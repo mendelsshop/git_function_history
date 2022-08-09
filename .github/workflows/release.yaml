@@ -1,0 +1,108 @@
+name: release
+
+on:
+  release:
+    types: [published, released, prereleased]
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  Linux:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: build
+        run: |
+          cargo build --release  
+          ls -l target/release/ 
+      - name: upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Linux
+          path: target/release/git_function_history
+      - name: rename
+        run: |
+          mv target/release/git_function_history target/release/git_function_history_linux
+      - name: upload to release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/git_function_history_linux
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+  MacOS:
+    strategy:
+      fail-fast: false
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: build
+        run: |
+          cargo build --release   
+          ls -l target/release/
+      - name: upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: MacOS
+          path: target/release/git_function_history
+      - name: rename
+        run: |
+          mv target/release/git_function_history target/release/git_function_history_macos
+      - name: upload to release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/git_function_history_macos
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+  Windows:
+    strategy:
+      fail-fast: false
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: build
+        run: |
+          cargo build --release  
+          ls -l target/release/ 
+      - name: upldoad artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows
+          path: target/release/git_function_history.exe
+      - name: rename
+        run: |
+          mv target/release/git_function_history.exe target/release/git_function_history_windows.exe
+      - name: upload to release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/git_function_history_windows.exe
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+  Publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+      - run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
+          
