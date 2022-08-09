@@ -1,3 +1,3 @@
 # git_function_history
 
-Show the git history of a function or method (wip).
+Show the git history of a function or method (WIP).

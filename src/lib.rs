@@ -26,7 +26,8 @@ use std::{process::Command, error::Error};
 /// # example
 /// 
 /// ```
-/// get_function("test_function", "src/test_functions.rs");
+/// use git_function_history::get_function;
+/// let t = get_function("test_function", "src/test_functions.rs");
 /// ```
 pub fn get_function(name: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
     // check if git is installed
