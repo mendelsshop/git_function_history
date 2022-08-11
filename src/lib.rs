@@ -27,6 +27,12 @@ lazy_static! {
     pub static ref CAPTURE_IN_QUOTE: Regex = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
     pub static ref CAPTURE_IN_COMMENT: Regex = Regex::new(r#"//.*"#).unwrap();
     pub static ref CAPTURE_MULTI_LINE_COMMENT: Regex = Regex::new(r#"/\*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
+    pub static ref CAPTURE_FUNCTION: Regex = Regex::new(r#"fn\s*(<[^<>]*>)*\s*\S+\s*\("#).unwrap();
+}
+
+struct Function {
+    name: String,
+    range: (usize, usize),
 }
 #[derive(Debug)]
 pub struct Commit {
@@ -48,14 +54,17 @@ pub struct FunctionHistory {
 }
 
 impl FunctionHistory {
+    /// This function will return a Commit for the given commit id
     pub fn get_by_commit_id(&self, id: &str) -> Option<&Commit> {
         self.history.iter().find(|c| c.id == id)
     }
 
+    /// This function will return a Commit for the date
     pub fn get_by_date(&self, date: &str) -> Option<&Commit> {
         self.history.iter().find(|c| c.date == date)
     }
 
+    // Given a date range it will return a vector of commits in that range
     pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&Commit> {
         // TODO: import chrono and use it to compare dates
         todo!("get_date_range({}-{})", start, end);
@@ -144,31 +153,37 @@ fn find_function_in_commit(
 ) -> Result<String, Box<dyn Error>> {
     let file_contents = find_file_in_commit(commit, file_path)?;
     let mut contents: String = "".to_string();
-    let funtion_keyword = "fn".to_string();
-    // create a regex to that finds the the function keyword followed by any amount of whitespace followed by the function name that returns the index after the function name
-    let fn_regex = Regex::new(format!(r"{}[\s]*{}", funtion_keyword, name).as_str()).unwrap();
     let points = turn_three_vecs_into_one(
         get_points_from_regex(&CAPTURE_IN_QUOTE, &file_contents),
         get_points_from_regex(&CAPTURE_MULTI_LINE_COMMENT, &file_contents),
         get_points_from_regex(&CAPTURE_IN_COMMENT, &file_contents),
     );
+    let blank_content = blank_out_range(&file_contents, &points);
     let mut function_range = Vec::new();
-    fn_regex.find_iter(&file_contents).for_each(|m| {
-        match get_body(&file_contents, &points, m.end()) {
+    for cap in CAPTURE_FUNCTION.find_iter(&blank_content) {
+        // get the function name
+        match get_body(&blank_content, &points, cap.end()) {
             t if t != 0 => {
-                function_range.push((m.start(), t));
+                function_range.push(Function {
+                    range: (cap.start(), t),
+                    name: get_function_name(&blank_content[cap.start()..cap.end()]),
+                });
             }
-            _ => {}
+            _ => {
+                continue;
+            }
         }
-    });
-    for (mut start, end) in function_range {
+    }
+
+    for mut t in function_range {
+        if t.name != name {
+            continue;
+        }
         if !contents.is_empty() {
             contents.push_str("\n...\n");
         }
-        start = file_contents[..start].rfind('\n').unwrap_or(0);
-        
-
-        contents += &file_contents[start..end];
+        t.range.0 = file_contents[..t.range.0].rfind('\n').unwrap_or(0);
+        contents += &file_contents[t.range.0..t.range.1];
     }
     if contents.is_empty() {
         return Err(String::from("Function not found"))?;
@@ -209,12 +224,8 @@ fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> us
         if index < start_point {
             continue;
         }
-        if found_end != 0 {
-            if char == '\n' {
-                return index;
-            } else {
-                continue;
-            }
+        if found_end != 0 && char == '\n' {
+            return index;
         }
         if points
             .iter()
@@ -228,15 +239,32 @@ fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> us
             brace_count -= 1;
             if brace_count == 0 {
                 found_end = index;
-
-
             }
         } else if char == ';' && brace_count == 0 {
             found_end = index;
-
         }
     }
     0
+}
+
+fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
+    let mut new_contents = contents.to_string();
+    for (start, end) in ranges {
+        new_contents.replace_range(start..end, &" ".repeat(end - start));
+    }
+    new_contents
+}
+
+fn get_function_name(mut function_header: &str) -> String {
+    let mut name = String::new();
+    function_header = function_header.split_once("fn ").unwrap().1;
+    for char in function_header.chars() {
+        if char == '(' || char == '<' || char.is_whitespace() {
+            break;
+        }
+        name.push(char);
+    }
+    name
 }
 
 #[cfg(test)]
@@ -247,10 +275,6 @@ mod tests {
         let output = get_function("empty_test", "src/test_functions.rs");
         assert!(output.is_ok());
         let output = output.unwrap();
-        // assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
-        // for i in output.history {
-        //     println!("{}\n{}", i.date, i.contents);
-        // }
         println!("{}", output.history[0].contents);
     }
     #[test]
