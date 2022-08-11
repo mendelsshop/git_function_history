@@ -154,18 +154,20 @@ fn find_function_in_commit(
     );
     let mut function_range = Vec::new();
     fn_regex.find_iter(&file_contents).for_each(|m| {
-        match get_body(&file_contents, &points, m.start()) {
+        match get_body(&file_contents, &points, m.end()) {
             t if t != 0 => {
                 function_range.push((m.start(), t));
             }
             _ => {}
         }
     });
-    for (start, end) in function_range {
+    for (mut start, end) in function_range {
         if !contents.is_empty() {
             contents.push_str("\n...\n");
         }
-        // TODO: if function dstarts in middle of a line capture from the start of the line
+        start = file_contents[..start].rfind('\n').unwrap_or(0);
+        
+
         contents += &file_contents[start..end];
     }
     if contents.is_empty() {
@@ -202,9 +204,17 @@ fn turn_three_vecs_into_one(
 
 fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
     let mut brace_count = 0usize;
+    let mut found_end: usize = 0;
     for (index, char) in contents.chars().enumerate() {
         if index < start_point {
             continue;
+        }
+        if found_end != 0 {
+            if char == '\n' {
+                return index;
+            } else {
+                continue;
+            }
         }
         if points
             .iter()
@@ -217,10 +227,13 @@ fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> us
         } else if char == '}' {
             brace_count -= 1;
             if brace_count == 0 {
-                return index + 1;
+                found_end = index;
+
+
             }
-        } else if char == ';' {
-            return index+1;
+        } else if char == ';' && brace_count == 0 {
+            found_end = index;
+
         }
     }
     0
@@ -235,9 +248,10 @@ mod tests {
         assert!(output.is_ok());
         let output = output.unwrap();
         // assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
-        for i in output.history {
-            println!("{}\n{}", i.date, i.contents);
-        }
+        // for i in output.history {
+        //     println!("{}\n{}", i.date, i.contents);
+        // }
+        println!("{}", output.history[0].contents);
     }
     #[test]
     fn git_installed() {
