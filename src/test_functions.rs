@@ -19,7 +19,19 @@ impl Test {
         println!("{{ {} added more chages", "{");
     }
 
+    pub fn test_2() {
+        println!("empty test");
+        // }
+        /* } */ 
+    }
+
     pub fn returns () -> String {
         String::from("returns")
     }
+}
+
+pub trait super_trait {
+    fn super_trait_method(&self);
+
+    fn empty_test() ->  String;
 }
