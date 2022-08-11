@@ -24,6 +24,9 @@ lazy_static! {
     #[derive(Debug)]
     // this is for when we support multiple languages
     pub static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
+    pub static ref CAPTURE_IN_QUOTE: Regex = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
+    pub static ref CAPTURE_IN_COMMENT: Regex = Regex::new(r#"^.*(//.*$)"#).unwrap();
+    pub static ref CAPTURE_MULTI_LINE_COMMENT: Regex = Regex::new(r#"/*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
 }
 #[derive(Debug)]
 pub struct Commit {
@@ -35,6 +38,27 @@ pub struct Commit {
 impl Commit {
     const fn new(id: String, contents: String, date: String) -> Self {
         Self { id, contents, date }
+    }
+}
+
+#[derive(Debug)]
+pub struct FunctionHistory {
+    pub name: String,
+    pub history: Vec<Commit>,
+}
+
+impl FunctionHistory {
+    pub fn get_by_commit_id(&self, id: &str) -> Option<&Commit> {
+        self.history.iter().find(|c| c.id == id)
+    }
+
+    pub fn get_by_date(&self, date: &str) -> Option<&Commit> {
+        self.history.iter().find(|c| c.date == date)
+    }
+
+    pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&Commit> {
+        // TODO: import chrono and use it to compare dates
+        todo!("get_date_range({}-{})", start, end);
     }
 }
 
@@ -60,7 +84,7 @@ impl Commit {
 /// use git_function_history::get_function;
 /// let t = get_function("test_function", "src/test_functions.rs");
 /// ```
-pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn Error>> {
+pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<dyn Error>> {
     // check if git is installed
     Command::new("git")
         .arg("--version")
@@ -74,13 +98,16 @@ pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn 
     if !commits.stderr.is_empty() {
         Err(String::from_utf8_lossy(&commits.stderr))?;
     }
-    let mut file_history: Vec<Commit> = Vec::new();
+    let mut file_history = FunctionHistory {
+        name: name.to_string(),
+        history: Vec::new(),
+    };
     for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
         let commit = commit.split(',').collect::<Vec<&str>>();
         if commit.len() == 2 {
             match find_function_in_commit(commit[0], file_path, name) {
                 Ok(contents) => {
-                    file_history.push(Commit::new(
+                    file_history.history.push(Commit::new(
                         commit[0].to_string(),
                         contents,
                         commit[1].to_string(),
@@ -94,8 +121,8 @@ pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn 
     }
     // get the commit hitory
     // chck if the file_history is empty if it is return an error
-    if file_history.is_empty() {
-        Err(String::from("No history found"))?;
+    if file_history.history.is_empty() {
+        Err("No history found")?;
     }
     Ok(file_history)
 }
@@ -120,21 +147,18 @@ fn find_function_in_commit(
     let funtion_keyword = "fn".to_string();
     // create a regex to that finds the the function keyword followed by any amount of whitespace followed by the function name that returns the index after the function name
     let fn_regex = Regex::new(format!(r"{}[\s]*{}", funtion_keyword, name).as_str()).unwrap();
-    let capture_in_quote = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
-    let capture_in_comment = Regex::new(r#"^.*(//.*$)"#).unwrap();
-    let capture_multi_line_comment = Regex::new(r#"/*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
-    let single_line_comment_range = get_points_from_regex(&capture_in_comment, &file_contents);
-    let multi_line_comment_range =
-        get_points_from_regex(&capture_multi_line_comment, &file_contents);
-    let quote_range = get_points_from_regex(&capture_in_quote, &file_contents);
     let points = turn_three_vecs_into_one(
-        single_line_comment_range,
-        multi_line_comment_range,
-        quote_range,
+        get_points_from_regex(&CAPTURE_IN_QUOTE, &file_contents),
+        get_points_from_regex(&CAPTURE_MULTI_LINE_COMMENT, &file_contents),
+        get_points_from_regex(&CAPTURE_IN_COMMENT, &file_contents),
     );
+    for point in &points {
+        println!("-----{:?}-----", point);
+        println!("{}", &file_contents[point.0..point.1]);
+    }
     let mut function_range = Vec::new();
     fn_regex.find_iter(&file_contents).for_each(|m| {
-        match get_function_body(&file_contents, &points, m.start()) {
+        match get_body(&file_contents, &points, m.start()) {
             t if t != 0 => {
                 function_range.push((m.start(), t));
             }
@@ -179,8 +203,8 @@ fn turn_three_vecs_into_one(
     points
 }
 
-fn get_function_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
-    // TODO: check if the first thing is ";" for traits, and also check for "->" for setting return type 
+fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
+    // TODO: check if the first thing is ";" for traits, and also check for "->" for setting return type
     let mut brace_count = 0usize;
     for (index, char) in contents.chars().enumerate() {
         if index < start_point {
@@ -196,9 +220,11 @@ fn get_function_body(contents: &str, points: &[(usize, usize)], start_point: usi
             brace_count += 1;
         } else if char == '}' {
             brace_count -= 1;
-        }
-        if brace_count == 0 && char == '}' {
-            return index + 1;
+            if brace_count == 0 {
+                return index + 1;
+            }
+        } else if char == ';' {
+            return index;
         }
     }
     0
@@ -209,11 +235,11 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function("returns", "src/test_functions.rs");
+        let output = get_function("empty_test", "src/test_functions.rs");
         assert!(output.is_ok());
         let output = output.unwrap();
         // assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
-        for i in output {
+        for i in output.history {
             println!("{}\n{}", i.date, i.contents);
         }
     }
