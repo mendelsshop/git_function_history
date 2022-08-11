@@ -25,7 +25,7 @@ impl Test {
     }
 
     pub fn returns () -> String {
-        String::from("returns")
+        String::from("fn empty_test() ")
     }
 }
 
