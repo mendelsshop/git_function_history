@@ -22,7 +22,6 @@ impl Test {
     pub fn test_2() {
         println!("empty test");
         // }
-        /* } */ 
     }
 
     pub fn returns () -> String {
