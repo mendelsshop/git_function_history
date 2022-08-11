@@ -32,5 +32,5 @@ impl Test {
 pub trait super_trait {
     fn super_trait_method(&self);
 
-    fn empty_test() ->  String;
+    fn empty_test<T>() ->  String;
 }
