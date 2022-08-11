@@ -13,9 +13,18 @@
     clippy::missing_errors_doc
 )]
 
-use std::fmt::Write;
-use std::{process::Command, error::Error};
+use lazy_static::lazy_static;
+use regex::Regex;
+use serde_json::Value;
+use std::fs::File;
+use std::{error::Error, process::Command};
 
+// read languages.json and parse the json to a const/static
+lazy_static! {
+    #[derive(Debug)]
+    // this is for when we support multiple languages
+    pub static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
+}
 #[derive(Debug)]
 pub struct Commit {
     pub id: String,
@@ -25,14 +34,9 @@ pub struct Commit {
 
 impl Commit {
     const fn new(id: String, contents: String, date: String) -> Self {
-        Self {
-            id,
-            contents,
-            date,
-        }
+        Self { id, contents, date }
     }
 }
-
 
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
@@ -49,9 +53,9 @@ impl Commit {
 /// It will then return the vector of `Commit` structs if contents of any of the commits is not empty.
 /// <br>
 /// If not it will error out with `no history found`.
-/// 
+///
 /// # example
-/// 
+///
 /// ```
 /// use git_function_history::get_function;
 /// let t = get_function("test_function", "src/test_functions.rs");
@@ -60,7 +64,8 @@ pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn 
     // check if git is installed
     Command::new("git")
         .arg("--version")
-        .output().expect("git is not installed");
+        .output()
+        .expect("git is not installed");
     // get the commit hitory
     let commits = Command::new("git")
         .args(r#"log --pretty=%H,%ad"#.split(' '))
@@ -83,7 +88,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn 
                 }
                 Err(_) => {
                     continue;
-                }   
+                }
             }
         }
     }
@@ -95,7 +100,6 @@ pub fn get_function(name: &str, file_path: &str) -> Result<Vec<Commit>, Box<dyn 
     Ok(file_history)
 }
 
-
 fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
     let commit_history = Command::new("git")
         .args(format!("show {}:{}", commit, file_path).split(' '))
@@ -106,49 +110,42 @@ fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn 
     Ok(String::from_utf8_lossy(&commit_history.stdout).to_string())
 }
 
-fn find_function_in_commit(commit: &str, file_path: &str, name: &str) -> Result<String, Box<dyn Error>> {
+fn find_function_in_commit(
+    commit: &str,
+    file_path: &str,
+    name: &str,
+) -> Result<String, Box<dyn Error>> {
     let file_contents = find_file_in_commit(commit, file_path)?;
-    let file_contents = file_contents.split('\n');
-    // TODO: dont hard code how functions are declared
-    // for 2 reasons 1. every language has different ways of declaring functions 2. there could be more space / new line between the function keyword and the function name
-    let fn_name = format!("fn {}", name);
-    let mut found = false;
-    let mut contents = String::new();
-    let mut brace_count = 0;
-    for (i, line) in file_contents.into_iter().enumerate() {
-        // for each line check if the line contains the function name set found to true and add the i: line to the contents
-        if line.contains(&fn_name) {
-            found = true;
-            writeln!(contents,"{i}: {}\n", line) ?;
-            // split line line on the fn name
-            match line.split_once(&fn_name){
-                Some(line) => 
-                {for lines in line.1.chars() {
-                    if lines == '{' {
-                        brace_count += 1;
-                    } else if lines == '}' {
-                        brace_count -= 1;
-                    }
-                }; continue },
-                None => continue,
-            };}
-            // loop through the line and check if the line contains { or } and add the line to the contents
-            for lines in line.chars() {
-                if lines == '{' {
-                    brace_count += 1;
-                } else if lines == '}' {
-                    brace_count -= 1;
-                }
-            } 
-            if found {
-                writeln!(contents,"{i}: {}\n", line) ?;
+    let mut contents: String = "".to_string();
+    let funtion_keyword = "fn".to_string();
+    // create a regex to that finds the the function keyword followed by any amount of whitespace followed by the function name that returns the index after the function name
+    let fn_regex = Regex::new(format!(r"{}[\s]*{}", funtion_keyword, name).as_str()).unwrap();
+    let capture_in_quote = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
+    let capture_in_comment = Regex::new(r#"^.*(//.*$)"#).unwrap();
+    let capture_multi_line_comment = Regex::new(r#"/*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
+    let single_line_comment_range = get_points_from_regex(&capture_in_comment, &file_contents);
+    let multi_line_comment_range =
+        get_points_from_regex(&capture_multi_line_comment, &file_contents);
+    let quote_range = get_points_from_regex(&capture_in_quote, &file_contents);
+    let points = turn_three_vecs_into_one(
+        single_line_comment_range,
+        multi_line_comment_range,
+        quote_range,
+    );
+    let mut function_range = Vec::new();
+    fn_regex.find_iter(&file_contents).for_each(|m| {
+        match get_function_body(&file_contents, &points, m.start()) {
+            t if t != 0 => {
+                function_range.push((m.start(), t));
             }
-
-            if brace_count == 0 && found {
-                found = false;
-            }
-        
-        
+            _ => {}
+        }
+    });
+    for (start, end) in function_range {
+        if !contents.is_empty() {
+            contents.push_str("\n...\n");
+        }
+        contents += &file_contents[start..end];
     }
     if contents.is_empty() {
         return Err(String::from("Function not found"))?;
@@ -156,16 +153,69 @@ fn find_function_in_commit(commit: &str, file_path: &str, name: &str) -> Result<
     Ok(contents)
 }
 
+fn get_points_from_regex(regex: &Regex, file_contents: &str) -> Vec<(usize, usize)> {
+    let mut points: Vec<(usize, usize)> = Vec::new();
+    regex.find_iter(file_contents).for_each(|m| {
+        points.push((m.start(), m.end()));
+    });
+    points
+}
+
+fn turn_three_vecs_into_one(
+    vec1: Vec<(usize, usize)>,
+    vec2: Vec<(usize, usize)>,
+    vec3: Vec<(usize, usize)>,
+) -> Vec<(usize, usize)> {
+    let mut points: Vec<(usize, usize)> = Vec::new();
+    for (start, end) in vec1 {
+        points.push((start, end));
+    }
+    for (start, end) in vec2 {
+        points.push((start, end));
+    }
+    for (start, end) in vec3 {
+        points.push((start, end));
+    }
+    points
+}
+
+fn get_function_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
+    // TODO: check if the first thing is ";" for traits, and also check for "->" for setting return type 
+    let mut brace_count = 0usize;
+    for (index, char) in contents.chars().enumerate() {
+        if index < start_point {
+            continue;
+        }
+        if points
+            .iter()
+            .any(|&(start, end)| index >= start && index < end)
+        {
+            continue;
+        }
+        if char == '{' {
+            brace_count += 1;
+        } else if char == '}' {
+            brace_count -= 1;
+        }
+        if brace_count == 0 && char == '}' {
+            return index + 1;
+        }
+    }
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function("empty_test", "src/test_functions.rs");
-        // check if output ik ok and not err
+        let output = get_function("not_empty_test", "src/test_functions.rs");
         assert!(output.is_ok());
         let output = output.unwrap();
-        assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
+        // assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
+        for i in output {
+            println!("{}\n{}", i.date, i.contents);
+        }
     }
     #[test]
     fn git_installed() {
@@ -180,6 +230,5 @@ mod tests {
     fn not_found_function() {
         let output = get_function("not_a_function", "src/test_functions.rs");
         assert!(output.is_err());
-
     }
 }

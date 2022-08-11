@@ -1,0 +1,13 @@
+{
+    "languages": 
+{
+    "rs": {
+        "class": "impl",
+        "function delimter": ["{", "}"],
+        "function keyword": ["fn"],
+        "qoutes": [["\"", "\""] , ["'", "'"]],
+        "comment": ["//"],
+        "comment block": ["/*", "*/"]
+    }
+}
+}

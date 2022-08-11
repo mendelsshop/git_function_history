@@ -18,5 +18,8 @@ impl Test {
         println!("not empty test");
         println!("{{ {} added more chages", "{");
     }
-    
+
+    pub fn returns () -> String {
+        String::from("returns")
+    }
 }
