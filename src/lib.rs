@@ -209,7 +209,7 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function("not_empty_test", "src/test_functions.rs");
+        let output = get_function("returns", "src/test_functions.rs");
         assert!(output.is_ok());
         let output = output.unwrap();
         // assert!(output.last().unwrap().date == "Tue Aug 9 13:02:28 2022 -0400");
