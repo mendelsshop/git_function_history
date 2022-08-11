@@ -25,8 +25,8 @@ lazy_static! {
     // this is for when we support multiple languages
     pub static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
     pub static ref CAPTURE_IN_QUOTE: Regex = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
-    pub static ref CAPTURE_IN_COMMENT: Regex = Regex::new(r#"^.*(//.*$)"#).unwrap();
-    pub static ref CAPTURE_MULTI_LINE_COMMENT: Regex = Regex::new(r#"/*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
+    pub static ref CAPTURE_IN_COMMENT: Regex = Regex::new(r#"//.*"#).unwrap();
+    pub static ref CAPTURE_MULTI_LINE_COMMENT: Regex = Regex::new(r#"/\*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
 }
 #[derive(Debug)]
 pub struct Commit {
@@ -152,10 +152,6 @@ fn find_function_in_commit(
         get_points_from_regex(&CAPTURE_MULTI_LINE_COMMENT, &file_contents),
         get_points_from_regex(&CAPTURE_IN_COMMENT, &file_contents),
     );
-    for point in &points {
-        println!("-----{:?}-----", point);
-        println!("{}", &file_contents[point.0..point.1]);
-    }
     let mut function_range = Vec::new();
     fn_regex.find_iter(&file_contents).for_each(|m| {
         match get_body(&file_contents, &points, m.start()) {
@@ -169,6 +165,7 @@ fn find_function_in_commit(
         if !contents.is_empty() {
             contents.push_str("\n...\n");
         }
+        // TODO: if function dstarts in middle of a line capture from the start of the line
         contents += &file_contents[start..end];
     }
     if contents.is_empty() {
@@ -204,7 +201,6 @@ fn turn_three_vecs_into_one(
 }
 
 fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
-    // TODO: check if the first thing is ";" for traits, and also check for "->" for setting return type
     let mut brace_count = 0usize;
     for (index, char) in contents.chars().enumerate() {
         if index < start_point {
@@ -224,7 +220,7 @@ fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> us
                 return index + 1;
             }
         } else if char == ';' {
-            return index;
+            return index+1;
         }
     }
     0
