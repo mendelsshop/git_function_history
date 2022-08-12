@@ -24,10 +24,12 @@ lazy_static! {
     #[derive(Debug)]
     // this is for when we support multiple languages
     pub static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
-    pub static ref CAPTURE_IN_QUOTE: Regex = Regex::new(r#"(["|'](?:\\["|']|[^"|'])*['|"])"#).unwrap();
-    pub static ref CAPTURE_IN_COMMENT: Regex = Regex::new(r#"//.*"#).unwrap();
-    pub static ref CAPTURE_MULTI_LINE_COMMENT: Regex = Regex::new(r#"/\*[^*]*\*+(?:[^/*][^*]*\*+)*/"#).unwrap();
-    pub static ref CAPTURE_FUNCTION: Regex = Regex::new(r#"fn\s*(<[^<>]*>)*\s*\S+\s*\("#).unwrap();
+    pub static ref CAPTURE_FUNCTION: Regex = Regex::new(r#"\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
+    // this regex look for string chars and comments
+    pub static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
+    pub static ref CAPTURE_IMPL: Regex = Regex::new(r#"\bimpl\s*(?P<lifetime><[^<>]+>)?\s*(?P<name>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher>where*[^{]+)?\{"#).unwrap();
+    pub static ref CAPTURE_TRAIT: Regex = Regex::new(r#"\btrait\s+(?P<name>[^\s<>]+)\s*(?P<lifetime><[^<>]+>)?\s*(?P<wher>where[^{]+)?\{"#).unwrap();
+    // TODO: add supporrt for extern
 }
 
 struct Function {
@@ -153,16 +155,12 @@ fn find_function_in_commit(
 ) -> Result<String, Box<dyn Error>> {
     let file_contents = find_file_in_commit(commit, file_path)?;
     let mut contents: String = "".to_string();
-    let points = turn_three_vecs_into_one(
-        get_points_from_regex(&CAPTURE_IN_QUOTE, &file_contents),
-        get_points_from_regex(&CAPTURE_MULTI_LINE_COMMENT, &file_contents),
-        get_points_from_regex(&CAPTURE_IN_COMMENT, &file_contents),
-    );
+    let points = get_points_from_regex(&CAPTURE_NOT_NEEDED, &file_contents);
     let blank_content = blank_out_range(&file_contents, &points);
     let mut function_range = Vec::new();
     for cap in CAPTURE_FUNCTION.find_iter(&blank_content) {
         // get the function name
-        match get_body(&blank_content, &points, cap.end()) {
+        match get_body(&blank_content, &points, cap.end(), true) {
             t if t != 0 => {
                 function_range.push(Function {
                     range: (cap.start(), t),
@@ -199,25 +197,12 @@ fn get_points_from_regex(regex: &Regex, file_contents: &str) -> Vec<(usize, usiz
     points
 }
 
-fn turn_three_vecs_into_one(
-    vec1: Vec<(usize, usize)>,
-    vec2: Vec<(usize, usize)>,
-    vec3: Vec<(usize, usize)>,
-) -> Vec<(usize, usize)> {
-    let mut points: Vec<(usize, usize)> = Vec::new();
-    for (start, end) in vec1 {
-        points.push((start, end));
-    }
-    for (start, end) in vec2 {
-        points.push((start, end));
-    }
-    for (start, end) in vec3 {
-        points.push((start, end));
-    }
-    points
-}
-
-fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> usize {
+fn get_body(
+    contents: &str,
+    points: &[(usize, usize)],
+    start_point: usize,
+    semi_colon: bool,
+) -> usize {
     let mut brace_count = 0usize;
     let mut found_end: usize = 0;
     for (index, char) in contents.chars().enumerate() {
@@ -240,7 +225,7 @@ fn get_body(contents: &str, points: &[(usize, usize)], start_point: usize) -> us
             if brace_count == 0 {
                 found_end = index;
             }
-        } else if char == ';' && brace_count == 0 {
+        } else if char == ';' && brace_count == 0 && semi_colon {
             found_end = index;
         }
     }
