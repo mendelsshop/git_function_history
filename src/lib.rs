@@ -16,9 +16,9 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
+use std::fmt::Write;
 use std::fs::File;
 use std::{error::Error, process::Command};
-use std::fmt::Write;
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -51,10 +51,9 @@ struct Block {
     pub end: Points,
 }
 
-
 struct Function {
     name: String,
-    range: Points
+    range: Points,
 }
 #[derive(Debug)]
 pub struct Commit {
@@ -89,7 +88,12 @@ impl FunctionHistory {
     // Given a date range it will return a vector of commits in that range
     pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&Commit> {
         // TODO: import chrono and use it to compare dates
-        todo!("get_date_range(for: {}, from: {}-{})", self.name, start, end);
+        todo!(
+            "get_date_range(for: {}, from: {}-{})",
+            self.name,
+            start,
+            end
+        );
     }
 }
 
@@ -187,10 +191,13 @@ fn find_function_in_commit(
     let mut function_range = Vec::new();
     for cap in CAPTURE_FUNCTION.find_iter(&blank_content) {
         // get the function name
-        match get_body(&blank_content,  cap.end(), true) {
+        match get_body(&blank_content, cap.end(), true) {
             t if t.0 != 0 => {
                 function_range.push(Function {
-                    range: Points {x: cap.start(), y: t.0},
+                    range: Points {
+                        x: cap.start(),
+                        y: t.0,
+                    },
                     name: get_function_name(&blank_content[cap.start()..cap.end()]),
                 });
             }
@@ -202,24 +209,27 @@ fn find_function_in_commit(
     let mut block_range = Vec::new();
     for cap in CAPTURE_BLOCKS.find_iter(&blank_content) {
         // get the function name
-        match get_body(&blank_content,  cap.end()-1, false) {
+        match get_body(&blank_content, cap.end() - 1, false) {
             t if t.0 != 0 => {
-                block_range.push(
-                    Block {
-                    // range: 
-                    start: Points {x: cap.start(), y: cap.end()},
-                    full: Points {x: cap.start(), y: t.0},
-                    end : Points {x: t.1, y: t.0},
-
-                }
-                    );
+                block_range.push(Block {
+                    // range:
+                    start: Points {
+                        x: cap.start(),
+                        y: cap.end(),
+                    },
+                    full: Points {
+                        x: cap.start(),
+                        y: t.0,
+                    },
+                    end: Points { x: t.1, y: t.0 },
+                });
             }
             _ => {
                 continue;
             }
         }
     }
-    let mut current_block: Option<&Block>= None;
+    let mut current_block: Option<&Block> = None;
     // let mut current_function = Vec::new();
     for t in function_range {
         if t.name != name {
@@ -238,7 +248,7 @@ fn find_function_in_commit(
         for b in &block_range {
             if t.range.in_other(&b.full) {
                 current_block = Some(b);
-                writeln!(contents,"{}", &file_contents[b.start.x..b.start.y])?;
+                writeln!(contents, "{}", &file_contents[b.start.x..b.start.y])?;
                 break;
             }
         }
@@ -249,10 +259,8 @@ fn find_function_in_commit(
         contents.push('\n');
     }
     if let Some(block) = current_block {
-
-            contents.push_str("...");
-            contents.push_str(&file_contents[block.end.x..block.end.y]);
-
+        contents.push_str("...");
+        contents.push_str(&file_contents[block.end.x..block.end.y]);
     }
     if contents.is_empty() {
         return Err(String::from("Function not found"))?;
@@ -268,11 +276,7 @@ fn get_points_from_regex(regex: &Regex, file_contents: &str) -> Vec<(usize, usiz
     points
 }
 
-fn get_body(
-    contents: &str,
-    start_point: usize,
-    semi_colon: bool,
-) -> (usize, usize) {
+fn get_body(contents: &str, start_point: usize, semi_colon: bool) -> (usize, usize) {
     let mut last_newline = 0;
     let mut brace_count = 0;
     let mut found_end = 0;
