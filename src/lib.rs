@@ -29,10 +29,10 @@ lazy_static! {
     // this regex look for string chars and comments
     pub static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
     pub static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)"#).unwrap();
-    // pub static ref CAPTURE_TRAIT: Regex = Regex::new(r#".*\btrait\s+(?P<name>[^\s<>]+)\s*(?P<lifetime><[^<>]+>)?\s*(?P<wher>where[^{]+)?\{"#).unwrap();
-    // pub static ref CAPTURE_EXTERN: Regex = Regex::new(r#".*\bextern\s*(?P<extern>".+")?\s*\{"#).unwrap();
-    // TODO: add supporrt for extern
+
 }
+
+static mut CURRENT_FILE: FileContents = FileContents::new();
 #[derive(Debug, Copy, Clone)]
 struct Points {
     pub x: usize,
@@ -65,6 +65,20 @@ pub struct Commit {
 impl Commit {
     const fn new(id: String, contents: String, date: String) -> Self {
         Self { id, contents, date }
+    }
+}
+
+struct FileContents {
+    functions: String,
+    contents: String,
+}
+
+impl FileContents {
+    const fn new() -> Self {
+        Self {
+            functions: String::new(),
+            contents: String::new(),
+        }
     }
 }
 
@@ -177,8 +191,13 @@ fn find_function_in_commit(
     file_path: &str,
     name: &str,
 ) -> Result<String, Box<dyn Error>> {
-    // TODO: store the file contents in a global variable aand in a local variable, for each new commit wee can check if the file contents has changed and if so we can update the local variable thus saing us doing the same computation for each commit if they are the same
     let file_contents = find_file_in_commit(commit, file_path)?;
+    unsafe {
+        // this works as a cache so that we dont have to do the same computation for each commit if they are the same
+        if CURRENT_FILE.contents == file_contents {
+            return Ok(CURRENT_FILE.functions.clone());
+        }
+    }
     let mut contents: String = "".to_string();
     // add line numbers to the file contents
     for (i, line) in file_contents.lines().enumerate() {
@@ -264,6 +283,10 @@ fn find_function_in_commit(
     }
     if contents.is_empty() {
         return Err(String::from("Function not found"))?;
+    }
+    unsafe {
+        CURRENT_FILE.contents = file_contents;
+        CURRENT_FILE.functions = contents.clone();
     }
     Ok(contents)
 }
