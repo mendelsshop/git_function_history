@@ -69,3 +69,6 @@ trait super_trait_2 <T> where T: super_trait {
         println!("super trait method");
     }
 }
+extern "C" {
+    fn abs(input: i32) -> i32;
+}
