@@ -16,7 +16,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
-use std::fmt::Write;
+use std::fmt::{self, Write};
 use std::fs::File;
 use std::{error::Error, process::Command};
 
@@ -29,10 +29,8 @@ lazy_static! {
     // this regex look for string chars and comments
     pub static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
     pub static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)"#).unwrap();
-
 }
 
-static mut CURRENT_FILE: FileContents = FileContents::new();
 #[derive(Debug, Copy, Clone)]
 struct Points {
     pub x: usize,
@@ -45,62 +43,134 @@ impl Points {
     }
 }
 
-struct Block {
-    pub start: Points,
-    pub full: Points,
-    pub end: Points,
+struct InternalBlock {
+    start: Points,
+    full: Points,
+    end: Points,
+    types: BlockType,
 }
 
-struct Function {
+pub struct InternalFunctions {
     name: String,
     range: Points,
 }
-#[derive(Debug)]
-pub struct Commit {
-    pub id: String,
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub name: String,
     pub contents: String,
+    pub block: Option<Block>,
+    pub function: Option<Vec<FunctionBlock>>,
+}
+
+impl fmt::Display for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.block {
+            None => {}
+            Some(block) => write!(f, "{}\n...\n", block.top)?,
+        };
+        match &self.function {
+            None => {}
+            Some(_) => {}
+        };
+        write!(f, "{}", self.contents)?;
+        match &self.function {
+            None => {}
+            Some(_) => {}
+        };
+        match &self.block {
+            None => {}
+            Some(block) => write!(f, "\n...{}", block.bottom)?,
+        };
+        Ok(())
+    }
+}
+#[derive(Debug, Clone)]
+pub struct FunctionBlock {
+    pub name: String,
+    pub top: String,
+    pub bottom: String,
+}
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub name: Option<String>,
+    pub top: String,
+    pub bottom: String,
+    pub block_type: BlockType,
+}
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum BlockType {
+    Impl,
+    Extern,
+    Trait,
+    Unknown,
+}
+
+#[derive(Debug)]
+pub struct CommitFunctions {
+    pub id: String,
+    pub functions: Vec<Function>,
     pub date: String,
 }
 
-impl Commit {
-    const fn new(id: String, contents: String, date: String) -> Self {
-        Self { id, contents, date }
+impl CommitFunctions {
+    const fn new(id: String, functions: Vec<Function>, date: String) -> Self {
+        Self {
+            id,
+            functions,
+            date,
+        }
+    }
+
+    pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Function> {
+        for function in &self.functions {
+            if let Some(blocks) = &function.block {
+                if blocks.block_type == block_type {
+                    return Some(function.clone());
+                }
+            }
+        }
+        None
     }
 }
 
-struct FileContents {
-    functions: String,
-    contents: String,
-}
-
-impl FileContents {
-    const fn new() -> Self {
-        Self {
-            functions: String::new(),
-            contents: String::new(),
+impl fmt::Display for CommitFunctions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Commit {}", self.id)?;
+        writeln!(f, "Date: {}", self.date)?;
+        for (i, function) in self.functions.iter().enumerate() {
+            write!(
+                f,
+                "{}{}",
+                match i {
+                    0 => "",
+                    _ => "\n...\n",
+                },
+                function
+            )?;
         }
+        Ok(())
     }
 }
 
 #[derive(Debug)]
 pub struct FunctionHistory {
     pub name: String,
-    pub history: Vec<Commit>,
+    pub history: Vec<CommitFunctions>,
 }
 
 impl FunctionHistory {
-    /// This function will return a Commit for the given commit id
-    pub fn get_by_commit_id(&self, id: &str) -> Option<&Commit> {
+    /// This function will return a `CommitFunctions` for the given commit id
+    pub fn get_by_commit_id(&self, id: &str) -> Option<&CommitFunctions> {
         self.history.iter().find(|c| c.id == id)
     }
 
-    /// This function will return a Commit for the date
-    pub fn get_by_date(&self, date: &str) -> Option<&Commit> {
+    /// This function will return a `CommitFunctions` for the date
+    pub fn get_by_date(&self, date: &str) -> Option<&CommitFunctions> {
         self.history.iter().find(|c| c.date == date)
     }
 
     // Given a date range it will return a vector of commits in that range
-    pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&Commit> {
+    pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&CommitFunctions> {
         // TODO: import chrono and use it to compare dates
         todo!(
             "get_date_range(for: {}, from: {}-{})",
@@ -111,19 +181,28 @@ impl FunctionHistory {
     }
 }
 
+impl fmt::Display for FunctionHistory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for commit in &self.history {
+            write!(f, "\n{}", commit)?;
+        }
+        Ok(())
+    }
+}
+
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
 /// If not it will get all the commits along with the date.
 /// <br>
-/// It the creates a vector of `Commit` structs.
+/// It the creates a vector of `CommitFunctions` structs.
 /// <br>
 /// it goes the command output and splits it into the commit id, and date.
 /// <br>
 /// Using the `find_funtions_in_commit` it will find all the functions matching the name in the commit.
 /// <br>
-/// It will then create a new `Commit` struct with the id, date, and the the functions.
+/// It will then create a new `CommitFunctions` struct with the id, date, and the the functions.
 /// <br>
-/// It will then return the vector of `Commit` structs if contents of any of the commits is not empty.
+/// It will then return the vector of `CommitFunctions` structs if contents of any of the commits is not empty.
 /// <br>
 /// If not it will error out with `no history found`.
 ///
@@ -156,7 +235,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
         if commit.len() == 2 {
             match find_function_in_commit(commit[0], file_path, name) {
                 Ok(contents) => {
-                    file_history.history.push(Commit::new(
+                    file_history.history.push(CommitFunctions::new(
                         commit[0].to_string(),
                         contents,
                         commit[1].to_string(),
@@ -190,21 +269,15 @@ fn find_function_in_commit(
     commit: &str,
     file_path: &str,
     name: &str,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<Vec<Function>, Box<dyn Error>> {
     let file_contents = find_file_in_commit(commit, file_path)?;
-    unsafe {
-        // this works as a cache so that we dont have to do the same computation for each commit if they are the same
-        if CURRENT_FILE.contents == file_contents {
-            return Ok(CURRENT_FILE.functions.clone());
-        }
-    }
     let mut contents: String = "".to_string();
     // add line numbers to the file contents
     for (i, line) in file_contents.lines().enumerate() {
         writeln!(contents, "{}: {}", i + 1, line)?;
     }
     let file_contents = contents;
-    let mut contents: String = "".to_string();
+    let mut contents: Vec<Function> = Vec::new();
     let points = get_points_from_regex(&CAPTURE_NOT_NEEDED, &file_contents);
     let blank_content = blank_out_range(&file_contents, &points);
     let mut function_range = Vec::new();
@@ -212,7 +285,7 @@ fn find_function_in_commit(
         // get the function name
         match get_body(&blank_content, cap.end(), true) {
             t if t.0 != 0 => {
-                function_range.push(Function {
+                function_range.push(InternalFunctions {
                     range: Points {
                         x: cap.start(),
                         y: t.0,
@@ -230,7 +303,7 @@ fn find_function_in_commit(
         // get the function name
         match get_body(&blank_content, cap.end() - 1, false) {
             t if t.0 != 0 => {
-                block_range.push(Block {
+                block_range.push(InternalBlock {
                     // range:
                     start: Points {
                         x: cap.start(),
@@ -241,6 +314,20 @@ fn find_function_in_commit(
                         y: t.0,
                     },
                     end: Points { x: t.1, y: t.0 },
+                    types: match CAPTURE_BLOCKS.captures(&blank_content[cap.start()..cap.end()]) {
+                        Some(types) => {
+                            if types.name("extern").is_some() {
+                                BlockType::Extern
+                            } else if types.name("name_impl").is_some() {
+                                BlockType::Impl
+                            } else if types.name("name_trait").is_some() {
+                                BlockType::Trait
+                            } else {
+                                BlockType::Unknown
+                            }
+                        }
+                        None => BlockType::Unknown,
+                    },
                 });
             }
             _ => {
@@ -248,45 +335,32 @@ fn find_function_in_commit(
             }
         }
     }
-    let mut current_block: Option<&Block> = None;
-    // let mut current_function = Vec::new();
     for t in function_range {
         if t.name != name {
             continue;
         }
+        let mut function = Function {
+            name: t.name.clone(),
+            contents: String::new(),
+            block: None,
+            function: None,
+        };
         // check if block is in range
+        let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
+
         if let Some(block) = current_block {
-            if !t.range.in_other(&block.full) {
-                contents.push_str("...");
-                contents.push_str(&file_contents[block.end.x..block.end.y]);
-                contents.push('\n');
-                current_block = None;
-            }
-        }
-        // check if the function is in a block
-        for b in &block_range {
-            if t.range.in_other(&b.full) {
-                current_block = Some(b);
-                writeln!(contents, "{}", &file_contents[b.start.x..b.start.y])?;
-                break;
-            }
-        }
-        if !contents.is_empty() {
-            contents.push_str("...\n");
-        }
-        contents += &file_contents[t.range.x..t.range.y];
-        contents.push('\n');
-    }
-    if let Some(block) = current_block {
-        contents.push_str("...");
-        contents.push_str(&file_contents[block.end.x..block.end.y]);
+            function.block = Some(Block {
+                name: None,
+                top: file_contents[block.start.x..block.start.y].to_string(),
+                bottom: file_contents[block.end.x..block.end.y].to_string(),
+                block_type: block.types,
+            });
+        };
+        function.contents = file_contents[t.range.x..t.range.y].to_string();
+        contents.push(function);
     }
     if contents.is_empty() {
-        return Err(String::from("Function not found"))?;
-    }
-    unsafe {
-        CURRENT_FILE.contents = file_contents;
-        CURRENT_FILE.functions = contents.clone();
+        Err("No functions found")?;
     }
     Ok(contents)
 }
@@ -354,7 +428,7 @@ mod tests {
         let output = get_function("empty_test", "src/test_functions.rs");
         assert!(output.is_ok());
         let output = output.unwrap();
-        println!("{}", output.history[0].contents);
+        println!("{}", output.history[0]);
     }
     #[test]
     fn git_installed() {

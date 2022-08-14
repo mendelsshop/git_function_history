@@ -4,3 +4,5 @@
 # git function history
 
 Show the git history of a function or method (WIP).
+Use the latest (beta) version by putting `"git_function_history" = { git = 'https://github.com/mendelsshop/git_function_history' }` in your cargo.toml under `[dependencies]` section.
+Use the latest [crates.io](https://crates.io/crates/git_function_history) (also beta) by putting `git_function_history = "0.2.1"` in your cargo.toml under `[dependencies]` section.
