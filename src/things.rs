@@ -1,29 +1,28 @@
 use std::fmt::{self};
 
-pub (crate) struct InternalBlock {
-    pub (crate) start: Points,
-    pub (crate) full: Points,
-    pub (crate) end: Points,
-    pub (crate) types: BlockType,
+pub(crate) struct InternalBlock {
+    pub(crate) start: Points,
+    pub(crate) full: Points,
+    pub(crate) end: Points,
+    pub(crate) types: BlockType,
 }
 
-pub (crate) struct InternalFunctions {
-    pub (crate) name: String,
-    pub (crate)range: Points,
+pub(crate) struct InternalFunctions {
+    pub(crate) name: String,
+    pub(crate) range: Points,
 }
 
 #[derive(Debug, Copy, Clone)]
-pub (crate) struct Points {
-    pub (crate) x: usize,
-    pub (crate) y: usize,
+pub(crate) struct Points {
+    pub(crate) x: usize,
+    pub(crate) y: usize,
 }
 
 impl Points {
-    pub (crate) const fn in_other(&self, other: &Self) -> bool {
+    pub(crate) const fn in_other(&self, other: &Self) -> bool {
         self.x > other.x && self.y < other.y
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -84,7 +83,7 @@ pub struct CommitFunctions {
 }
 
 impl CommitFunctions {
-    pub (crate) const fn new(id: String, functions: Vec<Function>, date: String) -> Self {
+    pub(crate) const fn new(id: String, functions: Vec<Function>, date: String) -> Self {
         Self {
             id,
             functions,
@@ -94,17 +93,24 @@ impl CommitFunctions {
 
     /// returns all functions in the block type specified if ore else it returns none
     pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
-        let vec: Vec<Function> = self.functions.iter().filter(|f| {
-            f.block.as_ref().map_or(false, |block| block.block_type == block_type)
-        }).cloned().collect();
-        if vec.is_empty() { 
+        let vec: Vec<Function> = self
+            .functions
+            .iter()
+            .filter(|f| {
+                f.block
+                    .as_ref()
+                    .map_or(false, |block| block.block_type == block_type)
+            })
+            .cloned()
+            .collect();
+        if vec.is_empty() {
             return None;
         }
         Some(Self {
-        functions: vec,
-        id: self.id.clone(),
-        date: self.date.clone(),
-    })
+            functions: vec,
+            id: self.id.clone(),
+            date: self.date.clone(),
+        })
     }
 }
 
@@ -162,10 +168,17 @@ impl FunctionHistory {
     /// let in_impl = get_function("empty_test", "src/test_functions.rs").unwrap().get_all_functions_in_block(BlockType::Impl);
     /// assert!(in_impl.get_by_commit_id("6cc3ab3cdd24d545d93db1c4c55873596dd0ac2a").is_some())
     /// ```
-    pub fn get_all_functions_in_block(&self, block_type: BlockType) ->  Self {
-        let t = self.history.iter().filter_map(|f| f.get_function_from_block(block_type)).collect();
-        Self { history: t, name: self.name.clone() }
-        }   
+    pub fn get_all_functions_in_block(&self, block_type: BlockType) -> Self {
+        let t = self
+            .history
+            .iter()
+            .filter_map(|f| f.get_function_from_block(block_type))
+            .collect();
+        Self {
+            history: t,
+            name: self.name.clone(),
+        }
+    }
 }
 
 impl fmt::Display for FunctionHistory {

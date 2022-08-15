@@ -12,17 +12,16 @@
     clippy::similar_names,
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
-
 )]
 pub mod things;
-pub use things::{FunctionHistory, Function, BlockType, Block, CommitFunctions,};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
-use things::{InternalFunctions, Points, InternalBlock};
-use std::fmt::{Write};
+use std::fmt::Write;
 use std::fs::File;
 use std::{error::Error, process::Command};
+pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory};
+use things::{InternalBlock, InternalFunctions, Points};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -34,8 +33,6 @@ lazy_static! {
     pub (crate) static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
-
-
 
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
