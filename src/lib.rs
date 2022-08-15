@@ -73,6 +73,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
     let mut file_history = FunctionHistory {
         name: name.to_string(),
         history: Vec::new(),
+        current_pos: 0
     };
     for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
         let commit = commit.split(',').collect::<Vec<&str>>();
@@ -188,6 +189,7 @@ fn find_function_in_commit(
             contents: String::new(),
             block: None,
             function: None,
+            lines: (0, 0),
         };
         // check if block is in range
         let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
@@ -201,6 +203,14 @@ fn find_function_in_commit(
             });
         };
         function.contents = file_contents[t.range.x..t.range.y].to_string();
+        let top_line: usize = file_contents[t.range.x..t.range.y].split_once(':').unwrap().0.parse().unwrap();
+        // println!("{}", top_line);
+        let bottom_line = match file_contents[t.range.x..t.range.y].rsplit_once('\n') {
+            Some(line) => {
+                line.1.split_once(':').unwrap().0.parse().unwrap()},
+            None => top_line,
+        };
+        function.lines = (top_line, bottom_line);
         contents.push(function);
     }
     if contents.is_empty() {
