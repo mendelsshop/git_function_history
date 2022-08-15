@@ -221,7 +221,7 @@ impl FunctionHistory {
     /// use git_function_history::{get_function, BlockType};
     /// let in_impl = get_function("empty_test", "src/test_functions.rs").unwrap().get_all_functions_in_block(BlockType::Impl);
     /// println!("{}", in_impl);
-    /// assert!(in_impl.get_by_commit_id("6cc3ab3cdd24d545d93db1c4c55873596dd0ac2a").is_some())
+    /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
     /// ```
     pub fn get_all_functions_in_block(&self, block_type: BlockType) -> Self {
         let t = self
