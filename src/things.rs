@@ -83,7 +83,7 @@ pub struct Block {
 /// This enum is used when filtering commit history only for let say impl and not externs or traits
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum BlockType {
-    Impl, 
+    Impl,
     Extern,
     Trait,
     Unknown,
@@ -127,7 +127,7 @@ impl CommitFunctions {
             functions: vec,
             id: self.id.clone(),
             date: self.date.clone(),
-            current_pos: 0
+            current_pos: 0,
         })
     }
 
@@ -137,9 +137,7 @@ impl CommitFunctions {
         let vec: Vec<Function> = self
             .functions
             .iter()
-            .filter(|f| {
-                f.lines.0 >= start && f.lines.1 <= end
-            })
+            .filter(|f| f.lines.0 >= start && f.lines.1 <= end)
             .cloned()
             .collect();
         if vec.is_empty() {
@@ -149,20 +147,18 @@ impl CommitFunctions {
             functions: vec,
             id: self.id.clone(),
             date: self.date.clone(),
-            current_pos: 0
+            current_pos: 0,
         })
     }
 }
 
-
 impl Iterator for CommitFunctions {
     type Item = Function;
     fn next(&mut self) -> Option<Self::Item> {
-        // get the current function without removing it 
+        // get the current function without removing it
         let function = self.functions.get(self.current_pos).cloned();
         self.current_pos += 1;
         function
-
     }
 }
 
@@ -236,7 +232,7 @@ impl FunctionHistory {
         Self {
             history: t,
             name: self.name.clone(),
-            current_pos: 0
+            current_pos: 0,
         }
     }
 
@@ -250,7 +246,7 @@ impl FunctionHistory {
         Self {
             history: t,
             name: self.name.clone(),
-            current_pos: 0
+            current_pos: 0,
         }
     }
 }
@@ -273,4 +269,3 @@ impl Iterator for FunctionHistory {
         })
     }
 }
-
