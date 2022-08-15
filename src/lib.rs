@@ -10,13 +10,17 @@
     clippy::cognitive_complexity,
     clippy::float_cmp,
     clippy::similar_names,
-    clippy::missing_errors_doc
-)]
+    clippy::missing_errors_doc,
+    clippy::return_self_not_must_use
 
+)]
+pub mod things;
+pub use things::{FunctionHistory, Function, BlockType, Block, CommitFunctions,};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
-use std::fmt::{self, Write};
+use things::{InternalFunctions, Points, InternalBlock};
+use std::fmt::{Write};
 use std::fs::File;
 use std::{error::Error, process::Command};
 
@@ -24,171 +28,14 @@ use std::{error::Error, process::Command};
 lazy_static! {
     #[derive(Debug)]
     // this is for when we support multiple languages
-    pub static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
-    pub static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
+    pub (crate)static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
+    pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
     // this regex look for string chars and comments
-    pub static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
-    pub static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)"#).unwrap();
+    pub (crate) static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
+    pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
 
-#[derive(Debug, Copy, Clone)]
-struct Points {
-    pub x: usize,
-    pub y: usize,
-}
 
-impl Points {
-    const fn in_other(&self, other: &Self) -> bool {
-        self.x > other.x && self.y < other.y
-    }
-}
-
-struct InternalBlock {
-    start: Points,
-    full: Points,
-    end: Points,
-    types: BlockType,
-}
-
-pub struct InternalFunctions {
-    name: String,
-    range: Points,
-}
-#[derive(Debug, Clone)]
-pub struct Function {
-    pub name: String,
-    pub contents: String,
-    pub block: Option<Block>,
-    pub function: Option<Vec<FunctionBlock>>,
-}
-
-impl fmt::Display for Function {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.block {
-            None => {}
-            Some(block) => write!(f, "{}\n...\n", block.top)?,
-        };
-        match &self.function {
-            None => {}
-            Some(_) => {}
-        };
-        write!(f, "{}", self.contents)?;
-        match &self.function {
-            None => {}
-            Some(_) => {}
-        };
-        match &self.block {
-            None => {}
-            Some(block) => write!(f, "\n...{}", block.bottom)?,
-        };
-        Ok(())
-    }
-}
-#[derive(Debug, Clone)]
-pub struct FunctionBlock {
-    pub name: String,
-    pub top: String,
-    pub bottom: String,
-}
-#[derive(Debug, Clone)]
-pub struct Block {
-    pub name: Option<String>,
-    pub top: String,
-    pub bottom: String,
-    pub block_type: BlockType,
-}
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum BlockType {
-    Impl,
-    Extern,
-    Trait,
-    Unknown,
-}
-
-#[derive(Debug)]
-pub struct CommitFunctions {
-    pub id: String,
-    pub functions: Vec<Function>,
-    pub date: String,
-}
-
-impl CommitFunctions {
-    const fn new(id: String, functions: Vec<Function>, date: String) -> Self {
-        Self {
-            id,
-            functions,
-            date,
-        }
-    }
-
-    pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Function> {
-        for function in &self.functions {
-            if let Some(blocks) = &function.block {
-                if blocks.block_type == block_type {
-                    return Some(function.clone());
-                }
-            }
-        }
-        None
-    }
-}
-
-impl fmt::Display for CommitFunctions {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Commit {}", self.id)?;
-        writeln!(f, "Date: {}", self.date)?;
-        for (i, function) in self.functions.iter().enumerate() {
-            write!(
-                f,
-                "{}{}",
-                match i {
-                    0 => "",
-                    _ => "\n...\n",
-                },
-                function
-            )?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub struct FunctionHistory {
-    pub name: String,
-    pub history: Vec<CommitFunctions>,
-}
-
-impl FunctionHistory {
-    /// This function will return a `CommitFunctions` for the given commit id
-    pub fn get_by_commit_id(&self, id: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| c.id == id)
-    }
-
-    /// This function will return a `CommitFunctions` for the date
-    pub fn get_by_date(&self, date: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| c.date == date)
-    }
-
-    // Given a date range it will return a vector of commits in that range
-    pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&CommitFunctions> {
-        // TODO: import chrono and use it to compare dates
-        todo!(
-            "get_date_range(for: {}, from: {}-{})",
-            self.name,
-            start,
-            end
-        );
-    }
-}
-
-impl fmt::Display for FunctionHistory {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for commit in &self.history {
-            write!(f, "\n{}", commit)?;
-        }
-        Ok(())
-    }
-}
 
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
@@ -314,7 +161,7 @@ fn find_function_in_commit(
                         y: t.0,
                     },
                     end: Points { x: t.1, y: t.0 },
-                    types: match CAPTURE_BLOCKS.captures(&blank_content[cap.start()..cap.end()]) {
+                    types: match CAPTURE_BLOCKS.captures(&file_contents[cap.start()..cap.end()]) {
                         Some(types) => {
                             if types.name("extern").is_some() {
                                 BlockType::Extern
