@@ -39,25 +39,26 @@ pub struct Function {
 impl Function {
     /// This is a formater almost like the fmt you use fro println!, but it takes a previous and next function.
     /// This is usefull for printing `CommitHistory` or a vector of functions, because if you use plain old fmt, you can get repeated lines impls, and parent function in your output.
-    pub fn fmt_with_context(&self, f: &mut fmt::Formatter<'_>, previous: Option<&Self>, next: Option<&Self>) -> fmt::Result {
+    pub fn fmt_with_context(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        previous: Option<&Self>,
+        next: Option<&Self>,
+    ) -> fmt::Result {
         match &self.block {
             None => {}
-            Some(block) => {
-                match previous {
+            Some(block) => match previous {
+                None => write!(f, "{}\n...\n", block.top)?,
+                Some(previous_function) => match &previous_function.block {
                     None => write!(f, "{}\n...\n", block.top)?,
-                    Some(previous_function) => {
-                        match &previous_function.block {
-                            None => write!(f, "{}\n...\n", block.top)?,
-                            Some(previous_block) => {
-                                if previous_block.lines == block.lines {
-                                } else {
-                                    write!(f, "{}\n...\n", block.top)?;
-                                }
-                            }
+                    Some(previous_block) => {
+                        if previous_block.lines == block.lines {
+                        } else {
+                            write!(f, "{}\n...\n", block.top)?;
                         }
                     }
-                }
-            }
+                },
+            },
         };
         match &self.function {
             None => {}
@@ -78,22 +79,18 @@ impl Function {
         };
         match &self.block {
             None => {}
-            Some(block) => {
-                match next {
-                    None => {write!(f, "\n{}", block.bottom)?}
-                    Some(next_function) => {
-                        match &next_function.block {
-                            None => write!(f, "\n{}", block.bottom)?,
-                            Some(next_block) => {
-                                if next_block.lines == block.lines {
-                                } else {
-                                    write!(f, "\n...{}", block.bottom)?;
-                                }
-                            }
+            Some(block) => match next {
+                None => write!(f, "\n{}", block.bottom)?,
+                Some(next_function) => match &next_function.block {
+                    None => write!(f, "\n{}", block.bottom)?,
+                    Some(next_block) => {
+                        if next_block.lines == block.lines {
+                        } else {
+                            write!(f, "\n...{}", block.bottom)?;
                         }
                     }
-                }
-            }
+                },
+            },
         };
         Ok(())
     }
@@ -227,12 +224,11 @@ impl CommitFunctions {
                 if let Some(parent_function) = &f.function {
                     for parents in parent_function {
                         if parents.name == parent {
-                        return true;
-                        } 
+                            return true;
+                        }
                     }
-                } 
+                }
                 false
-                
             })
             .cloned()
             .collect();
@@ -246,7 +242,6 @@ impl CommitFunctions {
             current_pos: 0,
         })
     }
-
 }
 
 impl Iterator for CommitFunctions {
@@ -276,7 +271,7 @@ impl fmt::Display for CommitFunctions {
                 0 => None,
                 _ => self.functions.get(i - 1),
             };
-            let next = self.functions.get(i+1);
+            let next = self.functions.get(i + 1);
             function.fmt_with_context(f, previous, next)?;
         }
         Ok(())
@@ -365,7 +360,6 @@ impl FunctionHistory {
             name: self.name.clone(),
             current_pos: 0,
         }
-        
     }
 }
 

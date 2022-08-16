@@ -166,15 +166,15 @@ fn find_function_in_commit(
         match get_body(&blank_content, cap.end() - 1, false) {
             t if t.0 != 0 => {
                 let top_line: usize = file_contents[cap.start()..t.0]
-                .split_once(':')
-                .unwrap()
-                .0
-                .parse()
-                .unwrap();
-            let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
-                None => top_line,
-            };
+                    .split_once(':')
+                    .unwrap()
+                    .0
+                    .parse()
+                    .unwrap();
+                let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
+                    Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
+                    None => top_line,
+                };
                 block_range.push(InternalBlock {
                     // range:
                     start: Points {
