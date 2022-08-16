@@ -149,7 +149,7 @@ fn find_function_in_commit(
                         y: t.0,
                     },
                     name: get_function_name(&blank_content[cap.start()..cap.end()]),
-                    line: Points {
+                    file_line: Points {
                         x: top_line,
                         y: bottom_line,
                     },
@@ -165,6 +165,16 @@ fn find_function_in_commit(
         // get the function name
         match get_body(&blank_content, cap.end() - 1, false) {
             t if t.0 != 0 => {
+                let top_line: usize = file_contents[cap.start()..t.0]
+                .split_once(':')
+                .unwrap()
+                .0
+                .parse()
+                .unwrap();
+            let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
+                Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
+                None => top_line,
+            };
                 block_range.push(InternalBlock {
                     // range:
                     start: Points {
@@ -190,6 +200,10 @@ fn find_function_in_commit(
                         }
                         None => BlockType::Unknown,
                     },
+                    file_line: Points {
+                        x: top_line,
+                        y: bottom_line,
+                    },
                 });
             }
             _ => {
@@ -206,27 +220,27 @@ fn find_function_in_commit(
             contents: String::new(),
             block: None,
             function: None,
-            lines: (t.line.x, t.line.y),
+            lines: (t.file_line.x, t.file_line.y),
         };
         // check if block is in range
         let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
         let function_ranges = Points {
-            x: t.line.x,
-            y: t.line.y,
+            x: t.file_line.x,
+            y: t.file_line.y,
         };
         function.function = match function_range
             .iter()
-            .filter(|other| function_ranges.in_other(&other.line))
+            .filter(|other| function_ranges.in_other(&other.file_line))
             .map(|fns| FunctionBlock {
                 name: fns.name.clone(),
                 top: file_contents
                     .lines()
-                    .nth(fns.line.x - 1)
+                    .nth(fns.file_line.x - 1)
                     .unwrap()
                     .to_string(),
                 bottom: file_contents
                     .lines()
-                    .nth(fns.line.y - 1)
+                    .nth(fns.file_line.y - 1)
                     .unwrap()
                     .to_string(),
             })
@@ -241,6 +255,7 @@ fn find_function_in_commit(
                 top: file_contents[block.start.x..block.start.y].to_string(),
                 bottom: file_contents[block.end.x..block.end.y].to_string(),
                 block_type: block.types,
+                lines: (block.file_line.x, block.file_line.y),
             });
         };
         function.contents = file_contents[t.range.x..t.range.y].to_string();

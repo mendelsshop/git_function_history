@@ -5,13 +5,14 @@ pub(crate) struct InternalBlock {
     pub(crate) full: Points,
     pub(crate) end: Points,
     pub(crate) types: BlockType,
+    pub(crate) file_line: Points,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct InternalFunctions {
     pub(crate) name: String,
     pub(crate) range: Points,
-    pub(crate) line: Points,
+    pub(crate) file_line: Points,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -35,6 +36,69 @@ pub struct Function {
     pub lines: (usize, usize),
 }
 
+impl Function {
+    /// This is a formater almost like the fmt you use fro println!, but it takes a previous and next function.
+    /// This is usefull for printing `CommitHistory` or a vector of functions, because if you use plain old fmt, you can get repeated lines impls, and parent function in your output.
+    pub fn fmt_with_context(&self, f: &mut fmt::Formatter<'_>, previous: Option<&Self>, next: Option<&Self>) -> fmt::Result {
+        match &self.block {
+            None => {}
+            Some(block) => {
+                match previous {
+                    None => write!(f, "{}\n...\n", block.top)?,
+                    Some(previous_function) => {
+                        match &previous_function.block {
+                            None => write!(f, "{}\n...\n", block.top)?,
+                            Some(previous_block) => {
+                                if previous_block.lines == block.lines {
+                                } else {
+                                    write!(f, "{}\n...\n", block.top)?;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        match &self.function {
+            None => {}
+            Some(function) => {
+                for i in function {
+                    write!(f, "{}\n...\n", i.top)?;
+                }
+            }
+        };
+        write!(f, "{}", self.contents)?;
+        match &self.function {
+            None => {}
+            Some(function) => {
+                for i in function {
+                    write!(f, "\n...\n{}", i.bottom)?;
+                }
+            }
+        };
+        match &self.block {
+            None => {}
+            Some(block) => {
+                match next {
+                    None => {write!(f, "\n{}", block.bottom)?}
+                    Some(next_function) => {
+                        match &next_function.block {
+                            None => write!(f, "\n{}", block.bottom)?,
+                            Some(next_block) => {
+                                if next_block.lines == block.lines {
+                                } else {
+                                    write!(f, "\n...{}", block.bottom)?;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        Ok(())
+    }
+}
+
 impl fmt::Display for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.block {
@@ -54,7 +118,6 @@ impl fmt::Display for Function {
             None => {}
             Some(function) => {
                 for i in function {
-                    // write!(f, "\n")?;
                     write!(f, "\n...\n{}", i.bottom)?;
                 }
             }
@@ -82,6 +145,7 @@ pub struct Block {
     pub top: String,
     pub bottom: String,
     pub block_type: BlockType,
+    pub lines: (usize, usize),
 }
 /// This enum is used when filtering commit history only for let say impl and not externs or traits
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -111,7 +175,7 @@ impl CommitFunctions {
         }
     }
 
-    /// returns all functions in the block type specified if ore else it returns none
+    /// Returns all functions in the block type specified if ore else it returns none.
     pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
         let vec: Vec<Function> = self
             .functions
@@ -153,6 +217,36 @@ impl CommitFunctions {
             current_pos: 0,
         })
     }
+
+    /// This returns a list of functions which  have a parent function that has the same name as the one specified.
+    pub fn get_function_with_parent(&self, parent: &str) -> Option<Self> {
+        let vec: Vec<Function> = self
+            .functions
+            .iter()
+            .filter(|f| {
+                if let Some(parent_function) = &f.function {
+                    for parents in parent_function {
+                        if parents.name == parent {
+                        return true;
+                        } 
+                    }
+                } 
+                false
+                
+            })
+            .cloned()
+            .collect();
+        if vec.is_empty() {
+            return None;
+        }
+        Some(Self {
+            functions: vec,
+            id: self.id.clone(),
+            date: self.date.clone(),
+            current_pos: 0,
+        })
+    }
+
 }
 
 impl Iterator for CommitFunctions {
@@ -170,16 +264,20 @@ impl fmt::Display for CommitFunctions {
         writeln!(f, "Commit {}", self.id)?;
         writeln!(f, "Date: {}", self.date)?;
         for (i, function) in self.functions.iter().enumerate() {
-            // TODO: figure out how to see if the previous .next function hve the same impl and or some of the same function blocks and print accordingly so the you dont have duplicate impls in the output
             write!(
                 f,
-                "{}{}",
+                "{}",
                 match i {
                     0 => "",
                     _ => "\n...\n",
                 },
-                function
             )?;
+            let previous = match i {
+                0 => None,
+                _ => self.functions.get(i - 1),
+            };
+            let next = self.functions.get(i+1);
+            function.fmt_with_context(f, previous, next)?;
         }
         Ok(())
     }
@@ -195,8 +293,8 @@ pub struct FunctionHistory {
 
 impl FunctionHistory {
     /// This function will return a `CommitFunctions` for the given commit id.
-    pub fn get_by_commit_id(&self, id: &str) -> Option<CommitFunctions> {
-        self.history.iter().find(|c| c.id == id).cloned()
+    pub fn get_by_commit_id(&self, id: &str) -> Option<&CommitFunctions> {
+        self.history.iter().find(|c| c.id == id)
     }
 
     /// This function will return a `CommitFunctions` for a given date (Date format not decided).
@@ -215,8 +313,9 @@ impl FunctionHistory {
         );
     }
 
-    pub fn list_commit_ids(&self) -> Vec<String> {
-        self.history.iter().map(|c| c.id.clone()).collect()
+    /// This will return a vector of all the commit ids in the history.
+    pub fn list_commit_ids(&self) -> Vec<&str> {
+        self.history.iter().map(|c| c.id.as_ref()).collect()
     }
 
     /// This function findss all functions that have a blocktype that matches the given blocktype
@@ -240,7 +339,7 @@ impl FunctionHistory {
         }
     }
 
-    /// This function finds alll function in each commit that are between the given start and end positions.
+    /// This function finds all function in each commit that are between the given start and end positions.
     pub fn get_all_functions_line(&self, start: usize, end: usize) -> Self {
         let t = self
             .history
@@ -252,6 +351,21 @@ impl FunctionHistory {
             name: self.name.clone(),
             current_pos: 0,
         }
+    }
+
+    /// This function finds all functions that have a parent function that has the same name as the one specified.
+    pub fn get_all_function_with_parent(&self, parent: &str) -> Self {
+        let t = self
+            .history
+            .iter()
+            .filter_map(|f| f.get_function_with_parent(parent))
+            .collect();
+        Self {
+            history: t,
+            name: self.name.clone(),
+            current_pos: 0,
+        }
+        
     }
 }
 
