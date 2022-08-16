@@ -16,6 +16,7 @@
 
 pub mod things;
 use lazy_static::lazy_static;
+use fancy_regex::Regex as FancyRegex;
 use regex::Regex;
 use serde_json::Value;
 use std::fmt::Write;
@@ -31,7 +32,7 @@ lazy_static! {
     pub (crate)static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
     pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
     // this regex look for string chars and comments
-    pub (crate) static ref CAPTURE_NOT_NEEDED: Regex = Regex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])"#).unwrap();
+    pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).unwrap();
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
 
@@ -268,10 +269,10 @@ fn find_function_in_commit(
     Ok(contents)
 }
 
-fn get_points_from_regex(regex: &Regex, file_contents: &str) -> Vec<(usize, usize)> {
+fn get_points_from_regex(regex: &FancyRegex, file_contents: &str) -> Vec<(usize, usize)> {
     let mut points: Vec<(usize, usize)> = Vec::new();
     regex.find_iter(file_contents).for_each(|m| {
-        points.push((m.start(), m.end()));
+        points.push((m.as_ref().expect("regex did not work").start(), m.as_ref().expect("regex did not work").end()));
     });
     points
 }
