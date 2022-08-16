@@ -62,33 +62,32 @@ impl Function {
         };
         match &self.function {
             None => {}
-            Some(function) => {
-                match previous {
-                    None => {                
-                        for i in function {
+            Some(function) => match previous {
+                None => {
+                    for i in function {
                         write!(f, "{}\n...\n", i.top)?;
-                    }}
-                    Some(previous_function) => {
-                        match &previous_function.function {
-                            None => {
-                                for i in function {
-                                    write!(f, "{}\n...\n", i.top)?;
-                                }
-                            }
-                            Some(previous_function_parent) => {
-                                for i in function {
-                                    if previous_function_parent.iter().map(|parent| {
-                                        parent.lines
-                                    }).any(|x| x == i.lines) {
-                                    } else {
-                                        write!(f, "{}\n...\n", i.top)?;
-                                    }
-                                }
+                    }
+                }
+                Some(previous_function) => match &previous_function.function {
+                    None => {
+                        for i in function {
+                            write!(f, "{}\n...\n", i.top)?;
+                        }
+                    }
+                    Some(previous_function_parent) => {
+                        for i in function {
+                            if previous_function_parent
+                                .iter()
+                                .map(|parent| parent.lines)
+                                .any(|x| x == i.lines)
+                            {
+                            } else {
+                                write!(f, "{}\n...\n", i.top)?;
                             }
                         }
                     }
-                }
-            }
+                },
+            },
         };
         write!(f, "{}", self.contents)?;
         match &self.function {
@@ -97,30 +96,31 @@ impl Function {
                 let mut r_function = function.clone();
                 r_function.reverse();
                 match next {
-                    None => {                
+                    None => {
                         for i in r_function {
-                        write!(f, "\n...\n{}", i.bottom)?;
-                    }}
-                    Some(next_function) => {
-                        match &next_function.function {
-                            None => {
-                                for i in r_function {
+                            write!(f, "\n...\n{}", i.bottom)?;
+                        }
+                    }
+                    Some(next_function) => match &next_function.function {
+                        None => {
+                            for i in r_function {
+                                write!(f, "\n...\n{}", i.bottom)?;
+                            }
+                        }
+
+                        Some(next_function_parent) => {
+                            for i in r_function {
+                                if next_function_parent
+                                    .iter()
+                                    .map(|parent| parent.lines)
+                                    .any(|x| x == i.lines)
+                                {
+                                } else {
                                     write!(f, "\n...\n{}", i.bottom)?;
                                 }
                             }
-                            
-                            Some(next_function_parent) => {
-                                for i in r_function {
-                                    if next_function_parent.iter().map(|parent| {
-                                        parent.lines
-                                    }).any(|x| x == i.lines) {
-                                    } else {
-                                        write!(f, "\n...\n{}", i.bottom)?;
-                                    }
-                                }
-                            }
                         }
-                    }
+                    },
                 }
             }
         };
