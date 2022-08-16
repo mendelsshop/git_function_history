@@ -45,7 +45,6 @@ impl fmt::Display for Function {
             None => {}
             Some(function) => {
                 for i in function {
-                    
                     write!(f, "{}\n...\n", i.top)?;
                 }
             }
