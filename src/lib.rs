@@ -15,8 +15,8 @@
 )]
 
 pub mod things;
-use lazy_static::lazy_static;
 use fancy_regex::Regex as FancyRegex;
+use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 use std::fmt::Write;
@@ -272,7 +272,10 @@ fn find_function_in_commit(
 fn get_points_from_regex(regex: &FancyRegex, file_contents: &str) -> Vec<(usize, usize)> {
     let mut points: Vec<(usize, usize)> = Vec::new();
     regex.find_iter(file_contents).for_each(|m| {
-        points.push((m.as_ref().expect("regex did not work").start(), m.as_ref().expect("regex did not work").end()));
+        points.push((
+            m.as_ref().expect("regex did not work").start(),
+            m.as_ref().expect("regex did not work").end(),
+        ));
     });
     points
 }
