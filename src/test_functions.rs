@@ -57,7 +57,10 @@ impl <'a, t> super_trait for t {
 gdg
 */
         fn empty_test<T>() ->  String where T: super_trait {
-            String::from("fn empty_test() ")
+            String::from("fn empty_test() ");
+            fn broken() {
+                r#"#"}"#
+            }
         }
     
 }
@@ -92,3 +95,4 @@ pub fn function_within(t: String) -> i32 {
     }
     empty_test(t)
 }
+
