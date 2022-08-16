@@ -7,9 +7,11 @@ pub(crate) struct InternalBlock {
     pub(crate) types: BlockType,
 }
 
+#[derive(Debug, Clone)]
 pub(crate) struct InternalFunctions {
     pub(crate) name: String,
     pub(crate) range: Points,
+    pub(crate) line: Points,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -43,6 +45,7 @@ impl fmt::Display for Function {
             None => {}
             Some(function) => {
                 for i in function {
+                    
                     write!(f, "{}\n...\n", i.top)?;
                 }
             }
@@ -52,7 +55,8 @@ impl fmt::Display for Function {
             None => {}
             Some(function) => {
                 for i in function {
-                    write!(f, "{}\n...", i.bottom)?;
+                    // write!(f, "\n")?;
+                    write!(f, "\n...\n{}", i.bottom)?;
                 }
             }
         };
@@ -167,6 +171,7 @@ impl fmt::Display for CommitFunctions {
         writeln!(f, "Commit {}", self.id)?;
         writeln!(f, "Date: {}", self.date)?;
         for (i, function) in self.functions.iter().enumerate() {
+            // TODO: figure out how to see if the previous .next function hve the same impl and or some of the same function blocks and print accordingly so the you dont have duplicate impls in the output
             write!(
                 f,
                 "{}{}",

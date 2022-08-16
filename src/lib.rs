@@ -13,6 +13,7 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
+
 pub mod things;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -21,7 +22,7 @@ use std::fmt::Write;
 use std::fs::File;
 use std::{error::Error, process::Command};
 pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory};
-use things::{InternalBlock, InternalFunctions, Points};
+use things::{InternalBlock, InternalFunctions, Points, FunctionBlock};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -110,6 +111,9 @@ fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn 
     Ok(String::from_utf8_lossy(&commit_history.stdout).to_string())
 }
 
+
+#[allow(clippy::too_many_lines)]
+// TODO: split this function into smaller functions
 fn find_function_in_commit(
     commit: &str,
     file_path: &str,
@@ -130,12 +134,23 @@ fn find_function_in_commit(
         // get the function name
         match get_body(&blank_content, cap.end(), true) {
             t if t.0 != 0 => {
+                let top_line: usize = file_contents[cap.start()..t.0]
+                .split_once(':')
+                .unwrap()
+                .0
+                .parse()
+                .unwrap();
+            let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
+                Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
+                None => top_line,
+            };
                 function_range.push(InternalFunctions {
                     range: Points {
                         x: cap.start(),
                         y: t.0,
                     },
                     name: get_function_name(&blank_content[cap.start()..cap.end()]),
+                    line: Points { x: top_line, y: bottom_line },
                 });
             }
             _ => {
@@ -180,7 +195,7 @@ fn find_function_in_commit(
             }
         }
     }
-    for t in function_range {
+    for t in &function_range {
         if t.name != name {
             continue;
         }
@@ -189,11 +204,22 @@ fn find_function_in_commit(
             contents: String::new(),
             block: None,
             function: None,
-            lines: (0, 0),
+            lines:  (t.line.x, t.line.y)
         };
         // check if block is in range
         let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
-
+        let function_ranges = Points {
+            x: t.line.x,
+            y: t.line.y,
+        };
+        function.function = match function_range.iter().filter(|other| {
+            function_ranges.in_other(&other.line)
+        }).map(|fns| {
+            FunctionBlock { name: fns.name.clone(), top: file_contents.lines().nth(fns.line.x-1).unwrap().to_string(), bottom:  file_contents.lines().nth(fns.line.y-1).unwrap().to_string() }
+        }).collect::<Vec<FunctionBlock>>() {
+            vec if vec.is_empty() => None,
+            vec => {Some(vec)},
+        };
         if let Some(block) = current_block {
             function.block = Some(Block {
                 name: None,
@@ -203,18 +229,6 @@ fn find_function_in_commit(
             });
         };
         function.contents = file_contents[t.range.x..t.range.y].to_string();
-        let top_line: usize = file_contents[t.range.x..t.range.y]
-            .split_once(':')
-            .unwrap()
-            .0
-            .parse()
-            .unwrap();
-        // println!("{}", top_line);
-        let bottom_line = match file_contents[t.range.x..t.range.y].rsplit_once('\n') {
-            Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
-            None => top_line,
-        };
-        function.lines = (top_line, bottom_line);
         contents.push(function);
     }
     if contents.is_empty() {
