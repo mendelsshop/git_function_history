@@ -89,7 +89,7 @@ pub enum BlockType {
     Unknown,
 }
 
-/// This holds information like date and commit id andalso the list of function found in the commit.
+/// This holds information like date and commit id and also the list of function found in the commit.
 #[derive(Debug, Clone)]
 pub struct CommitFunctions {
     pub id: String,
@@ -132,7 +132,7 @@ impl CommitFunctions {
     }
 
     /// Gets all functions which are betwwen the start an end lines specified.
-    /// If there are non the it returns none.
+    /// If there are none the it returns none.
     pub fn get_functin_in_lines(&self, start: usize, end: usize) -> Option<Self> {
         let vec: Vec<Function> = self
             .functions
@@ -200,7 +200,7 @@ impl FunctionHistory {
         self.history.iter().find(|c| c.date == date)
     }
 
-    /// Given a date range it will return a vector of commits in that range
+    /// Given a date range it will return a vector of commits in that range.
     pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&CommitFunctions> {
         // TODO: import chrono and use it to compare dates
         todo!(

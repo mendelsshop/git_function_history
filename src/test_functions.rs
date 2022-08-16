@@ -30,6 +30,12 @@ impl<a>Test<a>  {
     pub fn returns() -> String {
         String::from("fn empty_test() ")
     }
+
+    pub fn test_in_test() {
+        pub fn empty_test() {
+
+        }
+    }
 }
 
 pub trait super_trait {
@@ -71,4 +77,12 @@ trait super_trait_2 <T> where T: super_trait {
 }
 extern "C" {
     fn abs(input: i32) -> i32;
+}
+
+pub fn function_within(t: String) -> i32 {
+    pub fn empty_test(t: String) -> i32 {
+        println!("empty test");
+        t.parse()
+    }
+    empty_test(t)
 }
