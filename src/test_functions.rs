@@ -35,6 +35,12 @@ impl<a>Test<a>  {
         pub fn empty_test() {
 
         }
+
+        pub fn test_in_test_in_test() {
+            pub fn empty_test() {
+
+            }
+        }
     }
 }
 
