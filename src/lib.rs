@@ -243,6 +243,7 @@ fn find_function_in_commit(
                     .nth(fns.file_line.y - 1)
                     .unwrap()
                     .to_string(),
+                lines: (fns.file_line.x, fns.file_line.y),
             })
             .collect::<Vec<FunctionBlock>>()
         {

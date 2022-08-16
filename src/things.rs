@@ -63,8 +63,30 @@ impl Function {
         match &self.function {
             None => {}
             Some(function) => {
-                for i in function {
-                    write!(f, "{}\n...\n", i.top)?;
+                match previous {
+                    None => {                
+                        for i in function {
+                        write!(f, "{}\n...\n", i.top)?;
+                    }}
+                    Some(previous_function) => {
+                        match &previous_function.function {
+                            None => {
+                                for i in function {
+                                    write!(f, "{}\n...\n", i.top)?;
+                                }
+                            }
+                            Some(previous_function_parent) => {
+                                for i in function {
+                                    if previous_function_parent.iter().map(|parent| {
+                                        parent.lines
+                                    }).any(|x| x == i.lines) {
+                                    } else {
+                                        write!(f, "{}\n...\n", i.top)?;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         };
@@ -72,17 +94,42 @@ impl Function {
         match &self.function {
             None => {}
             Some(function) => {
-                for i in function {
-                    write!(f, "\n...\n{}", i.bottom)?;
+                let mut r_function = function.clone();
+                r_function.reverse();
+                match next {
+                    None => {                
+                        for i in r_function {
+                        write!(f, "\n...\n{}", i.bottom)?;
+                    }}
+                    Some(next_function) => {
+                        match &next_function.function {
+                            None => {
+                                for i in r_function {
+                                    write!(f, "\n...\n{}", i.bottom)?;
+                                }
+                            }
+                            
+                            Some(next_function_parent) => {
+                                for i in r_function {
+                                    if next_function_parent.iter().map(|parent| {
+                                        parent.lines
+                                    }).any(|x| x == i.lines) {
+                                    } else {
+                                        write!(f, "\n...\n{}", i.bottom)?;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         };
         match &self.block {
             None => {}
             Some(block) => match next {
-                None => write!(f, "\n{}", block.bottom)?,
+                None => write!(f, "\n...{}", block.bottom)?,
                 Some(next_function) => match &next_function.block {
-                    None => write!(f, "\n{}", block.bottom)?,
+                    None => write!(f, "\n...{}", block.bottom)?,
                     Some(next_block) => {
                         if next_block.lines == block.lines {
                         } else {
@@ -133,6 +180,7 @@ pub struct FunctionBlock {
     pub name: String,
     pub top: String,
     pub bottom: String,
+    pub lines: (usize, usize),
 }
 
 /// This holds information about when a function is in an impl/trait/extern block
