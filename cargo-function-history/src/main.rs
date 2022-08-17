@@ -1,5 +1,5 @@
-use std::{env, process::exit};
 use git_function_history::get_function;
+use std::{env, process::exit};
 
 fn main() {
     let config = parse_args();
