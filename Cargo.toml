@@ -1,17 +1,7 @@
-[package]
-name = "git_function_history"
-version = "0.4.0"
-edition = "2021"
-license = "MIT"
-repository = "https://github.com/mendelsshop/git_function_history"
-keywords = ["git_function_history", "git", "function", ]
-categories = ["tools", "git"]
-description = "show function history from git"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
 
-[dependencies]
-serde_json = "1.0"
-lazy_static = "1.4.0"
-fancy-regex = "0.10.0"
-regex = "1.6.0"
-chrono = "0.4"
+members = [
+    "git-function-history-lib",
+    "cargo-function-history",
+    "git-function-history-gui",
+]

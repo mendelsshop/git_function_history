@@ -18,9 +18,7 @@ pub mod things;
 use fancy_regex::Regex as FancyRegex;
 use lazy_static::lazy_static;
 use regex::Regex;
-use serde_json::Value;
 use std::fmt::Write;
-use std::fs::File;
 use std::{error::Error, process::Command};
 pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory};
 use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
@@ -29,7 +27,6 @@ use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
 lazy_static! {
     #[derive(Debug)]
     // this is for when we support multiple languages
-    pub (crate)static ref LANGUAGES: Value = serde_json::from_reader(File::open(&"languages.json").unwrap()).unwrap();
     pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
     // this regex look for string chars and comments
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).unwrap();
