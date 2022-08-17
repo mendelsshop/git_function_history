@@ -10,7 +10,8 @@ jobs:
       - run: |
           rustup component add clippy
           ls
-          cargo clippy -p git_function_history
+          cd git-function-history-lib
+          cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -21,4 +22,5 @@ jobs:
       - name: test
         run: |
           ls
-          cargo test -p git_function_history -- --nocapture
+          cd git-function-history-lib
+          cargo test -- --nocapture
