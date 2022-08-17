@@ -14,5 +14,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
-          
+      - run: |
+          cargo publish -p git_function_history --token ${{ secrets.CRATES_TOKEN }}
+          cargo publish -p git-function-history-gui --token ${{ secrets.CRATES_TOKEN }}
+          cargo publish -p cargo-function-history --token ${{ secrets.CRATES_TOKEN }}

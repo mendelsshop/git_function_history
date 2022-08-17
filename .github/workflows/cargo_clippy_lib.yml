@@ -1,7 +1,7 @@
 on: 
   push:
   workflow_dispatch:
-name: Clippy check + test
+name: Clippy check + test for the lib
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
@@ -11,7 +11,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+          args: --all-features -p git_function_history
   test:
     runs-on: ubuntu-latest
     steps:
