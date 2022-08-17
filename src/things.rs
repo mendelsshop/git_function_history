@@ -1,4 +1,5 @@
 use std::fmt::{self};
+use chrono::{DateTime, FixedOffset};
 
 pub(crate) struct InternalBlock {
     pub(crate) start: Points,
@@ -206,16 +207,16 @@ pub enum BlockType {
 pub struct CommitFunctions {
     pub id: String,
     pub functions: Vec<Function>,
-    pub date: String,
+    pub date: DateTime<FixedOffset>,
     current_pos: usize,
 }
 
 impl CommitFunctions {
-    pub(crate) const fn new(id: String, functions: Vec<Function>, date: String) -> Self {
+    pub(crate) fn new(id: String, functions: Vec<Function>, date: &str) -> Self {
         Self {
             id,
             functions,
-            date,
+            date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
             current_pos: 0,
         }
     }
@@ -238,7 +239,7 @@ impl CommitFunctions {
         Some(Self {
             functions: vec,
             id: self.id.clone(),
-            date: self.date.clone(),
+            date: self.date,
             current_pos: 0,
         })
     }
@@ -258,7 +259,7 @@ impl CommitFunctions {
         Some(Self {
             functions: vec,
             id: self.id.clone(),
-            date: self.date.clone(),
+            date: self.date,
             current_pos: 0,
         })
     }
@@ -286,7 +287,7 @@ impl CommitFunctions {
         Some(Self {
             functions: vec,
             id: self.id.clone(),
-            date: self.date.clone(),
+            date: self.date,
             current_pos: 0,
         })
     }
@@ -305,7 +306,7 @@ impl Iterator for CommitFunctions {
 impl fmt::Display for CommitFunctions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Commit {}", self.id)?;
-        writeln!(f, "Date: {}", self.date)?;
+        writeln!(f, "Date: {}", self.date.to_rfc2822())?;
         for (i, function) in self.functions.iter().enumerate() {
             write!(
                 f,
@@ -340,20 +341,25 @@ impl FunctionHistory {
         self.history.iter().find(|c| c.id == id)
     }
 
-    /// This function will return a `CommitFunctions` for a given date (Date format not decided).
+    /// This function will return a `CommitFunctions` for a given date in the rfc2822 format.
     pub fn get_by_date(&self, date: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| c.date == date)
+        self.history.iter().find(|c| {c.date.to_rfc2822() == date})
     }
 
-    /// Given a date range it will return a vector of commits in that range.
-    pub fn get_date_range(&self, start: &str, end: &str) -> Vec<&CommitFunctions> {
-        // TODO: import chrono and use it to compare dates
-        todo!(
-            "get_date_range(for: {}, from: {}-{})",
-            self.name,
-            start,
-            end
-        );
+    /// Given a date range in the rfc2822 format, this function will return a vector of commits in that range.
+    pub fn get_date_range(&self, start: &str, end: &str) -> Self {
+        let start = DateTime::parse_from_rfc2822(start).expect("Failed to parse date");
+        let end = DateTime::parse_from_rfc2822(end).expect("Failed to parse date");
+        assert!(start <= end, "Start date is greater than end date");
+        let t= self.history
+            .iter()
+            .filter(|c| c.date >= start && c.date <= end).cloned()
+            .collect();
+        Self {
+            history: t,
+            name: self.name.clone(),
+            current_pos: 0,
+        }
     }
 
     /// This will return a vector of all the commit ids in the history.

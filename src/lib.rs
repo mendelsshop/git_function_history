@@ -66,7 +66,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
         .expect("git is not installed");
     // get the commit hitory
     let commits = Command::new("git")
-        .args(r#"log --pretty=%H,%ad"#.split(' '))
+        .args(r#"log --pretty=%H;%aD"#.split(' '))
         .output()?;
     // if the stderr is not empty return the stderr
     if !commits.stderr.is_empty() {
@@ -78,14 +78,14 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
         current_pos: 0,
     };
     for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
-        let commit = commit.split(',').collect::<Vec<&str>>();
+        let commit = commit.split(';').collect::<Vec<&str>>();
         if commit.len() == 2 {
             match find_function_in_commit(commit[0], file_path, name) {
                 Ok(contents) => {
                     file_history.history.push(CommitFunctions::new(
                         commit[0].to_string(),
                         contents,
-                        commit[1].to_string(),
+                        commit[1],
                     ));
                 }
                 Err(_) => {
