@@ -9,7 +9,9 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           rustup component add clippy
+          ls
           cd ..
+          ls
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -23,4 +25,6 @@ jobs:
       - name: test
         run: |
           cd ..
+          ls
+          ls
           cargo test -p git_function_history -- --nocapture
