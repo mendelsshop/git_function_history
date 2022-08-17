@@ -12,3 +12,4 @@ description = "cargo frontend for git-function-history"
 
 [dependencies]
 crossterm = "0.25.0"
+git_function_history = { path = "../git-function-history-lib" }
