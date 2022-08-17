@@ -3,7 +3,6 @@ use std::{env, process::exit};
 
 fn main() {
     let config = parse_args();
-    println!("{:?}", config);
     let function = get_function(&config.function_name, &config.file_name);
     if function.is_err() {
         eprintln!("Error:\n\t{}", function.unwrap_err());
