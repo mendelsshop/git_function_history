@@ -6,15 +6,13 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
       - run: |
           rustup component add clippy
-          ls
-          cat Cargo.toml
-          cd git-function-history-lib
-          cat Cargo.toml
-          cargo clippy --all-features -- -D warnings --manifest-path Cargo.toml
-
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features -p git_function_history
   test:
     runs-on: ubuntu-latest
     steps:
@@ -23,9 +21,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: test
         run: |
-          ls
-          cargo metadata --no-deps 
-          cat Cargo.toml 
-          cd git-function-history-lib
-          cat Cargo.toml
-          cargo test -- --nocapture --manifest-path Cargo.toml
+          cargo test -p git_function_history -- --nocapture

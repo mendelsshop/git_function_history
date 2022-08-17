@@ -13,6 +13,6 @@ jobs:
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
       - run: |
-          cargo publish -p git_function_history --token ${{ secrets.CRATES_TOKEN }} --manifest-path ../git-function-history-lib/Cargo.toml
-          cargo publish -p git-function-history-gui --token ${{ secrets.CRATES_TOKEN }} --manifest-path ../git-function-history-gui/Cargo.toml
-          cargo publish -p cargo-function-history --token ${{ secrets.CRATES_TOKEN }}  --manifest-path Cargo.toml
+          cargo publish -p git_function_history --token ${{ secrets.CRATES_TOKEN }} 
+          cargo publish -p git-function-history-gui --token ${{ secrets.CRATES_TOKEN }}
+          cargo publish -p cargo-function-history --token ${{ secrets.CRATES_TOKEN }} 
