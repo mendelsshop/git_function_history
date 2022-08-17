@@ -1,5 +1,5 @@
-use std::fmt::{self};
 use chrono::{DateTime, FixedOffset};
+use std::fmt::{self};
 
 pub(crate) struct InternalBlock {
     pub(crate) start: Points,
@@ -343,7 +343,7 @@ impl FunctionHistory {
 
     /// This function will return a `CommitFunctions` for a given date in the rfc2822 format.
     pub fn get_by_date(&self, date: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| {c.date.to_rfc2822() == date})
+        self.history.iter().find(|c| c.date.to_rfc2822() == date)
     }
 
     /// Given a date range in the rfc2822 format, this function will return a vector of commits in that range.
@@ -351,9 +351,11 @@ impl FunctionHistory {
         let start = DateTime::parse_from_rfc2822(start).expect("Failed to parse date");
         let end = DateTime::parse_from_rfc2822(end).expect("Failed to parse date");
         assert!(start <= end, "Start date is greater than end date");
-        let t= self.history
+        let t = self
+            .history
             .iter()
-            .filter(|c| c.date >= start && c.date <= end).cloned()
+            .filter(|c| c.date >= start && c.date <= end)
+            .cloned()
             .collect();
         Self {
             history: t,
