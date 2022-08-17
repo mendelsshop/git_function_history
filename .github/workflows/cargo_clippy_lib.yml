@@ -10,7 +10,9 @@ jobs:
       - run: |
           rustup component add clippy
           ls
+          cat Cargo.toml
           cd git-function-history-lib
+          cat Cargo.toml
           cargo clippy --all-targets --all-features -- -D warnings
 
   test:
@@ -22,5 +24,7 @@ jobs:
       - name: test
         run: |
           ls
+          cat Cargo.toml 
           cd git-function-history-lib
+          cat Cargo.toml
           cargo test -- --nocapture

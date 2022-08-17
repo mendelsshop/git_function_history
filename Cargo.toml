@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
     "git-function-history-lib",
     "cargo-function-history",
