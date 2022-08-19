@@ -40,11 +40,7 @@ fn main() -> Result<(), io::Error> {
         (t, t1) if !t.is_empty() && !t1.is_empty() => {
             get_function(&config.function_name, &config.file_name)
         }
-        _ => Ok(FunctionHistory {
-            name: String::new(),
-            history: Vec::new(),
-            current_pos: 0,
-        }),
+        _ => Ok(FunctionHistory::new(String::new(), Vec::new())),
     };
 
     if function.is_err() {
@@ -91,7 +87,7 @@ fn read_key(timeout: Duration) -> Option<KeyEvent> {
         }
         offset = start.elapsed();
     }
-    return None;
+    None
 }
 
 fn usage(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> ! {

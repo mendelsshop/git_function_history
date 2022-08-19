@@ -202,25 +202,18 @@ pub enum BlockType {
     Unknown,
 }
 
-/// This holds information like date and commit id and also the list of function found in the commit.
+/// This is used to store each individual file in a commit and the associated functions in that file.
 #[derive(Debug, Clone)]
-pub struct CommitFunctions {
-    pub id: String,
+pub struct File {
+    pub name: String,
     pub functions: Vec<Function>,
-    pub date: DateTime<FixedOffset>,
     current_pos: usize,
 }
 
-impl CommitFunctions {
-    pub(crate) fn new(id: String, functions: Vec<Function>, date: &str) -> Self {
-        Self {
-            id,
-            functions,
-            date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
-            current_pos: 0,
+impl File {
+    pub fn new(name: String, functions: Vec<Function>) -> Self {
+        Self { name, functions, current_pos: 0 }
         }
-    }
-
     /// Returns all functions in the block type specified if ore else it returns none.
     pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
         let vec: Vec<Function> = self
@@ -237,9 +230,8 @@ impl CommitFunctions {
             return None;
         }
         Some(Self {
+            name: self.name.clone(),
             functions: vec,
-            id: self.id.clone(),
-            date: self.date,
             current_pos: 0,
         })
     }
@@ -257,9 +249,8 @@ impl CommitFunctions {
             return None;
         }
         Some(Self {
+            name: self.name.clone(),
             functions: vec,
-            id: self.id.clone(),
-            date: self.date,
             current_pos: 0,
         })
     }
@@ -285,15 +276,15 @@ impl CommitFunctions {
             return None;
         }
         Some(Self {
+            name: self.name.clone(),
             functions: vec,
-            id: self.id.clone(),
-            date: self.date,
             current_pos: 0,
         })
     }
 }
 
-impl Iterator for CommitFunctions {
+
+impl Iterator for File {
     type Item = Function;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
@@ -303,10 +294,9 @@ impl Iterator for CommitFunctions {
     }
 }
 
-impl fmt::Display for CommitFunctions {
+impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Commit {}", self.id)?;
-        writeln!(f, "Date: {}", self.date.to_rfc2822())?;
+        writeln!(f, "File {}", self.name)?;
         for (i, function) in self.functions.iter().enumerate() {
             write!(
                 f,
@@ -327,15 +317,130 @@ impl fmt::Display for CommitFunctions {
     }
 }
 
+/// This holds information like date and commit id and also the list of function found in the commit.
+#[derive(Debug, Clone)]
+pub struct CommitFunctions {
+    pub id: String,
+    pub functions: Vec<File>,
+    pub date: DateTime<FixedOffset>,
+    current_pos: usize,
+}
+
+impl CommitFunctions {
+    pub(crate) fn new(id: String, functions: Vec<File>, date: &str) -> Self {
+        Self {
+            id,
+            functions,
+            date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
+            current_pos: 0,
+        }
+    }
+
+    pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
+        let t: Vec<File> = self
+        .functions
+        .iter()
+        .filter_map(|f| f.get_function_from_block(block_type))
+        .collect();
+        match t {
+            t if t.is_empty() => {
+                return None;
+            }
+            _ => {},
+        }
+    Some(Self {
+        id: self.id.clone(),
+        functions: t,
+        date: self.date,
+        current_pos: 0,
+    })
+    }
+    
+    pub fn get_function_in_lines(&self, start: usize, end: usize) -> Option<Self> {
+        let t: Vec<File> = self
+            .functions
+            .iter()
+            .filter_map(|f| f.get_functin_in_lines(start, end))
+            .collect();
+        match t {
+            t if t.is_empty() => {
+                return None;
+            }
+            _ => {},
+        }
+        Some(Self {
+            id: self.id.clone(),
+            functions: t,
+            date: self.date,
+            current_pos: 0,
+        })
+    }
+
+    pub fn get_function_with_parent(&self, parent: &str) -> Option<Self> {
+        let t: Vec<File> = self
+            .functions
+            .iter()
+            .filter_map(|f| f.get_function_with_parent(parent))
+            .collect();
+        match t {
+            t if t.is_empty() => {
+                return None;
+            }
+            _ => {},
+        }
+        Some(Self {
+            id: self.id.clone(),
+            functions: t,
+            date: self.date,
+            current_pos: 0,
+        })
+    }
+}
+
+impl Iterator for CommitFunctions {
+    type Item = File;
+    fn next(&mut self) -> Option<Self::Item> {
+        // get the current function without removing it
+        let function = self.functions.get(self.current_pos).cloned();
+        self.current_pos += 1;
+        function
+    }
+}
+
+impl fmt::Display for CommitFunctions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Commit {}", self.id)?;
+        writeln!(f, "Date: {}", self.date.format("%Y-%m-%d %H:%M:%S"))?;
+        for file in &self.functions {
+            write!(
+                f,
+                "\n{}",
+                file
+
+            )?;
+        }
+        Ok(())
+    }
+    
+}
+
+
 /// This struct holds the a list of commits and the function that were looked up for each commit.
 #[derive(Debug)]
 pub struct FunctionHistory {
     pub name: String,
     pub history: Vec<CommitFunctions>,
-    pub current_pos: usize,
+    current_pos: usize,
 }
 
 impl FunctionHistory {
+    pub fn new(name: String, history: Vec<CommitFunctions>) -> Self {
+        Self {
+            name,
+            history,
+            current_pos: 0,
+        }
+    }
     /// This function will return a `CommitFunctions` for the given commit id.
     pub fn get_by_commit_id(&self, id: &str) -> Option<&CommitFunctions> {
         self.history.iter().find(|c| c.id == id)
@@ -372,8 +477,8 @@ impl FunctionHistory {
     /// This function findss all functions that have a blocktype that matches the given blocktype
     /// so you can filter out functions that are not in for example an impl block:
     /// ```rust
-    /// use git_function_history::{get_function, BlockType};
-    /// let in_impl = get_function("empty_test", "src/test_functions.rs").unwrap().get_all_functions_in_block(BlockType::Impl);
+    /// use git_function_history::{get_all_functions, BlockType};
+    /// let in_impl = get_all_functions("empty_test").unwrap();
     /// println!("{}", in_impl);
     /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
     /// ```
@@ -395,7 +500,7 @@ impl FunctionHistory {
         let t = self
             .history
             .iter()
-            .filter_map(|f| f.get_functin_in_lines(start, end))
+            .filter_map(|f| f.get_function_in_lines(start, end))
             .collect();
         Self {
             history: t,

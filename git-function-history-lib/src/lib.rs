@@ -21,7 +21,7 @@ use regex::Regex;
 use std::fmt::Write;
 use std::{error::Error, process::Command};
 pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory};
-use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
+use things::{FunctionBlock, InternalBlock, InternalFunctions, Points, File};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -33,19 +33,83 @@ lazy_static! {
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
 
+/// This is usefull for when you don't know what file the function is defined in, 
+/// but it also takes a lot more time, becauses its' looking in quite a lot of files.
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
 /// If not it will get all the commits along with the date.
 /// <br>
-/// It the creates a vector of `CommitFunctions` structs.
+/// It the creates a vector of `File` structs.
 /// <br>
-/// it goes the command output and splits it into the commit id, and date.
+/// It goes the command output and splits it into the commit id, and date.
+/// <br>
+/// It iterates through the commits and get all the files ending with `.rs` 
+/// <br>
+/// It goes through each file and get the functions that have the name
+/// <br>
+/// It will then return a `FunctionHistory` struct if contents of any of the commits is not empty.
+/// <br>
+/// If not it will error out with `no history found`.
+///
+/// # example
+///
+/// ```
+/// use git_function_history::get_function;
+/// let t = get_all_functions("test_function");
+/// ```
+pub fn get_all_functions(name: &str) -> Result<FunctionHistory, Box<dyn Error>> {
+        // check if git is installed
+        Command::new("git")
+        .arg("--version")
+        .output()
+        .expect("git is not installed");
+    // get the commit hitory
+    let commits = Command::new("git")
+        .args(r#"log --pretty=%H;%aD"#.split(' '))
+        .output()?;
+    // if the stderr is not empty return the stderr
+    if !commits.stderr.is_empty() {
+        Err(String::from_utf8_lossy(&commits.stderr))?;
+    }
+    let mut file_history = FunctionHistory::new(String::new(), Vec::new());
+    for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
+        let commit = commit.split(';').collect::<Vec<&str>>();
+        if commit.len() == 2 {
+            match find_function_in_commit_with_unkown_file(commit[0], name) {
+                Ok(contents) => {
+                    file_history.history.push(CommitFunctions::new(
+                        commit[0].to_string(),
+                        contents,
+                        commit[1],
+                    ));
+                }
+                Err(_) => {
+                    continue;
+                }
+            }
+        }
+    }
+    // get the commit hitory
+    // chck if the file_history is empty if it is return an error
+    if file_history.history.is_empty() {
+        Err("No history found")?;
+    }
+    Ok(file_history)
+}
+
+/// Checks if git is installed if its not it will error out with `git is not installed`.
+/// <br>
+/// If not it will get all the commits along with the date.
+/// <br>
+/// It the creates a vector with a single `File`.
+/// <br>
+/// it goes through the command output and splits it into the commit id, and date.
 /// <br>
 /// Using the `find_funtions_in_commit` it will find all the functions matching the name in the commit.
 /// <br>
 /// It will then create a new `CommitFunctions` struct with the id, date, and the the functions.
 /// <br>
-/// It will then return the vector of `CommitFunctions` structs if contents of any of the commits is not empty.
+/// It will then return the vector of a single `File` with all the `CommitFunctions` structs inside if contents of any of the commits is not empty.
 /// <br>
 /// If not it will error out with `no history found`.
 ///
@@ -69,11 +133,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
     if !commits.stderr.is_empty() {
         Err(String::from_utf8_lossy(&commits.stderr))?;
     }
-    let mut file_history = FunctionHistory {
-        name: name.to_string(),
-        history: Vec::new(),
-        current_pos: 0,
-    };
+    let mut file_history = FunctionHistory::new(String::new(), Vec::new());
     for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
         let commit = commit.split(';').collect::<Vec<&str>>();
         if commit.len() == 2 {
@@ -81,7 +141,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
                 Ok(contents) => {
                     file_history.history.push(CommitFunctions::new(
                         commit[0].to_string(),
-                        contents,
+                        vec![File::new( file_path.to_string(), contents,)],
                         commit[1],
                     ));
                 }
@@ -322,6 +382,39 @@ fn get_function_name(mut function_header: &str) -> String {
         name.push(char);
     }
     name
+}
+
+fn find_function_in_commit_with_unkown_file(    commit: &str,
+    name: &str,
+) -> Result<Vec<File>, Box<dyn Error>> {
+    // get a list of all the files in the repository
+    let mut files = Vec::new();
+    let command = Command::new("git")
+        .args(&["ls-tree", "-r", "--name-only", commit])
+        .output()?;
+    if !command.stderr.is_empty() {
+        Err(String::from_utf8_lossy(&command.stderr))?;
+    }
+    let file_list = String::from_utf8_lossy(&command.stdout).to_string();
+    for file in file_list.split('\n') {
+        if file.contains(name) && file.ends_with(".rs") {
+            files.push(file.to_string());
+        }
+    }
+    let mut returns = Vec::new();
+    for file in files {
+        match find_function_in_commit(
+            commit,
+            &file,
+            name,
+        ) {
+            Ok(functions) => returns.push(File::new(file, functions)),
+            Err(_) => continue
+            
+        }
+
+    }
+    Ok(returns)
 }
 
 #[cfg(test)]

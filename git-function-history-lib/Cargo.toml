@@ -1,6 +1,6 @@
 [package]
 name = "git_function_history"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/mendelsshop/git_function_history/git-function-history-lib"
