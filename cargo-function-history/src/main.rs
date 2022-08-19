@@ -12,13 +12,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 file if file.is_empty() => {
                     match get_all_functions(&string) {
                         Ok(functions) => Some(functions),
-                        Err(err) => None,
+                        Err(_err) => None,
                     }
                 }
                 file => {
                     match get_function(&string, &file) {
                         Ok(functions) => Some(functions),
-                        Err(err) => None,
+                        Err(_err) => None,
                     }
                 }
             }

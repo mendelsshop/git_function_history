@@ -377,7 +377,7 @@ fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
 
 fn get_function_name(mut function_header: &str) -> String {
     let mut name = String::new();
-    function_header = function_header.split_once("fn ").unwrap_or_else(|| ("", function_header)).1;
+    function_header = function_header.split_once("fn ").unwrap_or(("", function_header)).1;
     for char in function_header.chars() {
         if char == '(' || char == '<' || char.is_whitespace() {
             break;

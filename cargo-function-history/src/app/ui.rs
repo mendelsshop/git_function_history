@@ -1,7 +1,7 @@
 use git_function_history::File;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, BorderType, Borders, Paragraph};
+use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 use tui::{
     backend::Backend,
@@ -55,9 +55,9 @@ where
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a>(file: &Option<File>, state: &AppState) -> Paragraph<'a> {
+fn draw_body<'a>(file: &Option<File>, _state: &AppState) -> Paragraph<'a> {
     let tick_text = if let Some(file) = file {
-        file.to_string().split("\n").map(|s| 
+        file.to_string().split('\n').map(|s| 
             Spans::from(format!("{}\n",s))).collect()
     } else {
         vec![Spans::from(String::from("Please enter some commands to search for a function"))]

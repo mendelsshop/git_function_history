@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/mendelsshop/git_function_history/tree/main/cargo-function-history"
 keywords = ["git_function_history", "git", "function", ]
-categories = ["tools", "git"]
+categories = ["tools", "git", "tui"]
 description = "cargo frontend for git-function-history"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
