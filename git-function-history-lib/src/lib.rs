@@ -21,7 +21,7 @@ use regex::Regex;
 use std::fmt::Write;
 use std::{error::Error, process::Command};
 pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory};
-use things::{FunctionBlock, InternalBlock, InternalFunctions, Points, File};
+use things::{File, FunctionBlock, InternalBlock, InternalFunctions, Points};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -33,7 +33,7 @@ lazy_static! {
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
 
-/// This is usefull for when you don't know what file the function is defined in, 
+/// This is usefull for when you don't know what file the function is defined in,
 /// but it also takes a lot more time, becauses its' looking in quite a lot of files.
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
@@ -43,7 +43,7 @@ lazy_static! {
 /// <br>
 /// It goes the command output and splits it into the commit id, and date.
 /// <br>
-/// It iterates through the commits and get all the files ending with `.rs` 
+/// It iterates through the commits and get all the files ending with `.rs`
 /// <br>
 /// It goes through each file and get the functions that have the name
 /// <br>
@@ -58,8 +58,8 @@ lazy_static! {
 /// let t = get_all_functions("test_function");
 /// ```
 pub fn get_all_functions(name: &str) -> Result<FunctionHistory, Box<dyn Error>> {
-        // check if git is installed
-        Command::new("git")
+    // check if git is installed
+    Command::new("git")
         .arg("--version")
         .output()
         .expect("git is not installed");
@@ -141,7 +141,7 @@ pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<
                 Ok(contents) => {
                     file_history.history.push(CommitFunctions::new(
                         commit[0].to_string(),
-                        vec![File::new( file_path.to_string(), contents,)],
+                        vec![File::new(file_path.to_string(), contents)],
                         commit[1],
                     ));
                 }
@@ -384,7 +384,8 @@ fn get_function_name(mut function_header: &str) -> String {
     name
 }
 
-fn find_function_in_commit_with_unkown_file(    commit: &str,
+fn find_function_in_commit_with_unkown_file(
+    commit: &str,
     name: &str,
 ) -> Result<Vec<File>, Box<dyn Error>> {
     // get a list of all the files in the repository
@@ -403,16 +404,10 @@ fn find_function_in_commit_with_unkown_file(    commit: &str,
     }
     let mut returns = Vec::new();
     for file in files {
-        match find_function_in_commit(
-            commit,
-            &file,
-            name,
-        ) {
+        match find_function_in_commit(commit, &file, name) {
             Ok(functions) => returns.push(File::new(file, functions)),
-            Err(_) => continue
-            
+            Err(_) => continue,
         }
-
     }
     Ok(returns)
 }

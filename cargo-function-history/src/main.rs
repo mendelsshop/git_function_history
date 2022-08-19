@@ -9,20 +9,24 @@ use crossterm::{
     },
 };
 use git_function_history::{get_function, things::FunctionHistory};
+use lazy_static::lazy_static;
 use std::{
-    env, io::{self, Stdout},
+    env,
+    io::{self, Stdout},
     process::exit,
     time::{Duration, Instant},
 };
 use tui::{
     backend::CrosstermBackend,
+    layout::Alignment,
     widgets::{Block, Borders},
     Terminal,
-    layout::Alignment
 };
-use lazy_static::lazy_static;
 lazy_static! {
-    static ref BLOCK: tui::widgets::Block<'static> = Block::default().title(" cargo function history ").title_alignment(Alignment::Center).borders(Borders::ALL);
+    static ref BLOCK: tui::widgets::Block<'static> = Block::default()
+        .title(" cargo function history ")
+        .title_alignment(Alignment::Center)
+        .borders(Borders::ALL);
 }
 fn main() -> Result<(), io::Error> {
     // let block = Block::default().title("cargo function history").borders(Borders::ALL);
@@ -120,7 +124,6 @@ fn parse_args(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Config {
                     clear_term(terminal);
                     println!("Error:\n\tExpected funtion-name:file-name.\n\tFound function-name.\n\tTip: make sure to separate the function-name and file-name with a colon (:).");
                     exit(1);
-                    
                 }
             }
         } else {
@@ -139,12 +142,13 @@ fn parse_args(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Config {
     config
 }
 
-fn clear_term(terminal: &mut Terminal<CrosstermBackend<Stdout>>)  {
+fn clear_term(terminal: &mut Terminal<CrosstermBackend<Stdout>>) {
     disable_raw_mode().unwrap();
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    ).expect("Failed to restore terminal");
+    )
+    .expect("Failed to restore terminal");
     terminal.show_cursor().expect("Could not show cursor");
 }

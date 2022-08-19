@@ -212,8 +212,12 @@ pub struct File {
 
 impl File {
     pub fn new(name: String, functions: Vec<Function>) -> Self {
-        Self { name, functions, current_pos: 0 }
+        Self {
+            name,
+            functions,
+            current_pos: 0,
         }
+    }
     /// Returns all functions in the block type specified if ore else it returns none.
     pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
         let vec: Vec<Function> = self
@@ -283,7 +287,6 @@ impl File {
     }
 }
 
-
 impl Iterator for File {
     type Item = Function;
     fn next(&mut self) -> Option<Self::Item> {
@@ -338,24 +341,24 @@ impl CommitFunctions {
 
     pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
         let t: Vec<File> = self
-        .functions
-        .iter()
-        .filter_map(|f| f.get_function_from_block(block_type))
-        .collect();
+            .functions
+            .iter()
+            .filter_map(|f| f.get_function_from_block(block_type))
+            .collect();
         match t {
             t if t.is_empty() => {
                 return None;
             }
-            _ => {},
+            _ => {}
         }
-    Some(Self {
-        id: self.id.clone(),
-        functions: t,
-        date: self.date,
-        current_pos: 0,
-    })
+        Some(Self {
+            id: self.id.clone(),
+            functions: t,
+            date: self.date,
+            current_pos: 0,
+        })
     }
-    
+
     pub fn get_function_in_lines(&self, start: usize, end: usize) -> Option<Self> {
         let t: Vec<File> = self
             .functions
@@ -366,7 +369,7 @@ impl CommitFunctions {
             t if t.is_empty() => {
                 return None;
             }
-            _ => {},
+            _ => {}
         }
         Some(Self {
             id: self.id.clone(),
@@ -386,7 +389,7 @@ impl CommitFunctions {
             t if t.is_empty() => {
                 return None;
             }
-            _ => {},
+            _ => {}
         }
         Some(Self {
             id: self.id.clone(),
@@ -412,18 +415,11 @@ impl fmt::Display for CommitFunctions {
         writeln!(f, "Commit {}", self.id)?;
         writeln!(f, "Date: {}", self.date.format("%Y-%m-%d %H:%M:%S"))?;
         for file in &self.functions {
-            write!(
-                f,
-                "\n{}",
-                file
-
-            )?;
+            write!(f, "\n{}", file)?;
         }
         Ok(())
     }
-    
 }
-
 
 /// This struct holds the a list of commits and the function that were looked up for each commit.
 #[derive(Debug)]
