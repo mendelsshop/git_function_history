@@ -1,7 +1,6 @@
-use std::{process::exit, env, rc::Rc, cell::RefCell, error::Error};
+use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc};
 
-use cargo_function_history::{start_ui, app::App};
-
+use cargo_function_history::{app::App, start_ui};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let config = parse_args();
@@ -9,7 +8,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     start_ui(app)?;
     Ok(())
 }
-
 
 fn usage() -> ! {
     println!("Usage: cargo function-history [function-name]:[filename] <options>");
@@ -54,4 +52,3 @@ fn parse_args() -> Config {
     });
     config
 }
-

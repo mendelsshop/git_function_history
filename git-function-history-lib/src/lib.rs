@@ -20,7 +20,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
 use std::{error::Error, process::Command};
-pub use things::{Block, BlockType, CommitFunctions, Function, FunctionHistory, File};
+pub use things::{Block, BlockType, CommitFunctions, File, Function, FunctionHistory};
 use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
 
 // read languages.json and parse the json to a const/static

@@ -1,4 +1,3 @@
-
 use self::actions::Actions;
 use self::state::AppState;
 use crate::app::actions::Action;
@@ -38,27 +37,27 @@ impl App {
         self.is_loading
     }
 
-        /// Handle a user action
-        pub fn do_action(&mut self, key: Key) -> AppReturn {
-            if let Some(action) = self.actions.find(key) {
-                match action {
-                    Action::Quit => AppReturn::Exit,
-                }
-            } else {
-                AppReturn::Continue
+    /// Handle a user action
+    pub fn do_action(&mut self, key: Key) -> AppReturn {
+        if let Some(action) = self.actions.find(key) {
+            match action {
+                Action::Quit => AppReturn::Exit,
             }
-        }
-    
-        /// We could update the app or dispatch event on tick
-        pub fn update_on_tick(&mut self) -> AppReturn {
-            // here we just increment a counter
-            self.state.incr_tick();
+        } else {
             AppReturn::Continue
         }
+    }
 
-        pub fn actions(&self) -> &Actions {
-            &self.actions
-        }
+    /// We could update the app or dispatch event on tick
+    pub fn update_on_tick(&mut self) -> AppReturn {
+        // here we just increment a counter
+        self.state.incr_tick();
+        AppReturn::Continue
+    }
+
+    pub fn actions(&self) -> &Actions {
+        &self.actions
+    }
 
     pub fn state(&self) -> &AppState {
         &self.state

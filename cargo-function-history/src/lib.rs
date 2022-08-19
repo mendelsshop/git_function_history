@@ -1,13 +1,13 @@
-use std::{cell::RefCell, time::Duration};
 use std::io::stdout;
 use std::rc::Rc;
+use std::{cell::RefCell, time::Duration};
 
 use app::{App, AppReturn};
 use eyre::Result;
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
 use inputs::events::Events;
 use inputs::InputEvent;
+use tui::backend::CrosstermBackend;
+use tui::Terminal;
 
 use crate::app::ui;
 
