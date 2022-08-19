@@ -377,7 +377,10 @@ fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
 
 fn get_function_name(mut function_header: &str) -> String {
     let mut name = String::new();
-    function_header = function_header.split_once("fn ").unwrap_or(("", function_header)).1;
+    function_header = function_header
+        .split_once("fn ")
+        .unwrap_or(("", function_header))
+        .1;
     for char in function_header.chars() {
         if char == '(' || char == '<' || char.is_whitespace() {
             break;
@@ -408,8 +411,8 @@ fn find_function_in_commit_with_unkown_file(
     let mut returns = Vec::new();
     for file in files {
         match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => {returns.push(File::new(file, functions))},
-            Err(_) => {continue},
+            Ok(functions) => returns.push(File::new(file, functions)),
+            Err(_) => continue,
         }
     }
     Ok(returns)
@@ -424,7 +427,6 @@ mod tests {
         assert!(output.is_ok());
         let output = output.unwrap();
         println!("{}", output.history[0]);
-
     }
     #[test]
     fn git_installed() {

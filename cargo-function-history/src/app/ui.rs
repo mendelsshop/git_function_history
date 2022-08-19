@@ -57,21 +57,25 @@ where
 
 fn draw_body<'a>(file: &Option<File>, _state: &AppState) -> Paragraph<'a> {
     let tick_text = if let Some(file) = file {
-        file.to_string().split('\n').map(|s| 
-            Spans::from(format!("{}\n",s))).collect()
+        file.to_string()
+            .split('\n')
+            .map(|s| Spans::from(format!("{}\n", s)))
+            .collect()
     } else {
-        vec![Spans::from(String::from("Please enter some commands to search for a function"))]
+        vec![Spans::from(String::from(
+            "Please enter some commands to search for a function",
+        ))]
     };
     // println!("{:?}", tick_text);
     // let tick
     Paragraph::new(tick_text)
-    .style(Style::default().fg(Color::LightCyan))
-    .block(
-        Block::default()
-            .borders(Borders::TOP)
-            .borders(Borders::BOTTOM)
-            .style(Style::default().fg(Color::White)),
-    )
+        .style(Style::default().fg(Color::LightCyan))
+        .block(
+            Block::default()
+                .borders(Borders::TOP)
+                .borders(Borders::BOTTOM)
+                .style(Style::default().fg(Color::White)),
+        )
 }
 
 fn draw_main<'a>() -> Block<'a> {

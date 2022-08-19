@@ -1,4 +1,4 @@
-use git_function_history::{File, FunctionHistory, CommitFunctions};
+use git_function_history::{CommitFunctions, File, FunctionHistory};
 
 use self::actions::Actions;
 use self::state::AppState;
@@ -30,28 +30,24 @@ impl App {
     pub fn new(history: Option<FunctionHistory>) -> Self {
         let actions = vec![Action::Quit].into();
         let state = AppState::initialized();
-        match history {Some(history) => {
-            Self {
+        match history {
+            Some(history) => Self {
                 current_file: Some(history.history[0].functions[0].clone()),
                 current_commit: Some(history.history[0].clone()),
                 whole_function_history: Some(history),
                 actions,
                 state,
                 is_loading: false,
-            }
-        }
-        None => {
-            Self {
+            },
+            None => Self {
                 current_file: None,
                 current_commit: None,
                 whole_function_history: None,
                 actions,
                 state,
                 is_loading: false,
-            }
+            },
         }
-    }
-
     }
 
     pub fn is_loading(&self) -> bool {
