@@ -1,9 +1,9 @@
 [package]
 name = "git_function_history"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/mendelsshop/git_function_history/git-function-history-lib"
+repository = "https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-lib"
 keywords = ["git_function_history", "git", "function", ]
 categories = ["tools", "git"]
 description = "show function history from git"

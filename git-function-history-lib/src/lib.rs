@@ -54,7 +54,7 @@ lazy_static! {
 /// # example
 ///
 /// ```
-/// use git_function_history::get_function;
+/// use git_function_history::get_all_functions;
 /// let t = get_all_functions("test_function");
 /// ```
 pub fn get_all_functions(name: &str) -> Result<FunctionHistory, Box<dyn Error>> {
@@ -121,6 +121,9 @@ pub fn get_all_functions(name: &str) -> Result<FunctionHistory, Box<dyn Error>> 
 /// ```
 pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<dyn Error>> {
     // check if git is installed
+    if !file_path.ends_with(".rs") {
+        return Err("not a rust file")?;
+    }
     Command::new("git")
         .arg("--version")
         .output()
@@ -374,7 +377,7 @@ fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
 
 fn get_function_name(mut function_header: &str) -> String {
     let mut name = String::new();
-    function_header = function_header.split_once("fn ").unwrap().1;
+    function_header = function_header.split_once("fn ").unwrap_or_else(|| ("", function_header)).1;
     for char in function_header.chars() {
         if char == '(' || char == '<' || char.is_whitespace() {
             break;
@@ -398,15 +401,15 @@ fn find_function_in_commit_with_unkown_file(
     }
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
     for file in file_list.split('\n') {
-        if file.contains(name) && file.ends_with(".rs") {
+        if file.ends_with(".rs") {
             files.push(file.to_string());
         }
     }
     let mut returns = Vec::new();
     for file in files {
         match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => returns.push(File::new(file, functions)),
-            Err(_) => continue,
+            Ok(functions) => {returns.push(File::new(file, functions))},
+            Err(_) => {continue},
         }
     }
     Ok(returns)
@@ -421,6 +424,7 @@ mod tests {
         assert!(output.is_ok());
         let output = output.unwrap();
         println!("{}", output.history[0]);
+
     }
     #[test]
     fn git_installed() {
@@ -435,5 +439,12 @@ mod tests {
     fn not_found_function() {
         let output = get_function("not_a_function", "src/test_functions.rs");
         assert!(output.is_err());
+    }
+
+    #[test]
+    fn not_rust_file() {
+        let output = get_function("not_rust_file", "dummy.txt");
+        assert!(output.is_err());
+        assert_eq!(output.unwrap_err().to_string(), "not rust file");
     }
 }

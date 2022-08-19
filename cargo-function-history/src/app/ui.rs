@@ -1,3 +1,4 @@
+use git_function_history::File;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, BorderType, Borders, Paragraph};
@@ -46,7 +47,7 @@ where
         )
         .split(whole_chunks);
 
-    let body = draw_body(app.is_loading(), app.state());
+    let body = draw_body(&app.current_file, app.state());
     rect.render_widget(body, body_chunks[0]);
     let input = draw_input(app.state());
     rect.render_widget(input, body_chunks[1]);
@@ -54,17 +55,16 @@ where
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a>(loading: bool, state: &AppState) -> Paragraph<'a> {
-    let loading_text = if loading { "Loading..." } else { "" };
-    let tick_text = if let Some(ticks) = state.count_tick() {
-        format!("Tick count: {}", ticks)
+fn draw_body<'a>(file: &Option<File>, state: &AppState) -> Paragraph<'a> {
+    let tick_text = if let Some(file) = file {
+        file.to_string().split("\n").map(|s| 
+            Spans::from(format!("{}\n",s))).collect()
     } else {
-        String::default()
+        vec![Spans::from(String::from("Please enter some commands to search for a function"))]
     };
-    Paragraph::new(vec![
-        // Spans::from(Span::raw(loading_text)),
-        Spans::from(Span::raw(tick_text.clone())),
-    ])
+    // println!("{:?}", tick_text);
+    // let tick
+    Paragraph::new(tick_text)
     .style(Style::default().fg(Color::LightCyan))
     .block(
         Block::default()

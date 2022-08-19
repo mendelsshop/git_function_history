@@ -1,10 +1,30 @@
 use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc};
 
 use cargo_function_history::{app::App, start_ui};
+use git_function_history::{get_function, get_all_functions};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let config = parse_args();
-    let app = Rc::new(RefCell::new(App::new())); // TODO app is useless for now
+    let history = match config.function_name {
+        string if string.is_empty() => {None}
+        string => {
+            match config.file_name {
+                file if file.is_empty() => {
+                    match get_all_functions(&string) {
+                        Ok(functions) => Some(functions),
+                        Err(err) => None,
+                    }
+                }
+                file => {
+                    match get_function(&string, &file) {
+                        Ok(functions) => Some(functions),
+                        Err(err) => None,
+                    }
+                }
+            }
+        }
+    };
+    let app = Rc::new(RefCell::new(App::new(history))); // TODO app is useless for now
     start_ui(app)?;
     Ok(())
 }
