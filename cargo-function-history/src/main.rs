@@ -1,23 +1,105 @@
-use git_function_history::get_function;
-use std::{env, process::exit};
+use crossterm::{
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
+        KeyEventState, KeyModifiers,
+    },
+    execute,
+    terminal::{
+        self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    },
+};
+use git_function_history::{get_function, things::FunctionHistory};
+use std::{
+    env, io::{self, Stdout},
+    process::exit,
+    time::{Duration, Instant},
+};
+use tui::{
+    backend::CrosstermBackend,
+    widgets::{Block, Borders},
+    Terminal,
+    layout::Alignment
+};
+use lazy_static::lazy_static;
+lazy_static! {
+    static ref BLOCK: tui::widgets::Block<'static> = Block::default().title(" cargo function history ").title_alignment(Alignment::Center).borders(Borders::ALL);
+}
+fn main() -> Result<(), io::Error> {
+    // let block = Block::default().title("cargo function history").borders(Borders::ALL);
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.draw(|f| {
+        let size = f.size();
+        f.render_widget(BLOCK.clone(), size);
+    })?;
+    let config = parse_args(&mut terminal);
+    let function = match (&config.function_name, &config.file_name) {
+        (t, t1) if !t.is_empty() && !t1.is_empty() => {
+            get_function(&config.function_name, &config.file_name)
+        }
+        _ => Ok(FunctionHistory {
+            name: String::new(),
+            history: Vec::new(),
+            current_pos: 0,
+        }),
+    };
 
-fn main() {
-    let config = parse_args();
-    let function = get_function(&config.function_name, &config.file_name);
     if function.is_err() {
         eprintln!("Error:\n\t{}", function.unwrap_err());
         exit(1);
     }
-    // TODO: print the latest commit and use cross-term to get keyborad input for the arrow keys to go to the next commit or previous commit
-    // and use up and down arrow keys to scroll through a commit if the commit is too long to fit on the screen
-    println!("{}", function.unwrap());
+    let function = function.unwrap();
+    let _commit_vec = function.history;
+    loop {
+        terminal.draw(|f| {
+            let size = f.size();
+            f.render_widget(BLOCK.clone(), size);
+        })?;
+        if read_key(Duration::from_secs(2))
+            == Some(KeyEvent {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::empty(),
+            })
+        {
+            break;
+        }
+    }
+    clear_term(&mut terminal);
+    Ok(())
 }
 
-fn usage() -> ! {
+fn read_key(timeout: Duration) -> Option<KeyEvent> {
+    struct RawModeGuard;
+    impl Drop for RawModeGuard {
+        fn drop(&mut self) {
+            terminal::disable_raw_mode().unwrap();
+        }
+    }
+
+    terminal::enable_raw_mode().unwrap();
+    let _guard = RawModeGuard;
+    let start = Instant::now();
+    let mut offset = Duration::ZERO;
+    while offset <= timeout && event::poll(timeout - offset).unwrap() {
+        if let Event::Key(event) = event::read().unwrap() {
+            return Some(event);
+        }
+        offset = start.elapsed();
+    }
+    return None;
+}
+
+fn usage(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> ! {
+    clear_term(terminal);
     println!("Usage: cargo function-history [function-name]:[filename] <options>");
     println!("Available options:");
     println!("  --help - show this message");
-    exit(1)
+    exit(1);
 }
 
 #[derive(Debug)]
@@ -26,14 +108,11 @@ struct Config {
     function_name: String,
 }
 
-fn parse_args() -> Config {
+fn parse_args(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Config {
     let mut config = Config {
         file_name: String::new(),
         function_name: String::new(),
     };
-    if env::args().count() < 2 {
-        usage();
-    }
     env::args().enumerate().skip(1).for_each(|arg| {
         if arg.0 == 1 {
             match arg.1.split_once(':') {
@@ -42,16 +121,19 @@ fn parse_args() -> Config {
                     config.function_name = string_tuple.0.to_string();
                 }
                 _ => {
+                    clear_term(terminal);
                     println!("Error:\n\tExpected funtion-name:file-name.\n\tFound function-name.\n\tTip: make sure to separate the function-name and file-name with a colon (:).");
                     exit(1);
+                    
                 }
             }
         } else {
             match arg.1.as_str() {
                 "--help" => {
-                    usage();
+                    usage(terminal);
                 }
                 _ => {
+                    clear_term(terminal);
                     println!("Error:\n\tUnknown argument: {}\n\tTip: use --help to see available arguments.", arg.1);
                     exit(1);
                 }
@@ -59,4 +141,14 @@ fn parse_args() -> Config {
         }
     });
     config
+}
+
+fn clear_term(terminal: &mut Terminal<CrosstermBackend<Stdout>>)  {
+    disable_raw_mode().unwrap();
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    ).expect("Failed to restore terminal");
+    terminal.show_cursor().expect("Could not show cursor");
 }

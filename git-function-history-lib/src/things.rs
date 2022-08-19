@@ -332,7 +332,7 @@ impl fmt::Display for CommitFunctions {
 pub struct FunctionHistory {
     pub name: String,
     pub history: Vec<CommitFunctions>,
-    pub(crate) current_pos: usize,
+    pub current_pos: usize,
 }
 
 impl FunctionHistory {
