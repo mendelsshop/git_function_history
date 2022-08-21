@@ -68,8 +68,12 @@ pub enum Filter<'a> {
 /// use git_function_history::{get_function_history, Filter, FileType};
 /// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
 /// ```
-pub fn get_function_history(name: &str, file: FileType<'_>, filter: Filter<'_>) -> Result<FunctionHistory, Box<dyn Error>> {
-        // check if git is installed
+pub fn get_function_history(
+    name: &str,
+    file: FileType<'_>,
+    filter: Filter<'_>,
+) -> Result<FunctionHistory, Box<dyn Error>> {
+    // check if git is installed
     Command::new("git")
         .arg("--version")
         .output()
@@ -103,12 +107,17 @@ pub fn get_function_history(name: &str, file: FileType<'_>, filter: Filter<'_>) 
         return Err(String::from_utf8(output.stderr)?)?;
     }
     let stdout = String::from_utf8(output.stdout)?;
-    let commits = stdout.lines().map(|line| {
-        let mut parts = line.split(';');
-        let id = parts.next().expect("no id found in git command output");
-        let date = parts.next().expect("date is missing from git command output");
-        (id, date)
-    }).collect::<Vec<_>>();
+    let commits = stdout
+        .lines()
+        .map(|line| {
+            let mut parts = line.split(';');
+            let id = parts.next().expect("no id found in git command output");
+            let date = parts
+                .next()
+                .expect("date is missing from git command output");
+            (id, date)
+        })
+        .collect::<Vec<_>>();
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
     match file {
         FileType::Absolute(path) => {
@@ -172,24 +181,27 @@ pub fn get_function_history(name: &str, file: FileType<'_>, filter: Filter<'_>) 
     Ok(file_history)
 }
 
-
-/// List all the commits date in the git history (in rfc2822 format). 
+/// List all the commits date in the git history (in rfc2822 format).
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
         .args(&["log", "--pretty=%aD", "--date", "rfc2822"])
         .output()?;
     let output = String::from_utf8(output.stdout)?;
-    let output = output.split('\n').map(std::string::ToString::to_string).collect::<Vec<String>>();
+    let output = output
+        .split('\n')
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
     Ok(output)
 }
 
 /// List all the commit hashes in the git history.
 pub fn get_git_commits() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git")
-        .args(&["log", "--pretty=%H"])
-        .output()?;
+    let output = Command::new("git").args(&["log", "--pretty=%H"]).output()?;
     let output = String::from_utf8(output.stdout)?;
-    let output = output.split('\n').map(std::string::ToString::to_string).collect::<Vec<String>>();
+    let output = output
+        .split('\n')
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
     Ok(output)
 }
 
@@ -483,14 +495,22 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
+        let output = get_function_history(
+            "empty_test",
+            FileType::Absolute("src/test_functions.rs"),
+            Filter::None,
+        );
         assert!(output.is_ok());
         let output = output.unwrap();
         println!("{}", output.history[0]);
     }
     #[test]
     fn git_installed() {
-        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
+        let output = get_function_history(
+            "empty_test",
+            FileType::Absolute("src/test_functions.rs"),
+            Filter::None,
+        );
         // assert that err is "not git is not installed"
         if output.is_err() {
             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
@@ -499,23 +519,31 @@ mod tests {
 
     #[test]
     fn not_found_function() {
-        let output = get_function_history("Not_a_function", FileType::Absolute("src/test_functions.rs"), Filter::None);
+        let output = get_function_history(
+            "Not_a_function",
+            FileType::Absolute("src/test_functions.rs"),
+            Filter::None,
+        );
         assert!(output.is_err());
     }
 
     #[test]
     fn not_rust_file() {
-        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.txt"), Filter::None);
+        let output = get_function_history(
+            "empty_test",
+            FileType::Absolute("src/test_functions.txt"),
+            Filter::None,
+        );
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "not a rust file");
     }
     #[test]
     fn test() {
-        let output = get_function_history("empty_test", FileType::None, Filter::DateRange(
-            "17 Aug 2022 11:27:23 -0400",
-            "19 Aug 2022 23:45:52 +0000"
-        ));
+        let output = get_function_history(
+            "empty_test",
+            FileType::None,
+            Filter::DateRange("17 Aug 2022 11:27:23 -0400", "19 Aug 2022 23:45:52 +0000"),
+        );
         assert!(output.is_ok());
-
     }
 }

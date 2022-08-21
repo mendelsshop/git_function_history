@@ -8,11 +8,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let history = match config.function_name {
         string if string.is_empty() => None,
         string => match config.file_name {
-            file if file.is_empty() => match get_function_history(&string, git_function_history::FileType::None, git_function_history::Filter::None) {
+            file if file.is_empty() => match get_function_history(
+                &string,
+                git_function_history::FileType::None,
+                git_function_history::Filter::None,
+            ) {
                 Ok(functions) => Some(functions),
                 Err(_err) => None,
             },
-            file => match get_function_history(&string, git_function_history::FileType::Absolute(&file), git_function_history::Filter::None) {
+            file => match get_function_history(
+                &string,
+                git_function_history::FileType::Absolute(&file),
+                git_function_history::Filter::None,
+            ) {
                 Ok(functions) => Some(functions),
                 Err(_err) => None,
             },
