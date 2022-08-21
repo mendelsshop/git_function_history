@@ -357,12 +357,26 @@ fn find_function_in_commit(
                 top: file_contents
                     .lines()
                     .nth(fns.file_line.x - 1)
-                    .unwrap_or_else(|| panic!("could not get line {} in file {} from commit: {}",fns.file_line.y - 1, file_path, name))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not get line {} in file {} from commit: {}",
+                            fns.file_line.y - 1,
+                            file_path,
+                            name
+                        )
+                    })
                     .to_string(),
                 bottom: file_contents
                     .lines()
                     .nth(fns.file_line.y - 1)
-                    .unwrap_or_else(|| panic!("could not get line {} in file {} from commit: {}",fns.file_line.y - 1, file_path, name))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not get line {} in file {} from commit: {}",
+                            fns.file_line.y - 1,
+                            file_path,
+                            name
+                        )
+                    })
                     .to_string(),
                 lines: (fns.file_line.x, fns.file_line.y),
             })
@@ -519,7 +533,6 @@ impl<T> UwrapToError<T> for Option<T> {
         }
     }
 }
-    
 
 #[cfg(test)]
 mod tests {
