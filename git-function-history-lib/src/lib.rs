@@ -506,6 +506,7 @@ mod tests {
             }
             Err(e) => println!("{}", e),
         }
+        assert!(output.is_ok());
     }
     #[test]
     fn git_installed() {
@@ -537,6 +538,8 @@ mod tests {
             FileType::Absolute("src/test_functions.txt"),
             Filter::None,
         );
+        let path = std::env::current_dir().unwrap();
+        println!("The current directory is {}", path.display());
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "not a rust file");
     }
@@ -553,5 +556,8 @@ mod tests {
             }
             Err(e) => println!("{}", e),
         }
+        let path = std::env::current_dir().unwrap();
+        println!("The current directory is {}", path.display());
+        assert!(output.is_ok());
     }
 }
