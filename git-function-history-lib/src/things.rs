@@ -473,8 +473,8 @@ impl FunctionHistory {
     /// This function findss all functions that have a blocktype that matches the given blocktype
     /// so you can filter out functions that are not in for example an impl block:
     /// ```rust
-    /// use git_function_history::{get_all_functions, BlockType};
-    /// let in_impl = get_all_functions("empty_test").unwrap();
+    /// use git_function_history::{get_function_history, BlockType, Filter, FileType};
+    /// let in_impl = get_function_history("empty_test", FileType::None, Filter::None).unwrap();
     /// println!("{}", in_impl);
     /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
     /// ```

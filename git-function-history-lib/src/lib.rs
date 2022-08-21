@@ -32,134 +32,165 @@ lazy_static! {
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).unwrap();
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
 }
+#[derive(Debug, Clone, Copy)]
+pub enum FileType<'a> {
+    /// When you have a absolute path to a file.
+    Absolute(&'a str),
+    /// When you have a relative path to a file and or want to find look in all files match a name.
+    Relative(&'a str),
+    /// When you don't know the path to a file.
+    None,
+}
 
-/// This is usefull for when you don't know what file the function is defined in,
-/// but it also takes a lot more time, becauses its' looking in quite a lot of files.
+/// This is filter enum is used when you only want to lookup a function with the filter
+/// it is different from the from the all the filters in the things module, because those filters are after the fact,
+/// and require that you already found all the functions in the file. Making using this filter most probably faster.
+#[derive(Debug, Clone, Copy)]
+pub enum Filter<'a> {
+    /// When you want to filter by a commit hash.
+    CommitId(&'a str),
+    /// When you want to filter by a specific date (in rfc2822 format).
+    Date(&'a str),
+    /// When you want to filter from one ate to another date (both in rfc2822 format).
+    DateRange(&'a str, &'a str),
+    /// When you want to filter by nothing.
+    None,
+}
+
+// TODO: document this
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
-/// If not it will get all the commits along with the date.
-/// <br>
-/// It the creates a vector of `File` structs.
-/// <br>
-/// It goes the command output and splits it into the commit id, and date.
-/// <br>
-/// It iterates through the commits and get all the files ending with `.rs`
-/// <br>
-/// It goes through each file and get the functions that have the name
-/// <br>
-/// It will then return a `FunctionHistory` struct if contents of any of the commits is not empty.
-/// <br>
-/// If not it will error out with `no history found`.
+/// If no histoy is is available it will error out with `no history found`.
 ///
-/// # example
+/// # examples
 ///
 /// ```
-/// use git_function_history::get_all_functions;
-/// let t = get_all_functions("test_function");
+/// use git_function_history::{get_function_history, Filter, FileType};
+/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
 /// ```
-pub fn get_all_functions(name: &str) -> Result<FunctionHistory, Box<dyn Error>> {
-    // check if git is installed
+pub fn get_function_history(name: &str, file: FileType<'_>, filter: Filter<'_>) -> Result<FunctionHistory, Box<dyn Error>> {
+        // check if git is installed
     Command::new("git")
         .arg("--version")
         .output()
         .expect("git is not installed");
     // get the commit hitory
-    let commits = Command::new("git")
-        .args(r#"log --pretty=%H;%aD"#.split(' '))
-        .output()?;
-    // if the stderr is not empty return the stderr
-    if !commits.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&commits.stderr))?;
+    let mut command = Command::new("git");
+    command.arg("log");
+    command.arg("--pretty=%H;%aD");
+    command.arg("--date=rfc2822");
+    match filter {
+        Filter::CommitId(id) => {
+            command.arg(id);
+            command.arg("-n");
+            command.arg("1");
+        }
+        Filter::Date(date) => {
+            command.arg("--since");
+            command.arg(date);
+            command.arg("--max-count=1");
+        }
+        Filter::DateRange(start, end) => {
+            command.arg("--since");
+            command.arg(start);
+            command.arg("--until");
+            command.arg(end);
+        }
+        Filter::None => {}
     }
-    let mut file_history = FunctionHistory::new(String::new(), Vec::new());
-    for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
-        let commit = commit.split(';').collect::<Vec<&str>>();
-        if commit.len() == 2 {
-            match find_function_in_commit_with_unkown_file(commit[0], name) {
-                Ok(contents) => {
-                    file_history.history.push(CommitFunctions::new(
-                        commit[0].to_string(),
-                        contents,
-                        commit[1],
-                    ));
+    let output = command.output()?;
+    if !output.stderr.is_empty() {
+        return Err(String::from_utf8(output.stderr)?)?;
+    }
+    let stdout = String::from_utf8(output.stdout)?;
+    let commits = stdout.lines().map(|line| {
+        let mut parts = line.split(';');
+        let id = parts.next().expect("no id found in git command output");
+        let date = parts.next().expect("date is missing from git command output");
+        (id, date)
+    }).collect::<Vec<_>>();
+    let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
+    match file {
+        FileType::Absolute(path) => {
+            if !path.ends_with(".rs") {
+                return Err("not a rust file")?;
+            }
+            for commit in commits {
+                match find_function_in_commit(commit.0, path, name) {
+                    Ok(contents) => {
+                        file_history.history.push(CommitFunctions::new(
+                            commit.0.to_string(),
+                            vec![File::new(path.to_string(), contents)],
+                            commit.1,
+                        ));
+                    }
+                    Err(_) => {
+                        continue;
+                    }
                 }
-                Err(_) => {
-                    continue;
+            }
+        }
+        FileType::Relative(path) => {
+            if !path.ends_with(".rs") {
+                return Err("not a rust file")?;
+            }
+            for commit in commits {
+                match find_function_in_commit_with_relative_path(commit.0, name, path) {
+                    Ok(contents) => {
+                        file_history.history.push(CommitFunctions::new(
+                            commit.0.to_string(),
+                            contents,
+                            commit.1,
+                        ));
+                    }
+                    Err(_) => {
+                        continue;
+                    }
+                }
+            }
+        }
+        FileType::None => {
+            for commit in commits {
+                match find_function_in_commit_with_unkown_file(commit.0, name) {
+                    Ok(contents) => {
+                        file_history.history.push(CommitFunctions::new(
+                            commit.0.to_string(),
+                            contents,
+                            commit.1,
+                        ));
+                    }
+                    Err(_) => {
+                        continue;
+                    }
                 }
             }
         }
     }
-    // get the commit hitory
-    // chck if the file_history is empty if it is return an error
     if file_history.history.is_empty() {
         Err("No history found")?;
     }
     Ok(file_history)
 }
 
-/// Checks if git is installed if its not it will error out with `git is not installed`.
-/// <br>
-/// If not it will get all the commits along with the date.
-/// <br>
-/// It the creates a vector with a single `File`.
-/// <br>
-/// it goes through the command output and splits it into the commit id, and date.
-/// <br>
-/// Using the `find_funtions_in_commit` it will find all the functions matching the name in the commit.
-/// <br>
-/// It will then create a new `CommitFunctions` struct with the id, date, and the the functions.
-/// <br>
-/// It will then return the vector of a single `File` with all the `CommitFunctions` structs inside if contents of any of the commits is not empty.
-/// <br>
-/// If not it will error out with `no history found`.
-///
-/// # example
-///
-/// ```
-/// use git_function_history::get_function;
-/// let t = get_function("test_function", "src/test_functions.rs");
-/// ```
-pub fn get_function(name: &str, file_path: &str) -> Result<FunctionHistory, Box<dyn Error>> {
-    // check if git is installed
-    if !file_path.ends_with(".rs") {
-        return Err("not a rust file")?;
-    }
-    Command::new("git")
-        .arg("--version")
-        .output()
-        .expect("git is not installed");
-    // get the commit hitory
-    let commits = Command::new("git")
-        .args(r#"log --pretty=%H;%aD"#.split(' '))
+
+/// List all the commits date in the git history (in rfc2822 format). 
+pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
+    let output = Command::new("git")
+        .args(&["log", "--pretty=%aD", "--date", "rfc2822"])
         .output()?;
-    // if the stderr is not empty return the stderr
-    if !commits.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&commits.stderr))?;
-    }
-    let mut file_history = FunctionHistory::new(String::new(), Vec::new());
-    for commit in String::from_utf8_lossy(&commits.stdout).split('\n') {
-        let commit = commit.split(';').collect::<Vec<&str>>();
-        if commit.len() == 2 {
-            match find_function_in_commit(commit[0], file_path, name) {
-                Ok(contents) => {
-                    file_history.history.push(CommitFunctions::new(
-                        commit[0].to_string(),
-                        vec![File::new(file_path.to_string(), contents)],
-                        commit[1],
-                    ));
-                }
-                Err(_) => {
-                    continue;
-                }
-            }
-        }
-    }
-    // get the commit hitory
-    // chck if the file_history is empty if it is return an error
-    if file_history.history.is_empty() {
-        Err("No history found")?;
-    }
-    Ok(file_history)
+    let output = String::from_utf8(output.stdout)?;
+    let output = output.split('\n').map(std::string::ToString::to_string).collect::<Vec<String>>();
+    Ok(output)
+}
+
+/// List all the commit hashes in the git history.
+pub fn get_git_commits() -> Result<Vec<String>, Box<dyn Error>> {
+    let output = Command::new("git")
+        .args(&["log", "--pretty=%H"])
+        .output()?;
+    let output = String::from_utf8(output.stdout)?;
+    let output = output.split('\n').map(std::string::ToString::to_string).collect::<Vec<String>>();
+    Ok(output)
 }
 
 fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
@@ -418,19 +449,48 @@ fn find_function_in_commit_with_unkown_file(
     Ok(returns)
 }
 
+fn find_function_in_commit_with_relative_path(
+    commit: &str,
+    name: &str,
+    relative_path: &str,
+) -> Result<Vec<File>, Box<dyn Error>> {
+    // get a list of all the files in the repository
+    let mut files = Vec::new();
+    let command = Command::new("git")
+        .args(&["ls-tree", "-r", "--name-only", commit])
+        .output()?;
+    if !command.stderr.is_empty() {
+        Err(String::from_utf8_lossy(&command.stderr))?;
+    }
+    let file_list = String::from_utf8_lossy(&command.stdout).to_string();
+    for file in file_list.split('\n') {
+        if file.ends_with(relative_path) {
+            files.push(file.to_string());
+        }
+    }
+    let mut returns = Vec::new();
+    for file in files {
+        match find_function_in_commit(commit, &file, name) {
+            Ok(functions) => returns.push(File::new(file, functions)),
+            Err(_) => continue,
+        }
+    }
+    Ok(returns)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function("empty_test", "src/test_functions.rs");
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
         assert!(output.is_ok());
         let output = output.unwrap();
         println!("{}", output.history[0]);
     }
     #[test]
     fn git_installed() {
-        let output = get_function("empty_test", "src/test_functions.rs");
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
         // assert that err is "not git is not installed"
         if output.is_err() {
             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
@@ -439,14 +499,23 @@ mod tests {
 
     #[test]
     fn not_found_function() {
-        let output = get_function("not_a_function", "src/test_functions.rs");
+        let output = get_function_history("Not_a_function", FileType::Absolute("src/test_functions.rs"), Filter::None);
         assert!(output.is_err());
     }
 
     #[test]
     fn not_rust_file() {
-        let output = get_function("not_rust_file", "dummy.txt");
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.txt"), Filter::None);
         assert!(output.is_err());
-        assert_eq!(output.unwrap_err().to_string(), "not rust file");
+        assert_eq!(output.unwrap_err().to_string(), "not a rust file");
+    }
+    #[test]
+    fn test() {
+        let output = get_function_history("empty_test", FileType::None, Filter::DateRange(
+            "17 Aug 2022 11:27:23 -0400",
+            "19 Aug 2022 23:45:52 +0000"
+        ));
+        assert!(output.is_ok());
+
     }
 }
