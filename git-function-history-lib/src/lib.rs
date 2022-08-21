@@ -495,22 +495,17 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
-        let output = get_function_history(
-            "empty_test",
-            FileType::Absolute("src/test_functions.rs"),
-            Filter::None,
-        );
-        assert!(output.is_ok());
-        let output = output.unwrap();
-        println!("{}", output.history[0]);
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
     }
     #[test]
     fn git_installed() {
-        let output = get_function_history(
-            "empty_test",
-            FileType::Absolute("src/test_functions.rs"),
-            Filter::None,
-        );
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
         // assert that err is "not git is not installed"
         if output.is_err() {
             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
@@ -519,31 +514,27 @@ mod tests {
 
     #[test]
     fn not_found_function() {
-        let output = get_function_history(
-            "Not_a_function",
-            FileType::Absolute("src/test_functions.rs"),
-            Filter::None,
-        );
+        let output = get_function_history("Not_a_function", FileType::Absolute("src/test_functions.rs"), Filter::None);
         assert!(output.is_err());
     }
 
     #[test]
     fn not_rust_file() {
-        let output = get_function_history(
-            "empty_test",
-            FileType::Absolute("src/test_functions.txt"),
-            Filter::None,
-        );
+        let output = get_function_history("empty_test", FileType::Absolute("src/test_functions.txt"), Filter::None);
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "not a rust file");
     }
     #[test]
     fn test() {
-        let output = get_function_history(
-            "empty_test",
-            FileType::None,
-            Filter::DateRange("17 Aug 2022 11:27:23 -0400", "19 Aug 2022 23:45:52 +0000"),
-        );
-        assert!(output.is_ok());
+        let output = get_function_history("empty_test", FileType::None, Filter::DateRange(
+            "17 Aug 2022 11:27:23 -0400",
+            "19 Aug 2022 23:45:52 +0000"
+        ));
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
     }
 }
