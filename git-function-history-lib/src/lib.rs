@@ -27,10 +27,10 @@ use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
 lazy_static! {
     #[derive(Debug)]
     // this is for when we support multiple languages
-    pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).unwrap();
+    pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).expect("failed to compile regex");
     // this regex look for string chars and comments
-    pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).unwrap();
-    pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).unwrap();
+    pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
+    pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
 }
 #[derive(Debug, Clone, Copy)]
 pub enum FileType<'a> {
@@ -60,6 +60,23 @@ pub enum Filter<'a> {
 // TODO: document this
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
+/// It then goes and creates a git log command based on the filters that you pass in.
+/// <br>
+/// Then it matches on the filetype, if its not none it will check that the file ends with .rs if not it will error out with `file is not a rust file`.
+/// <br>
+/// If its an absolute it will only for a file matching the exact path from te root of the repo.
+/// <br>
+/// If its a relative it will look for a that ends with the name of the file.
+/// <br>
+/// If its none it will look for all files in the repo that end in .rs.
+/// Note: using `FilteType::None` will take a long time to run (especially if you no filters).
+/// <br>
+/// It will then go through the file and find all the functions and blocks in the file.
+/// <br>
+/// It will then go through the functions and find the ones that match the name als getting the blocks that enclose that function.
+/// <br>
+/// It will then return a `FunctionHistory` struct with all the commits with files that have functions that match the name.
+/// <br>
 /// If no histoy is is available it will error out with `no history found`.
 ///
 /// # examples
@@ -68,6 +85,8 @@ pub enum Filter<'a> {
 /// use git_function_history::{get_function_history, Filter, FileType};
 /// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
 /// ```
+#[allow(clippy::too_many_lines)]
+// TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
     file: FileType<'_>,
@@ -239,12 +258,11 @@ fn find_function_in_commit(
             t if t.0 != 0 => {
                 let top_line: usize = file_contents[cap.start()..t.0]
                     .split_once(':')
-                    .unwrap()
+                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
                     .0
-                    .parse()
-                    .unwrap();
+                    .parse()?;
                 let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
+                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
                     None => top_line,
                 };
                 function_range.push(InternalFunctions {
@@ -271,12 +289,11 @@ fn find_function_in_commit(
             t if t.0 != 0 => {
                 let top_line: usize = file_contents[cap.start()..t.0]
                     .split_once(':')
-                    .unwrap()
+                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
                     .0
-                    .parse()
-                    .unwrap();
+                    .parse()?;
                 let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap().0.parse().unwrap(),
+                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
                     None => top_line,
                 };
                 block_range.push(InternalBlock {
@@ -340,12 +357,12 @@ fn find_function_in_commit(
                 top: file_contents
                     .lines()
                     .nth(fns.file_line.x - 1)
-                    .unwrap()
+                    .unwrap_or_else(|| panic!("could not get line {} in file {} from commit: {}",fns.file_line.y - 1, file_path, name))
                     .to_string(),
                 bottom: file_contents
                     .lines()
                     .nth(fns.file_line.y - 1)
-                    .unwrap()
+                    .unwrap_or_else(|| panic!("could not get line {} in file {} from commit: {}",fns.file_line.y - 1, file_path, name))
                     .to_string(),
                 lines: (fns.file_line.x, fns.file_line.y),
             })
@@ -489,6 +506,20 @@ fn find_function_in_commit_with_relative_path(
     }
     Ok(returns)
 }
+
+trait UwrapToError<T> {
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>>;
+}
+
+impl<T> UwrapToError<T> for Option<T> {
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
+        match self {
+            Some(val) => Ok(val),
+            None => Err(message.to_string().into()),
+        }
+    }
+}
+    
 
 #[cfg(test)]
 mod tests {
