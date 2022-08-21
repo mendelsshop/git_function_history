@@ -502,7 +502,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{}", functions.history[0]);
             }
             Err(e) => println!("{}", e),
         }
@@ -552,7 +552,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{}", functions.history[0]);
             }
             Err(e) => println!("{}", e),
         }
