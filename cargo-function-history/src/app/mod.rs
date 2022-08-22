@@ -1,3 +1,5 @@
+use std::fmt;
+
 use git_function_history::{CommitFunctions, File, FunctionHistory};
 
 use self::actions::Actions;
@@ -12,40 +14,38 @@ pub mod ui;
 pub enum AppReturn {
     Exit,
     Continue,
+    Run,
 }
 
 /// The main application, containing the state
 pub struct App {
     is_loading: bool,
     actions: Actions,
-    current_file: Option<File>,
-    current_commit: Option<CommitFunctions>,
-    whole_function_history: Option<FunctionHistory>,
-    /// State
     state: AppState,
+    input_buffer: String,
+    cmd_output: CommandResult,
+
 }
 
 impl App {
     #[allow(clippy::new_without_default)]
     pub fn new(history: Option<FunctionHistory>) -> Self {
-        let actions = vec![Action::Quit].into();
+        let actions = vec![Action::Quit, Action::Run, Action::Backspace].into();
         let state = AppState::initialized();
         match history {
             Some(history) => Self {
-                current_file: Some(history.history[0].functions[0].clone()),
-                current_commit: Some(history.history[0].clone()),
-                whole_function_history: Some(history),
                 actions,
                 state,
                 is_loading: false,
+                input_buffer: String::new(),
+                cmd_output: CommandResult::History(history),
             },
             None => Self {
-                current_file: None,
-                current_commit: None,
-                whole_function_history: None,
                 actions,
                 state,
                 is_loading: false,
+                input_buffer: String::new(),
+                cmd_output: CommandResult::None,
             },
         }
     }
@@ -59,18 +59,24 @@ impl App {
         if let Some(action) = self.actions.find(key) {
             match action {
                 Action::Quit => AppReturn::Exit,
+                Action::Run => {
+                    let buf = self.input_buffer.clone();
+                    self.input_buffer.clear();
+                    self.is_loading = true;
+                    self.run_command(&buf);
+                    AppReturn::Continue
+                }
+                Action::Backspace => {
+                    self.input_buffer.pop();
+                    AppReturn::Continue
+                }
             }
         } else {
+            self.input_buffer.push_str(&key.to_string());
             AppReturn::Continue
         }
     }
 
-    /// We could update the app or dispatch event on tick
-    pub fn update_on_tick(&mut self) -> AppReturn {
-        // here we just increment a counter
-        self.state.incr_tick();
-        AppReturn::Continue
-    }
 
     pub fn actions(&self) -> &Actions {
         &self.actions
@@ -78,5 +84,54 @@ impl App {
 
     pub fn state(&self) -> &AppState {
         &self.state
+    }
+
+    pub fn input_buffer(&self) -> &String {
+        &self.input_buffer
+    }
+
+    pub fn cmd_output(&self) -> &CommandResult {
+        &self.cmd_output
+    }
+
+    // TODO: figure outt what to name ceach commnad and something based on that
+    pub fn run_command(&mut self, command: &str) {
+        let mut cmd_output = CommandResult::None;
+        // iterate through the tha commnad by space
+        let mut iter = command.split(' ');
+        let cmd = iter.next();
+        match cmd {
+            Some(cmd) => {
+                {
+                    cmd_output = CommandResult::String(format!("{} is not a valid command", cmd));
+                }
+            }
+            None => {
+                cmd_output = CommandResult::String(format!("{} is not a valid command", "sd"));
+            }
+        }
+
+        self.cmd_output = cmd_output;
+
+    }
+}
+
+pub enum CommandResult {
+    History(FunctionHistory),
+    Commit(CommitFunctions),
+    File(File),
+    String(String),
+    None
+}
+
+impl fmt::Display for CommandResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CommandResult::History(history) => write!(f, "{}", history),
+            CommandResult::Commit(commit) => write!(f, "{}", commit),
+            CommandResult::File(file) => write!(f, "{}", file),
+            CommandResult::String(string) => write!(f, "{}", string),
+            CommandResult::None => write!(f, "Please enter some commands to search for a function",)
+        }
     }
 }

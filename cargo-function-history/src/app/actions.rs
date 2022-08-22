@@ -8,12 +8,14 @@ use crate::inputs::key::Key;
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Action {
     Quit,
+    Run,
+    Backspace,
 }
 
 impl Action {
     /// All available actions
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 1] = [Action::Quit];
+        static ACTIONS: [Action; 3] = [Action::Quit, Action::Run, Action::Backspace];
         ACTIONS.iter()
     }
 
@@ -21,6 +23,8 @@ impl Action {
     pub fn keys(&self) -> &[Key] {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
+            Action::Run => &[Key::Enter],
+            Action::Backspace => &[Key::Backspace, Key::Ctrl('h')],
         }
     }
 }
@@ -30,6 +34,8 @@ impl Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = match self {
             Action::Quit => "Quit",
+            Action::Run => "Run" ,
+            Action::Backspace => "Backspace",
         };
         write!(f, "{}", str)
     }
@@ -42,6 +48,7 @@ pub struct Actions(Vec<Action>);
 impl Actions {
     /// Given a key, find the corresponding action
     pub fn find(&self, key: Key) -> Option<&Action> {
+        // println!("{:?}", Action::iterator().collect::<Vec<_>>().iter().find(|a| a.keys().contains(&key)));
         Action::iterator()
             .filter(|action| self.0.contains(action))
             .find(|action| action.keys().contains(&key))

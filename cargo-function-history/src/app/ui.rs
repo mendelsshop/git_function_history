@@ -1,4 +1,3 @@
-use git_function_history::File;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
@@ -10,7 +9,7 @@ use tui::{
 
 use crate::app::App;
 
-use super::state::AppState;
+use super::{state::AppState, CommandResult};
 
 pub fn draw<B>(rect: &mut Frame<B>, app: &App)
 where
@@ -22,7 +21,6 @@ where
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(1), Constraint::Length(size.height - 1)].as_ref())
         .split(size)[1];
-    // println!("{:?}", size);
     rect.render_widget(main_window, size);
     whole_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -47,27 +45,21 @@ where
         )
         .split(whole_chunks);
 
-    let body = draw_body(&app.current_file, app.state());
+    let body = draw_body(&app.cmd_output, app.state());
     rect.render_widget(body, body_chunks[0]);
-    let input = draw_input(app.state());
+    let input = draw_input(&app.input_buffer);
     rect.render_widget(input, body_chunks[1]);
-    let status = draw_status(app.state());
+    let status = draw_status(Status::Ok("hello".to_string()));
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a>(file: &Option<File>, _state: &AppState) -> Paragraph<'a> {
-    let tick_text = if let Some(file) = file {
+fn draw_body<'a>(file: &CommandResult, _state: &AppState) -> Paragraph<'a> {
+    let tick_text: Vec<Spans> = 
         file.to_string()
             .split('\n')
             .map(|s| Spans::from(format!("{}\n", s)))
-            .collect()
-    } else {
-        vec![Spans::from(String::from(
-            "Please enter some commands to search for a function",
-        ))]
-    };
-    // println!("{:?}", tick_text);
-    // let tick
+            .collect();
+
     Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .block(
@@ -87,13 +79,8 @@ fn draw_main<'a>() -> Block<'a> {
         .style(Style::default().fg(Color::White))
 }
 
-fn draw_input<'a>(state: &AppState) -> Paragraph<'a> {
-    let initialized_text = if state.is_initialized() {
-        "Initialized"
-    } else {
-        "Not Initialized !"
-    };
-    Paragraph::new(vec![Spans::from(Span::raw(initialized_text))])
+fn draw_input(input: &str) -> Paragraph {
+    Paragraph::new(vec![Spans::from(Span::raw(input))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
             Block::default()
@@ -103,13 +90,9 @@ fn draw_input<'a>(state: &AppState) -> Paragraph<'a> {
         )
 }
 
-fn draw_status<'a>(state: &AppState) -> Paragraph<'a> {
-    let initialized_text = if state.is_initialized() {
-        "Initialized"
-    } else {
-        "Not Initialized !"
-    };
-    Paragraph::new(vec![Spans::from(Span::raw(initialized_text))])
+fn draw_status<'a>(status: Status) -> Paragraph<'a> {
+
+    Paragraph::new(vec![Spans::from(Span::raw(status.to_string()))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
             Block::default()
@@ -117,4 +100,22 @@ fn draw_status<'a>(state: &AppState) -> Paragraph<'a> {
                 .borders(Borders::BOTTOM)
                 .style(Style::default().fg(Color::White)),
         )
+}
+
+pub enum Status {
+    Ok(String),
+    Error(String),
+    Warning(String),
+    Loading
+}
+
+impl Status {
+    pub fn to_string(&self) -> String {
+        match self {
+            Status::Ok(s) => format!("Ok: {}", s),
+            Status::Error(s) => format!("Error: {}", s),
+            Status::Warning(s) => format!("Warning: {}", s),
+            Status::Loading => String::from("Loading..."),
+        }
+    }
 }

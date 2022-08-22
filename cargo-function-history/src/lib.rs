@@ -35,7 +35,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Handle inputs
         let result = match events.next()? {
             InputEvent::Input(key) => app.do_action(key),
-            InputEvent::Tick => app.update_on_tick(),
+            InputEvent::Tick => AppReturn::Continue,
         };
         // Check if we should exit
         if result == AppReturn::Exit {
