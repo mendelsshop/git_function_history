@@ -103,7 +103,7 @@ impl eframe::App for MyEguiApp {
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.command, Command::Filter, "filter");
                         ui.selectable_value(&mut self.command, Command::Search, "search");
-                        ui.selectable_value(&mut self.command, Command::List, "history");
+                        ui.selectable_value(&mut self.command, Command::List, "list");
                     });
                 match self.command {
                     Command::Filter => {
@@ -136,11 +136,13 @@ impl eframe::App for MyEguiApp {
                     }
                     Command::Search => {
                         ui.add(Label::new("Function Name:"));
-                        let text_input = ui.text_edit_singleline(&mut self.input_buffer);
-                        if text_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                        ui.text_edit_singleline(&mut self.input_buffer);
+                        let resp = ui.add(Button::new("Go"));
+                        if resp.clicked() {
                             // get file if any
                             // get filters if any
                             self.status = Status::Loading;
+                            // TODO: do heavy computation in a separate thread
                             match git_function_history::get_function_history(
                                 &self.input_buffer,
                                 FileType::None,
