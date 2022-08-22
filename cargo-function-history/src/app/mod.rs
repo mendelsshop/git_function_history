@@ -99,32 +99,21 @@ impl App {
         let mut iter = command.split(' ');
         let cmd = iter.next();
         match cmd {
-            Some(cmd) => {
-                match cmd {
-                    "filter" => {}
-                    "search" => {}
-                    "list" => {
-                        match iter.next() {
-                            Some(arg) => {
-                                match arg {
-                                    "dates" => {
-                                        
-                                    }
-                                    "commits" => {
-                                        
-                                    }
-                                    _ => {}
-                                }
-                            }
-                            None => {}
-                        }
-                    }
-                    other => {
-                        cmd_output = CommandResult::String(format!("Unknown command: {}", other));
-                    }
-
+            Some(cmd) => match cmd {
+                "filter" => {}
+                "search" => {}
+                "list" => match iter.next() {
+                    Some(arg) => match arg {
+                        "dates" => {}
+                        "commits" => {}
+                        _ => {}
+                    },
+                    None => {}
+                },
+                other => {
+                    cmd_output = CommandResult::String(format!("Unknown command: {}", other));
                 }
-            }
+            },
             None => {
                 cmd_output = CommandResult::String(format!("{} is not a valid command", "sd"));
             }
