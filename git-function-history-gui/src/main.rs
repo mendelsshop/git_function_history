@@ -40,8 +40,10 @@ impl MyEguiApp {
             ui.add_space(10.);
             egui::menu::bar(ui, |ui| {
                 // logo
-                ui.with_layout(Layout::left_to_right(eframe::emath::Align::Center), |_ui| {
-                });
+                ui.with_layout(
+                    Layout::left_to_right(eframe::emath::Align::Center),
+                    |_ui| {},
+                );
                 // controls
                 ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                     let close_btn = ui.add(Button::new("❌"));
@@ -66,9 +68,7 @@ impl eframe::App for MyEguiApp {
         } else {
             ctx.set_visuals(Visuals::light());
         }
-        egui::TopBottomPanel::bottom("status_bar").show(ctx, |_ui| {
-
-        });
+        egui::TopBottomPanel::bottom("status_bar").show(ctx, |_ui| {});
         self.render_top_panel(ctx, frame);
         egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {
             egui::ComboBox::from_label("Select one!")
@@ -78,10 +78,10 @@ impl eframe::App for MyEguiApp {
                     ui.selectable_value(&mut self.command, Command::Search, "search");
                     ui.selectable_value(&mut self.command, Command::List, "history");
                 });
-                // let text_input = ui.text_edit_singleline(&mut self.input_buffer);
-                // if text_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+            // let text_input = ui.text_edit_singleline(&mut self.input_buffer);
+            // if text_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
 
-                // }
+            // }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -112,4 +112,3 @@ impl std::fmt::Display for Command {
         }
     }
 }
-    
