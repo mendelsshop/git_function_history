@@ -54,11 +54,11 @@ where
 }
 
 fn draw_body<'a>(file: &CommandResult, _state: &AppState) -> Paragraph<'a> {
-    let tick_text: Vec<Spans> = 
-        file.to_string()
-            .split('\n')
-            .map(|s| Spans::from(format!("{}\n", s)))
-            .collect();
+    let tick_text: Vec<Spans> = file
+        .to_string()
+        .split('\n')
+        .map(|s| Spans::from(format!("{}\n", s)))
+        .collect();
 
     Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
@@ -91,7 +91,6 @@ fn draw_input(input: &str) -> Paragraph {
 }
 
 fn draw_status<'a>(status: Status) -> Paragraph<'a> {
-
     Paragraph::new(vec![Spans::from(Span::raw(status.to_string()))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
@@ -106,7 +105,7 @@ pub enum Status {
     Ok(String),
     Error(String),
     Warning(String),
-    Loading
+    Loading,
 }
 
 impl Status {

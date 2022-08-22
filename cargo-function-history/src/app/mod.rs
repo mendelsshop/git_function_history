@@ -24,7 +24,6 @@ pub struct App {
     state: AppState,
     input_buffer: String,
     cmd_output: CommandResult,
-
 }
 
 impl App {
@@ -77,7 +76,6 @@ impl App {
         }
     }
 
-
     pub fn actions(&self) -> &Actions {
         &self.actions
     }
@@ -102,9 +100,7 @@ impl App {
         let cmd = iter.next();
         match cmd {
             Some(cmd) => {
-                {
-                    cmd_output = CommandResult::String(format!("{} is not a valid command", cmd));
-                }
+                cmd_output = CommandResult::String(format!("{} is not a valid command", cmd));
             }
             None => {
                 cmd_output = CommandResult::String(format!("{} is not a valid command", "sd"));
@@ -112,7 +108,6 @@ impl App {
         }
 
         self.cmd_output = cmd_output;
-
     }
 }
 
@@ -121,7 +116,7 @@ pub enum CommandResult {
     Commit(CommitFunctions),
     File(File),
     String(String),
-    None
+    None,
 }
 
 impl fmt::Display for CommandResult {
@@ -131,7 +126,9 @@ impl fmt::Display for CommandResult {
             CommandResult::Commit(commit) => write!(f, "{}", commit),
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => write!(f, "{}", string),
-            CommandResult::None => write!(f, "Please enter some commands to search for a function",)
+            CommandResult::None => {
+                write!(f, "Please enter some commands to search for a function",)
+            }
         }
     }
 }

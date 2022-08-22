@@ -34,7 +34,7 @@ impl Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = match self {
             Action::Quit => "Quit",
-            Action::Run => "Run" ,
+            Action::Run => "Run",
             Action::Backspace => "Backspace",
         };
         write!(f, "{}", str)
