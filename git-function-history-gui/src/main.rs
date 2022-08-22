@@ -108,7 +108,7 @@ impl eframe::App for MyEguiApp {
                 match self.command {
                     Command::Filter => {
                         match &self.cmd_output {
-                            CommandResult::History(t) => {
+                            CommandResult::History(_t) => {
                                 // Options
                                 // 1. by date
                                 // 2. by commit hash
@@ -117,13 +117,13 @@ impl eframe::App for MyEguiApp {
                                 // 5. function in lines
                                 // 6. function in function
                             }
-                            CommandResult::Commit(t) => {
+                            CommandResult::Commit(_t) => {
                                 // Options
                                 // 1. function in block
                                 // 2. function in lines
                                 // 3. function in function
                             }
-                            CommandResult::File(t) => {
+                            CommandResult::File(_t) => {
                                 // Options
                                 // 1. function in block
                                 // 2. function in lines
