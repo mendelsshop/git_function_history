@@ -11,5 +11,4 @@ description = "GUI frontend for git-function-history"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui = "0.18.1"
-imgui = "0.8.2"
+eframe = {version = "0.19.0", features = ["dark-light"]}
