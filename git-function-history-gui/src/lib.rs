@@ -156,6 +156,7 @@ impl eframe::App for MyEguiApp {
                     }
                     Command::Search => {
                         ui.add(Label::new("Function Name:"));
+                        // TODO: make each intput field a fixed size
                         ui.text_edit_singleline(&mut self.input_buffer);
                         // get file if any
                         egui::ComboBox::from_id_source("search_file_combo_box")
@@ -176,11 +177,9 @@ impl eframe::App for MyEguiApp {
                         match self.file_type {
                             FileTypeS::None => {}
                             FileTypeS::Relative => {
-                                ui.add(Label::new("Relative Path:"));
                                 ui.text_edit_singleline(&mut self.file_input_rel);
                             }
                             FileTypeS::Absolute => {
-                                ui.add(Label::new("Absolute Path:"));
                                 ui.text_edit_singleline(&mut self.file_input_abs);
                             }
                         }
@@ -204,15 +203,12 @@ impl eframe::App for MyEguiApp {
                         match self.filter {
                             FilterS::None => {}
                             FilterS::CommitId => {
-                                ui.add(Label::new("Commit Hash:"));
                                 ui.text_edit_singleline(&mut self.filter_input_id);
                             }
                             FilterS::Date => {
-                                ui.add(Label::new("Date:"));
                                 ui.text_edit_singleline(&mut self.filter_input_date);
                             }
                             FilterS::DateRange => {
-                                ui.add(Label::new("Date Range:"));
                                 ui.text_edit_singleline(&mut self.filter_input_date_range.0);
                                 ui.text_edit_singleline(&mut self.filter_input_date_range.1);
                             }
@@ -317,18 +313,18 @@ impl eframe::App for MyEguiApp {
                             // TODO: add buttons to switch between files and commits
                             ui.add(Label::new(format!("Function: {}", t.name)));
                             if !t.history.is_empty() {
-                                if !t.history[c_index.0].functions.is_empty() {
+                                if !t.history[c_index.1].functions.is_empty() {
                                     ui.add(Label::new(format!(
                                         "Date: {}\nCommit Hash: {}",
-                                        t.history[c_index.0].date, t.history[c_index.0].id,
+                                        t.history[c_index.1].date, t.history[c_index.1].id,
                                     )));
-                                    if !t.history[c_index.0].functions[f_index.0]
+                                    if !t.history[c_index.1].functions[f_index.1]
                                         .functions
                                         .is_empty()
                                     {
                                         ui.add(Label::new(format!(
                                             "{}",
-                                            t.history[c_index.0].functions[f_index.0]
+                                            t.history[c_index.1].functions[f_index.1]
                                         )));
                                     } else {
                                         ui.add(Label::new("No history Found"));
@@ -346,8 +342,8 @@ impl eframe::App for MyEguiApp {
                                 t.date, t.id,
                             )));
                             if !t.functions.is_empty() {
-                                if !t.functions[index.0].functions.is_empty() {
-                                    ui.add(Label::new(format!("{}", t.functions[index.0])));
+                                if !t.functions[index.1].functions.is_empty() {
+                                    ui.add(Label::new(format!("{}", t.functions[index.1])));
                                 } else {
                                     ui.add(Label::new("No history Found"));
                                 }
