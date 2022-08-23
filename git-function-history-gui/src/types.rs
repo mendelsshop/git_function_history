@@ -1,3 +1,5 @@
+use std::fmt;
+
 use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,8 +48,8 @@ impl Default for ListType {
 
 #[derive(Debug, Clone)]
 pub enum CommandResult {
-    History(FunctionHistory),
-    Commit(CommitFunctions),
+    History(FunctionHistory, Index, Index),
+    Commit(CommitFunctions, Index),
     File(File),
     String(Vec<String>),
     None,
@@ -75,4 +77,46 @@ pub enum FullCommand {
     Filter(),
     List(ListType),
     Search(String, FileType, Filter),
+}
+
+#[derive(Debug, Clone)]
+pub struct Index(pub usize, pub usize);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileTypeS {
+    None,
+    Absolute,
+    Relative,
+}
+
+impl fmt::Display for FileTypeS {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FileTypeS::None => write!(f, "none"),
+            FileTypeS::Absolute => write!(f, "absolute"),
+            FileTypeS::Relative => write!(f, "relative"),
+        }
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FilterS {
+
+        CommitId,
+
+        Date,
+
+        DateRange,
+
+        None,
+}
+
+impl fmt::Display for FilterS {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FilterS::CommitId => write!(f, "commit hash"),
+            FilterS::Date => write!(f, "date"),
+            FilterS::DateRange => write!(f, "date range"),
+            FilterS::None => write!(f, "none"),
+        }
+    }
 }

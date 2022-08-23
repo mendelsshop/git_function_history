@@ -7,7 +7,7 @@ use eframe::{
     egui::{self, Button, Context, Layout},
 };
 use git_function_history::{FileType, Filter};
-use types::{Command, CommandResult, FullCommand, ListType, Status};
+use types::{Command, CommandResult, FullCommand, ListType, Status, FileTypeS, FilterS};
 
 pub struct MyEguiApp {
     command: Command,
@@ -20,6 +20,13 @@ pub struct MyEguiApp {
         mpsc::Sender<FullCommand>,
         mpsc::Receiver<(CommandResult, Status)>,
     ),
+    filter: FilterS,
+    file_type: FileTypeS,
+    file_input_abs: String,
+    file_input_rel: String,
+    filter_input_id: String,
+    filter_input_date: String,
+    filter_input_date_range: (String, String),
 }
 
 impl MyEguiApp {
@@ -43,6 +50,13 @@ impl MyEguiApp {
             status: Status::default(),
             list_type: ListType::default(),
             channels,
+            file_type: FileTypeS::None,
+            filter: FilterS::None,
+            file_input_abs: String::new(),
+            file_input_rel: String::new(),
+            filter_input_id: String::new(),
+            filter_input_date: String::new(),
+            filter_input_date_range: (String::new(), String::new()),
         }
     }
 
@@ -96,7 +110,7 @@ impl eframe::App for MyEguiApp {
                     }
                 },
                 Status::Error(a) => {
-                    ui.add(Label::new(a));
+                    ui.add(Label::new(format!("Error: {}", a)));
                 }
             }
             ui.add_space(20.);
@@ -114,7 +128,7 @@ impl eframe::App for MyEguiApp {
                 match self.command {
                     Command::Filter => {
                         match &self.cmd_output {
-                            CommandResult::History(_t) => {
+                            CommandResult::History(_t, _, _) => {
                                 // Options
                                 // 1. by date
                                 // 2. by commit hash
@@ -123,7 +137,7 @@ impl eframe::App for MyEguiApp {
                                 // 5. function in lines
                                 // 6. function in function
                             }
-                            CommandResult::Commit(_t) => {
+                            CommandResult::Commit(_t, _) => {
                                 // Options
                                 // 1. function in block
                                 // 2. function in lines
@@ -143,20 +157,96 @@ impl eframe::App for MyEguiApp {
                     Command::Search => {
                         ui.add(Label::new("Function Name:"));
                         ui.text_edit_singleline(&mut self.input_buffer);
+                        // get file if any
+                        egui::ComboBox::from_id_source("search_file_combo_box")
+                            .selected_text(self.file_type.to_string())
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
+                                ui.selectable_value(&mut self.file_type, FileTypeS::Relative, "Relative");
+                                ui.selectable_value(&mut self.file_type, FileTypeS::Absolute, "Absolute");
+                            });
+                             match self.file_type {
+                                FileTypeS::None => {}
+                                FileTypeS::Relative => {
+                                    ui.add(Label::new("Relative Path:"));
+                                    ui.text_edit_singleline(&mut self.file_input_rel);
+                                }
+                                FileTypeS::Absolute => {
+                                    ui.add(Label::new("Absolute Path:"));
+                                    ui.text_edit_singleline(&mut self.file_input_abs);
+                                }
+                            }
+                        // get filters if any
+                        egui::ComboBox::from_id_source("search_filter_combo_box")
+                            .selected_text(self.filter.to_string())
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.filter, FilterS::None, "None");
+                                ui.selectable_value(&mut self.filter, FilterS::CommitId, "Commit Hash");
+                                ui.selectable_value(&mut self.filter, FilterS::Date, "Date");
+                                ui.selectable_value(&mut self.filter, FilterS::DateRange, "Date Range");
+                            });
+                        match self.filter {
+                            FilterS::None => {}
+                            FilterS::CommitId => {
+                                ui.add(Label::new("Commit Hash:"));
+                                ui.text_edit_singleline(&mut self.filter_input_id);
+                            }
+                            FilterS::Date => {
+                                ui.add(Label::new("Date:"));
+                                ui.text_edit_singleline(&mut self.filter_input_date);
+                            }
+                            FilterS::DateRange => {
+                                ui.add(Label::new("Date Range:"));
+                                ui.text_edit_singleline(&mut self.filter_input_date_range.0);
+                                ui.text_edit_singleline(&mut self.filter_input_date_range.1);
+                            }
+                        }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            // get file if any
-                            // get filters if any
+                            let file = 
+                                    match self.file_type {
+                                        FileTypeS::None => {
+                                            FileType::None
+                                        }
+                                        FileTypeS::Relative => {
+                                            FileType::Relative(self.file_input_rel.clone())
+                                        }
+                                        FileTypeS::Absolute => {
+                                            FileType::Absolute(self.file_input_abs.clone())
+                                        }
+                                    };
+                            let filter = 
+                                    match self.filter {
+                                        FilterS::None => {
+                                            Filter::None
+                                        }
+                                        FilterS::CommitId => {
+                                            Filter::CommitId(self.filter_input_id.clone())
+                                        }
+                                        FilterS::Date => {
+                                            Filter::Date(self.filter_input_date.clone())
+                                        }
+                                        FilterS::DateRange => {
+                                            Filter::DateRange(self.filter_input_date_range.0.clone() , self.filter_input_date_range.1.clone())
+                                        }
+                                    };
                             self.status = Status::Loading;
                             self.channels
                                 .0
                                 .send(FullCommand::Search(
                                     self.input_buffer.clone(),
-                                    FileType::None,
-                                    Filter::None,
+                                    file,
+                                    filter,
                                 ))
                                 .unwrap();
                             self.input_buffer.clear();
+                            self.file_input_rel.clear();
+                            self.file_input_abs.clear();
+                            self.filter_input_id.clear();
+                            self.filter_input_date.clear();
+                            self.filter_input_date_range.0.clear();
+                            self.filter_input_date_range.1.clear();
+
                         }
                     }
                     Command::List => {
@@ -220,20 +310,23 @@ impl eframe::App for MyEguiApp {
                         },
                     }
                     match &self.cmd_output {
-                        CommandResult::History(t) => {
+                        CommandResult::History(t, c_index, f_index) => {
                             // TODO: keep track of commit and file index
                             // TODO: add buttons to switch between files and commits
                             ui.add(Label::new(format!("Function: {}", t.name)));
                             if !t.history.is_empty() {
-                                if !t.history[0].functions.is_empty() {
+                                if !t.history[c_index.0].functions.is_empty() {
                                     ui.add(Label::new(format!(
                                         "Date: {}\nCommit Hash: {}",
-                                        t.history[0].date, t.history[0].id,
+                                        t.history[c_index.0].date, t.history[c_index.0].id,
                                     )));
-                                    if !t.history[0].functions[0].functions.is_empty() {
+                                    if !t.history[c_index.0].functions[f_index.0]
+                                        .functions
+                                        .is_empty()
+                                    {
                                         ui.add(Label::new(format!(
                                             "{}",
-                                            t.history[0].functions[0]
+                                            t.history[c_index.0].functions[f_index.0]
                                         )));
                                     } else {
                                         ui.add(Label::new("No history Found"));
@@ -245,9 +338,24 @@ impl eframe::App for MyEguiApp {
                                 ui.add(Label::new("No history Found"));
                             }
                         }
-                        CommandResult::Commit(_t) => {}
-                        CommandResult::File(_t) => {
+                        CommandResult::Commit(t, index) => {
+                            ui.add(Label::new(format!(
+                                "Date: {}\nCommit Hash: {}",
+                                t.date, t.id,
+                            )));
+                            if !t.functions.is_empty() {
+                                if !t.functions[index.0].functions.is_empty() {
+                                    ui.add(Label::new(format!("{}", t.functions[index.0])));
+                                } else {
+                                    ui.add(Label::new("No history Found"));
+                                }
+                            } else {
+                                ui.add(Label::new("No history Found"));
+                            }
+                        }
+                        CommandResult::File(t) => {
                             ui.add(Label::new("File:"));
+                            ui.add(Label::new(t.to_string()));
                         }
                         CommandResult::String(t) => {
                             for line in t {

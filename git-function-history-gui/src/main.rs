@@ -1,5 +1,5 @@
 use git_function_history_gui::{
-    types::{CommandResult, FullCommand, ListType, Status},
+    types::{CommandResult, FullCommand, Index, ListType, Status},
     MyEguiApp,
 };
 use std::{sync::mpsc, thread, time::Duration};
@@ -60,9 +60,19 @@ fn main() {
                         println!("Searching for {} in {:?}", name, file);
                         match git_function_history::get_function_history(&name, file, filter) {
                             Ok(functions) => {
+                                let hist_len = functions.history.len();
+                                let commit_len = if hist_len > 0 {
+                                    functions.history[0].functions.len()
+                                } else {
+                                    0
+                                };
                                 println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(functions),
+                                    CommandResult::History(
+                                        functions,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
