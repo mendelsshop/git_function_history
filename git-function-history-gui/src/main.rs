@@ -1,7 +1,10 @@
+use git_function_history_gui::{
+    types::{CommandResult, FullCommand, ListType, Status},
+    MyEguiApp,
+};
 use std::{sync::mpsc, thread, time::Duration};
-use git_function_history_gui::{types::{FullCommand, ListType, Status, CommandResult}, MyEguiApp};
 
-use eframe::{run_native, epaint::Vec2};
+use eframe::{epaint::Vec2, run_native};
 fn main() {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
@@ -96,8 +99,3 @@ fn main() {
     );
     thread.join().unwrap();
 }
-
-
-
-
-

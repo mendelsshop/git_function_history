@@ -7,7 +7,7 @@ use eframe::{
     egui::{self, Button, Context, Layout},
 };
 use git_function_history::{FileType, Filter};
-use types::{Command, CommandResult, ListType, Status, FullCommand};
+use types::{Command, CommandResult, FullCommand, ListType, Status};
 
 pub struct MyEguiApp {
     command: Command,
@@ -72,7 +72,6 @@ impl MyEguiApp {
         });
     }
 }
-
 
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
@@ -229,8 +228,7 @@ impl eframe::App for MyEguiApp {
                                 if !t.history[0].functions.is_empty() {
                                     ui.add(Label::new(format!(
                                         "Date: {}\nCommit Hash: {}",
-                                        t.history[0].date,
-                                        t.history[0].id,
+                                        t.history[0].date, t.history[0].id,
                                     )));
                                     if !t.history[0].functions[0].functions.is_empty() {
                                         ui.add(Label::new(format!(
