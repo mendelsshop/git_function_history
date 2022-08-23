@@ -7,7 +7,7 @@ use eframe::{
     egui::{self, Button, Context, Layout},
 };
 use git_function_history::{FileType, Filter};
-use types::{Command, CommandResult, FullCommand, ListType, Status, FileTypeS, FilterS};
+use types::{Command, CommandResult, FileTypeS, FilterS, FullCommand, ListType, Status};
 
 pub struct MyEguiApp {
     command: Command,
@@ -162,28 +162,44 @@ impl eframe::App for MyEguiApp {
                             .selected_text(self.file_type.to_string())
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
-                                ui.selectable_value(&mut self.file_type, FileTypeS::Relative, "Relative");
-                                ui.selectable_value(&mut self.file_type, FileTypeS::Absolute, "Absolute");
+                                ui.selectable_value(
+                                    &mut self.file_type,
+                                    FileTypeS::Relative,
+                                    "Relative",
+                                );
+                                ui.selectable_value(
+                                    &mut self.file_type,
+                                    FileTypeS::Absolute,
+                                    "Absolute",
+                                );
                             });
-                             match self.file_type {
-                                FileTypeS::None => {}
-                                FileTypeS::Relative => {
-                                    ui.add(Label::new("Relative Path:"));
-                                    ui.text_edit_singleline(&mut self.file_input_rel);
-                                }
-                                FileTypeS::Absolute => {
-                                    ui.add(Label::new("Absolute Path:"));
-                                    ui.text_edit_singleline(&mut self.file_input_abs);
-                                }
+                        match self.file_type {
+                            FileTypeS::None => {}
+                            FileTypeS::Relative => {
+                                ui.add(Label::new("Relative Path:"));
+                                ui.text_edit_singleline(&mut self.file_input_rel);
                             }
+                            FileTypeS::Absolute => {
+                                ui.add(Label::new("Absolute Path:"));
+                                ui.text_edit_singleline(&mut self.file_input_abs);
+                            }
+                        }
                         // get filters if any
                         egui::ComboBox::from_id_source("search_filter_combo_box")
                             .selected_text(self.filter.to_string())
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(&mut self.filter, FilterS::None, "None");
-                                ui.selectable_value(&mut self.filter, FilterS::CommitId, "Commit Hash");
+                                ui.selectable_value(
+                                    &mut self.filter,
+                                    FilterS::CommitId,
+                                    "Commit Hash",
+                                );
                                 ui.selectable_value(&mut self.filter, FilterS::Date, "Date");
-                                ui.selectable_value(&mut self.filter, FilterS::DateRange, "Date Range");
+                                ui.selectable_value(
+                                    &mut self.filter,
+                                    FilterS::DateRange,
+                                    "Date Range",
+                                );
                             });
                         match self.filter {
                             FilterS::None => {}
@@ -203,41 +219,28 @@ impl eframe::App for MyEguiApp {
                         }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            let file = 
-                                    match self.file_type {
-                                        FileTypeS::None => {
-                                            FileType::None
-                                        }
-                                        FileTypeS::Relative => {
-                                            FileType::Relative(self.file_input_rel.clone())
-                                        }
-                                        FileTypeS::Absolute => {
-                                            FileType::Absolute(self.file_input_abs.clone())
-                                        }
-                                    };
-                            let filter = 
-                                    match self.filter {
-                                        FilterS::None => {
-                                            Filter::None
-                                        }
-                                        FilterS::CommitId => {
-                                            Filter::CommitId(self.filter_input_id.clone())
-                                        }
-                                        FilterS::Date => {
-                                            Filter::Date(self.filter_input_date.clone())
-                                        }
-                                        FilterS::DateRange => {
-                                            Filter::DateRange(self.filter_input_date_range.0.clone() , self.filter_input_date_range.1.clone())
-                                        }
-                                    };
+                            let file = match self.file_type {
+                                FileTypeS::None => FileType::None,
+                                FileTypeS::Relative => {
+                                    FileType::Relative(self.file_input_rel.clone())
+                                }
+                                FileTypeS::Absolute => {
+                                    FileType::Absolute(self.file_input_abs.clone())
+                                }
+                            };
+                            let filter = match self.filter {
+                                FilterS::None => Filter::None,
+                                FilterS::CommitId => Filter::CommitId(self.filter_input_id.clone()),
+                                FilterS::Date => Filter::Date(self.filter_input_date.clone()),
+                                FilterS::DateRange => Filter::DateRange(
+                                    self.filter_input_date_range.0.clone(),
+                                    self.filter_input_date_range.1.clone(),
+                                ),
+                            };
                             self.status = Status::Loading;
                             self.channels
                                 .0
-                                .send(FullCommand::Search(
-                                    self.input_buffer.clone(),
-                                    file,
-                                    filter,
-                                ))
+                                .send(FullCommand::Search(self.input_buffer.clone(), file, filter))
                                 .unwrap();
                             self.input_buffer.clear();
                             self.file_input_rel.clear();
@@ -246,7 +249,6 @@ impl eframe::App for MyEguiApp {
                             self.filter_input_date.clear();
                             self.filter_input_date_range.0.clear();
                             self.filter_input_date_range.1.clear();
-
                         }
                     }
                     Command::List => {

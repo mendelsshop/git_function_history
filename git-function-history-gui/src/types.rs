@@ -100,14 +100,13 @@ impl fmt::Display for FileTypeS {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FilterS {
+    CommitId,
 
-        CommitId,
+    Date,
 
-        Date,
+    DateRange,
 
-        DateRange,
-
-        None,
+    None,
 }
 
 impl fmt::Display for FilterS {
