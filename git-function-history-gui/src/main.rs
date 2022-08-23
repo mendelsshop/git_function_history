@@ -304,56 +304,52 @@ impl eframe::App for MyEguiApp {
                                 self.cmd_output = t;
                             }
                             _ => {}
-
                         },
                         Err(e) => match e {
-                            mpsc::RecvTimeoutError::Timeout => {
-                            },
+                            mpsc::RecvTimeoutError::Timeout => {}
                             mpsc::RecvTimeoutError::Disconnected => {
                                 panic!("Disconnected");
                             }
                         },
                     }
-                match &self.cmd_output {
-                    CommandResult::History(t) => {
-                        // TODO: keep track of commit and file index
-                        // TODO: add buttons to switch between files and commits
-                        ui.add(Label::new(format!("Function: {}", t.name)));
-                        if !t.history.is_empty() {
-                            if !t.history[0].functions.is_empty() {
-                                if !t.history[0].functions[0].functions.is_empty() {
-                                    ui.add(Label::new(
-                                        format!("{}", t.history[0].functions[0]),
-                                    ));
+                    match &self.cmd_output {
+                        CommandResult::History(t) => {
+                            // TODO: keep track of commit and file index
+                            // TODO: add buttons to switch between files and commits
+                            ui.add(Label::new(format!("Function: {}", t.name)));
+                            if !t.history.is_empty() {
+                                if !t.history[0].functions.is_empty() {
+                                    if !t.history[0].functions[0].functions.is_empty() {
+                                        ui.add(Label::new(format!(
+                                            "{}",
+                                            t.history[0].functions[0]
+                                        )));
+                                    } else {
+                                        ui.add(Label::new("No history Found"));
+                                    }
                                 } else {
                                     ui.add(Label::new("No history Found"));
                                 }
                             } else {
                                 ui.add(Label::new("No history Found"));
                             }
-                        } else {
-                            ui.add(Label::new("No history Found"));
                         }
-                    }
-                    CommandResult::Commit(_t) => {
-
-                    }
-                    CommandResult::File(_t) => {
-                        ui.add(Label::new("File:"));
-
-                    }
-                    CommandResult::String(t) => {
-                        for line in t {
-                            if !line.is_empty() {
-                                ui.add(Label::new(line));
+                        CommandResult::Commit(_t) => {}
+                        CommandResult::File(_t) => {
+                            ui.add(Label::new("File:"));
+                        }
+                        CommandResult::String(t) => {
+                            for line in t {
+                                if !line.is_empty() {
+                                    ui.add(Label::new(line));
+                                }
                             }
                         }
+                        CommandResult::None => {
+                            ui.add(Label::new("Nothing to show"));
+                            ui.add(Label::new("Please select a command"));
+                        }
                     }
-                    CommandResult::None => {
-                        ui.add(Label::new("Nothing to show"));
-                        ui.add(Label::new("Please select a command"));
-                    }
-                }
                 });
         });
     }
