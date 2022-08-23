@@ -32,12 +32,12 @@ lazy_static! {
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
 }
-#[derive(Debug, Clone, Copy)]
-pub enum FileType<'a> {
+#[derive(Debug, Clone)]
+pub enum FileType {
     /// When you have a absolute path to a file.
-    Absolute(&'a str),
+    Absolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
-    Relative(&'a str),
+    Relative(String),
     /// When you don't know the path to a file.
     None,
 }
@@ -45,14 +45,14 @@ pub enum FileType<'a> {
 /// This is filter enum is used when you only want to lookup a function with the filter
 /// it is different from the from the all the filters in the things module, because those filters are after the fact,
 /// and require that you already found all the functions in the file. Making using this filter most probably faster.
-#[derive(Debug, Clone, Copy)]
-pub enum Filter<'a> {
+#[derive(Debug, Clone)]
+pub enum Filter {
     /// When you want to filter by a commit hash.
-    CommitId(&'a str),
+    CommitId(String),
     /// When you want to filter by a specific date (in rfc2822 format).
-    Date(&'a str),
+    Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
-    DateRange(&'a str, &'a str),
+    DateRange(String, String),
     /// When you want to filter by nothing.
     None,
 }
@@ -89,8 +89,8 @@ pub enum Filter<'a> {
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
-    file: FileType<'_>,
-    filter: Filter<'_>,
+    file: FileType,
+    filter: Filter,
 ) -> Result<FunctionHistory, Box<dyn Error>> {
     // check if git is installed
     Command::new("git")
@@ -144,7 +144,7 @@ pub fn get_function_history(
                 return Err("not a rust file")?;
             }
             for commit in commits {
-                match find_function_in_commit(commit.0, path, name) {
+                match find_function_in_commit(commit.0, &path, name) {
                     Ok(contents) => {
                         file_history.history.push(CommitFunctions::new(
                             commit.0.to_string(),
@@ -163,7 +163,7 @@ pub fn get_function_history(
                 return Err("not a rust file")?;
             }
             for commit in commits {
-                match find_function_in_commit_with_relative_path(commit.0, name, path) {
+                match find_function_in_commit_with_relative_path(commit.0, name, &path) {
                     Ok(contents) => {
                         file_history.history.push(CommitFunctions::new(
                             commit.0.to_string(),
@@ -541,7 +541,7 @@ mod tests {
     fn found_function() {
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.rs"),
+            FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
         match &output {
@@ -556,7 +556,7 @@ mod tests {
     fn git_installed() {
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.rs"),
+            FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
         // assert that err is "not git is not installed"
@@ -569,7 +569,7 @@ mod tests {
     fn not_found_function() {
         let output = get_function_history(
             "Not_a_function",
-            FileType::Absolute("src/test_functions.rs"),
+            FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
         assert!(output.is_err());
@@ -579,7 +579,7 @@ mod tests {
     fn not_rust_file() {
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.txt"),
+            FileType::Absolute("src/test_functions.txt".to_string()),
             Filter::None,
         );
         let path = std::env::current_dir().unwrap();
@@ -592,7 +592,10 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             FileType::None,
-            Filter::DateRange("17 Aug 2022 11:27:23 -0400", "19 Aug 2022 23:45:52 +0000"),
+            Filter::DateRange(
+                "17 Aug 2022 11:27:23 -0400".to_owned(),
+                "19 Aug 2022 23:45:52 +0000".to_owned(),
+            ),
         );
         match &output {
             Ok(functions) => {

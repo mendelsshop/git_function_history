@@ -1,3 +1,5 @@
+use std::{sync::mpsc, thread, time::Duration};
+
 use eframe::egui::{Label, TopBottomPanel, Visuals};
 use eframe::{
     self,
@@ -7,16 +9,100 @@ use eframe::{
 };
 use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
 fn main() {
+    let (tx_t, rx_m) = mpsc::channel();
+    let (tx_m, rx_t) = mpsc::channel();
+
+    let thread = thread::spawn(move || {
+        loop {
+            match rx_t.recv_timeout(Duration::from_millis(100)) {
+                Ok(msg) => match msg {
+                    FullCommand::List(list_type) => {
+                        println!("list");
+                        match list_type {
+                            ListType::Commits => {
+                                match git_function_history::get_git_commits() {
+                                    Ok(commits) => {
+                                        println!("found {} commits", commits.len());
+                                        tx_t.send((
+                                            CommandResult::String(commits),
+                                            Status::Ok(Some("Found commits dates".to_string())),
+                                        ))
+                                        .unwrap();
+                                    }
+                                    Err(err) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(err.to_string()),
+                                        ))
+                                        .unwrap();
+                                    }
+                                };
+                            }
+                            ListType::Dates => {
+                                match git_function_history::get_git_dates() {
+                                    Ok(dates) => {
+                                        println!("found {} dates", dates.len());
+                                        tx_t.send((
+                                            CommandResult::String(dates),
+                                            Status::Ok(Some("Found dates".to_string())),
+                                        ))
+                                        .unwrap();
+                                    }
+                                    Err(err) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(err.to_string()),
+                                        ))
+                                        .unwrap();
+                                    }
+                                };
+                            }
+                        }
+                    }
+                    FullCommand::Search(name, file, filter) => {
+                        println!("Searching for {} in {:?}", name, file);
+                        match git_function_history::get_function_history(&name, file, filter) {
+                            Ok(functions) => {
+                                println!("Found functions",);
+                                tx_t.send((
+                                    CommandResult::History(functions),
+                                    Status::Ok(Some("Found functions".to_string())),
+                                ))
+                                .unwrap();
+                            }
+                            Err(err) => {
+                                tx_t.send((CommandResult::None, Status::Error(err.to_string())))
+                                    .unwrap();
+                            }
+                        };
+                    }
+                    FullCommand::Filter() => {
+                        println!("filter");
+                    }
+                },
+                Err(a) => {
+                    match a {
+                        mpsc::RecvTimeoutError::Timeout => {
+                            // println!("thread timeout");
+                        }
+                        mpsc::RecvTimeoutError::Disconnected => {
+                            panic!("channel disconnected");
+                        }
+                    }
+                }
+            };
+        }
+    });
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(800.0, 600.0));
     run_native(
         "Git Function History",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc))),
-    )
+        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m)))),
+    );
+    thread.join().unwrap();
 }
 
-#[derive(Default)]
 struct MyEguiApp {
     command: Command,
     dark_theme: bool,
@@ -24,13 +110,24 @@ struct MyEguiApp {
     cmd_output: CommandResult,
     status: Status,
     list_type: ListType,
+    channels: (
+        mpsc::Sender<FullCommand>,
+        mpsc::Receiver<(CommandResult, Status)>,
+    ),
 }
 impl MyEguiApp {
-    fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    fn new(
+        _cc: &eframe::CreationContext<'_>,
+        channels: (
+            mpsc::Sender<FullCommand>,
+            mpsc::Receiver<(CommandResult, Status)>,
+        ),
+    ) -> Self {
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
+        // channels.0.send(FullCommand::List(ListType::Commits)).unwrap();
         Self {
             dark_theme: true,
             command: Command::Search,
@@ -38,6 +135,7 @@ impl MyEguiApp {
             cmd_output: CommandResult::None,
             status: Status::default(),
             list_type: ListType::default(),
+            channels,
         }
     }
 
@@ -70,6 +168,7 @@ impl MyEguiApp {
 
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        ctx.request_repaint();
         if self.dark_theme {
             ctx.set_visuals(Visuals::dark());
         } else {
@@ -142,20 +241,14 @@ impl eframe::App for MyEguiApp {
                             // get file if any
                             // get filters if any
                             self.status = Status::Loading;
-                            // TODO: do heavy computation in a separate thread
-                            match git_function_history::get_function_history(
-                                &self.input_buffer,
-                                FileType::None,
-                                Filter::None,
-                            ) {
-                                Ok(t) => {
-                                    self.cmd_output = CommandResult::History(t);
-                                    self.status = Status::Ok(None);
-                                }
-                                Err(t) => {
-                                    self.status = Status::Error(t.to_string());
-                                }
-                            }
+                            self.channels
+                                .0
+                                .send(FullCommand::Search(
+                                    self.input_buffer.clone(),
+                                    FileType::None,
+                                    Filter::None,
+                                ))
+                                .unwrap();
                             self.input_buffer.clear();
                         }
                     }
@@ -175,32 +268,17 @@ impl eframe::App for MyEguiApp {
                             match self.list_type {
                                 ListType::Dates => {
                                     self.status = Status::Loading;
-                                    match git_function_history::get_git_dates() {
-                                        Ok(dates) => {
-                                            self.cmd_output = CommandResult::String(dates);
-                                            self.status =
-                                                Status::Ok(Some("Found commits dates".to_string()));
-                                        }
-                                        Err(err) => {
-                                            self.status = Status::Error(err.to_string());
-                                            self.cmd_output = CommandResult::None;
-                                        }
-                                    };
+                                    self.channels
+                                        .0
+                                        .send(FullCommand::List(self.list_type))
+                                        .unwrap();
                                 }
                                 ListType::Commits => {
                                     self.status = Status::Loading;
-                                    match git_function_history::get_git_commits() {
-                                        Ok(commits) => {
-                                            self.cmd_output = CommandResult::String(commits);
-                                            self.status = Status::Ok(Some(
-                                                "Found commits hashes".to_string(),
-                                            ));
-                                        }
-                                        Err(err) => {
-                                            self.status = Status::Error(err.to_string());
-                                            self.cmd_output = CommandResult::None;
-                                        }
-                                    };
+                                    self.channels
+                                        .0
+                                        .send(FullCommand::List(self.list_type))
+                                        .unwrap();
                                 }
                             }
                         }
@@ -214,19 +292,60 @@ impl eframe::App for MyEguiApp {
                 .max_height(f32::INFINITY)
                 .max_width(f32::INFINITY)
                 .auto_shrink([false, false])
-                .show(ui, |ui| match &self.cmd_output {
-                    CommandResult::None => {
-                        ui.add(Label::new("Nothing to show"));
-                        ui.add(Label::new("Please select a command"));
-                    }
-                    CommandResult::String(ref s) => {
-                        for line in s {
-                            if !line.is_empty() {
-                                ui.add(Label::new(line));
+                .show(ui, |ui| {
+                    match self.channels.1.recv_timeout(Duration::from_millis(100)) {
+                        Ok(timeout) => match timeout {
+                            (_, Status::Error(e)) => {
+                                self.status = Status::Error(e);
                             }
-                        }
+                            (CommandResult::String(str), Status::Ok(msg)) => {
+                                println!("received");
+                                self.status = Status::Ok(msg);
+                                self.cmd_output = CommandResult::String(str.clone());
+                                for line in str {
+                                    if !line.is_empty() {
+                                        ui.add(Label::new(line));
+                                    }
+                                }
+                            }
+                            (CommandResult::History(hist), Status::Ok(msg)) => {
+                                self.status = Status::Ok(msg);
+                                self.cmd_output = CommandResult::History(hist);
+                            }
+                            (CommandResult::Commit(commit), Status::Ok(msg)) => {
+                                self.status = Status::Ok(msg);
+                                self.cmd_output = CommandResult::Commit(commit);
+                            }
+                            (CommandResult::File(file), Status::Ok(msg)) => {
+                                self.status = Status::Ok(msg);
+                                self.cmd_output = CommandResult::File(file);
+                            }
+                            _ => {
+                                self.status = Status::Ok(None);
+                                ui.add(Label::new("Nothing to show"));
+                                ui.add(Label::new("Please select a command"));
+                            }
+                        },
+                        Err(e) => match e {
+                            mpsc::RecvTimeoutError::Timeout => match &self.cmd_output {
+                                CommandResult::String(str) => {
+                                    for line in str {
+                                        if !line.is_empty() {
+                                            ui.add(Label::new(line));
+                                        }
+                                    }
+                                }
+
+                                _ => {
+                                    ui.add(Label::new("Nothing to show"));
+                                    ui.add(Label::new("Please select a command"));
+                                }
+                            },
+                            mpsc::RecvTimeoutError::Disconnected => {
+                                panic!("Disconnected");
+                            }
+                        },
                     }
-                    _ => {}
                 });
         });
     }
@@ -276,6 +395,7 @@ impl Default for ListType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum CommandResult {
     History(FunctionHistory),
     Commit(CommitFunctions),
@@ -289,7 +409,7 @@ impl Default for CommandResult {
         CommandResult::None
     }
 }
-
+#[derive(Debug, Clone)]
 enum Status {
     Ok(Option<String>),
     Error(String),
@@ -300,4 +420,10 @@ impl Default for Status {
     fn default() -> Self {
         Status::Ok(None)
     }
+}
+#[derive(Debug, Clone)]
+enum FullCommand {
+    Filter(),
+    List(ListType),
+    Search(String, FileType, Filter),
 }

@@ -422,7 +422,7 @@ impl fmt::Display for CommitFunctions {
 }
 
 /// This struct holds the a list of commits and the function that were looked up for each commit.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionHistory {
     pub name: String,
     pub history: Vec<CommitFunctions>,

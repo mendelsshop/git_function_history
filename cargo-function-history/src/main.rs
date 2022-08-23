@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             file => match get_function_history(
                 &string,
-                git_function_history::FileType::Absolute(&file),
+                git_function_history::FileType::Absolute(file),
                 git_function_history::Filter::None,
             ) {
                 Ok(functions) => Some(functions),
