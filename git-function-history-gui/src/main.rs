@@ -298,54 +298,62 @@ impl eframe::App for MyEguiApp {
                             (_, Status::Error(e)) => {
                                 self.status = Status::Error(e);
                             }
-                            (CommandResult::String(str), Status::Ok(msg)) => {
+                            (t, Status::Ok(msg)) => {
                                 println!("received");
                                 self.status = Status::Ok(msg);
-                                self.cmd_output = CommandResult::String(str.clone());
-                                for line in str {
-                                    if !line.is_empty() {
-                                        ui.add(Label::new(line));
-                                    }
-                                }
+                                self.cmd_output = t;
                             }
-                            (CommandResult::History(hist), Status::Ok(msg)) => {
-                                self.status = Status::Ok(msg);
-                                self.cmd_output = CommandResult::History(hist);
-                            }
-                            (CommandResult::Commit(commit), Status::Ok(msg)) => {
-                                self.status = Status::Ok(msg);
-                                self.cmd_output = CommandResult::Commit(commit);
-                            }
-                            (CommandResult::File(file), Status::Ok(msg)) => {
-                                self.status = Status::Ok(msg);
-                                self.cmd_output = CommandResult::File(file);
-                            }
-                            _ => {
-                                self.status = Status::Ok(None);
-                                ui.add(Label::new("Nothing to show"));
-                                ui.add(Label::new("Please select a command"));
-                            }
+                            _ => {}
+
                         },
                         Err(e) => match e {
-                            mpsc::RecvTimeoutError::Timeout => match &self.cmd_output {
-                                CommandResult::String(str) => {
-                                    for line in str {
-                                        if !line.is_empty() {
-                                            ui.add(Label::new(line));
-                                        }
-                                    }
-                                }
-
-                                _ => {
-                                    ui.add(Label::new("Nothing to show"));
-                                    ui.add(Label::new("Please select a command"));
-                                }
+                            mpsc::RecvTimeoutError::Timeout => {
                             },
                             mpsc::RecvTimeoutError::Disconnected => {
                                 panic!("Disconnected");
                             }
                         },
                     }
+                match &self.cmd_output {
+                    CommandResult::History(t) => {
+                        // TODO: keep track of commit and file index
+                        // TODO: add buttons to switch between files and commits
+                        ui.add(Label::new(format!("Function: {}", t.name)));
+                        if !t.history.is_empty() {
+                            if !t.history[0].functions.is_empty() {
+                                if !t.history[0].functions[0].functions.is_empty() {
+                                    ui.add(Label::new(
+                                        format!("{}", t.history[0].functions[0]),
+                                    ));
+                                } else {
+                                    ui.add(Label::new("No history Found"));
+                                }
+                            } else {
+                                ui.add(Label::new("No history Found"));
+                            }
+                        } else {
+                            ui.add(Label::new("No history Found"));
+                        }
+                    }
+                    CommandResult::Commit(_t) => {
+
+                    }
+                    CommandResult::File(_t) => {
+                        ui.add(Label::new("File:"));
+
+                    }
+                    CommandResult::String(t) => {
+                        for line in t {
+                            if !line.is_empty() {
+                                ui.add(Label::new(line));
+                            }
+                        }
+                    }
+                    CommandResult::None => {
+                        ui.add(Label::new("Nothing to show"));
+                        ui.add(Label::new("Please select a command"));
+                    }
+                }
                 });
         });
     }
