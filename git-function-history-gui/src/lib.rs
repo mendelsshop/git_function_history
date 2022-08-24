@@ -1,7 +1,7 @@
 pub mod types;
 use std::{sync::mpsc, time::Duration};
 
-use eframe::egui::{Label, TopBottomPanel, Visuals};
+use eframe::{egui::{Label, TopBottomPanel, Visuals, TextEdit}, epaint::Color32};
 use eframe::{
     self,
     egui::{self, Button, Context, Layout},
@@ -99,18 +99,19 @@ impl eframe::App for MyEguiApp {
             ui.add_space(20.);
             match &self.status {
                 Status::Loading => {
-                    ui.add(Label::new("Loading..."));
+                    ui.colored_label(Color32::LIGHT_BLUE, "Loading...");
                 }
                 Status::Ok(a) => match a {
                     Some(a) => {
-                        ui.add(Label::new(format!("Ok: {}", a)));
+                        ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+
                     }
                     None => {
-                        ui.add(Label::new("Ready"));
+                        ui.colored_label(Color32::GREEN, "Ready");
                     }
                 },
                 Status::Error(a) => {
-                    ui.add(Label::new(format!("Error: {}", a)));
+                    ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                 }
             }
             ui.add_space(20.);
@@ -118,6 +119,7 @@ impl eframe::App for MyEguiApp {
         self.render_top_panel(ctx, frame);
         egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
+                let max = ui.available_width()/6.0;
                 egui::ComboBox::from_id_source("command_combo_box")
                     .selected_text(self.command.to_string())
                     .show_ui(ui, |ui| {
@@ -157,7 +159,13 @@ impl eframe::App for MyEguiApp {
                     Command::Search => {
                         ui.add(Label::new("Function Name:"));
                         // TODO: make each intput field a fixed size
-                        ui.text_edit_singleline(&mut self.input_buffer);
+                        ui.horizontal(|ui| {
+                            // set the width of the input field
+                            ui.set_min_width(4.0);
+                            ui.set_max_width(max);
+                            ui.add(TextEdit::singleline(&mut self.input_buffer));
+                        });
+                        
                         // get file if any
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(self.file_type.to_string())
@@ -177,10 +185,20 @@ impl eframe::App for MyEguiApp {
                         match self.file_type {
                             FileTypeS::None => {}
                             FileTypeS::Relative => {
-                                ui.text_edit_singleline(&mut self.file_input_rel);
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.file_input_rel));
+                                });
                             }
                             FileTypeS::Absolute => {
-                                ui.text_edit_singleline(&mut self.file_input_abs);
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.file_input_abs));
+                                });
                             }
                         }
                         // get filters if any
@@ -203,14 +221,35 @@ impl eframe::App for MyEguiApp {
                         match self.filter {
                             FilterS::None => {}
                             FilterS::CommitId => {
-                                ui.text_edit_singleline(&mut self.filter_input_id);
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.filter_input_id));
+                                });
                             }
                             FilterS::Date => {
-                                ui.text_edit_singleline(&mut self.filter_input_date);
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.filter_input_date));
+                                });
                             }
                             FilterS::DateRange => {
-                                ui.text_edit_singleline(&mut self.filter_input_date_range.0);
-                                ui.text_edit_singleline(&mut self.filter_input_date_range.1);
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.filter_input_date_range.0));
+                                });
+                                ui.add(Label::new("-"));
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(&mut self.filter_input_date_range.1));
+                                });
                             }
                         }
                         let resp = ui.add(Button::new("Go"));
@@ -363,8 +402,15 @@ impl eframe::App for MyEguiApp {
                             }
                         }
                         CommandResult::None => {
-                            ui.add(Label::new("Nothing to show"));
-                            ui.add(Label::new("Please select a command"));
+                            match &self.status {
+                                Status::Loading => {
+                                    ui.add(Label::new("Loading..."));
+                                }
+                                _ => {
+                                    ui.add(Label::new("Nothing to show"));
+                                    ui.add(Label::new("Please select a command"));
+                                }
+                            }
                         }
                     }
                 });
