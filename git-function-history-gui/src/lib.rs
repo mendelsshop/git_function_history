@@ -1,10 +1,13 @@
 pub mod types;
 use std::{sync::mpsc, time::Duration};
 
-use eframe::{egui::{Label, TopBottomPanel, Visuals, TextEdit}, epaint::Color32};
 use eframe::{
     self,
     egui::{self, Button, Context, Layout},
+};
+use eframe::{
+    egui::{Label, TextEdit, TopBottomPanel, Visuals},
+    epaint::Color32,
 };
 use git_function_history::{FileType, Filter};
 use types::{Command, CommandResult, FileTypeS, FilterS, FullCommand, ListType, Status};
@@ -104,7 +107,6 @@ impl eframe::App for MyEguiApp {
                 Status::Ok(a) => match a {
                     Some(a) => {
                         ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
-
                     }
                     None => {
                         ui.colored_label(Color32::GREEN, "Ready");
@@ -119,7 +121,7 @@ impl eframe::App for MyEguiApp {
         self.render_top_panel(ctx, frame);
         egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
-                let max = ui.available_width()/6.0;
+                let max = ui.available_width() / 6.0;
                 egui::ComboBox::from_id_source("command_combo_box")
                     .selected_text(self.command.to_string())
                     .show_ui(ui, |ui| {
@@ -165,7 +167,7 @@ impl eframe::App for MyEguiApp {
                             ui.set_max_width(max);
                             ui.add(TextEdit::singleline(&mut self.input_buffer));
                         });
-                        
+
                         // get file if any
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(self.file_type.to_string())
@@ -241,14 +243,18 @@ impl eframe::App for MyEguiApp {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(&mut self.filter_input_date_range.0));
+                                    ui.add(TextEdit::singleline(
+                                        &mut self.filter_input_date_range.0,
+                                    ));
                                 });
                                 ui.add(Label::new("-"));
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(&mut self.filter_input_date_range.1));
+                                    ui.add(TextEdit::singleline(
+                                        &mut self.filter_input_date_range.1,
+                                    ));
                                 });
                             }
                         }
@@ -401,17 +407,15 @@ impl eframe::App for MyEguiApp {
                                 }
                             }
                         }
-                        CommandResult::None => {
-                            match &self.status {
-                                Status::Loading => {
-                                    ui.add(Label::new("Loading..."));
-                                }
-                                _ => {
-                                    ui.add(Label::new("Nothing to show"));
-                                    ui.add(Label::new("Please select a command"));
-                                }
+                        CommandResult::None => match &self.status {
+                            Status::Loading => {
+                                ui.add(Label::new("Loading..."));
                             }
-                        }
+                            _ => {
+                                ui.add(Label::new("Nothing to show"));
+                                ui.add(Label::new("Please select a command"));
+                            }
+                        },
                     }
                 });
         });
