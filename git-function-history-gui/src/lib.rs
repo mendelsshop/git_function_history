@@ -158,7 +158,6 @@ impl MyEguiApp {
                     }
                     if r_resp.clicked() {
                         i = *is + 1;
-  
                     }
                 });
             }
@@ -169,7 +168,6 @@ impl MyEguiApp {
     fn draw_history(history: (&FunctionHistory, &mut Index, &mut Index), ui: &mut Ui) {
         // split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
         ui.vertical(|ui| {
-
             // create a 3 line header
             ui.horizontal(|ui| {
                 let mut max = ui.available_width();
@@ -185,14 +183,13 @@ impl MyEguiApp {
                 };
                 max -= ui.available_width();
                 ui.add_sized(
-                    Vec2::new(ui.available_width()-max, 2.0),
+                    Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.0.history[history.1.1].id,
-                        history.0.history[history.1.1].date
+                        history.0.history[history.1 .1].id, history.0.history[history.1 .1].date
                     )),
                 );
-                
+
                 let r_resp = match history.1 {
                     Index(len, i) if *i == *len - 1 => {
                         ui.add_sized(Vec2::new(2.0, 2.0), Label::new("->"));
@@ -222,7 +219,7 @@ impl MyEguiApp {
                 }
             });
         });
-        Self::draw_commit((&history.0.history[history.1.1], history.2), ui, false)
+        Self::draw_commit((&history.0.history[history.1 .1], history.2), ui, false)
     }
 }
 
@@ -470,7 +467,6 @@ impl eframe::App for MyEguiApp {
                         self.status = Status::Error(e);
                     }
                     (t, Status::Ok(msg)) => {
-                        
                         self.status = Status::Ok(msg);
                         self.cmd_output = t;
                     }
