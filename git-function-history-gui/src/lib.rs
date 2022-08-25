@@ -177,22 +177,22 @@ impl MyEguiApp {
             // create a 3 line header
             ui.horizontal(|ui| {
                 let max = ui.available_width() - 3.0;
+                println!("history.1 .1: {:?}", history.1);
                 let l_resp = match history.1 {
                     Index(_, 0) => {
-                        ui.add_sized(Vec2::new(max, 3.0), Label::new("<-"));
+                        ui.add_sized(Vec2::new(3.0, 3.0), Label::new("<-"));
                         None
                     }
                     _ => Some(
                         // add a left arrow button that is disabled
-                        ui.add_sized(Vec2::new(3.0, 3.0), Label::new("<-")),
+                        ui.add_sized(Vec2::new(3.0, 3.0), Button::new("<-")),
                     ),
                 };
 
                 // add the commit hash and the date
-
                 let r_resp = match history.1 {
                     Index(len, i) if *i == *len - 1 => {
-                        ui.add_sized(Vec2::new(max, 3.0), Label::new("->"));
+                        ui.add_sized(Vec2::new(3.0, 3.0), Label::new("->"));
                         None
                     }
                     _ => {
@@ -204,7 +204,7 @@ impl MyEguiApp {
                 match r_resp {
                     Some(r_resp) => {
                         if r_resp.clicked() {
-                            *history.1 = Index(history.1 .0, history.1 .1 + 1);
+                            *history.1 = Index(history.1.0, history.1 .1 + 1);
                         }
                     }
                     None => {}
@@ -212,7 +212,7 @@ impl MyEguiApp {
                 match l_resp {
                     Some(l_resp) => {
                         if l_resp.clicked() {
-                            *history.1 = Index(history.1 .1, history.1 .1 - 1);
+                            *history.1 = Index(history.1.0, history.1 .1 - 1);
                         }
                     }
                     None => {}
@@ -234,7 +234,7 @@ impl eframe::App for MyEguiApp {
             ui.add_space(20.);
             match &self.status {
                 Status::Loading => {
-                    ui.colored_label(Color32::LIGHT_BLUE, "Loading...");
+                    ui.colored_label(Color32::BLUE, "Loading...");
                 }
                 Status::Ok(a) => match a {
                     Some(a) => {
