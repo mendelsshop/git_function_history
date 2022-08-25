@@ -204,7 +204,7 @@ impl MyEguiApp {
                 match r_resp {
                     Some(r_resp) => {
                         if r_resp.clicked() {
-                            *history.1 = Index(history.1.0, history.1 .1 + 1);
+                            *history.1 = Index(history.1 .0, history.1 .1 + 1);
                         }
                     }
                     None => {}
@@ -212,7 +212,7 @@ impl MyEguiApp {
                 match l_resp {
                     Some(l_resp) => {
                         if l_resp.clicked() {
-                            *history.1 = Index(history.1.0, history.1 .1 - 1);
+                            *history.1 = Index(history.1 .0, history.1 .1 - 1);
                         }
                     }
                     None => {}
