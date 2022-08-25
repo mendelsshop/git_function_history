@@ -92,6 +92,10 @@ pub fn get_function_history(
     file: FileType,
     filter: Filter,
 ) -> Result<FunctionHistory, Box<dyn Error>> {
+    // chack if name is empty
+    if name.is_empty() {
+        Err("function name is empty")?;
+    }
     // check if git is installed
     Command::new("git")
         .arg("--version")

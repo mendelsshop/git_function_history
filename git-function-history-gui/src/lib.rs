@@ -3,14 +3,14 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Context, Layout},
+    egui::{self, Button, Context, Layout, Ui}, epaint::Vec2,
 };
 use eframe::{
     egui::{Label, TextEdit, TopBottomPanel, Visuals},
     epaint::Color32,
 };
-use git_function_history::{FileType, Filter};
-use types::{Command, CommandResult, FileTypeS, FilterS, FullCommand, ListType, Status};
+use git_function_history::{FileType, Filter, CommitFunctions, FunctionHistory};
+use types::{Command, CommandResult, FileTypeS, FilterS, FullCommand, ListType, Status, Index};
 
 pub struct MyEguiApp {
     command: Command,
@@ -86,6 +86,128 @@ impl MyEguiApp {
                 });
             });
             ui.add_space(10.);
+        });
+    }
+
+    fn draw_commit(commit: (&CommitFunctions, &mut Index), ui: &mut Ui)  {
+        ui.add(Label::new(format!("Commit: {}", commit.0.id)));
+        ui.add(Label::new(format!("Date: {}", commit.0.date)));
+        let mut i = 0;
+        match commit.1 {
+            Index(len, 0) if *len == 0 => {
+                egui::ScrollArea::vertical()
+                .max_height(f32::INFINITY)
+                .max_width(f32::INFINITY)
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    ui.add(Label::new(commit.0.functions[0].to_string()));
+                });
+            }
+            Index(_, 0) => {
+                // split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
+                ui.horizontal(|ui| {
+
+                    let max = ui.available_width() - 3.0;
+                    egui::ScrollArea::vertical().max_height(f32::INFINITY).max_width(max).auto_shrink([false, false]).show(ui, |ui| {
+                        ui.add(Label::new(commit.0.functions[0].to_string()));
+                    });
+                    let resp = ui.add(Button::new("->"));
+                    if resp.clicked() {
+                    i = 1;
+                    // *commit.1 = Index(*len, 1);
+                    }
+                });
+            }
+            Index(len, d) if *d == *len - 1 => {
+                // split the screen in two parts, leave a small part for the left arrow and the rest for the content
+                let max = ui.available_width() - 3.0;
+                ui.horizontal(|ui| {
+                    let max = ui.available_width() - 3.0;
+                    let resp = ui.add_sized(Vec2::new(3.0, ui.available_height()), Button::new("<-"));
+                    egui::ScrollArea::vertical().max_height(f32::INFINITY).max_width(max).auto_shrink([false, false]).show(ui, |ui| {
+                        ui.add(Label::new(commit.0.functions[*len - 1].to_string()));
+                    });
+                    if resp.clicked() {
+                        i = *d - 1;
+                        // *commit.1 = Index(*len, *d - 1);
+                    }
+                });
+            }
+            Index(_, is) => {
+                // split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
+                ui.horizontal(|ui| {
+                    let max = ui.available_width() - 6.0;
+                    let l_resp = ui.add_sized(Vec2::new(3.0, ui.available_height()), Button::new("<-"));
+                    egui::ScrollArea::vertical().max_height(f32::INFINITY).max_width(max).auto_shrink([false, false]).show(ui, |ui| {
+                        ui.add(Label::new(commit.0.functions[*is].to_string()));
+                    });
+                    let r_resp = ui.add(Button::new("->"));
+                    if l_resp.clicked() {
+                        i = *is - 1;
+                        // *commit.1 = Index(*len, *is - 1);
+                    }
+                    if r_resp.clicked() {
+                        i = *is + 1;
+                        // *commit.1 = Index(*len, *is + 1);
+                    }
+                });
+            }
+            
+        }
+        *commit.1 = Index(commit.1.1, i);
+    }
+
+    fn draw_history(history: (&FunctionHistory, &mut Index, &mut Index), ui: &mut Ui) {
+        // split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
+        ui.vertical(|ui| {
+            let max = ui.available_height() - 3.0;
+            // create a 3 line header
+            ui.horizontal(|ui| {
+                let max = ui.available_width() - 3.0;
+                let l_resp = match history.1 {
+                    Index(_, 0)  => {
+                        ui.add_sized(Vec2::new(max, 3.0), Label::new("<-"));
+                        None
+                    }
+                    _ => Some(
+                        // add a left arrow button that is disabled
+                        ui.add_sized(Vec2::new(3.0, 3.0), Label::new("<-"))
+                    )
+                };
+                
+                // add the commit hash and the date
+                
+                let r_resp = match history.1 {
+                    Index(len, i)   if *i == *len - 1 => {
+                        
+                        ui.add_sized(Vec2::new(max, 3.0), Label::new("->"));
+                        None
+                    }
+                    _ => {
+                        // add a right arrow button that is disabled
+                        Some(ui.add_sized(Vec2::new(3.0, 3.0), Button::new("->")))
+                    }
+                };
+
+                match r_resp {
+                    Some(r_resp) => {
+                        if r_resp.clicked() {
+                            *history.1 = Index(history.1.0, history.1.1 + 1);
+                        }
+                    }
+                    None => {}
+                }
+                match l_resp {
+                    Some(l_resp) => {
+                        if l_resp.clicked() {
+                            *history.1 = Index(history.1.1, history.1.1 - 1);
+                        }
+                    }
+                    None => {}
+                }
+            });
+
+   
         });
     }
 }
@@ -328,96 +450,120 @@ impl eframe::App for MyEguiApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical()
+            // check if the channel has a message and if so set it to self.command
+            match self.channels.1.recv_timeout(Duration::from_millis(100)) {
+                Ok(timeout) => match timeout {
+                    (_, Status::Error(e)) => {
+                        self.status = Status::Error(e);
+                    }
+                    (t, Status::Ok(msg)) => {
+                        println!("received");
+                        self.status = Status::Ok(msg);
+                        self.cmd_output = t;
+                    }
+                    _ => {}
+                },
+                Err(e) => match e {
+                    mpsc::RecvTimeoutError::Timeout => {}
+                    mpsc::RecvTimeoutError::Disconnected => {
+                        panic!("Disconnected");
+                    }
+                },
+            }
+            // match self.commmand and render based on that
+            match &mut self.cmd_output {
+                CommandResult::History(t, c_index, f_index) => {
+                    ui.add(Label::new(format!("Function: {}", t.name)));
+                    Self::draw_history((t, c_index, f_index), ui);
+                }
+                CommandResult::Commit(t, index) => {
+                    ui.add(Label::new(format!("Commit: {}", t.id)));
+                    ui.add(Label::new(format!("Date: {}", t.date)));
+                    Self::draw_commit((t, index), ui)
+                }
+                CommandResult::File(t) => {
+                    ui.add(Label::new("File"));
+                    ui.add(Label::new(t.to_string()));
+                }
+                CommandResult::String(t) => {
+                egui::ScrollArea::vertical()
                 .max_height(f32::INFINITY)
                 .max_width(f32::INFINITY)
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    match self.channels.1.recv_timeout(Duration::from_millis(100)) {
-                        Ok(timeout) => match timeout {
-                            (_, Status::Error(e)) => {
-                                self.status = Status::Error(e);
-                            }
-                            (t, Status::Ok(msg)) => {
-                                println!("received");
-                                self.status = Status::Ok(msg);
-                                self.cmd_output = t;
-                            }
-                            _ => {}
-                        },
-                        Err(e) => match e {
-                            mpsc::RecvTimeoutError::Timeout => {}
-                            mpsc::RecvTimeoutError::Disconnected => {
-                                panic!("Disconnected");
-                            }
-                        },
-                    }
-                    match &self.cmd_output {
-                        CommandResult::History(t, c_index, f_index) => {
-                            // TODO: keep track of commit and file index
-                            // TODO: add buttons to switch between files and commits
-                            ui.add(Label::new(format!("Function: {}", t.name)));
-                            if !t.history.is_empty() {
-                                if !t.history[c_index.1].functions.is_empty() {
-                                    ui.add(Label::new(format!(
-                                        "Date: {}\nCommit Hash: {}",
-                                        t.history[c_index.1].date, t.history[c_index.1].id,
-                                    )));
-                                    if !t.history[c_index.1].functions[f_index.1]
-                                        .functions
-                                        .is_empty()
-                                    {
-                                        ui.add(Label::new(format!(
-                                            "{}",
-                                            t.history[c_index.1].functions[f_index.1]
-                                        )));
-                                    } else {
-                                        ui.add(Label::new("No history Found"));
-                                    }
-                                } else {
-                                    ui.add(Label::new("No history Found"));
-                                }
-                            } else {
-                                ui.add(Label::new("No history Found"));
-                            }
-                        }
-                        CommandResult::Commit(t, index) => {
-                            ui.add(Label::new(format!(
-                                "Date: {}\nCommit Hash: {}",
-                                t.date, t.id,
-                            )));
-                            if !t.functions.is_empty() {
-                                if !t.functions[index.1].functions.is_empty() {
-                                    ui.add(Label::new(format!("{}", t.functions[index.1])));
-                                } else {
-                                    ui.add(Label::new("No history Found"));
-                                }
-                            } else {
-                                ui.add(Label::new("No history Found"));
-                            }
-                        }
-                        CommandResult::File(t) => {
-                            ui.add(Label::new("File:"));
-                            ui.add(Label::new(t.to_string()));
-                        }
-                        CommandResult::String(t) => {
-                            for line in t {
+                                                for line in t {
                                 if !line.is_empty() {
-                                    ui.add(Label::new(line));
+                                    ui.add(Label::new(line.to_string()));
                                 }
                             }
-                        }
-                        CommandResult::None => match &self.status {
-                            Status::Loading => {
-                                ui.add(Label::new("Loading..."));
-                            }
-                            _ => {
-                                ui.add(Label::new("Nothing to show"));
-                                ui.add(Label::new("Please select a command"));
-                            }
-                        },
-                    }
                 });
+                }
+                CommandResult::None => match &self.status {
+                    Status::Loading => {
+                        ui.add(Label::new("Loading..."));
+                    }
+                    _ => {
+                        ui.add(Label::new("Nothing to show"));
+                        ui.add(Label::new("Please select a command"));
+                    }
+
+                }
+                        }         ;   
+                // egui::ScrollArea::vertical()
+                // .max_height(f32::INFINITY)
+                // .max_width(f32::INFINITY)
+                // .auto_shrink([false, false])
+                // .show(ui, |ui| {
+
+                //     match &self.cmd_output {
+                //         CommandResult::History(t, c_index, f_index) => {
+                //             // TODO: keep track of commit and file index
+                //             // TODO: add buttons to switch between files and commits
+                //             ui.add(Label::new(format!("Function: {}", t.name)));
+                //             if !t.history.is_empty() {
+                //                 if !t.history[c_index.1].functions.is_empty() {
+                //                     ui.add(Label::new(format!(
+                //                         "Date: {}\nCommit Hash: {}",
+                //                         t.history[c_index.1].date, t.history[c_index.1].id,
+                //                     )));
+                //                     if !t.history[c_index.1].functions[f_index.1]
+                //                         .functions
+                //                         .is_empty()
+                //                     {
+                //                         ui.add(Label::new(format!(
+                //                             "{}",
+                //                             t.history[c_index.1].functions[f_index.1]
+                //                         )));
+                //                     } else {
+                //                         ui.add(Label::new("No history Found"));
+                //                     }
+                //                 } else {
+                //                     ui.add(Label::new("No history Found"));
+                //                 }
+                //             } else {
+                //                 ui.add(Label::new("No history Found"));
+                //             }
+                //         }
+                //         CommandResult::Commit(t, index) => {
+                //             ui.add(Label::new(format!(
+                //                 "Date: {}\nCommit Hash: {}",
+                //                 t.date, t.id,
+                //             )));
+                //             if !t.functions.is_empty() {
+                //                 if !t.functions[index.1].functions.is_empty() {
+                //                     ui.add(Label::new(format!("{}", t.functions[index.1])));
+                //                 } else {
+                //                     ui.add(Label::new("No history Found"));
+                //                 }
+                //             } else {
+                //                 ui.add(Label::new("No history Found"));
+                //             }
+                //         }
+                //         CommandResult::File(t) => {
+                //             ui.add(Label::new("File:"));
+                //             ui.add(Label::new(t.to_string()));
+                //         }
+
         });
     }
 }
