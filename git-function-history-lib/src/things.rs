@@ -202,6 +202,28 @@ pub enum BlockType {
     Unknown,
 }
 
+impl BlockType {
+    pub fn from_string(s: &str) -> Self {
+        match s {
+            "impl" => Self::Impl,
+            "extern" => Self::Extern,
+            "trait" => Self::Trait,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+impl fmt::Display for BlockType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Impl => write!(f, "impl"),
+            Self::Extern => write!(f, "extern"),
+            Self::Trait => write!(f, "trait"),
+            Self::Unknown => write!(f, "unknown"),
+        }
+    }
+}
+
 /// This is used to store each individual file in a commit and the associated functions in that file.
 #[derive(Debug, Clone)]
 pub struct File {
@@ -330,6 +352,7 @@ pub struct CommitFunctions {
 }
 
 impl CommitFunctions {
+    // TODO: add a function to filter by filename
     pub(crate) fn new(id: String, functions: Vec<File>, date: &str) -> Self {
         Self {
             id,
@@ -430,6 +453,7 @@ pub struct FunctionHistory {
 }
 
 impl FunctionHistory {
+    // TODO: add a function to filter by filename
     pub fn new(name: String, history: Vec<CommitFunctions>) -> Self {
         Self {
             name,

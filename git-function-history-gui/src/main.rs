@@ -1,5 +1,5 @@
 use git_function_history_gui::{
-    types::{CommandResult, FullCommand, Index, ListType, Status},
+    types::{CommandResult, FilterType, FullCommand, HistoryFilter, Index, ListType, Status},
     MyEguiApp,
 };
 use std::{sync::mpsc, thread, time::Duration};
@@ -83,9 +83,135 @@ fn main() {
                             }
                         };
                     }
-                    FullCommand::Filter() => {
-                        println!("filter");
-                    }
+                    FullCommand::Filter(t) => match t {
+                        FilterType::History(functions, history) => match functions {
+                            HistoryFilter::Date(date) => {
+                                match history.get_by_date(&date) {
+                                    Some(functions) => {
+                                        tx_t.send((
+                                            CommandResult::Commit(
+                                                functions.clone(),
+                                                Index(functions.functions.len(), 0),
+                                            ),
+                                            Status::Ok(Some("Found functions".to_string())),
+                                        ))
+                                        .unwrap();
+                                    }
+                                    None => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(format!(
+                                                "No functions found for date {}",
+                                                date
+                                            )),
+                                        ))
+                                        .unwrap();
+                                    }
+                                };
+                            }
+                            HistoryFilter::CommitId(commit) => {
+                                match history.get_by_commit_id(&commit) {
+                                    Some(functions) => {
+                                        tx_t.send((
+                                            CommandResult::Commit(
+                                                functions.clone(),
+                                                Index(functions.functions.len(), 0),
+                                            ),
+                                            Status::Ok(Some("Found functions".to_string())),
+                                        ))
+                                        .unwrap();
+                                    }
+                                    None => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(format!(
+                                                "No functions found for commit {}",
+                                                commit
+                                            )),
+                                        ))
+                                        .unwrap();
+                                    }
+                                };
+                            }
+                            HistoryFilter::DateRange(frst, scd) => {
+                                let t = history.get_date_range(&frst, &scd);
+                                let hist_len = t.history.len();
+                                let commit_len = if hist_len > 0 {
+                                    t.history[0].functions.len()
+                                } else {
+                                    0
+                                };
+                                println!("Found functions",);
+                                tx_t.send((
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
+                                    Status::Ok(Some("Found functions".to_string())),
+                                ))
+                                .unwrap();
+                            }
+                            HistoryFilter::FunctionInBlock(block) => {
+                                let t = history.get_all_functions_in_block(block);
+                                let hist_len = t.history.len();
+                                let commit_len = if hist_len > 0 {
+                                    t.history[0].functions.len()
+                                } else {
+                                    0
+                                };
+                                println!("Found functions",);
+                                tx_t.send((
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
+                                    Status::Ok(Some("Found functions".to_string())),
+                                ))
+                                .unwrap();
+                            }
+                            HistoryFilter::FunctionInLines(line1, line2) => {
+                                let t = history.get_all_functions_line(line1, line2);
+                                let hist_len = t.history.len();
+                                let commit_len = if hist_len > 0 {
+                                    t.history[0].functions.len()
+                                } else {
+                                    0
+                                };
+                                println!("Found functions",);
+                                tx_t.send((
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
+                                    Status::Ok(Some("Found functions".to_string())),
+                                ))
+                                .unwrap();
+                            }
+                            HistoryFilter::FunctionInFunction(function) => {
+                                let t = history.get_all_function_with_parent(&function);
+                                let hist_len = t.history.len();
+                                let commit_len = if hist_len > 0 {
+                                    t.history[0].functions.len()
+                                } else {
+                                    0
+                                };
+                                println!("Found functions",);
+                                tx_t.send((
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
+                                    Status::Ok(Some("Found functions".to_string())),
+                                ))
+                                .unwrap();
+                            }
+                        },
+                        FilterType::CommitOrFile(_commit, _t) => {}
+                    },
                 },
                 Err(a) => {
                     match a {
