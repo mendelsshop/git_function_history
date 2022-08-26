@@ -9,7 +9,7 @@ fn main() {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
 
-    let thread = thread::spawn(move || {
+    thread::spawn(move || {
         loop {
             match rx_t.recv_timeout(Duration::from_millis(100)) {
                 Ok(msg) => match msg {
@@ -107,5 +107,5 @@ fn main() {
         native_options,
         Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m)))),
     );
-    thread.join().unwrap();
+    // thread.join().unwrap();
 }
