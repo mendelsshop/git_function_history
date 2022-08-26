@@ -85,11 +85,10 @@ impl MyEguiApp {
     }
 
     fn draw_commit(commit: (&CommitFunctions, &mut Index), ctx: &egui::Context, show: bool) {
-
         if show {
             TopBottomPanel::top("date_id").show(ctx, |ui| {
-            ui.add(Label::new(format!("Commit: {}", commit.0.id)));
-            ui.add(Label::new(format!("Date: {}", commit.0.date)));
+                ui.add(Label::new(format!("Commit: {}", commit.0.id)));
+                ui.add(Label::new(format!("Date: {}", commit.0.date)));
             });
         }
         let mut i = 0;
@@ -98,27 +97,31 @@ impl MyEguiApp {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.add(Label::new("no files found"));
                 });
-                
             }
             Index(len, 0) if *len == 1 => {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                egui::ScrollArea::vertical()
-                    .max_height(f32::INFINITY)
-                    .max_width(f32::INFINITY)
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| {
-                        ui.add(Label::new(commit.0.functions[0].to_string()));
-                    });
+                    egui::ScrollArea::vertical()
+                        .max_height(f32::INFINITY)
+                        .max_width(f32::INFINITY)
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            ui.add(Label::new(commit.0.functions[0].to_string()));
+                        });
                 });
             }
             Index(_, 0) => {
                 // split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
                 println!("found at least one file index beginning");
-                    let resp = egui::SidePanel::right("right_arrow").show(ctx, |ui| {
-                         ui.set_width(0.5);
-                         ui.add_sized(Vec2::new(ui.available_width(), ui.available_height()), Button::new("->"))
-                    }).inner;
-                    egui::CentralPanel::default().show(ctx, |ui| {
+                let resp = egui::SidePanel::right("right_arrow")
+                    .show(ctx, |ui| {
+                        ui.set_width(0.5);
+                        ui.add_sized(
+                            Vec2::new(ui.available_width(), ui.available_height()),
+                            Button::new("->"),
+                        )
+                    })
+                    .inner;
+                egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
@@ -126,20 +129,24 @@ impl MyEguiApp {
                         .show(ui, |ui| {
                             ui.add(Label::new(commit.0.functions[0].to_string()))
                         });
-                    });
-                    if resp.clicked() {
-                        i = 1;
-                    }
+                });
+                if resp.clicked() {
+                    i = 1;
+                }
             }
             Index(len, d) if *d == *len - 1 => {
                 println!("found at least one file index end");
                 // split the screen in two parts, leave a small part for the left arrow and the rest for the content
-                    let resp = 
-                    SidePanel::left("right_button").show(ctx, |ui| {
+                let resp = SidePanel::left("right_button")
+                    .show(ctx, |ui| {
                         ui.set_width(1.0);
-                        ui.add_sized(Vec2::new(ui.available_width(), ui.available_height()), Button::new("<-"))
-                    }).inner;
-                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.add_sized(
+                            Vec2::new(ui.available_width(), ui.available_height()),
+                            Button::new("<-"),
+                        )
+                    })
+                    .inner;
+                egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
@@ -147,26 +154,35 @@ impl MyEguiApp {
                         .show(ui, |ui| {
                             ui.add(Label::new(commit.0.functions[*len - 1].to_string()));
                         });
-                    });
-                    if resp.clicked() {
-                        i = *d - 1;
-                    } else {
-                        i = *d
-                    }
+                });
+                if resp.clicked() {
+                    i = *d - 1;
+                } else {
+                    i = *d
+                }
             }
             Index(_, is) => {
                 println!("found at least one file index middle");
                 // split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
-                let l_resp = 
-                SidePanel::left("left_arrow").show(ctx, |ui| {
-                    ui.set_width(1.0);
-                    ui.add_sized(Vec2::new(ui.available_width(), ui.available_height()), Button::new("<-"))
-                }).inner;
-                let r_resp = egui::SidePanel::right("right_arrows").show(ctx, |ui| {
-                    ui.set_width(1.0);
-                    ui.add_sized(Vec2::new(ui.available_width(), ui.available_height()), Button::new("->"))
-               }).inner;
-               egui::CentralPanel::default().show(ctx, |ui| {
+                let l_resp = SidePanel::left("left_arrow")
+                    .show(ctx, |ui| {
+                        ui.set_width(1.0);
+                        ui.add_sized(
+                            Vec2::new(ui.available_width(), ui.available_height()),
+                            Button::new("<-"),
+                        )
+                    })
+                    .inner;
+                let r_resp = egui::SidePanel::right("right_arrows")
+                    .show(ctx, |ui| {
+                        ui.set_width(1.0);
+                        ui.add_sized(
+                            Vec2::new(ui.available_width(), ui.available_height()),
+                            Button::new("->"),
+                        )
+                    })
+                    .inner;
+                egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
@@ -174,17 +190,14 @@ impl MyEguiApp {
                         .show(ui, |ui| {
                             ui.add(Label::new(commit.0.functions[*is].to_string()));
                         });
-                    });
-                    if l_resp.clicked() {
-                        i = *is - 1;
-                    }
-                    else if r_resp.clicked() {
-                        i = *is + 1;
-  
-                    } else {
-                        i = * is;
-                    }
-               
+                });
+                if l_resp.clicked() {
+                    i = *is - 1;
+                } else if r_resp.clicked() {
+                    i = *is + 1;
+                } else {
+                    i = *is;
+                }
             }
         }
         *commit.1 = Index(commit.1 .0, i);
@@ -192,69 +205,64 @@ impl MyEguiApp {
 
     fn draw_history(history: (&FunctionHistory, &mut Index, &mut Index), ctx: &egui::Context) {
         // split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
-            // create a 3 line header
-            TopBottomPanel::top("control history").show(ctx, |ui| {
-                ui.set_height(2.0);
-                ui.horizontal(|ui| {
-                    let mut max = ui.available_width();
-                    let l_resp = match history.1 {
-                        Index(_, 0) => {
-                            ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-").sense(
-                                Sense::hover()
-                            ));
-                            None
-                        }
-                        _ => Some(
-                            // add a left arrow button that is disabled
-                            ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-")),
-                        ),
-                    };
-                    max -= ui.available_width();
-                    ui.add_sized(
-                        Vec2::new(ui.available_width()-max, 2.0),
-                        Label::new(format!(
-                            "{}\n{}",
-                            history.0.history[history.1.1].id,
-                            history.0.history[history.1.1].date
-                        )),
-                    );
-                    
-                    let r_resp = match history.1 {
-                        Index(len, i) if *i == *len - 1 => {
-                            ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->").sense(
-                                Sense::hover()
-                            ));
-                            None
-                        }
-                        _ => {
-                            // add a right arrow button that is disabled
-                            Some(ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->")))
-                        }
-                    };
-    
-                    match r_resp {
-                        Some(r_resp) => {
-                            if r_resp.clicked() {
-                                *history.1 = Index(history.1 .0, history.1 .1 + 1);
-                                // reset file index
-                                *history.2 = Index(history.2 .0, 0)
-                            }
-                        }
-                        None => {}
+        // create a 3 line header
+        TopBottomPanel::top("control history").show(ctx, |ui| {
+            ui.set_height(2.0);
+            ui.horizontal(|ui| {
+                let mut max = ui.available_width();
+                let l_resp = match history.1 {
+                    Index(_, 0) => {
+                        ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-").sense(Sense::hover()));
+                        None
                     }
-                    match l_resp {
-                        Some(l_resp) => {
-                            if l_resp.clicked() {
-                                *history.1 = Index(history.1 .0, history.1 .1 - 1);
-                                // reset file index
-                                *history.2 = Index(history.2 .0, 0)
-                            }
-                        }
-                        None => {}
+                    _ => Some(
+                        // add a left arrow button that is disabled
+                        ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-")),
+                    ),
+                };
+                max -= ui.available_width();
+                ui.add_sized(
+                    Vec2::new(ui.available_width() - max, 2.0),
+                    Label::new(format!(
+                        "{}\n{}",
+                        history.0.history[history.1 .1].id, history.0.history[history.1 .1].date
+                    )),
+                );
+
+                let r_resp = match history.1 {
+                    Index(len, i) if *i == *len - 1 => {
+                        ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->").sense(Sense::hover()));
+                        None
                     }
-                });
+                    _ => {
+                        // add a right arrow button that is disabled
+                        Some(ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->")))
+                    }
+                };
+
+                match r_resp {
+                    Some(r_resp) => {
+                        if r_resp.clicked() {
+                            *history.1 = Index(history.1 .0, history.1 .1 + 1);
+                            // reset file index
+                            *history.2 = Index(history.2 .0, 0)
+                        }
+                    }
+                    None => {}
+                }
+                match l_resp {
+                    Some(l_resp) => {
+                        if l_resp.clicked() {
+                            *history.1 = Index(history.1 .0, history.1 .1 - 1);
+                            // reset file index
+                            *history.2 = Index(history.2 .0, 0)
+                        }
+                    }
+                    None => {}
+                }
             });
-        Self::draw_commit((&history.0.history[history.1.1], history.2), ctx, false);
+        });
+        Self::draw_commit((&history.0.history[history.1 .1], history.2), ctx, false);
     }
 }
 
@@ -502,7 +510,6 @@ impl eframe::App for MyEguiApp {
                         self.status = Status::Error(e);
                     }
                     (t, Status::Ok(msg)) => {
-                        
                         self.status = Status::Ok(msg);
                         self.cmd_output = t;
                     }
