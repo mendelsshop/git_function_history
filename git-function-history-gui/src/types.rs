@@ -82,36 +82,36 @@ pub enum FullCommand {
 #[derive(Debug, Clone)]
 pub struct Index(pub usize, pub usize);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileTypeS {
     None,
-    Absolute,
-    Relative,
+    Absolute(String),
+    Relative(String)
 }
 
 impl fmt::Display for FileTypeS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FileTypeS::None => write!(f, "none"),
-            FileTypeS::Absolute => write!(f, "absolute"),
-            FileTypeS::Relative => write!(f, "relative"),
+            FileTypeS::Absolute(_) => write!(f, "absolute"),
+            FileTypeS::Relative(_) => write!(f, "relative"),
         }
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SearchFilter {
-    CommitId,
-    Date,
-    DateRange,
+    CommitId(String),
+    Date(String),
+    DateRange(String, String),
     None,
 }
 
 impl fmt::Display for SearchFilter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SearchFilter::CommitId => write!(f, "commit hash"),
-            SearchFilter::Date => write!(f, "date"),
-            SearchFilter::DateRange => write!(f, "date range"),
+            SearchFilter::CommitId(_) => write!(f, "commit hash"),
+            SearchFilter::Date(_) => write!(f, "date"),
+            SearchFilter::DateRange(_, _) => write!(f, "date range"),
             SearchFilter::None => write!(f, "none"),
         }
     }
@@ -136,35 +136,46 @@ pub enum CommitOrFileFilter {
     FunctionInLines(usize, usize),
     FunctionInFunction(String),
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HistoryFilterType {
-    Date,
-    DateRange,
-    FunctionInBlock,
-    FunctionInLines,
-    FunctionInFunction,
-    CommitId,
+    Date(String),
+    DateRange(String, String),
+    FunctionInBlock(String),
+    FunctionInLines(String, String),
+    FunctionInFunction(String),
+    CommitId(String),
     None,
 }
 
 impl fmt::Display for HistoryFilterType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            HistoryFilterType::Date => write!(f, "date"),
-            HistoryFilterType::DateRange => write!(f, "date range"),
-            HistoryFilterType::FunctionInBlock => write!(f, "function in block"),
-            HistoryFilterType::FunctionInLines => write!(f, "function in lines"),
-            HistoryFilterType::FunctionInFunction => write!(f, "function in function"),
-            HistoryFilterType::CommitId => write!(f, "commit id"),
+            HistoryFilterType::Date(_) => write!(f, "date"),
+            HistoryFilterType::DateRange(_, _) => write!(f, "date range"),
+            HistoryFilterType::FunctionInBlock(_) => write!(f, "function in block"),
+            HistoryFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
+            HistoryFilterType::FunctionInFunction(_) => write!(f, "function in function"),
+            HistoryFilterType::CommitId(_) => write!(f, "commit id"),
             HistoryFilterType::None => write!(f, "none"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone,  PartialEq, Eq)]
 pub enum CommitFilterType {
-    FunctionInBlock,
-    FunctionInLines,
-    FunctionInFunction,
+    FunctionInBlock(String),
+    FunctionInLines(String, String),
+    FunctionInFunction(String),
     None,
+}
+
+impl fmt::Display for CommitFilterType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CommitFilterType::FunctionInBlock(_) => write!(f, "function in block"),
+            CommitFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
+            CommitFilterType::FunctionInFunction(_) => write!(f, "function in function"),
+            CommitFilterType::None => write!(f, "none"),
+        }
+    }
 }

@@ -17,7 +17,6 @@ use types::{
 };
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
-// TODO: have only enough text buffers needeedd at any given time ie: 3
 pub struct MyEguiApp {
     command: Command,
     dark_theme: bool,
@@ -31,20 +30,6 @@ pub struct MyEguiApp {
     ),
     filter: SearchFilter,
     file_type: FileTypeS,
-    file_input_abs: String,
-    file_input_rel: String,
-    search_filter_input_id: String,
-    search_filter_input_date: String,
-    search_filter_input_date_range: (String, String),
-    filter_history_dates: String,
-    filter_history_dates_range: (String, String),
-    filter_history_commits: String,
-    filter_history_fn_in_block: String,
-    filter_history_fn_in_lines: (String, String),
-    filter_history_fn_in_fn: String,
-    filter_commit_fn_in_block: String,
-    filter_commit_fn_in_lines: (String, String),
-    filter_commmit_fn_in_fn: String,
     history_filter_type: HistoryFilterType,
     commit_filter_type: CommitFilterType,
 }
@@ -67,20 +52,6 @@ impl MyEguiApp {
             channels,
             file_type: FileTypeS::None,
             filter: SearchFilter::None,
-            file_input_abs: String::new(),
-            file_input_rel: String::new(),
-            search_filter_input_id: String::new(),
-            search_filter_input_date: String::new(),
-            search_filter_input_date_range: (String::new(), String::new()),
-            filter_history_dates: String::new(),
-            filter_history_dates_range: (String::new(), String::new()),
-            filter_history_commits: String::new(),
-            filter_history_fn_in_block: String::new(),
-            filter_history_fn_in_lines: (String::new(), String::new()),
-            filter_history_fn_in_fn: String::new(),
-            filter_commit_fn_in_block: String::new(),
-            filter_commit_fn_in_lines: (String::new(), String::new()),
-            filter_commmit_fn_in_fn: String::new(),
             history_filter_type: HistoryFilterType::None,
             commit_filter_type: CommitFilterType::None,
         }
@@ -336,44 +307,38 @@ impl eframe::App for MyEguiApp {
                     Command::Filter => {
                         match &self.cmd_output {
                             CommandResult::History(t, _, _) => {
-                                // Options
-                                // 1. by date
-                                // 2. by commit hash
-                                // 3. in date range
-                                // 4. function in block
-                                // 5. function in lines
-                                // 6. function in function
+                                // Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
                                 egui::ComboBox::from_id_source("history_combo_box")
                                     .selected_text(self.history_filter_type.to_string())
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::Date,
+                                            HistoryFilterType::Date(String::new()),
                                             "by date",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::CommitId,
+                                            HistoryFilterType::CommitId(String::new()),
                                             "by commit hash",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::DateRange,
+                                            HistoryFilterType::DateRange(String::new(), String::new()),
                                             "in date range",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::FunctionInBlock,
+                                            HistoryFilterType::FunctionInBlock(String::new()),
                                             "function in block",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::FunctionInLines,
+                                            HistoryFilterType::FunctionInLines(String::new(), String::new()),
                                             "function in lines",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::FunctionInFunction,
+                                            HistoryFilterType::FunctionInFunction(String::new()),
                                             "function in function",
                                         );
                                         ui.selectable_value(
@@ -382,34 +347,34 @@ impl eframe::App for MyEguiApp {
                                             "none",
                                         );
                                     });
-                                match self.history_filter_type {
-                                    HistoryFilterType::Date => {
+                                match &mut self.history_filter_type {
+                                    HistoryFilterType::Date(date) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_dates,
+                                                date
                                             ));
                                         });
                                     }
-                                    HistoryFilterType::CommitId => {
+                                    HistoryFilterType::CommitId(commit) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_commits,
+                                                commit
                                             ));
                                         });
                                     }
-                                    HistoryFilterType::DateRange => {
+                                    HistoryFilterType::DateRange(date1, date2) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_dates_range.0,
+                                                date1
                                             ));
                                         });
                                         ui.horizontal(|ui| {
@@ -417,37 +382,46 @@ impl eframe::App for MyEguiApp {
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_dates_range.1,
-                                            ));
-                                        });
-                                    }
-                                    HistoryFilterType::FunctionInBlock => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_fn_in_block,
+                                                date2
                                             ));
                                         });
                                     }
-                                    HistoryFilterType::FunctionInLines => {
+                                    HistoryFilterType::FunctionInBlock(block) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_fn_in_lines.0,
+                                                block
                                             ));
                                         });
                                     }
-                                    HistoryFilterType::FunctionInFunction => {
+                                    HistoryFilterType::FunctionInLines(line1, line2) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
                                             ui.set_max_width(max);
                                             ui.add(TextEdit::singleline(
-                                                &mut self.filter_history_fn_in_fn,
+                                                line1
+                                            ));
+                                        });
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(
+                                                line2
+                                            ));
+                                        });
+                                    }
+                                    HistoryFilterType::FunctionInFunction(function) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(
+                                                function
+                                            
                                             ));
                                         });
                                     }
@@ -458,59 +432,54 @@ impl eframe::App for MyEguiApp {
                                 let resp = ui.add(Button::new("Go"));
                                 if resp.clicked() {
                                     self.status = Status::Loading;
-                                    match self.history_filter_type {
-                                        HistoryFilterType::Date => {
-                                            let date = self.filter_history_dates.clone();
+                                    match &self.history_filter_type {
+                                        HistoryFilterType::Date(date) => {
                                             self.channels
                                                 .0
                                                 .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::Date(date),
+                                                    HistoryFilter::Date(date.to_string()),
                                                     t.clone(),
                                                 )))
                                                 .unwrap();
                                         }
-                                        HistoryFilterType::CommitId => {
-                                            let commit_id = self.filter_history_commits.clone();
+                                        HistoryFilterType::CommitId(commit_id) => {
                                             self.channels
                                                 .0
                                                 .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::CommitId(commit_id),
+                                                    HistoryFilter::CommitId(commit_id.to_string()),
                                                     t.clone(),
                                                 )))
                                                 .unwrap();
                                         }
-                                        HistoryFilterType::DateRange => {
-                                            let date_range = (
-                                                self.filter_history_dates_range.0.clone(),
-                                                self.filter_history_dates_range.1.clone(),
-                                            );
+                                        HistoryFilterType::DateRange(date1, date2) => {
+
                                             self.channels
                                                 .0
                                                 .send(FullCommand::Filter(FilterType::History(
                                                     HistoryFilter::DateRange(
-                                                        date_range.0,
-                                                        date_range.1,
+                                                        date1.to_string(),
+                                                        date2.to_string(),
                                                     ),
                                                     t.clone(),
                                                 )))
                                                 .unwrap();
                                         }
-                                        HistoryFilterType::FunctionInBlock => {
+                                        HistoryFilterType::FunctionInBlock(block) => {
                                             self.channels
                                                 .0
                                                 .send(FullCommand::Filter(FilterType::History(
                                                     HistoryFilter::FunctionInBlock(
                                                         BlockType::from_string(
-                                                            &self.filter_history_fn_in_block,
+                                                            block,
                                                         ),
                                                     ),
                                                     t.clone(),
                                                 )))
                                                 .unwrap();
                                         }
-                                        HistoryFilterType::FunctionInLines => {
+                                        HistoryFilterType::FunctionInLines(line1, line2) => {
                                             let fn_in_lines = (
-                                                match self.filter_history_fn_in_lines.0.parse() {
+                                                match line1.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
                                                         self.status =
@@ -518,7 +487,7 @@ impl eframe::App for MyEguiApp {
                                                         return;
                                                     }
                                                 },
-                                                match self.filter_history_fn_in_lines.1.parse() {
+                                                match line2.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
                                                         self.status =
@@ -538,12 +507,13 @@ impl eframe::App for MyEguiApp {
                                                 )))
                                                 .unwrap();
                                         }
-                                        HistoryFilterType::FunctionInFunction => {
+                                        HistoryFilterType::FunctionInFunction(function) => {
                                             self.channels
                                                 .0
                                                 .send(FullCommand::Filter(FilterType::History(
                                                     HistoryFilter::FunctionInFunction(
-                                                        self.filter_history_fn_in_fn.clone(),
+                                                        function.to_string(),
+                                                    
                                                     ),
                                                     t.clone(),
                                                 )))
@@ -551,21 +521,6 @@ impl eframe::App for MyEguiApp {
                                         }
                                         HistoryFilterType::None => {}
                                     }
-                                    // clear these (part of self)
-                                    // filter_history_dates: String,
-                                    // filter_history_dates_range: (String, String),
-                                    // filter_history_commits: String,
-                                    // filter_history_fn_in_block: String,
-                                    // filter_history_fn_in_lines: (String, String),
-                                    // filter_history_fn_in_fn: String,
-                                    self.filter_history_dates = String::new();
-                                    self.filter_history_dates_range =
-                                        (String::new(), String::new());
-                                    self.filter_history_commits = String::new();
-                                    self.filter_history_fn_in_block = String::new();
-                                    self.filter_history_fn_in_lines =
-                                        (String::new(), String::new());
-                                    self.filter_history_fn_in_fn = String::new();
                                 }
                             }
                             CommandResult::Commit(_t, _) => {
@@ -586,6 +541,7 @@ impl eframe::App for MyEguiApp {
                         }
                     }
                     Command::Search => {
+                        // TODO: use the filetypes and searchfilter enums to hold the input buffers
                         ui.add(Label::new("Function Name:"));
                         ui.horizontal(|ui| {
                             // set the width of the input field
@@ -601,31 +557,31 @@ impl eframe::App for MyEguiApp {
                                 ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Relative,
+                                    FileTypeS::Relative(String::new()),
                                     "Relative",
                                 );
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Absolute,
+                                    FileTypeS::Absolute(String::new()),
                                     "Absolute",
                                 );
                             });
-                        match self.file_type {
+                        match &mut self.file_type {
                             FileTypeS::None => {}
-                            FileTypeS::Relative => {
+                            FileTypeS::Relative(abc) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(&mut self.file_input_rel));
+                                    ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            FileTypeS::Absolute => {
+                            FileTypeS::Absolute(atring) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(&mut self.file_input_abs));
+                                    ui.add(TextEdit::singleline(atring));
                                 });
                             }
                         }
@@ -636,43 +592,44 @@ impl eframe::App for MyEguiApp {
                                 ui.selectable_value(&mut self.filter, SearchFilter::None, "None");
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::CommitId,
+                                    SearchFilter::CommitId(String::new()),
                                     "Commit Hash",
                                 );
-                                ui.selectable_value(&mut self.filter, SearchFilter::Date, "Date");
+                                ui.selectable_value(&mut self.filter, SearchFilter::Date(String::new()), "Date");
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::DateRange,
+                                    SearchFilter::DateRange(String::new(), String::new()),
                                     "Date Range",
                                 );
                             });
-                        match self.filter {
+                        match &mut self.filter {
                             SearchFilter::None => {}
-                            SearchFilter::CommitId => {
+                            SearchFilter::CommitId(abc ) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(&mut self.search_filter_input_id));
+                                    ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            SearchFilter::Date => {
+                            SearchFilter::Date(date) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
                                     ui.add(TextEdit::singleline(
-                                        &mut self.search_filter_input_date,
+                                        date,
                                     ));
                                 });
                             }
-                            SearchFilter::DateRange => {
+                            SearchFilter::DateRange(start, end) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
                                     ui.add(TextEdit::singleline(
-                                        &mut self.search_filter_input_date_range.0,
+                                        start,
+                                    
                                     ));
                                 });
                                 ui.add(Label::new("-"));
@@ -681,33 +638,38 @@ impl eframe::App for MyEguiApp {
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
                                     ui.add(TextEdit::singleline(
-                                        &mut self.search_filter_input_date_range.1,
+                                        end,
+                                    
                                     ));
                                 });
                             }
                         }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            let file = match self.file_type {
+                            let file = match &mut self.file_type {
                                 FileTypeS::None => FileType::None,
-                                FileTypeS::Relative => {
-                                    FileType::Relative(self.file_input_rel.clone())
+                                FileTypeS::Relative(s) => {
+                                    let t = FileType::Relative(s.clone());
+                                    s.clear();
+                                    t
                                 }
-                                FileTypeS::Absolute => {
-                                    FileType::Absolute(self.file_input_abs.clone())
+                                FileTypeS::Absolute(s) => {
+                                    let t= FileType::Absolute(s.clone());
+                                    s.clear();
+                                    t
                                 }
                             };
-                            let filter = match self.filter {
+                            let filter = match &mut self.filter {
                                 SearchFilter::None => Filter::None,
-                                SearchFilter::CommitId => {
-                                    Filter::CommitId(self.search_filter_input_id.clone())
+                                SearchFilter::CommitId(s) => {
+                                    Filter::CommitId(s.clone())
                                 }
-                                SearchFilter::Date => {
-                                    Filter::Date(self.search_filter_input_date.clone())
+                                SearchFilter::Date(date) => {
+                                    Filter::Date(date.clone())
                                 }
-                                SearchFilter::DateRange => Filter::DateRange(
-                                    self.search_filter_input_date_range.0.clone(),
-                                    self.search_filter_input_date_range.1.clone(),
+                                SearchFilter::DateRange(date, scd) => Filter::DateRange(
+                                    date.clone(),
+                                    scd.clone(),
                                 ),
                             };
                             self.status = Status::Loading;
@@ -715,13 +677,7 @@ impl eframe::App for MyEguiApp {
                                 .0
                                 .send(FullCommand::Search(self.input_buffer.clone(), file, filter))
                                 .unwrap();
-                            self.input_buffer.clear();
-                            self.file_input_rel.clear();
-                            self.file_input_abs.clear();
-                            self.search_filter_input_id.clear();
-                            self.search_filter_input_date.clear();
-                            self.search_filter_input_date_range.0.clear();
-                            self.search_filter_input_date_range.1.clear();
+
                         }
                     }
                     Command::List => {
@@ -819,3 +775,4 @@ impl eframe::App for MyEguiApp {
         });
     }
 }
+
