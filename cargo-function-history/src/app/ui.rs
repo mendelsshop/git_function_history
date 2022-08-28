@@ -111,7 +111,7 @@ pub enum Status {
 }
 
 impl fmt::Display for Status {
-    fn fmt(&self, f: &mut fmt::Formatter::<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Status::Ok(s) => write!(f, "{}", s),
             Status::Error(s) => write!(f, "{}", s),

@@ -124,7 +124,7 @@ pub enum FilterType {
 #[derive(Debug, Clone)]
 pub enum CommmitFilterValue {
     Commit(CommitFunctions),
-    File(File)
+    File(File),
 }
 #[derive(Debug, Clone)]
 pub enum HistoryFilter {
