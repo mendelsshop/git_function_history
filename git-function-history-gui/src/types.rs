@@ -86,7 +86,7 @@ pub struct Index(pub usize, pub usize);
 pub enum FileTypeS {
     None,
     Absolute(String),
-    Relative(String)
+    Relative(String),
 }
 
 impl fmt::Display for FileTypeS {
@@ -161,7 +161,7 @@ impl fmt::Display for HistoryFilterType {
     }
 }
 
-#[derive(Debug, Clone,  PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CommitFilterType {
     FunctionInBlock(String),
     FunctionInLines(String, String),
