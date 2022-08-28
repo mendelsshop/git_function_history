@@ -119,7 +119,12 @@ impl fmt::Display for SearchFilter {
 #[derive(Debug, Clone)]
 pub enum FilterType {
     History(HistoryFilter, FunctionHistory),
-    CommitOrFile(CommitOrFileFilter, CommitFunctions),
+    CommitOrFile(CommitOrFileFilter, CommmitFilterValue),
+}
+#[derive(Debug, Clone)]
+pub enum CommmitFilterValue {
+    Commit(CommitFunctions),
+    File(File)
 }
 #[derive(Debug, Clone)]
 pub enum HistoryFilter {

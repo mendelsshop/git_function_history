@@ -1,3 +1,5 @@
+use std::fmt;
+
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
@@ -108,13 +110,13 @@ pub enum Status {
     Loading,
 }
 
-impl Status {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter::<'_>) -> fmt::Result {
         match self {
-            Status::Ok(s) => format!("Ok: {}", s),
-            Status::Error(s) => format!("Error: {}", s),
-            Status::Warning(s) => format!("Warning: {}", s),
-            Status::Loading => String::from("Loading..."),
+            Status::Ok(s) => write!(f, "{}", s),
+            Status::Error(s) => write!(f, "{}", s),
+            Status::Warning(s) => write!(f, "{}", s),
+            Status::Loading => write!(f, "Loading..."),
         }
     }
 }

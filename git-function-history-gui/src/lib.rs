@@ -3,7 +3,7 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Context, Layout, Sense, SidePanel},
+    egui::{self, Button, Context, Layout, Sense, SidePanel, Ui},
     epaint::Vec2,
 };
 use eframe::{
@@ -13,7 +13,7 @@ use eframe::{
 use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory};
 use types::{
     Command, CommandResult, CommitFilterType, FileTypeS, FilterType, FullCommand, HistoryFilter,
-    HistoryFilterType, Index, ListType, SearchFilter, Status,
+    HistoryFilterType, Index, ListType, SearchFilter, Status, CommitOrFileFilter, CommmitFilterValue,
 };
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
@@ -262,6 +262,132 @@ impl MyEguiApp {
         });
         Self::draw_commit((&history.0.history[history.1 .1], history.2), ctx, false);
     }
+
+    fn draw_commit_file_filter(&mut self, ui: &mut Ui, t: CommmitFilterValue, max: f32)
+
+        {
+         // Options
+                                // 1. function in block
+                                // 2. function in lines
+                                // 3. function in function
+                                egui::ComboBox::from_id_source("commit_combo_box").selected_text(self.commit_filter_type.to_string()).show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.commit_filter_type,
+                                        CommitFilterType::FunctionInFunction(String::new()),
+                                        "function with parent"
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.commit_filter_type,
+                                        CommitFilterType::FunctionInBlock(String::new()),
+                                        "function in block"
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.commit_filter_type,
+                                        CommitFilterType::FunctionInLines(String::new(), String::new()),
+                                        "function in lines"
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.commit_filter_type,
+                                        CommitFilterType::None,
+                                        "none"
+                                    );
+                                });
+                                match &mut self.commit_filter_type {
+                                    CommitFilterType::FunctionInBlock(block) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(block));
+                                        });
+                                    }
+                                    CommitFilterType::FunctionInLines(line1, line2) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(line1));
+                                        });
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(line2));
+                                        });
+                                    }
+                                    CommitFilterType::FunctionInFunction(function) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(function));
+                                        });
+                                    }
+                                    CommitFilterType::None => {
+                                        // do nothing
+                                    }
+                                }
+                                let resp = ui.add(Button::new("Go"));
+                                if resp.clicked() {
+                                    self.status = Status::Loading;
+                                    match &self.commit_filter_type {
+   
+                                        CommitFilterType::FunctionInBlock(block) => {
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::CommitOrFile(
+                                                    CommitOrFileFilter::FunctionInBlock(
+                                                        BlockType::from_string(block),
+                                                    ),
+                                                    t,
+                                                )))
+                                                .unwrap();
+                                        }
+                                        CommitFilterType::FunctionInLines(line1, line2) => {
+                                            let fn_in_lines = (
+                                                match line1.parse::<usize>() {
+                                                    Ok(x) => x,
+                                                    Err(e) => {
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
+                                                        return;
+                                                    }
+                                                },
+                                                match line2.parse::<usize>() {
+                                                    Ok(x) => x,
+                                                    Err(e) => {
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
+                                                        return;
+                                                    }
+                                                },
+                                            );
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::CommitOrFile(
+                                                    CommitOrFileFilter::FunctionInLines(
+                                                        fn_in_lines.0,
+                                                        fn_in_lines.1,
+                                                    ),
+                                                    t,
+                                                )))
+                                                .unwrap();
+                                        }
+                                        CommitFilterType::FunctionInFunction(function) => {
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::CommitOrFile(
+                                                    CommitOrFileFilter::FunctionInFunction(
+                                                        function.to_string(),
+                                                    ),
+                                                    t,
+                                                )))
+                                                .unwrap();
+                                        }
+                                        CommitFilterType::None => {}
+                                    }
+                                }
+    }
 }
 
 impl eframe::App for MyEguiApp {
@@ -508,17 +634,11 @@ impl eframe::App for MyEguiApp {
                                     }
                                 }
                             }
-                            CommandResult::Commit(_t, _) => {
-                                // Options
-                                // 1. function in block
-                                // 2. function in lines
-                                // 3. function in function
+                            CommandResult::Commit(t, _) => {
+                                self.draw_commit_file_filter(ui, CommmitFilterValue::Commit(t.clone()), max)
                             }
-                            CommandResult::File(_t) => {
-                                // Options
-                                // 1. function in block
-                                // 2. function in lines
-                                // 3. function in function
+                            CommandResult::File(t) => {
+                                self.draw_commit_file_filter(ui, CommmitFilterValue::File(t.clone()), max);
                             }
                             _ => {
                                 ui.add(Label::new("No filters available"));
