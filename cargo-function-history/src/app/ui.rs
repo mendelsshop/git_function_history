@@ -1,14 +1,12 @@
-use std::{fmt};
+use std::fmt;
 
+use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 use tui::{
     backend::Backend,
     text::{Span, Spans},
-};
-use tui::{
-    layout::{Alignment, Constraint, Direction, Layout},
 };
 
 use crate::app::App;

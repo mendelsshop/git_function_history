@@ -156,9 +156,9 @@ impl fmt::Display for CommandResult {
             CommandResult::String(string) => {
                 for line in string {
                     writeln!(f, "{}", line);
-                };
+                }
                 Ok(())
-            },
+            }
             CommandResult::None => {
                 write!(f, "Please enter some commands to search for a function",)
             }
