@@ -105,7 +105,7 @@ impl App {
         // println!("-{}-", command);
         let mut iter = command.trim().split(' ');
         // for s in iter.clone() {
-            // println!(r#"-{}-"#, s);
+        // println!(r#"-{}-"#, s);
         // }
         let cmd = iter.next();
         match cmd {
@@ -153,11 +153,9 @@ impl fmt::Display for CommandResult {
             CommandResult::History(history) => write!(f, "{}", history),
             CommandResult::Commit(commit) => write!(f, "{}", commit),
             CommandResult::File(file) => write!(f, "{}", file),
-            CommandResult::String(string) => {
-                Ok(for line in string {
-                    writeln!(f, "{}", line);
-                })
-            }
+            CommandResult::String(string) => Ok(for line in string {
+                writeln!(f, "{}", line);
+            }),
             CommandResult::None => {
                 write!(f, "Please enter some commands to search for a function",)
             }
