@@ -65,6 +65,7 @@ pub enum Key {
     Char(char),
     Ctrl(char),
     Alt(char),
+    Shift(char),
     Unknown,
 }
 
@@ -110,6 +111,7 @@ impl Display for Key {
             Key::Alt(c) => write!(f, "Alt+{}", c),
             Key::Ctrl(c) => write!(f, "Ctrl+{}", c),
             Key::Char(c) => write!(f, "{}", c),
+            Key::Shift(c) => write!(f, "Shift+{}", c),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -190,7 +192,11 @@ impl From<event::KeyEvent> for Key {
                 modifiers: event::KeyModifiers::CONTROL,
                 ..
             } => Key::Ctrl(c),
-
+            event::KeyEvent {
+                code: event::KeyCode::Char(c),
+                modifiers: event::KeyModifiers::SHIFT,
+                ..
+            } => Key::Shift(c),
             event::KeyEvent {
                 code: event::KeyCode::Char(c),
                 ..

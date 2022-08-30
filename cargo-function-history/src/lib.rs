@@ -4,8 +4,8 @@ use std::{cell::RefCell, time::Duration};
 
 use app::{App, AppReturn};
 use eyre::Result;
-use inputs::events::Events;
 use inputs::InputEvent;
+use inputs::{events::Events, key::Key};
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -30,7 +30,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         let mut app = app.borrow_mut();
 
         // Render
-        terminal.draw(|rect| ui::draw(rect, &app))?;
+        terminal.draw(|rect| ui::draw(rect, &mut app))?;
 
         // Handle inputs
         let result = match events.next()? {
@@ -40,6 +40,17 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Check if we should exit
         if result == AppReturn::Exit {
             break;
+        } else if let AppReturn::TextEdit(x, y) = result {
+            terminal.set_cursor(x, y)?;
+            crossterm::terminal::disable_raw_mode()?;
+            terminal.show_cursor()?;
+            let mut inputs = String::new();
+            std::io::stdin().read_line(&mut inputs)?;
+            crossterm::terminal::enable_raw_mode()?;
+            terminal.hide_cursor()?;
+            app.input_buffer.push_str(&inputs);
+            app.do_action(Key::Enter);
+            // crossterm::terminal::enable_raw_mode()?;
         }
     }
 
