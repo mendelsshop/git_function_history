@@ -1,16 +1,14 @@
-use std::{fmt, io::Stdout};
+use std::{fmt};
 
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 use tui::{
     backend::Backend,
-    backend::CrosstermBackend,
     text::{Span, Spans},
 };
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
-    Terminal,
 };
 
 use crate::app::App;
@@ -53,7 +51,7 @@ where
 
     let body = draw_body(&app.cmd_output, app.state());
     rect.render_widget(body, body_chunks[0]);
-    let input = draw_input(&app.input_buffer, app.state());
+    let input = draw_input(&app.input_buffer);
     rect.render_widget(input, body_chunks[1]);
     app.input_lines = (body_chunks[1].x, body_chunks[1].y);
     let status = draw_status(Status::Ok("hello".to_string()));
@@ -86,14 +84,7 @@ fn draw_main<'a>() -> Block<'a> {
         .style(Style::default().fg(Color::White))
 }
 
-fn draw_input<'a>(input: &'a str, state: &'a AppState) -> Paragraph<'a> {
-    match state {
-        AppState::Editing => {
-            // terminal.set_cursor(0, 0);
-            // terminal.show_cursor();
-        }
-        _ => {}
-    }
+fn draw_input(input: &str) -> Paragraph {
     Paragraph::new(vec![Spans::from(Span::raw(input))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
