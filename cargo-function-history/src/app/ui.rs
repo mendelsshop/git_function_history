@@ -83,7 +83,7 @@ fn draw_main<'a>() -> Block<'a> {
 }
 
 fn draw_input(input: &str) -> Paragraph {
-    Paragraph::new(vec![Spans::from(Span::raw(format!(":{}",input)))])
+    Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
             Block::default()

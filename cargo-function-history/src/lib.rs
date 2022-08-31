@@ -1,9 +1,16 @@
-use std::{io::{stdout, Write}, time::Instant, fs::{File, OpenOptions}};
 use std::rc::Rc;
-use std::{cell::RefCell, time::Duration, };
+use std::{cell::RefCell, time::Duration};
+use std::{
+    fs::{File, OpenOptions},
+    io::{stdout, Write},
+    time::Instant,
+};
 
-use app::{App, AppReturn, state::AppState};
-use crossterm::{terminal, event::{self, Event}};
+use app::{state::AppState, App, AppReturn};
+use crossterm::{
+    event::{self, Event},
+    terminal,
+};
 use eyre::Result;
 use inputs::InputEvent;
 use inputs::{events::Events, key::Key};
@@ -41,7 +48,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Check if we should exit
         if result == AppReturn::Exit {
             break;
-        } 
+        }
         // let mut f = OpenOptions::new()
         // .read(true)
         // .append(true)
@@ -64,32 +71,26 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                                 if app.input_buffer.len() > 0 {
                                     // app.input_lines.0 -= 1;
                                     app.input_buffer.pop();
-                                    
                                 }
                             }
                             Key::Char(c) => {
                                 // f.write(format!("{:?}", c).as_bytes())?;
                                 // app.input_lines.0 += 1;
                                 app.input_buffer.push(c);
-                                
                             }
                             Key::Esc => {
-                                
                                 app.state = AppState::Looking;
                             }
                             _ => {}
                         }
-
                     }
-                    None => {
-                    }
+                    None => {}
                 }
             }
-            _ => {
-            }
+            _ => {}
         }
     }
-    
+
     // Restore the terminal and close application
     terminal.clear()?;
     terminal.show_cursor()?;
