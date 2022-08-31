@@ -1,8 +1,9 @@
-use std::io::stdout;
+use std::{io::{stdout, Write}, time::Instant, fs::{File, OpenOptions}};
 use std::rc::Rc;
-use std::{cell::RefCell, time::Duration};
+use std::{cell::RefCell, time::Duration, };
 
-use app::{App, AppReturn};
+use app::{App, AppReturn, state::AppState};
+use crossterm::{terminal, event::{self, Event}};
 use eyre::Result;
 use inputs::InputEvent;
 use inputs::{events::Events, key::Key};
@@ -40,24 +41,80 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Check if we should exit
         if result == AppReturn::Exit {
             break;
-        } else if let AppReturn::TextEdit(x, y) = result {
-            terminal.set_cursor(x, y)?;
-            crossterm::terminal::disable_raw_mode()?;
-            terminal.show_cursor()?;
-            let mut inputs = String::new();
-            std::io::stdin().read_line(&mut inputs)?;
-            crossterm::terminal::enable_raw_mode()?;
-            terminal.hide_cursor()?;
-            app.input_buffer.push_str(&inputs);
-            app.do_action(Key::Enter);
-            // crossterm::terminal::enable_raw_mode()?;
+        } 
+        // let mut f = OpenOptions::new()
+        // .read(true)
+        // .append(true)
+        // // .create(true)
+        // .open("log").unwrap();
+        match &mut app.state() {
+            AppState::Editing => {
+                // f.write(format!("{:?}", app.input_lines).as_bytes()).unwrap();
+                terminal.set_cursor(app.input_lines.0, app.input_lines.1)?;
+                terminal.show_cursor()?;
+                match read_key(Duration::from_millis(2000)) {
+                    Some(key) => {
+                        match key {
+                            Key::Enter => {
+                                app.run_command();
+                                app.input_buffer.clear();
+                            }
+                            Key::Backspace => {
+                                // f.write("backspace".as_bytes())?;
+                                if app.input_buffer.len() > 0 {
+                                    // app.input_lines.0 -= 1;
+                                    app.input_buffer.pop();
+                                    
+                                }
+                            }
+                            Key::Char(c) => {
+                                // f.write(format!("{:?}", c).as_bytes())?;
+                                // app.input_lines.0 += 1;
+                                app.input_buffer.push(c);
+                                
+                            }
+                            Key::Esc => {
+                                
+                                app.state = AppState::Looking;
+                            }
+                            _ => {}
+                        }
+
+                    }
+                    None => {
+                    }
+                }
+            }
+            _ => {
+            }
         }
     }
-
+    
     // Restore the terminal and close application
     terminal.clear()?;
     terminal.show_cursor()?;
     crossterm::terminal::disable_raw_mode()?;
 
     Ok(())
+}
+
+fn read_key(timeout: Duration) -> Option<Key> {
+    struct RawModeGuard;
+    impl Drop for RawModeGuard {
+        fn drop(&mut self) {
+            terminal::disable_raw_mode().unwrap();
+        }
+    }
+
+    terminal::enable_raw_mode().unwrap();
+    let _guard = RawModeGuard;
+    let start = Instant::now();
+    let mut offset = Duration::ZERO;
+    while offset <= timeout && event::poll(timeout - offset).unwrap() {
+        if let Event::Key(event) = event::read().unwrap() {
+            return Some(Key::from(event));
+        }
+        offset = start.elapsed();
+    }
+    None
 }

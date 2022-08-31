@@ -14,18 +14,17 @@ pub mod ui;
 pub enum AppReturn {
     Exit,
     Continue,
-    Run,
-    TextEdit(u16, u16),
+    TextEdit,
 }
 
 /// The main application, containing the state
 pub struct App {
     is_loading: bool,
     actions: Actions,
-    state: AppState,
+    pub state: AppState,
     pub input_buffer: String,
     cmd_output: CommandResult,
-    input_lines: (u16, u16),
+    pub input_lines: (u16, u16),
 }
 
 impl App {
@@ -63,18 +62,18 @@ impl App {
             match action {
                 Action::Quit => AppReturn::Exit,
                 Action::Run => {
-                    let buf = self.input_buffer.clone();
                     self.input_buffer.clear();
                     self.is_loading = true;
-                    self.run_command(&buf);
+                    self.run_command();
                     AppReturn::Continue
                 }
                 Action::TextEdit => {
                     // println!("opening editor...");
                     self.state = AppState::Editing;
-                    self.is_loading = true;
+                    // self.is_loading = true;
                     // println!("opening editor...");
-                    AppReturn::TextEdit(self.input_lines.0, self.input_lines.1)
+                    // AppReturn::TextEdit(self.input_lines.0, self.input_lines.1)
+                    AppReturn::Continue
                 }
             }
         } else {
@@ -99,11 +98,11 @@ impl App {
     }
 
     // TODO: figure outt what to name ceach commnad and something based on that
-    pub fn run_command(&mut self, command: &str) {
+    pub fn run_command(&mut self) {
         let mut cmd_output = CommandResult::None;
         // iterate through the tha commnad by space
         // println!("-{}-", command);
-        let mut iter = command.trim().split(' ');
+        let mut iter = self.input_buffer.trim().split(' ');
         // for s in iter.clone() {
         // println!(r#"-{}-"#, s);
         // }
@@ -155,7 +154,7 @@ impl fmt::Display for CommandResult {
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {
                 for line in string {
-                    writeln!(f, "{}", line);
+                    writeln!(f, "{}", line)?;
                 }
                 Ok(())
             }

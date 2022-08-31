@@ -24,7 +24,7 @@ impl Action {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
             Action::Run => &[Key::Enter],
-            Action::TextEdit => &[Key::Char('e')],
+            Action::TextEdit => &[Key::Shift(':')],
         }
     }
 }
@@ -48,7 +48,6 @@ pub struct Actions(Vec<Action>);
 impl Actions {
     /// Given a key, find the corresponding action
     pub fn find(&self, key: Key) -> Option<&Action> {
-        // println!("{:?}", Action::iterator().collect::<Vec<_>>().iter().find(|a| a.keys().contains(&key)));
         Action::iterator()
             .filter(|action| self.0.contains(action))
             .find(|action| action.keys().contains(&key))
