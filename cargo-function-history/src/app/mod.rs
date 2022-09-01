@@ -1,10 +1,9 @@
-use git_function_history::{CommitFunctions, File, FunctionHistory};
-use std::fmt;
-
-use self::actions::Actions;
 use self::state::AppState;
-use crate::app::actions::Action;
-use crate::inputs::key::Key;
+use self::{actions::Actions, ui::Status};
+use crate::{inputs::key::Key, types::ListType};
+use crate::{app::actions::Action, types::FullCommand};
+use git_function_history::{CommitFunctions, File, FunctionHistory};
+use std::{fmt, sync::mpsc, time::Duration};
 
 pub mod actions;
 pub mod state;
@@ -18,21 +17,30 @@ pub enum AppReturn {
 
 /// The main application, containing the state
 pub struct App {
-    is_loading: bool,
     actions: Actions,
     state: AppState,
     input_buffer: String,
     cmd_output: CommandResult,
     pub scroll_pos: (u16, u16),
     pub body_height: u16,
-    // input_buffer_pos: u16,
     pub text_scroll_pos: (u16, u16),
     pub input_width: u16,
+    channels: (
+        mpsc::Sender<FullCommand>,
+        mpsc::Receiver<(CommandResult, Status)>,
+    ),
+    status: Status,
 }
 
 impl App {
     #[allow(clippy::new_without_default)]
-    pub fn new(history: Option<FunctionHistory>) -> Self {
+    pub fn new(
+        history: Option<FunctionHistory>,
+        channels: (
+            mpsc::Sender<FullCommand>,
+            mpsc::Receiver<(CommandResult, Status)>,
+        ),
+    ) -> Self {
         let actions = vec![
             Action::Quit,
             Action::TextEdit,
@@ -45,34 +53,33 @@ impl App {
             Some(history) => Self {
                 actions,
                 state,
-                is_loading: false,
                 input_buffer: String::new(),
                 cmd_output: CommandResult::History(history),
                 scroll_pos: (0, 0),
                 body_height: 0,
-                // input_buffer_pos: 0,
                 text_scroll_pos: (0, 0),
                 input_width: 0,
+                channels,
+                status: Status::Ok(None),
             },
             None => Self {
                 actions,
                 state,
-                is_loading: false,
                 input_buffer: String::new(),
                 cmd_output: CommandResult::None,
                 scroll_pos: (0, 0),
                 body_height: 0,
-                // input_buffer_pos: 0,
                 text_scroll_pos: (0, 0),
                 input_width: 0,
+                channels,
+                status: Status::Ok(None),
             },
         }
     }
 
-    pub fn is_loading(&self) -> bool {
-        self.is_loading
+    pub fn status(&self) -> &Status {
+        &self.status
     }
-
     /// Handle a user action
     pub fn do_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
@@ -189,11 +196,13 @@ impl App {
                 "list" => match iter.next() {
                     Some(arg) => match arg {
                         "dates" => {
-                            cmd_output = CommandResult::String(
-                                git_function_history::get_git_dates().unwrap(),
-                            )
+                            self.status = Status::Loading;
+                            self.channels.0.send(FullCommand::List(ListType::Dates)).unwrap();
                         }
-                        "commits" => {}
+                        "commits" => {
+                            self.status = Status::Loading;
+                            self.channels.0.send(FullCommand::List(ListType::Commits)).unwrap();
+                        }
                         _ => {}
                     },
                     None => {}
@@ -209,6 +218,28 @@ impl App {
         }
 
         self.cmd_output = cmd_output;
+    }
+
+    pub fn get_result(&mut self)  {
+        match self.channels.1.recv_timeout(Duration::from_millis(100)) {
+            Ok(timeout) => match timeout {
+                (_, Status::Error(e)) => {
+                    self.status = Status::Error(e);
+                }
+                (t, Status::Ok(msg)) => {
+                    // TODO: clear all the old positioning/scrolling data
+                    self.status = Status::Ok(msg);
+                    self.cmd_output = t;
+                }
+                _ => {}
+            },
+            Err(e) => match e {
+                mpsc::RecvTimeoutError::Timeout => {}
+                mpsc::RecvTimeoutError::Disconnected => {
+                    panic!("Thread Channel Disconnected");
+                }
+            },
+        }
     }
 }
 

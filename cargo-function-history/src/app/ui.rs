@@ -47,12 +47,13 @@ where
         )
         .split(whole_chunks);
     app.body_height = body_chunks[0].height;
+    app.get_result();
     let body = draw_body(&app.cmd_output, app.state(), app.scroll_pos);
     rect.render_widget(body, body_chunks[0]);
     app.input_width = body_chunks[1].width;
     let input = draw_input(&app.input_buffer, app.state(), app.text_scroll_pos);
     rect.render_widget(input, body_chunks[1]);
-    let status = draw_status(Status::Ok("hello".to_string()));
+    let status = draw_status(app.status());
     rect.render_widget(status, body_chunks[2]);
 }
 
@@ -107,7 +108,7 @@ fn draw_input<'a>(input: &'a str, status: &'a AppState, scroll_pos: (u16, u16)) 
     }
 }
 
-fn draw_status<'a>(status: Status) -> Paragraph<'a> {
+fn draw_status<'a>(status: &Status) -> Paragraph<'a> {
     Paragraph::new(vec![Spans::from(Span::raw(status.to_string()))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
@@ -119,7 +120,7 @@ fn draw_status<'a>(status: Status) -> Paragraph<'a> {
 }
 
 pub enum Status {
-    Ok(String),
+    Ok(Option<String>),
     Error(String),
     Warning(String),
     Loading,
@@ -128,7 +129,10 @@ pub enum Status {
 impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Status::Ok(s) => write!(f, "Ok {}", s),
+            Status::Ok(s) => match s {
+                Some(s) => write!(f, "Ok: {}", s),
+                None => write!(f, "Ok"),    
+            }
             Status::Error(s) => write!(f, "Err {}", s),
             Status::Warning(s) => write!(f, "Warn {}", s),
             Status::Loading => write!(f, "Loading..."),

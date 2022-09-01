@@ -14,6 +14,7 @@ use crate::app::ui;
 
 pub mod app;
 pub mod inputs;
+pub mod types;
 pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
     // Configure Crossterm backend for tui
     let stdout = stdout();
