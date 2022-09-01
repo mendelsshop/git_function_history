@@ -1,8 +1,7 @@
 use std::rc::Rc;
 use std::{cell::RefCell, time::Duration};
 use std::{
-    fs::{File, OpenOptions},
-    io::{stdout, Write},
+    io::stdout,
     time::Instant,
 };
 
@@ -41,25 +40,11 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         terminal.draw(|rect| ui::draw(rect, &mut app))?;
 
         // Handle inputs
-        let result = match events.next()? {
-            InputEvent::Input(key) => app.do_action(key),
-            InputEvent::Tick => AppReturn::Continue,
-        };
-        // Check if we should exit
-        if result == AppReturn::Exit {
-            break;
-        }
-        // let mut f = OpenOptions::new()
-        // .read(true)
-        // .append(true)
-        // // .create(true)
-        // .open("log").unwrap();
         match &mut app.state() {
             AppState::Editing => {
-                // f.write(format!("{:?}", app.input_lines).as_bytes()).unwrap();
                 terminal.set_cursor(app.input_lines.0, app.input_lines.1)?;
                 terminal.show_cursor()?;
-                match read_key(Duration::from_millis(2000)) {
+                match read_key(Duration::from_millis(1000)) {
                     Some(key) => {
                         match key {
                             Key::Enter => {
@@ -67,15 +52,11 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                                 app.input_buffer.clear();
                             }
                             Key::Backspace => {
-                                // f.write("backspace".as_bytes())?;
-                                if app.input_buffer.len() > 0 {
-                                    // app.input_lines.0 -= 1;
+                                if !app.input_buffer.is_empty() {
                                     app.input_buffer.pop();
                                 }
                             }
                             Key::Char(c) => {
-                                // f.write(format!("{:?}", c).as_bytes())?;
-                                // app.input_lines.0 += 1;
                                 app.input_buffer.push(c);
                             }
                             Key::Esc => {
@@ -84,10 +65,21 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                             _ => {}
                         }
                     }
-                    None => {}
+                    None => {
+                        
+                    }
                 }
             }
-            _ => {}
+            _ => {
+                let result = match events.next()? {
+                    InputEvent::Input(key) => app.do_action(key),
+                    InputEvent::Tick => AppReturn::Continue,
+                };
+                // Check if we should exit
+                if result == AppReturn::Exit {
+                    break;
+                }
+            }
         }
     }
 
