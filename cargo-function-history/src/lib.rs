@@ -1,12 +1,12 @@
+use std::io::stdout;
 use std::rc::Rc;
 use std::{cell::RefCell, time::Duration};
-use std::{io::stdout};
 
 use app::{state::AppState, App, AppReturn};
 
 use eyre::Result;
+use inputs::events::Events;
 use inputs::InputEvent;
-use inputs::{events::Events};
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -36,7 +36,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Handle inputs
         match &mut app.state() {
             AppState::Editing => {
-                 match events.next()? {
+                match events.next()? {
                     InputEvent::Input(key) => app.do_edit_action(key),
                     InputEvent::Tick => {}
                 };

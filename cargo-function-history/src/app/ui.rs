@@ -83,10 +83,11 @@ fn draw_main<'a>() -> Block<'a> {
         .style(Style::default().fg(Color::White))
 }
 
-fn draw_input<'a>(input: &'a str, status: &'a AppState,scroll_pos: (u16, u16) ) -> Paragraph<'a> {
+fn draw_input<'a>(input: &'a str, status: &'a AppState, scroll_pos: (u16, u16)) -> Paragraph<'a> {
     // TODO: make that the : (colon) stays at the beginning of the line at all times even when scrolling
     match status {
-        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))]).scroll(scroll_pos)
+        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
+            .scroll(scroll_pos)
             .style(Style::default().fg(Color::LightCyan))
             .block(
                 Block::default()
@@ -94,7 +95,8 @@ fn draw_input<'a>(input: &'a str, status: &'a AppState,scroll_pos: (u16, u16) ) 
                     .borders(Borders::BOTTOM)
                     .style(Style::default().fg(Color::White)),
             ),
-        _ => Paragraph::new(vec![Spans::from(Span::raw(input))]).scroll(scroll_pos)
+        _ => Paragraph::new(vec![Spans::from(Span::raw(input))])
+            .scroll(scroll_pos)
             .style(Style::default().fg(Color::LightCyan))
             .block(
                 Block::default()

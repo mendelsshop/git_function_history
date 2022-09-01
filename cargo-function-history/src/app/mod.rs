@@ -119,7 +119,6 @@ impl App {
                 self.input_buffer.push_str("    ");
                 if self.input_width < self.input_buffer.len() as u16 {
                     self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-    
                 }
             }
             Key::Char(c) => {
@@ -133,19 +132,16 @@ impl App {
                 if self.input_width < self.input_buffer.len() as u16 {
                     self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
                 }
-        }
-        Key::Backspace => {
-            if !self.input_buffer.is_empty() {
-                self.input_buffer.pop();
             }
-            // check if we need to scroll back
-            if self.input_width > self.input_buffer.len() as u16 && self.text_scroll_pos.1 > 0 {
-                self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-                
-
-                
+            Key::Backspace => {
+                if !self.input_buffer.is_empty() {
+                    self.input_buffer.pop();
+                }
+                // check if we need to scroll back
+                if self.input_width > self.input_buffer.len() as u16 && self.text_scroll_pos.1 > 0 {
+                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
+                }
             }
-        }
             Key::Left => {
                 if usize::from(self.text_scroll_pos.1) < self.input_buffer.len() {
                     self.text_scroll_pos.1 += 1;
