@@ -20,12 +20,14 @@ pub enum AppReturn {
 pub struct App {
     is_loading: bool,
     actions: Actions,
-    pub state: AppState,
-    pub input_buffer: String,
+    state: AppState,
+    input_buffer: String,
     cmd_output: CommandResult,
-    pub input_lines: (u16, u16),
     pub scroll_pos: (u16, u16),
     pub body_height: u16,
+    // input_buffer_pos: u16,
+    pub text_scroll_pos: (u16, u16),
+    pub input_width: u16,
 }
 
 impl App {
@@ -46,9 +48,11 @@ impl App {
                 is_loading: false,
                 input_buffer: String::new(),
                 cmd_output: CommandResult::History(history),
-                input_lines: (0, 0),
                 scroll_pos: (0, 0),
                 body_height: 0,
+                // input_buffer_pos: 0,
+                text_scroll_pos: (0, 0),
+                input_width: 0,
             },
             None => Self {
                 actions,
@@ -56,9 +60,11 @@ impl App {
                 is_loading: false,
                 input_buffer: String::new(),
                 cmd_output: CommandResult::None,
-                input_lines: (0, 0),
                 scroll_pos: (0, 0),
                 body_height: 0,
+                // input_buffer_pos: 0,
+                text_scroll_pos: (0, 0),
+                input_width: 0,
             },
         }
     }
@@ -95,6 +101,66 @@ impl App {
             }
         } else {
             AppReturn::Continue
+        }
+    }
+
+    pub fn do_edit_action(&mut self, key: Key) {
+        // TODO: figyure ohow to handle the one extra character that doesnt get sohwn
+        match key {
+            Key::Esc => {
+                self.state = AppState::Looking;
+            }
+            Key::Enter => {
+                self.run_command();
+                self.input_buffer.clear();
+            }
+
+            Key::Tab => {
+                self.input_buffer.push_str("    ");
+                if self.input_width < self.input_buffer.len() as u16 {
+                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
+    
+                }
+            }
+            Key::Char(c) => {
+                self.input_buffer.push(c);
+                if self.input_width < self.input_buffer.len() as u16 {
+                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
+                }
+            }
+            Key::Shift(c) => {
+                self.input_buffer.push(c.to_ascii_uppercase());
+                if self.input_width < self.input_buffer.len() as u16 {
+                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
+                }
+        }
+        Key::Backspace => {
+            if !self.input_buffer.is_empty() {
+                self.input_buffer.pop();
+            }
+            // check if we need to scroll back
+            if self.input_width > self.input_buffer.len() as u16 && self.text_scroll_pos.1 > 0 {
+                self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
+                
+
+                
+            }
+        }
+            Key::Left => {
+                if usize::from(self.text_scroll_pos.1) < self.input_buffer.len() {
+                    self.text_scroll_pos.1 += 1;
+                }
+            }
+            Key::Right => {
+                if self.text_scroll_pos.1 > 0 {
+                    self.text_scroll_pos.1 -= 1;
+                }
+            }
+            Key::Delete => {
+                self.input_buffer.clear();
+                self.text_scroll_pos.1 = 0;
+            }
+            _ => {}
         }
     }
 

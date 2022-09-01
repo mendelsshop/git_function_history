@@ -46,13 +46,12 @@ where
             .as_ref(),
         )
         .split(whole_chunks);
-
+    app.body_height = body_chunks[0].height;
     let body = draw_body(&app.cmd_output, app.state(), app.scroll_pos);
     rect.render_widget(body, body_chunks[0]);
-    app.body_height = body_chunks[0].height;
-    let input = draw_input(&app.input_buffer, app.state());
+    app.input_width = body_chunks[1].width;
+    let input = draw_input(&app.input_buffer, app.state(), app.text_scroll_pos);
     rect.render_widget(input, body_chunks[1]);
-    app.input_lines = (body_chunks[1].x, body_chunks[1].y);
     let status = draw_status(Status::Ok("hello".to_string()));
     rect.render_widget(status, body_chunks[2]);
 }
@@ -84,9 +83,10 @@ fn draw_main<'a>() -> Block<'a> {
         .style(Style::default().fg(Color::White))
 }
 
-fn draw_input<'a>(input: &'a str, status: &'a AppState) -> Paragraph<'a> {
+fn draw_input<'a>(input: &'a str, status: &'a AppState,scroll_pos: (u16, u16) ) -> Paragraph<'a> {
+    // TODO: make that the : (colon) stays at the beginning of the line at all times even when scrolling
     match status {
-        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
+        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))]).scroll(scroll_pos)
             .style(Style::default().fg(Color::LightCyan))
             .block(
                 Block::default()
@@ -94,7 +94,7 @@ fn draw_input<'a>(input: &'a str, status: &'a AppState) -> Paragraph<'a> {
                     .borders(Borders::BOTTOM)
                     .style(Style::default().fg(Color::White)),
             ),
-        _ => Paragraph::new(vec![Spans::from(Span::raw(input))])
+        _ => Paragraph::new(vec![Spans::from(Span::raw(input))]).scroll(scroll_pos)
             .style(Style::default().fg(Color::LightCyan))
             .block(
                 Block::default()
