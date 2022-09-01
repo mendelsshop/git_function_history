@@ -2,7 +2,11 @@ use std::{
     cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc, thread, time::Duration,
 };
 
-use cargo_function_history::{app::{App, CommandResult, ui::Status}, start_ui, types::{HistoryFilter, FullCommand, FilterType, ListType}};
+use cargo_function_history::{
+    app::{ui::Status, App, CommandResult},
+    start_ui,
+    types::{FilterType, FullCommand, HistoryFilter, ListType},
+};
 use git_function_history::get_function_history;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -102,11 +106,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 };
                                 // println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(
-                                        functions,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(functions),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -123,9 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 match history.get_by_date(&date) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(
-                                                functions.clone(),
-                                            ),
+                                            CommandResult::Commit(functions.clone()),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -146,10 +144,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 match history.get_by_commit_id(&commit) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(
-                                                functions.clone(),
-                                                
-                                            ),
+                                            CommandResult::Commit(functions.clone()),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -176,11 +171,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 };
                                 // println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -195,11 +186,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 };
                                 // println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -214,11 +201,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 };
                                 // println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -233,11 +216,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 };
                                 // println!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();

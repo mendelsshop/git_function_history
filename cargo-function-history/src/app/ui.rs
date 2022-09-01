@@ -131,8 +131,8 @@ impl fmt::Display for Status {
         match self {
             Status::Ok(s) => match s {
                 Some(s) => write!(f, "Ok: {}", s),
-                None => write!(f, "Ok"),    
-            }
+                None => write!(f, "Ok"),
+            },
             Status::Error(s) => write!(f, "Err {}", s),
             Status::Warning(s) => write!(f, "Warn {}", s),
             Status::Loading => write!(f, "Loading..."),

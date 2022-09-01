@@ -1,7 +1,7 @@
 use self::state::AppState;
 use self::{actions::Actions, ui::Status};
-use crate::{inputs::key::Key, types::ListType};
 use crate::{app::actions::Action, types::FullCommand};
+use crate::{inputs::key::Key, types::ListType};
 use git_function_history::{CommitFunctions, File, FunctionHistory};
 use std::{fmt, sync::mpsc, time::Duration};
 
@@ -197,11 +197,17 @@ impl App {
                     Some(arg) => match arg {
                         "dates" => {
                             self.status = Status::Loading;
-                            self.channels.0.send(FullCommand::List(ListType::Dates)).unwrap();
+                            self.channels
+                                .0
+                                .send(FullCommand::List(ListType::Dates))
+                                .unwrap();
                         }
                         "commits" => {
                             self.status = Status::Loading;
-                            self.channels.0.send(FullCommand::List(ListType::Commits)).unwrap();
+                            self.channels
+                                .0
+                                .send(FullCommand::List(ListType::Commits))
+                                .unwrap();
                         }
                         _ => {}
                     },
@@ -220,7 +226,7 @@ impl App {
         self.cmd_output = cmd_output;
     }
 
-    pub fn get_result(&mut self)  {
+    pub fn get_result(&mut self) {
         match self.channels.1.recv_timeout(Duration::from_millis(100)) {
             Ok(timeout) => match timeout {
                 (_, Status::Error(e)) => {
