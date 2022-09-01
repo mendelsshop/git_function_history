@@ -1,5 +1,5 @@
-use std::fmt;
 use git_function_history::{CommitFunctions, File, FunctionHistory};
+use std::fmt;
 
 use self::actions::Actions;
 use self::state::AppState;
@@ -25,13 +25,19 @@ pub struct App {
     cmd_output: CommandResult,
     pub input_lines: (u16, u16),
     pub scroll_pos: (u16, u16),
-    pub body_height: u16
+    pub body_height: u16,
 }
 
 impl App {
     #[allow(clippy::new_without_default)]
     pub fn new(history: Option<FunctionHistory>) -> Self {
-        let actions = vec![Action::Quit, Action::TextEdit, Action::ScrollDown, Action::ScrollUp].into();
+        let actions = vec![
+            Action::Quit,
+            Action::TextEdit,
+            Action::ScrollDown,
+            Action::ScrollUp,
+        ]
+        .into();
         let state = AppState::initialized();
         match history {
             Some(history) => Self {
@@ -42,7 +48,7 @@ impl App {
                 cmd_output: CommandResult::History(history),
                 input_lines: (0, 0),
                 scroll_pos: (0, 0),
-                body_height: 0
+                body_height: 0,
             },
             None => Self {
                 actions,
@@ -52,7 +58,7 @@ impl App {
                 cmd_output: CommandResult::None,
                 input_lines: (0, 0),
                 scroll_pos: (0, 0),
-                body_height: 0
+                body_height: 0,
             },
         }
     }
@@ -77,7 +83,7 @@ impl App {
                     self.scroll_pos.0 -= 1;
                     AppReturn::Continue
                 }
-                Action::ScrollDown => { 
+                Action::ScrollDown => {
                     let ot = self.scroll_pos.0 + self.body_height;
                     // check if there is enough body_height that we dont need to scroll more
                     if usize::from(ot) >= self.cmd_output().len() {
@@ -85,7 +91,6 @@ impl App {
                     }
                     self.scroll_pos.0 += 1;
                     AppReturn::Continue
-               
                 }
             }
         } else {
@@ -160,7 +165,7 @@ impl CommandResult {
             CommandResult::Commit(commit) => commit.to_string().len(),
             CommandResult::File(file) => file.to_string().len(),
             CommandResult::String(str) => str.len(),
-            CommandResult::None => 0
+            CommandResult::None => 0,
         }
     }
 }

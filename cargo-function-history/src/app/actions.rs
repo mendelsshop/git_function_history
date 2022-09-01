@@ -16,7 +16,12 @@ pub enum Action {
 impl Action {
     /// All available actions
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 4] = [Action::Quit, Action::TextEdit, Action::ScrollUp, Action::ScrollDown];
+        static ACTIONS: [Action; 4] = [
+            Action::Quit,
+            Action::TextEdit,
+            Action::ScrollUp,
+            Action::ScrollDown,
+        ];
         ACTIONS.iter()
     }
 

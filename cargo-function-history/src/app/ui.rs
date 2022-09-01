@@ -65,7 +65,8 @@ fn draw_body<'a>(file: &CommandResult, _state: &AppState, scroll_pos: (u16, u16)
         .collect();
 
     Paragraph::new(tick_text)
-        .style(Style::default().fg(Color::LightCyan)).scroll(scroll_pos)
+        .style(Style::default().fg(Color::LightCyan))
+        .scroll(scroll_pos)
         .block(
             Block::default()
                 .borders(Borders::TOP)
@@ -85,16 +86,14 @@ fn draw_main<'a>() -> Block<'a> {
 
 fn draw_input<'a>(input: &'a str, status: &'a AppState) -> Paragraph<'a> {
     match status {
-        AppState::Editing => {
-            Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
+        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
             .style(Style::default().fg(Color::LightCyan))
             .block(
                 Block::default()
                     .borders(Borders::TOP)
                     .borders(Borders::BOTTOM)
                     .style(Style::default().fg(Color::White)),
-            )
-        }
+            ),
         _ => Paragraph::new(vec![Spans::from(Span::raw(input))])
             .style(Style::default().fg(Color::LightCyan))
             .block(
@@ -104,7 +103,6 @@ fn draw_input<'a>(input: &'a str, status: &'a AppState) -> Paragraph<'a> {
                     .style(Style::default().fg(Color::White)),
             ),
     }
-
 }
 
 fn draw_status<'a>(status: Status) -> Paragraph<'a> {
