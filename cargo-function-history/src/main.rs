@@ -1,11 +1,6 @@
-use std::{
-    cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc,
-};
+use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc};
 
-use cargo_function_history::{
-    app::App, 
-    start_ui,
-};
+use cargo_function_history::{app::App, start_ui};
 use git_function_history::get_function_history;
 
 fn main() -> Result<(), Box<dyn Error>> {
