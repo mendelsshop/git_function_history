@@ -74,21 +74,22 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                 Err(a) => {
                     match a {
                         RecvTimeoutError::Timeout => {
-                            // // println!("thread timeout");
+                            log::trace!("thread timeout");
                         }
                         RecvTimeoutError::Disconnected => {
+                            log::warn!("thread disconnected");
                             panic!("channel disconnected");
                         }
                     }
                 }
                 Ok(msg) => match msg {
                     FullCommand::List(list_type) => {
-                        // println!("list");
+                        log::info!("list");
                         match list_type {
                             ListType::Commits => {
                                 match git_function_history::get_git_commits() {
                                     Ok(commits) => {
-                                        // println!("found {} commits", commits.len());
+                                        log::info!("found {} commits", commits.len());
                                         tx_t.send((
                                             CommandResult::String(commits),
                                             Status::Ok(Some("Found commits dates".to_string())),
@@ -107,7 +108,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                             ListType::Dates => {
                                 match git_function_history::get_git_dates() {
                                     Ok(dates) => {
-                                        // println!("found {} dates", dates.len());
+                                        log::info!("found {} dates", dates.len());
                                         tx_t.send((
                                             CommandResult::String(dates),
                                             Status::Ok(Some("Found dates".to_string())),
@@ -126,7 +127,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                         }
                     }
                     FullCommand::Search(name, file, filter) => {
-                        // println!("Searching for {} in {:?}", name, file);
+                        log::info!("Searching for {} in {:?}", name, file);
                         match get_function_history(&name, file, filter) {
                             Ok(functions) => {
                                 let hist_len = functions.history.len();
@@ -135,7 +136,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 } else {
                                     0
                                 };
-                                // println!("Found functions",);
+                                log::info!("Found functions",);
                                 tx_t.send((
                                     CommandResult::History(functions),
                                     Status::Ok(Some("Found functions".to_string())),
@@ -200,7 +201,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 } else {
                                     0
                                 };
-                                // println!("Found functions",);
+                                log::info!("Found functions",);
                                 tx_t.send((
                                     CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
@@ -215,7 +216,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 } else {
                                     0
                                 };
-                                // println!("Found functions",);
+                                log::info!("Found functions",);
                                 tx_t.send((
                                     CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
@@ -230,7 +231,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 } else {
                                     0
                                 };
-                                // println!("Found functions",);
+                                log::info!("Found functions",);
                                 tx_t.send((
                                     CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
@@ -245,7 +246,7 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 } else {
                                     0
                                 };
-                                // println!("Found functions",);
+                                log::info!("Found functions",);
                                 tx_t.send((
                                     CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),

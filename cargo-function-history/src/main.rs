@@ -2,6 +2,7 @@ use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc};
 
 use cargo_function_history::{app::App, start_ui};
 use git_function_history::get_function_history;
+use log::info;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let config = parse_args();
@@ -26,6 +27,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
         },
     };
+    simple_file_logger::init_logger("cargo_function_history", None)?;
+    info!("Starting cargo function history");
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
     cargo_function_history::command_thread(rx_t, tx_t);
