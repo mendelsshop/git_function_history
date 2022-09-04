@@ -71,17 +71,15 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
         loop {
             // TODO: change all the commented out println! to log
             match rx_t.recv_timeout(Duration::from_millis(100)) {
-                Err(a) => {
-                    match a {
-                        RecvTimeoutError::Timeout => {
-                            log::trace!("thread timeout");
-                        }
-                        RecvTimeoutError::Disconnected => {
-                            log::warn!("thread disconnected");
-                            panic!("channel disconnected");
-                        }
+                Err(a) => match a {
+                    RecvTimeoutError::Timeout => {
+                        log::trace!("thread timeout");
                     }
-                }
+                    RecvTimeoutError::Disconnected => {
+                        log::warn!("thread disconnected");
+                        panic!("channel disconnected");
+                    }
+                },
                 Ok(msg) => match msg {
                     FullCommand::List(list_type) => {
                         log::info!("list");
