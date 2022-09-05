@@ -136,9 +136,11 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(functions,
+                                    CommandResult::History(
+                                        functions,
                                         Index(hist_len, 0),
-                                        Index(commit_len, 0),),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -155,8 +157,10 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 match history.get_by_date(&date) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(functions.clone(),
-                                            Index(functions.functions.len(), 0),),
+                                            CommandResult::Commit(
+                                                functions.clone(),
+                                                Index(functions.functions.len(), 0),
+                                            ),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -177,8 +181,10 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 match history.get_by_commit_id(&commit) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(functions.clone(),
-                                            Index(functions.functions.len(), 0)),
+                                            CommandResult::Commit(
+                                                functions.clone(),
+                                                Index(functions.functions.len(), 0),
+                                            ),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -205,8 +211,11 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t,                                         Index(hist_len, 0),
-                                    Index(commit_len, 0),),
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -221,8 +230,11 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t,                                         Index(hist_len, 0),
-                                    Index(commit_len, 0),),
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -237,9 +249,11 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t,
+                                    CommandResult::History(
+                                        t,
                                         Index(hist_len, 0),
-                                        Index(commit_len, 0),),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -254,8 +268,11 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t, Index(hist_len, 0),
-                                    Index(commit_len, 0),),
+                                    CommandResult::History(
+                                        t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),
+                                    ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();

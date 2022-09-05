@@ -1,6 +1,9 @@
 use self::state::AppState;
 use self::{actions::Actions, ui::Status};
-use crate::{app::actions::Action, types::{FullCommand, Index}};
+use crate::{
+    app::actions::Action,
+    types::{FullCommand, Index},
+};
 use crate::{inputs::key::Key, types::ListType};
 use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
 use std::{fmt, sync::mpsc, time::Duration};
@@ -54,27 +57,30 @@ impl App {
         .into();
         let state = AppState::initialized();
         match history {
-            Some(history) =>{
+            Some(history) => {
                 let hist_len = history.history.len();
                 let commit_len = if hist_len > 0 {
                     history.history[0].functions.len()
                 } else {
                     0
                 };
-                 Self {
-                actions,
-                state,
-                input_buffer: String::new(),
-                cmd_output: CommandResult::History(history,
-                    Index(hist_len, 0),
-                    Index(commit_len, 0),),
-                scroll_pos: (0, 0),
-                body_height: 0,
-                text_scroll_pos: (0, 0),
-                input_width: 0,
-                channels,
-                status: Status::Ok(None),
-            }},
+                Self {
+                    actions,
+                    state,
+                    input_buffer: String::new(),
+                    cmd_output: CommandResult::History(
+                        history,
+                        Index(hist_len, 0),
+                        Index(commit_len, 0),
+                    ),
+                    scroll_pos: (0, 0),
+                    body_height: 0,
+                    text_scroll_pos: (0, 0),
+                    input_width: 0,
+                    channels,
+                    status: Status::Ok(None),
+                }
+            }
             None => Self {
                 actions,
                 state,
@@ -422,7 +428,6 @@ impl App {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub enum CommandResult {
     History(FunctionHistory, Index, Index),
@@ -453,7 +458,9 @@ impl CommandResult {
 impl fmt::Display for CommandResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CommandResult::History(history, t1, t2) => write!(f, "{}", history.history[t1.1].functions[t2.1]),
+            CommandResult::History(history, t1, t2) => {
+                write!(f, "{}", history.history[t1.1].functions[t2.1])
+            }
             CommandResult::Commit(commit, t) => write!(f, "{}", commit.functions[t.1]),
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {

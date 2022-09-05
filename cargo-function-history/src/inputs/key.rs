@@ -134,7 +134,7 @@ impl From<event::KeyEvent> for Key {
                 code: event::KeyCode::Left,
                 modifiers: event::KeyModifiers::SHIFT,
                 ..
-            } => Key::Shiftleft,         
+            } => Key::Shiftleft,
             event::KeyEvent {
                 code: event::KeyCode::Left,
                 ..
