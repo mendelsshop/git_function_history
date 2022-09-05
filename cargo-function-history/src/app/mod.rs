@@ -2,7 +2,7 @@ use self::state::AppState;
 use self::{actions::Actions, ui::Status};
 use crate::{app::actions::Action, types::FullCommand};
 use crate::{inputs::key::Key, types::ListType};
-use git_function_history::{CommitFunctions, File, FunctionHistory, FileType, Filter};
+use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
 use std::{fmt, sync::mpsc, time::Duration};
 
 pub mod actions;
@@ -201,76 +201,39 @@ impl App {
                                 // if there is no next arg then we are searching for a function
                                 // with the given name
                                 self.status = Status::Loading;
-                                self.channels.0.send(FullCommand::Search(name.to_string(), FileType::None, Filter::None)).unwrap(); 
+                                self.channels
+                                    .0
+                                    .send(FullCommand::Search(
+                                        name.to_string(),
+                                        FileType::None,
+                                        Filter::None,
+                                    ))
+                                    .unwrap();
                             }
-                            Some(thing) => {
-                                match thing {
-                                    "relative" | "absolute" => {
-                                        let file_type = match iter.next() {
-                                            Some(filter) => match thing {
-                                                "relative" => FileType::Relative(filter.to_string()),
-                                                "absolute" => FileType::Absolute(filter.to_string()),
-                                                _ => FileType::None,
-                                            
-                                            }
-                                            None => {
-                                                self.status = Status::Error("No filter given".to_string());
-                                                return;
-                                            }
-                                        
-                                        };
-                                        let filter = match iter.next() {
-                                            Some(filter) =>  match filter {
-                                                "date" => {
-                                                    let date = iter.next();
-                                                    match date {
-                                                        Some(date) => Filter::Date(date.to_string()),
-                                                        None => {
-                                                            self.status = Status::Error("No date given".to_string());
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                                "commit" => {
-                                                    let commit = iter.next();
-                                                    match commit {
-                                                        Some(commit) => Filter::CommitId(commit.to_string()),
-                                                        None => {
-                                                            self.status = Status::Error("No commit given".to_string());
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                                "date range" => {
-                                                    let start = iter.next();
-                                                    let end = iter.next();
-                                                    match (start, end) {
-                                                        (Some(start), Some(end)) => Filter::DateRange(start.to_string(), end.to_string()),
-                                                        _ => {
-                                                            self.status = Status::Error("No date range given".to_string());
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                                _ => {
-                                                    self.status = Status::Error("No filter given".to_string());
-                                                    return;
-                                                }
-                                            }
-                                            None => Filter::None,
-                                        };
-                                        
-                                        self.status = Status::Loading;
-                                        self.channels.0.send(FullCommand::Search(name.to_string(), file_type, filter)).unwrap(); 
-                                    }
-                                    "date" | "commit" | "date range" => {
-                                        let filter = match thing {
+                            Some(thing) => match thing {
+                                "relative" | "absolute" => {
+                                    let file_type = match iter.next() {
+                                        Some(filter) => match thing {
+                                            "relative" => FileType::Relative(filter.to_string()),
+                                            "absolute" => FileType::Absolute(filter.to_string()),
+                                            _ => FileType::None,
+                                        },
+                                        None => {
+                                            self.status =
+                                                Status::Error("No filter given".to_string());
+                                            return;
+                                        }
+                                    };
+                                    let filter = match iter.next() {
+                                        Some(filter) => match filter {
                                             "date" => {
                                                 let date = iter.next();
                                                 match date {
                                                     Some(date) => Filter::Date(date.to_string()),
                                                     None => {
-                                                        self.status = Status::Error("No date given".to_string());
+                                                        self.status = Status::Error(
+                                                            "No date given".to_string(),
+                                                        );
                                                         return;
                                                     }
                                                 }
@@ -278,9 +241,13 @@ impl App {
                                             "commit" => {
                                                 let commit = iter.next();
                                                 match commit {
-                                                    Some(commit) => Filter::CommitId(commit.to_string()),
+                                                    Some(commit) => {
+                                                        Filter::CommitId(commit.to_string())
+                                                    }
                                                     None => {
-                                                        self.status = Status::Error("No commit given".to_string());
+                                                        self.status = Status::Error(
+                                                            "No commit given".to_string(),
+                                                        );
                                                         return;
                                                     }
                                                 }
@@ -289,25 +256,97 @@ impl App {
                                                 let start = iter.next();
                                                 let end = iter.next();
                                                 match (start, end) {
-                                                    (Some(start), Some(end)) => Filter::DateRange(start.to_string(), end.to_string()),
+                                                    (Some(start), Some(end)) => Filter::DateRange(
+                                                        start.to_string(),
+                                                        end.to_string(),
+                                                    ),
                                                     _ => {
-                                                        self.status = Status::Error("No date range given".to_string());
+                                                        self.status = Status::Error(
+                                                            "No date range given".to_string(),
+                                                        );
                                                         return;
                                                     }
                                                 }
                                             }
-                                            _ => Filter::None,
-                                        };
-                                        self.status = Status::Loading;
-                                        self.channels.0.send(FullCommand::Search(name.to_string(), FileType::None, filter)).unwrap(); 
-                                    }
-                                    _ => {
-                                        self.status = Status::Error("Invalid file type".to_string());
-                                        return;
-                                    }
+                                            _ => {
+                                                self.status =
+                                                    Status::Error("No filter given".to_string());
+                                                return;
+                                            }
+                                        },
+                                        None => Filter::None,
+                                    };
 
+                                    self.status = Status::Loading;
+                                    self.channels
+                                        .0
+                                        .send(FullCommand::Search(
+                                            name.to_string(),
+                                            file_type,
+                                            filter,
+                                        ))
+                                        .unwrap();
                                 }
-                            }
+                                "date" | "commit" | "date range" => {
+                                    let filter = match thing {
+                                        "date" => {
+                                            let date = iter.next();
+                                            match date {
+                                                Some(date) => Filter::Date(date.to_string()),
+                                                None => {
+                                                    self.status =
+                                                        Status::Error("No date given".to_string());
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        "commit" => {
+                                            let commit = iter.next();
+                                            match commit {
+                                                Some(commit) => {
+                                                    Filter::CommitId(commit.to_string())
+                                                }
+                                                None => {
+                                                    self.status = Status::Error(
+                                                        "No commit given".to_string(),
+                                                    );
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        "date range" => {
+                                            let start = iter.next();
+                                            let end = iter.next();
+                                            match (start, end) {
+                                                (Some(start), Some(end)) => Filter::DateRange(
+                                                    start.to_string(),
+                                                    end.to_string(),
+                                                ),
+                                                _ => {
+                                                    self.status = Status::Error(
+                                                        "No date range given".to_string(),
+                                                    );
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        _ => Filter::None,
+                                    };
+                                    self.status = Status::Loading;
+                                    self.channels
+                                        .0
+                                        .send(FullCommand::Search(
+                                            name.to_string(),
+                                            FileType::None,
+                                            filter,
+                                        ))
+                                        .unwrap();
+                                }
+                                _ => {
+                                    self.status = Status::Error("Invalid file type".to_string());
+                                    return;
+                                }
+                            },
                         }
                     } else {
                         self.status = Status::Error("No function name given".to_string());
