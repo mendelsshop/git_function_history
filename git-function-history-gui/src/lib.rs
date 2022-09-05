@@ -33,7 +33,6 @@ pub struct MyEguiApp {
     file_type: FileTypeS,
     history_filter_type: HistoryFilterType,
     commit_filter_type: CommitFilterType,
-
 }
 
 impl MyEguiApp {
@@ -365,28 +364,25 @@ impl eframe::App for MyEguiApp {
             ui.add_space(20.);
             // ui.add_space(10.);
             egui::menu::bar(ui, |ui| {
-                ui.with_layout(
-                    Layout::left_to_right(eframe::emath::Align::Center),
-                    |ui| {
-                //         ui
-                match &self.status {
-                    Status::Loading => {
-                        ui.colored_label(Color32::BLUE, "Loading...");
-                    }
-                    Status::Ok(a) => match a {
-                        Some(a) => {
-                            ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+                ui.with_layout(Layout::left_to_right(eframe::emath::Align::Center), |ui| {
+                    //         ui
+                    match &self.status {
+                        Status::Loading => {
+                            ui.colored_label(Color32::BLUE, "Loading...");
                         }
-                        None => {
-                            ui.colored_label(Color32::GREEN, "Ready");
+                        Status::Ok(a) => match a {
+                            Some(a) => {
+                                ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+                            }
+                            None => {
+                                ui.colored_label(Color32::GREEN, "Ready");
+                            }
+                        },
+                        Status::Error(a) => {
+                            ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                         }
-                    },
-                    Status::Error(a) => {
-                        ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                     }
-                }
-                    },
-                );
+                });
                 // controls
                 ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                     let theme_btn = ui.add(Button::new({
@@ -399,10 +395,9 @@ impl eframe::App for MyEguiApp {
                     if theme_btn.clicked() {
                         self.dark_theme = !self.dark_theme;
                     }
-
                 });
             });
-         
+
             ui.add_space(20.);
         });
         egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {

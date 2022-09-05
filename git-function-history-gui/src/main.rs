@@ -234,6 +234,6 @@ fn main() {
     run_native(
         "Git Function History",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m),))),
+        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m)))),
     );
 }
