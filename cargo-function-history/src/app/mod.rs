@@ -124,8 +124,32 @@ impl App {
                     self.scroll_pos.0 += 1;
                     AppReturn::Continue
                 }
-                _ => todo!("action not implemented"),
+                Action::BackCommit => {
+                    if let CommandResult::History(_,Index(_, i), _,) = &mut self.cmd_output {
+                        if *i <= 0 {
+                            *i = 0;
+                            return AppReturn::Continue;
+                        }
+                        self.scroll_pos.0 = 0;
+
+                        *i -= 1;
+                    }
+                    AppReturn::Continue
+                }
+                Action::ForwardCommit => {
+                    if let CommandResult::History(_, Index(len, i), _, ) = &mut self.cmd_output {
+                        if *len-1 >= *i {
+                            *i = *len-1;
+                            return AppReturn::Continue;
+                        }
+                        self.scroll_pos.0 = 0;
+                        *i += 1;
+                    }
+                    AppReturn::Continue
+                }
+                _ => AppReturn::Continue,
             }
+
         } else {
             AppReturn::Continue
         }
