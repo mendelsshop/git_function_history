@@ -53,3 +53,6 @@ pub enum CommitOrFileFilter {
     FunctionInLines(usize, usize),
     FunctionInFunction(String),
 }
+
+#[derive(Debug, Clone)]
+pub struct Index(pub usize, pub usize);

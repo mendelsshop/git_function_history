@@ -1,6 +1,6 @@
 use self::state::AppState;
 use self::{actions::Actions, ui::Status};
-use crate::{app::actions::Action, types::FullCommand};
+use crate::{app::actions::Action, types::{FullCommand, Index}};
 use crate::{inputs::key::Key, types::ListType};
 use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
 use std::{fmt, sync::mpsc, time::Duration};
@@ -46,22 +46,35 @@ impl App {
             Action::TextEdit,
             Action::ScrollDown,
             Action::ScrollUp,
+            Action::BackCommit,
+            Action::ForwardCommit,
+            Action::BackFile,
+            Action::ForwardFile,
         ]
         .into();
         let state = AppState::initialized();
         match history {
-            Some(history) => Self {
+            Some(history) =>{
+                let hist_len = history.history.len();
+                let commit_len = if hist_len > 0 {
+                    history.history[0].functions.len()
+                } else {
+                    0
+                };
+                 Self {
                 actions,
                 state,
                 input_buffer: String::new(),
-                cmd_output: CommandResult::History(history),
+                cmd_output: CommandResult::History(history,
+                    Index(hist_len, 0),
+                    Index(commit_len, 0),),
                 scroll_pos: (0, 0),
                 body_height: 0,
                 text_scroll_pos: (0, 0),
                 input_width: 0,
                 channels,
                 status: Status::Ok(None),
-            },
+            }},
             None => Self {
                 actions,
                 state,
@@ -105,6 +118,7 @@ impl App {
                     self.scroll_pos.0 += 1;
                     AppReturn::Continue
                 }
+                _ => todo!("action not implemented"),
             }
         } else {
             AppReturn::Continue
@@ -408,19 +422,27 @@ impl App {
     }
 }
 
+
+#[derive(Debug, Clone)]
 pub enum CommandResult {
-    History(FunctionHistory),
-    Commit(CommitFunctions),
+    History(FunctionHistory, Index, Index),
+    Commit(CommitFunctions, Index),
     File(File),
     String(Vec<String>),
     None,
 }
 
+impl Default for CommandResult {
+    fn default() -> Self {
+        CommandResult::None
+    }
+}
+
 impl CommandResult {
     pub fn len(&self) -> usize {
         match self {
-            CommandResult::History(history) => history.to_string().len(),
-            CommandResult::Commit(commit) => commit.to_string().len(),
+            CommandResult::History(history, ..) => history.to_string().len(),
+            CommandResult::Commit(commit, _) => commit.to_string().len(),
             CommandResult::File(file) => file.to_string().len(),
             CommandResult::String(str) => str.len(),
             CommandResult::None => 0,
@@ -431,8 +453,8 @@ impl CommandResult {
 impl fmt::Display for CommandResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CommandResult::History(history) => write!(f, "{}", history),
-            CommandResult::Commit(commit) => write!(f, "{}", commit),
+            CommandResult::History(history, t1, t2) => write!(f, "{}", history.history[t1.1].functions[t2.1]),
+            CommandResult::Commit(commit, t) => write!(f, "{}", commit.functions[t.1]),
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {
                 for line in string {

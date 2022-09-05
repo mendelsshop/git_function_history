@@ -7,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use crate::app::ui;
+use crate::{app::ui, types::Index};
 use app::{state::AppState, ui::Status, App, AppReturn, CommandResult};
 use eyre::Result;
 use git_function_history::get_function_history;
@@ -129,14 +129,16 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                         match get_function_history(&name, file, filter) {
                             Ok(functions) => {
                                 let hist_len = functions.history.len();
-                                let _commit_len = if hist_len > 0 {
+                                let commit_len = if hist_len > 0 {
                                     functions.history[0].functions.len()
                                 } else {
                                     0
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(functions),
+                                    CommandResult::History(functions,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -153,7 +155,8 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 match history.get_by_date(&date) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(functions.clone()),
+                                            CommandResult::Commit(functions.clone(),
+                                            Index(functions.functions.len(), 0),),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -174,7 +177,8 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                                 match history.get_by_commit_id(&commit) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(functions.clone()),
+                                            CommandResult::Commit(functions.clone(),
+                                            Index(functions.functions.len(), 0)),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -194,14 +198,15 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                             HistoryFilter::DateRange(frst, scd) => {
                                 let t = history.get_date_range(&frst, &scd);
                                 let hist_len = t.history.len();
-                                let _commit_len = if hist_len > 0 {
+                                let commit_len = if hist_len > 0 {
                                     t.history[0].functions.len()
                                 } else {
                                     0
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t),
+                                    CommandResult::History(t,                                         Index(hist_len, 0),
+                                    Index(commit_len, 0),),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -209,14 +214,15 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                             HistoryFilter::FunctionInBlock(block) => {
                                 let t = history.get_all_functions_in_block(block);
                                 let hist_len = t.history.len();
-                                let _commit_len = if hist_len > 0 {
+                                let commit_len = if hist_len > 0 {
                                     t.history[0].functions.len()
                                 } else {
                                     0
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t),
+                                    CommandResult::History(t,                                         Index(hist_len, 0),
+                                    Index(commit_len, 0),),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -224,14 +230,16 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                             HistoryFilter::FunctionInLines(line1, line2) => {
                                 let t = history.get_all_functions_line(line1, line2);
                                 let hist_len = t.history.len();
-                                let _commit_len = if hist_len > 0 {
+                                let commit_len = if hist_len > 0 {
                                     t.history[0].functions.len()
                                 } else {
                                     0
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t),
+                                    CommandResult::History(t,
+                                        Index(hist_len, 0),
+                                        Index(commit_len, 0),),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -239,14 +247,15 @@ pub fn command_thread(rx_t: Receiver<FullCommand>, tx_t: Sender<(CommandResult, 
                             HistoryFilter::FunctionInFunction(function) => {
                                 let t = history.get_all_function_with_parent(&function);
                                 let hist_len = t.history.len();
-                                let _commit_len = if hist_len > 0 {
+                                let commit_len = if hist_len > 0 {
                                     t.history[0].functions.len()
                                 } else {
                                     0
                                 };
                                 log::info!("Found functions",);
                                 tx_t.send((
-                                    CommandResult::History(t),
+                                    CommandResult::History(t, Index(hist_len, 0),
+                                    Index(commit_len, 0),),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();

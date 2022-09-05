@@ -11,16 +11,24 @@ pub enum Action {
     TextEdit,
     ScrollUp,
     ScrollDown,
+    BackCommit,
+    ForwardCommit,
+    BackFile,
+    ForwardFile,
 }
 
 impl Action {
     /// All available actions
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 4] = [
+        static ACTIONS: [Action; 8] = [
             Action::Quit,
             Action::TextEdit,
             Action::ScrollUp,
             Action::ScrollDown,
+            Action::BackCommit,
+            Action::ForwardCommit,
+            Action::BackFile,
+            Action::ForwardFile,
         ];
         ACTIONS.iter()
     }
@@ -32,6 +40,10 @@ impl Action {
             Action::TextEdit => &[Key::Shift(':')],
             Action::ScrollUp => &[Key::Up],
             Action::ScrollDown => &[Key::Down],
+            Action::BackCommit => &[Key::Left],
+            Action::ForwardCommit => &[Key::Right],
+            Action::BackFile => &[Key::Shiftleft],
+            Action::ForwardFile => &[Key::Shiftright],
         }
     }
 }
@@ -44,6 +56,10 @@ impl Display for Action {
             Action::TextEdit => "TextEdit",
             Action::ScrollUp => "ScrollUp",
             Action::ScrollDown => "ScrollDown",
+            Action::BackCommit => "BackCommit",
+            Action::ForwardCommit => "ForwardCommit",
+            Action::BackFile => "BackFile",
+            Action::ForwardFile => "ForwardFile",
         };
         write!(f, "{}", str)
     }
