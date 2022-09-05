@@ -3,7 +3,7 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Context, Layout, Sense, SidePanel, Ui},
+    egui::{self, Button, Layout, Sense, SidePanel, Ui},
     epaint::Vec2,
 };
 use eframe::{
@@ -33,6 +33,7 @@ pub struct MyEguiApp {
     file_type: FileTypeS,
     history_filter_type: HistoryFilterType,
     commit_filter_type: CommitFilterType,
+
 }
 
 impl MyEguiApp {
@@ -56,31 +57,6 @@ impl MyEguiApp {
             history_filter_type: HistoryFilterType::None,
             commit_filter_type: CommitFilterType::None,
         }
-    }
-
-    pub(crate) fn render_top_panel(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
-        // define a TopBottomPanel widget
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.add_space(10.);
-            egui::menu::bar(ui, |ui| {
-                ui.with_layout(
-                    Layout::left_to_right(eframe::emath::Align::Center),
-                    |_ui| {},
-                );
-                // controls
-                ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
-                    let close_btn = ui.add(Button::new("❌"));
-                    let theme_btn = ui.add(Button::new("🌙"));
-                    if theme_btn.clicked() {
-                        self.dark_theme = !self.dark_theme;
-                    }
-                    if close_btn.clicked() {
-                        frame.close();
-                    }
-                });
-            });
-            ui.add_space(10.);
-        });
     }
 
     fn draw_commit(commit: (&CommitFunctions, &mut Index), ctx: &egui::Context, show: bool) {
@@ -378,7 +354,7 @@ impl MyEguiApp {
 }
 
 impl eframe::App for MyEguiApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
         if self.dark_theme {
             ctx.set_visuals(Visuals::dark());
@@ -387,25 +363,48 @@ impl eframe::App for MyEguiApp {
         }
         egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.add_space(20.);
-            match &self.status {
-                Status::Loading => {
-                    ui.colored_label(Color32::BLUE, "Loading...");
-                }
-                Status::Ok(a) => match a {
-                    Some(a) => {
-                        ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+            // ui.add_space(10.);
+            egui::menu::bar(ui, |ui| {
+                ui.with_layout(
+                    Layout::left_to_right(eframe::emath::Align::Center),
+                    |ui| {
+                //         ui
+                match &self.status {
+                    Status::Loading => {
+                        ui.colored_label(Color32::BLUE, "Loading...");
                     }
-                    None => {
-                        ui.colored_label(Color32::GREEN, "Ready");
+                    Status::Ok(a) => match a {
+                        Some(a) => {
+                            ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+                        }
+                        None => {
+                            ui.colored_label(Color32::GREEN, "Ready");
+                        }
+                    },
+                    Status::Error(a) => {
+                        ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                     }
-                },
-                Status::Error(a) => {
-                    ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                 }
-            }
+                    },
+                );
+                // controls
+                ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
+                    let theme_btn = ui.add(Button::new({
+                        if self.dark_theme {
+                            "🌞"
+                        } else {
+                            "🌙"
+                        }
+                    }));
+                    if theme_btn.clicked() {
+                        self.dark_theme = !self.dark_theme;
+                    }
+
+                });
+            });
+         
             ui.add_space(20.);
         });
-        self.render_top_panel(ctx, frame);
         egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 let max = ui.available_width() / 6.0;

@@ -228,11 +228,12 @@ fn main() {
     });
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(Vec2::new(800.0, 600.0)),
+        transparent: true,
         ..Default::default()
     };
     run_native(
         "Git Function History",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m)))),
+        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m),))),
     );
 }
