@@ -105,6 +105,7 @@ impl App {
             match action {
                 Action::Quit => AppReturn::Exit,
                 Action::TextEdit => {
+                    log::info!("change to edit mode");
                     self.state = AppState::Editing;
                     AppReturn::Continue
                 }
@@ -124,6 +125,7 @@ impl App {
                     self.scroll_pos.0 += 1;
                     AppReturn::Continue
                 }
+                // TODO reset other things
                 Action::BackCommit => {
                     if let CommandResult::History(_, Index(_, i), _) = &mut self.cmd_output {
                         if *i <= 0 {
@@ -138,7 +140,7 @@ impl App {
                 }
                 Action::ForwardCommit => {
                     if let CommandResult::History(_, Index(len, i), _) = &mut self.cmd_output {
-                        if *len - 1 >= *i {
+                        if *len - 1 <= *i {
                             *i = *len - 1;
                             return AppReturn::Continue;
                         }
@@ -147,8 +149,54 @@ impl App {
                     }
                     AppReturn::Continue
                 }
-                _ => AppReturn::Continue,
+                Action::BackFile => {
+                    match &mut self.cmd_output {
+                        CommandResult::History(_, _, Index(_, i)) => {
+                            if *i <= 0 {
+                                *i = 0;
+                                return AppReturn::Continue;
+                            }
+                            self.scroll_pos.0 = 0;
+    
+                            *i -= 1;
+                        }
+                        CommandResult::Commit(_, Index(_, i)) => {
+                            if *i <= 0 {
+                                *i = 0;
+                                return AppReturn::Continue;
+                            }
+                            self.scroll_pos.0 = 0;
+    
+                            *i -= 1;
+                        }
+                        _ => {}
+                    }
+                    AppReturn::Continue
+                }
+                Action::ForwardFile => {
+                    match &mut self.cmd_output {
+                        CommandResult::History(_, _, Index(len, i)) => {
+                            if *len - 1 >= *i {
+                                *i = *len - 1;
+                                return AppReturn::Continue;
+                            }
+                            self.scroll_pos.0 = 0;
+                            *i += 1;
+                        }
+                        CommandResult::Commit(_, Index(len, i)) => {
+                            if *len - 1 >= *i {
+                                *i = *len - 1;
+                                return AppReturn::Continue;
+                            }
+                            self.scroll_pos.0 = 0;
+                            *i += 1;
+                        }
+                        _ => {}
+                    }
+                    AppReturn::Continue
+                }
             }
+
         } else {
             AppReturn::Continue
         }

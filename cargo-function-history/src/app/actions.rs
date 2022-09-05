@@ -37,7 +37,7 @@ impl Action {
     pub fn keys(&self) -> &[Key] {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
-            Action::TextEdit => &[Key::Shift(':')],
+            Action::TextEdit => &[Key::Char(':')],
             Action::ScrollUp => &[Key::Up],
             Action::ScrollDown => &[Key::Down],
             Action::BackCommit => &[Key::Left],
@@ -72,6 +72,7 @@ pub struct Actions(Vec<Action>);
 impl Actions {
     /// Given a key, find the corresponding action
     pub fn find(&self, key: Key) -> Option<&Action> {
+        log::debug!("{}", key);
         Action::iterator()
             .filter(|action| self.0.contains(action))
             .find(|action| action.keys().contains(&key))

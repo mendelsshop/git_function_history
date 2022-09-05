@@ -25,6 +25,7 @@ impl Events {
                 if crossterm::event::poll(tick_rate).unwrap() {
                     if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
                         let key = Key::from(key);
+                        log::trace!("{}", key);
                         event_tx.send(InputEvent::Input(key)).unwrap();
                     }
                 }
