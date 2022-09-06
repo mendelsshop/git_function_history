@@ -1,6 +1,6 @@
 // use std::fmt;
 
-use backend_thread::types::Status;
+use function_history_backend_thread::types::Status;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};

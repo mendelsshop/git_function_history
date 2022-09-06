@@ -4,7 +4,7 @@ use std::sync::mpsc;
 fn main() {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
-    backend_thread::command_thread(rx_t, tx_t, true);
+    function_history_backend_thread::command_thread(rx_t, tx_t, true);
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(Vec2::new(800.0, 600.0)),
         transparent: true,

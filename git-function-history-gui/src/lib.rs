@@ -1,6 +1,6 @@
 use std::{sync::mpsc, time::Duration};
 
-use backend_thread::types::{
+use function_history_backend_thread::types::{
     Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
     FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
     Status,

@@ -1,9 +1,9 @@
 [package]
-name = "backend_thread"
+name = "function_history_backend_thread"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/mendelsshop/git_function_history/tree/main/backend_thread"
+repository = "https://github.com/mendelsshop/git_function_history/tree/main/function_history_backend_thread"
 keywords = ["threading", "custom_types"]
 categories = ["threading", "custom_types"]
 description = "threading and types for git-function-history"

@@ -2,7 +2,7 @@ use self::actions::Actions;
 use self::state::AppState;
 use crate::app::actions::Action;
 use crate::inputs::key::Key;
-use backend_thread::types::{CommandResult, FullCommand, Index, ListType, Status};
+use function_history_backend_thread::types::{CommandResult, FullCommand, Index, ListType, Status};
 use git_function_history::{FileType, Filter, FunctionHistory};
 use std::{sync::mpsc, time::Duration};
 
