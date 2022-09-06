@@ -1,10 +1,5 @@
 use std::{sync::mpsc, time::Duration};
 
-use function_history_backend_thread::types::{
-    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
-    Status,
-};
 use eframe::{
     self,
     egui::{self, Button, Layout, Sense, SidePanel, Ui},
@@ -13,6 +8,11 @@ use eframe::{
 use eframe::{
     egui::{Label, TextEdit, TopBottomPanel, Visuals},
     epaint::Color32,
+};
+use function_history_backend_thread::types::{
+    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
+    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
+    Status,
 };
 use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory};
 // TODO: use a logger instead of print statements
