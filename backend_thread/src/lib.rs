@@ -5,7 +5,7 @@ use std::{
 };
 
 use git_function_history::get_function_history;
-use types::{FilterType, FullCommand, HistoryFilter};
+use types::{FilterType, FullCommand, HistoryFilter, CommmitFilterValue, CommitOrFileFilter};
 
 use crate::types::{CommandResult, Index, ListType, Status};
 
@@ -248,9 +248,189 @@ pub fn command_thread(
                                 ))
                                 .unwrap();
                             }
-                        },
-                        FilterType::CommitOrFile(_commit, _t) => {}
-                    },
+                        },  
+                        FilterType::CommitOrFile(filter, t) => {
+                            match t {
+                                CommmitFilterValue::Commit(com) => {
+                                    match filter {
+                                        CommitOrFileFilter::FunctionInFunction(function) => {
+                                            let t = match com.get_function_with_parent(&function) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for function {}",
+                                                            function
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            let hist_len = t.functions.len();
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::Commit(
+                                                    t,
+                                                    Index(hist_len, 0),
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                        CommitOrFileFilter::FunctionInBlock(block) => {
+                                            let t = match com.get_function_from_block(block) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for block {}",
+                                                            block
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            let hist_len = t.functions.len();
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::Commit(
+                                                    t,
+                                                    Index(hist_len, 0),
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                        CommitOrFileFilter::FunctionInLines(line1, line2) => {
+                                            let t = match com.get_function_in_lines(line1, line2) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for lines {}-{}",
+                                                            line1, line2
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            let hist_len = t.functions.len();
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::Commit(
+                                                    t,
+                                                    Index(hist_len, 0),
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                    }
+                                }
+                                CommmitFilterValue::File(file) => {
+                                    match filter {
+                                        CommitOrFileFilter::FunctionInFunction(function) => {
+                                            let t = match file.get_function_with_parent(&function) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for function {}",
+                                                            function
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::File(
+                                                    t,
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                        CommitOrFileFilter::FunctionInBlock(block) => {
+                                            let t = match file.get_function_from_block(block) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for block {}",
+                                                            block
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::File(
+                                                    t,
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                        CommitOrFileFilter::FunctionInLines(line1, line2) => {
+                                            let t = match file.get_functin_in_lines(line1, line2) {
+                                                Some(functions) => functions,
+                                                None => {
+                                                    tx_t.send((
+                                                        CommandResult::None,
+                                                        Status::Error(format!(
+                                                            "No functions found for lines {}-{}",
+                                                            line1, line2
+                                                        )),
+                                                    ))
+                                                    .unwrap();
+                                                    return;
+                                                }
+                                            
+                                            };
+                                            if log {
+                                                log::info!("Found functions",);
+                                            }
+                                            tx_t.send((
+                                                CommandResult::File(
+                                                    t,
+                                                ),
+                                                Status::Ok(Some("Found functions".to_string())),
+                                            ))
+                                            .unwrap();
+                                        }
+                                    }
+                                }
+                                }
+                            }
+                        }
+                    
                 },
             }
         }
