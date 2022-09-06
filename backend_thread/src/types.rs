@@ -60,11 +60,58 @@ impl Default for CommandResult {
         CommandResult::None
     }
 }
+
+impl CommandResult {
+    pub fn len(&self) -> usize {
+        match self {
+            CommandResult::History(history, ..) => history.to_string().len(),
+            CommandResult::Commit(commit, _) => commit.to_string().len(),
+            CommandResult::File(file) => file.to_string().len(),
+            CommandResult::String(str) => str.len(),
+            CommandResult::None => 0,
+        }
+    }
+}
+
+impl fmt::Display for CommandResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CommandResult::History(history, t1, t2) => {
+                write!(f, "{}", history.history[t1.1].functions[t2.1])
+            }
+            CommandResult::Commit(commit, t) => write!(f, "{}", commit.functions[t.1]),
+            CommandResult::File(file) => write!(f, "{}", file),
+            CommandResult::String(string) => {
+                for line in string {
+                    writeln!(f, "{}", line)?;
+                }
+                Ok(())
+            }
+            CommandResult::None => {
+                write!(f, "Please enter some commands to search for a function",)
+            }
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub enum Status {
     Ok(Option<String>),
     Error(String),
+    Warning(String),
     Loading,
+}
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Status::Ok(s) => match s {
+                Some(s) => write!(f, "Ok: {}", s),
+                None => write!(f, "Ok"),
+            },
+            Status::Error(s) => write!(f, "Err {}", s),
+            Status::Warning(s) => write!(f, "Warn {}", s),
+            Status::Loading => write!(f, "Loading..."),
+        }
+    }
 }
 
 impl Default for Status {

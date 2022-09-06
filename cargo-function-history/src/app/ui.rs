@@ -1,5 +1,6 @@
-use std::fmt;
+// use std::fmt;
 
+use backend_thread::types::Status;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
@@ -117,25 +118,4 @@ fn draw_status<'a>(status: &Status) -> Paragraph<'a> {
                 .borders(Borders::BOTTOM)
                 .style(Style::default().fg(Color::White)),
         )
-}
-
-pub enum Status {
-    Ok(Option<String>),
-    Error(String),
-    Warning(String),
-    Loading,
-}
-
-impl fmt::Display for Status {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Status::Ok(s) => match s {
-                Some(s) => write!(f, "Ok: {}", s),
-                None => write!(f, "Ok"),
-            },
-            Status::Error(s) => write!(f, "Err {}", s),
-            Status::Warning(s) => write!(f, "Warn {}", s),
-            Status::Loading => write!(f, "Loading..."),
-        }
-    }
 }

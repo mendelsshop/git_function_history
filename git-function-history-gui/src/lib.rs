@@ -1,6 +1,10 @@
-pub mod types;
 use std::{sync::mpsc, time::Duration};
 
+use backend_thread::types::{
+    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
+    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
+    Status,
+};
 use eframe::{
     self,
     egui::{self, Button, Layout, Sense, SidePanel, Ui},
@@ -11,11 +15,6 @@ use eframe::{
     epaint::Color32,
 };
 use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory};
-use types::{
-    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
-    Status,
-};
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -378,6 +377,9 @@ impl eframe::App for MyEguiApp {
                                 ui.colored_label(Color32::GREEN, "Ready");
                             }
                         },
+                        Status::Warning(a) => {
+                            ui.colored_label(Color32::LIGHT_RED, format!("Warn: {}", a));
+                        }
                         Status::Error(a) => {
                             ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                         }

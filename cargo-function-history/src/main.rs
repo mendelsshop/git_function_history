@@ -31,7 +31,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     info!("Starting cargo function history");
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
-    cargo_function_history::command_thread(rx_t, tx_t);
+    backend_thread::command_thread(rx_t, tx_t, true);
+
     let app = Rc::new(RefCell::new(App::new(history, (tx_m, rx_m)))); // TODO app is useless for now
     start_ui(app)?;
     Ok(())

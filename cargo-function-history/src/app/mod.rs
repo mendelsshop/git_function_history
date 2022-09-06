@@ -1,12 +1,10 @@
+use self::actions::Actions;
 use self::state::AppState;
-use self::{actions::Actions, ui::Status};
-use crate::{
-    app::actions::Action,
-    types::{FullCommand, Index},
-};
-use crate::{inputs::key::Key, types::ListType};
-use git_function_history::{CommitFunctions, File, FileType, Filter, FunctionHistory};
-use std::{fmt, sync::mpsc, time::Duration};
+use crate::app::actions::Action;
+use crate::inputs::key::Key;
+use backend_thread::types::{CommandResult, FullCommand, Index, ListType, Status};
+use git_function_history::{FileType, Filter, FunctionHistory};
+use std::{sync::mpsc, time::Duration};
 
 pub mod actions;
 pub mod state;
@@ -128,7 +126,7 @@ impl App {
                 // TODO reset other things
                 Action::BackCommit => {
                     if let CommandResult::History(_, Index(_, i), _) = &mut self.cmd_output {
-                        if *i <= 0 {
+                        if *i == 0 {
                             *i = 0;
                             return AppReturn::Continue;
                         }
@@ -152,21 +150,21 @@ impl App {
                 Action::BackFile => {
                     match &mut self.cmd_output {
                         CommandResult::History(_, _, Index(_, i)) => {
-                            if *i <= 0 {
+                            if *i == 0 {
                                 *i = 0;
                                 return AppReturn::Continue;
                             }
                             self.scroll_pos.0 = 0;
-    
+
                             *i -= 1;
                         }
                         CommandResult::Commit(_, Index(_, i)) => {
-                            if *i <= 0 {
+                            if *i == 0 {
                                 *i = 0;
                                 return AppReturn::Continue;
                             }
                             self.scroll_pos.0 = 0;
-    
+
                             *i -= 1;
                         }
                         _ => {}
@@ -176,7 +174,7 @@ impl App {
                 Action::ForwardFile => {
                     match &mut self.cmd_output {
                         CommandResult::History(_, _, Index(len, i)) => {
-                            if *len - 1 >= *i {
+                            if *len > *i {
                                 *i = *len - 1;
                                 return AppReturn::Continue;
                             }
@@ -184,7 +182,7 @@ impl App {
                             *i += 1;
                         }
                         CommandResult::Commit(_, Index(len, i)) => {
-                            if *len - 1 >= *i {
+                            if *len > *i {
                                 *i = *len - 1;
                                 return AppReturn::Continue;
                             }
@@ -196,7 +194,6 @@ impl App {
                     AppReturn::Continue
                 }
             }
-
         } else {
             AppReturn::Continue
         }
@@ -495,54 +492,6 @@ impl App {
                     panic!("Thread Channel Disconnected");
                 }
             },
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum CommandResult {
-    History(FunctionHistory, Index, Index),
-    Commit(CommitFunctions, Index),
-    File(File),
-    String(Vec<String>),
-    None,
-}
-
-impl Default for CommandResult {
-    fn default() -> Self {
-        CommandResult::None
-    }
-}
-
-impl CommandResult {
-    pub fn len(&self) -> usize {
-        match self {
-            CommandResult::History(history, ..) => history.to_string().len(),
-            CommandResult::Commit(commit, _) => commit.to_string().len(),
-            CommandResult::File(file) => file.to_string().len(),
-            CommandResult::String(str) => str.len(),
-            CommandResult::None => 0,
-        }
-    }
-}
-
-impl fmt::Display for CommandResult {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CommandResult::History(history, t1, t2) => {
-                write!(f, "{}", history.history[t1.1].functions[t2.1])
-            }
-            CommandResult::Commit(commit, t) => write!(f, "{}", commit.functions[t.1]),
-            CommandResult::File(file) => write!(f, "{}", file),
-            CommandResult::String(string) => {
-                for line in string {
-                    writeln!(f, "{}", line)?;
-                }
-                Ok(())
-            }
-            CommandResult::None => {
-                write!(f, "Please enter some commands to search for a function",)
-            }
         }
     }
 }

@@ -3,4 +3,5 @@ members = [
     "git-function-history-lib",
     "cargo-function-history",
     "git-function-history-gui",
+    "backend_thread"
 ]
