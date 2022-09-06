@@ -2,8 +2,11 @@ use self::actions::Actions;
 use self::state::AppState;
 use crate::app::actions::Action;
 use crate::inputs::key::Key;
-use function_history_backend_thread::types::{CommandResult, FullCommand, Index, ListType, Status, FilterType, HistoryFilter, CommitOrFileFilter, CommmitFilterValue};
-use git_function_history::{FileType, Filter, FunctionHistory, BlockType};
+use function_history_backend_thread::types::{
+    CommandResult, CommitOrFileFilter, CommmitFilterValue, FilterType, FullCommand, HistoryFilter,
+    Index, ListType, Status,
+};
+use git_function_history::{BlockType, FileType, Filter, FunctionHistory};
 use std::{sync::mpsc, time::Duration};
 
 pub mod actions;
@@ -282,116 +285,90 @@ impl App {
                 "filter" => {
                     match &self.cmd_output {
                         CommandResult::History(t, _, _) => {
-                        if let Some(filter) = iter.next() {
-                            match filter {
-                                "date" => {
-                                    if let Some(date) = iter.next() {
-                                        let date = date.replace('_', " ");
-                                        self.channels.0.send(FullCommand::Filter(
-                                            FilterType::History(HistoryFilter::Date(date), t.clone()),
-                                        )).unwrap()
-                                    } else {
-                                        self.status = Status::Error("No date given".to_string());
-                                    }
-                                }
-                                "commit" => {
-                                    if let Some(commit) = iter.next() {
-                                        self.channels.0.send(FullCommand::Filter(
-                                            FilterType::History(HistoryFilter::CommitId(commit.to_owned()), t.clone()),
-                                        )).unwrap()
-                                    } else {
-                                        self.status = Status::Error("No commit given".to_string());
-                                    }
-                                }
-                                "parent" => {
-                                    if let Some(parent) = iter.next() {
-                                        self.channels.0.send(FullCommand::Filter(
-                                            FilterType::History(HistoryFilter::FunctionInFunction(parent.to_owned()), t.clone()),
-                                        )).unwrap()
-                                    } else {
-                                        self.status = Status::Error("No parent function given".to_string());
-                                    }
-                                }
-                                "block" => {
-                                    if let Some(block) = iter.next() {
-                                        self.channels.0.send(FullCommand::Filter(
-                                            FilterType::History(HistoryFilter::FunctionInBlock(BlockType::from_string(block)), t.clone()),
-                                        )).unwrap()
-                                    } else {
-                                        self.status = Status::Error("No block type given".to_string());
-                                    }
-                                }
-                                "date-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            // remove all - from the date
-                                            let start = start.replace('_', " ");
-                                            let end = end.replace('_', " ");
-                                            self.channels.0.send(FullCommand::Filter(
-                                                FilterType::History(HistoryFilter::DateRange(start, end), t.clone()),
-                                            )).unwrap()
-                                        } else {
-                                            self.status = Status::Error("No end date given".to_string());
-                                        }
-                                    } else {
-                                        self.status = Status::Error("No start date given".to_string());
-                                    }
-                                }
-                                "line-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            let start = match start.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            let end = match end.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            self.channels.0.send(FullCommand::Filter(
-                                                
-                                                FilterType::History(HistoryFilter::FunctionInLines(start.to_owned(), end.to_owned()), t.clone()),
-                                            )).unwrap()
-                                        } else {
-                                            self.status = Status::Error("No end line given".to_string());
-                                        }
-                                    } else {
-                                        self.status = Status::Error("No start line given".to_string());
-                                    }
-                                }
-                                _ => {
-                                    self.status = Status::Error("Invalid filter".to_string());
-                                }
-                            }
-                        } else {
-                            self.status = Status::Error("No filter given".to_string());
-                        }
-                        }
-                        CommandResult::Commit(t, _)  => {
                             if let Some(filter) = iter.next() {
                                 match filter {
+                                    "date" => {
+                                        if let Some(date) = iter.next() {
+                                            let date = date.replace('_', " ");
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::History(
+                                                    HistoryFilter::Date(date),
+                                                    t.clone(),
+                                                )))
+                                                .unwrap()
+                                        } else {
+                                            self.status =
+                                                Status::Error("No date given".to_string());
+                                        }
+                                    }
+                                    "commit" => {
+                                        if let Some(commit) = iter.next() {
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::History(
+                                                    HistoryFilter::CommitId(commit.to_owned()),
+                                                    t.clone(),
+                                                )))
+                                                .unwrap()
+                                        } else {
+                                            self.status =
+                                                Status::Error("No commit given".to_string());
+                                        }
+                                    }
                                     "parent" => {
                                         if let Some(parent) = iter.next() {
-                                            self.channels.0.send(FullCommand::Filter(
-                                                FilterType::CommitOrFile(CommitOrFileFilter::FunctionInFunction(parent.to_owned()), CommmitFilterValue::Commit(t.clone())),
-                                            )).unwrap()
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::History(
+                                                    HistoryFilter::FunctionInFunction(
+                                                        parent.to_owned(),
+                                                    ),
+                                                    t.clone(),
+                                                )))
+                                                .unwrap()
                                         } else {
-                                            self.status = Status::Error("No parent function given".to_string());
+                                            self.status = Status::Error(
+                                                "No parent function given".to_string(),
+                                            );
                                         }
                                     }
                                     "block" => {
                                         if let Some(block) = iter.next() {
-                                            self.channels.0.send(FullCommand::Filter(
-                                                FilterType::CommitOrFile(CommitOrFileFilter::FunctionInBlock(BlockType::from_string(block)), CommmitFilterValue::Commit(t.clone())),
-                                            )).unwrap()
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType::History(
+                                                    HistoryFilter::FunctionInBlock(
+                                                        BlockType::from_string(block),
+                                                    ),
+                                                    t.clone(),
+                                                )))
+                                                .unwrap()
                                         } else {
-                                            self.status = Status::Error("No block type given".to_string());
+                                            self.status =
+                                                Status::Error("No block type given".to_string());
+                                        }
+                                    }
+                                    "date-range" => {
+                                        if let Some(start) = iter.next() {
+                                            if let Some(end) = iter.next() {
+                                                // remove all - from the date
+                                                let start = start.replace('_', " ");
+                                                let end = end.replace('_', " ");
+                                                self.channels
+                                                    .0
+                                                    .send(FullCommand::Filter(FilterType::History(
+                                                        HistoryFilter::DateRange(start, end),
+                                                        t.clone(),
+                                                    )))
+                                                    .unwrap()
+                                            } else {
+                                                self.status =
+                                                    Status::Error("No end date given".to_string());
+                                            }
+                                        } else {
+                                            self.status =
+                                                Status::Error("No start date given".to_string());
                                         }
                                     }
                                     "line-range" => {
@@ -400,26 +377,36 @@ impl App {
                                                 let start = match start.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
-                                                        self.status = Status::Error(format!("{}", e));
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
                                                         return;
                                                     }
                                                 };
                                                 let end = match end.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
-                                                        self.status = Status::Error(format!("{}", e));
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
                                                         return;
                                                     }
                                                 };
-                                                self.channels.0.send(FullCommand::Filter(
-                                                    
-                                                    FilterType::CommitOrFile(CommitOrFileFilter::FunctionInLines(start.to_owned(), end.to_owned()), CommmitFilterValue::Commit(t.clone())),
-                                                )).unwrap()
+                                                self.channels
+                                                    .0
+                                                    .send(FullCommand::Filter(FilterType::History(
+                                                        HistoryFilter::FunctionInLines(
+                                                            start.to_owned(),
+                                                            end.to_owned(),
+                                                        ),
+                                                        t.clone(),
+                                                    )))
+                                                    .unwrap()
                                             } else {
-                                                self.status = Status::Error("No end line given".to_string());
+                                                self.status =
+                                                    Status::Error("No end line given".to_string());
                                             }
                                         } else {
-                                            self.status = Status::Error("No start line given".to_string());
+                                            self.status =
+                                                Status::Error("No start line given".to_string());
                                         }
                                     }
                                     _ => {
@@ -429,27 +416,45 @@ impl App {
                             } else {
                                 self.status = Status::Error("No filter given".to_string());
                             }
-                            
                         }
-                        CommandResult::File(t) => {
+                        CommandResult::Commit(t, _) => {
                             if let Some(filter) = iter.next() {
                                 match filter {
                                     "parent" => {
                                         if let Some(parent) = iter.next() {
-                                            self.channels.0.send(FullCommand::Filter(
-                                                FilterType::CommitOrFile(CommitOrFileFilter::FunctionInFunction(parent.to_owned()), CommmitFilterValue::File(t.clone())),
-                                            )).unwrap()
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(
+                                                    FilterType::CommitOrFile(
+                                                        CommitOrFileFilter::FunctionInFunction(
+                                                            parent.to_owned(),
+                                                        ),
+                                                        CommmitFilterValue::Commit(t.clone()),
+                                                    ),
+                                                ))
+                                                .unwrap()
                                         } else {
-                                            self.status = Status::Error("No parent function given".to_string());
+                                            self.status = Status::Error(
+                                                "No parent function given".to_string(),
+                                            );
                                         }
                                     }
                                     "block" => {
                                         if let Some(block) = iter.next() {
-                                            self.channels.0.send(FullCommand::Filter(
-                                                FilterType::CommitOrFile(CommitOrFileFilter::FunctionInBlock(BlockType::from_string(block)), CommmitFilterValue::File(t.clone())),
-                                            )).unwrap()
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(
+                                                    FilterType::CommitOrFile(
+                                                        CommitOrFileFilter::FunctionInBlock(
+                                                            BlockType::from_string(block),
+                                                        ),
+                                                        CommmitFilterValue::Commit(t.clone()),
+                                                    ),
+                                                ))
+                                                .unwrap()
                                         } else {
-                                            self.status = Status::Error("No block type given".to_string());
+                                            self.status =
+                                                Status::Error("No block type given".to_string());
                                         }
                                     }
                                     "line-range" => {
@@ -458,26 +463,126 @@ impl App {
                                                 let start = match start.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
-                                                        self.status = Status::Error(format!("{}", e));
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
                                                         return;
                                                     }
                                                 };
                                                 let end = match end.parse::<usize>() {
                                                     Ok(x) => x,
                                                     Err(e) => {
-                                                        self.status = Status::Error(format!("{}", e));
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
                                                         return;
                                                     }
                                                 };
-                                                self.channels.0.send(FullCommand::Filter(
-                                                    
-                                                    FilterType::CommitOrFile(CommitOrFileFilter::FunctionInLines(start.to_owned(), end.to_owned()), CommmitFilterValue::File(t.clone())),
-                                                )).unwrap()
+                                                self.channels
+                                                    .0
+                                                    .send(FullCommand::Filter(
+                                                        FilterType::CommitOrFile(
+                                                            CommitOrFileFilter::FunctionInLines(
+                                                                start.to_owned(),
+                                                                end.to_owned(),
+                                                            ),
+                                                            CommmitFilterValue::Commit(t.clone()),
+                                                        ),
+                                                    ))
+                                                    .unwrap()
                                             } else {
-                                                self.status = Status::Error("No end line given".to_string());
+                                                self.status =
+                                                    Status::Error("No end line given".to_string());
                                             }
                                         } else {
-                                            self.status = Status::Error("No start line given".to_string());
+                                            self.status =
+                                                Status::Error("No start line given".to_string());
+                                        }
+                                    }
+                                    _ => {
+                                        self.status = Status::Error("Invalid filter".to_string());
+                                    }
+                                }
+                            } else {
+                                self.status = Status::Error("No filter given".to_string());
+                            }
+                        }
+                        CommandResult::File(t) => {
+                            if let Some(filter) = iter.next() {
+                                match filter {
+                                    "parent" => {
+                                        if let Some(parent) = iter.next() {
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(
+                                                    FilterType::CommitOrFile(
+                                                        CommitOrFileFilter::FunctionInFunction(
+                                                            parent.to_owned(),
+                                                        ),
+                                                        CommmitFilterValue::File(t.clone()),
+                                                    ),
+                                                ))
+                                                .unwrap()
+                                        } else {
+                                            self.status = Status::Error(
+                                                "No parent function given".to_string(),
+                                            );
+                                        }
+                                    }
+                                    "block" => {
+                                        if let Some(block) = iter.next() {
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(
+                                                    FilterType::CommitOrFile(
+                                                        CommitOrFileFilter::FunctionInBlock(
+                                                            BlockType::from_string(block),
+                                                        ),
+                                                        CommmitFilterValue::File(t.clone()),
+                                                    ),
+                                                ))
+                                                .unwrap()
+                                        } else {
+                                            self.status =
+                                                Status::Error("No block type given".to_string());
+                                        }
+                                    }
+                                    "line-range" => {
+                                        if let Some(start) = iter.next() {
+                                            if let Some(end) = iter.next() {
+                                                let start = match start.parse::<usize>() {
+                                                    Ok(x) => x,
+                                                    Err(e) => {
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
+                                                        return;
+                                                    }
+                                                };
+                                                let end = match end.parse::<usize>() {
+                                                    Ok(x) => x,
+                                                    Err(e) => {
+                                                        self.status =
+                                                            Status::Error(format!("{}", e));
+                                                        return;
+                                                    }
+                                                };
+                                                self.channels
+                                                    .0
+                                                    .send(FullCommand::Filter(
+                                                        FilterType::CommitOrFile(
+                                                            CommitOrFileFilter::FunctionInLines(
+                                                                start.to_owned(),
+                                                                end.to_owned(),
+                                                            ),
+                                                            CommmitFilterValue::File(t.clone()),
+                                                        ),
+                                                    ))
+                                                    .unwrap()
+                                            } else {
+                                                self.status =
+                                                    Status::Error("No end line given".to_string());
+                                            }
+                                        } else {
+                                            self.status =
+                                                Status::Error("No start line given".to_string());
                                         }
                                     }
                                     _ => {
@@ -534,7 +639,8 @@ impl App {
                                                 match date {
                                                     Some(date) => {
                                                         let date = date.replace('_', " ");
-                                                        Filter::Date(date)},
+                                                        Filter::Date(date)
+                                                    }
                                                     None => {
                                                         self.status = Status::Error(
                                                             "No date given".to_string(),
@@ -564,10 +670,8 @@ impl App {
                                                     (Some(start), Some(end)) => {
                                                         let start = start.replace('_', " ");
                                                         let end = end.replace('_', " ");
-                                                        Filter::DateRange(
-                                                        start,
-                                                        end,
-                                                    )}
+                                                        Filter::DateRange(start, end)
+                                                    }
                                                     _ => {
                                                         self.status = Status::Error(
                                                             "No date range given".to_string(),
