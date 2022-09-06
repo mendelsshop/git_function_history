@@ -286,7 +286,7 @@ impl App {
                             match filter {
                                 "date" => {
                                     if let Some(date) = iter.next() {
-                                        let date = date.replace('_", " ");
+                                        let date = date.replace('_', " ");
                                         self.channels.0.send(FullCommand::Filter(
                                             FilterType::History(HistoryFilter::Date(date), t.clone()),
                                         )).unwrap()
@@ -325,8 +325,8 @@ impl App {
                                     if let Some(start) = iter.next() {
                                         if let Some(end) = iter.next() {
                                             // remove all - from the date
-                                            let start = start.replace('_", " ");
-                                            let end = end.replace('_", " ");
+                                            let start = start.replace('_', " ");
+                                            let end = end.replace('_', " ");
                                             self.channels.0.send(FullCommand::Filter(
                                                 FilterType::History(HistoryFilter::DateRange(start, end), t.clone()),
                                             )).unwrap()
@@ -533,7 +533,7 @@ impl App {
                                                 let date = iter.next();
                                                 match date {
                                                     Some(date) => {
-                                                        let date = date.replace('_", " ");
+                                                        let date = date.replace('_', " ");
                                                         Filter::Date(date)},
                                                     None => {
                                                         self.status = Status::Error(
@@ -562,8 +562,8 @@ impl App {
                                                 let end = iter.next();
                                                 match (start, end) {
                                                     (Some(start), Some(end)) => {
-                                                        let start = start.replace('_", " ");
-                                                        let end = end.replace('_", " ");
+                                                        let start = start.replace('_', " ");
+                                                        let end = end.replace('_', " ");
                                                         Filter::DateRange(
                                                         start,
                                                         end,
