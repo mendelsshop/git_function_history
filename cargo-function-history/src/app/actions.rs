@@ -37,7 +37,7 @@ impl Action {
     pub fn keys(&self) -> &[Key] {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
-            Action::TextEdit => &[Key::Char(':')],
+            Action::TextEdit => &[Key::Char(':'), Key::Shift(':')],
             Action::ScrollUp => &[Key::Up],
             Action::ScrollDown => &[Key::Down],
             Action::BackCommit => &[Key::Left],
