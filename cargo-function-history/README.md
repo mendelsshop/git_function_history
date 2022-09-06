@@ -4,3 +4,5 @@
 
 A cargo frontend for the [git function history library](https://crates.io/crates/git-function-history).
 (WIP)
+
+When specifying dates please use the RFC 2822 format, e.g. `Mon, 15 Feb 2021 15:04:05 +0000`, please put underscores instead of spaces like `Mon,_15_Feb_2021_15:04:05_+0000`.
