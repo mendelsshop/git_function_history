@@ -243,8 +243,12 @@ impl MyEguiApp {
         // 1. function in block
         // 2. function in lines
         // 3. function in function
+        let text = match &self.commit_filter_type {
+            CommitFilterType::None => "filter type".to_string(),
+            a => a.to_string(),
+        };
         egui::ComboBox::from_id_source("commit_combo_box")
-            .selected_text(self.commit_filter_type.to_string())
+            .selected_text(text)
             .show_ui(ui, |ui| {
                 ui.selectable_value(
                     &mut self.commit_filter_type,
@@ -417,8 +421,12 @@ impl eframe::App for MyEguiApp {
                         match &self.cmd_output {
                             CommandResult::History(t, _, _) => {
                                 // Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
+                                let text = match &self.history_filter_type {
+                                    HistoryFilterType::None => "filter type".to_string(),
+                                    a => a.to_string(),
+                                };
                                 egui::ComboBox::from_id_source("history_combo_box")
-                                    .selected_text(self.history_filter_type.to_string())
+                                    .selected_text(text)
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
@@ -644,9 +652,12 @@ impl eframe::App for MyEguiApp {
                             ui.add(TextEdit::singleline(&mut self.input_buffer));
                         });
 
-                        // get file if any
+                        let text = match &self.file_type {
+                            FileTypeS::None => "file type".to_string(),
+                            a => a.to_string(),
+                        };
                         egui::ComboBox::from_id_source("search_file_combo_box")
-                            .selected_text(self.file_type.to_string())
+                            .selected_text(text)
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
                                 ui.selectable_value(
@@ -680,8 +691,12 @@ impl eframe::App for MyEguiApp {
                             }
                         }
                         // get filters if any
+                        let text = match &self.filter {
+                            SearchFilter::None => "filter type".to_string(),
+                            a => a.to_string(),
+                        };
                         egui::ComboBox::from_id_source("search_search_filter_combo_box")
-                            .selected_text(self.filter.to_string())
+                            .selected_text(text)
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(&mut self.filter, SearchFilter::None, "None");
                                 ui.selectable_value(
