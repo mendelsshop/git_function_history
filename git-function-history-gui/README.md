@@ -28,7 +28,7 @@ On ubuntu you can install them with:
 
 When you run the program, you will see a window, like this: (the title bar/decorations vary by platform)
 
-<img src="./resources/screenshots/startup.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/startup.png" width="400">
 
 The app is split into three sections:
 
@@ -40,13 +40,13 @@ The app is split into three sections:
 
 ### Command bar
 
-<img src="./resources/screenshots/command_bar.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar.png" width="400">
 
 Even though the command bar is the middle section, we will start with it because you cannot use the top section without first building a command in the command bar.
 
 The leftmost part of the command bar is the command selector, it is a drop down menu that allows you to select the command you want to build.
 
-<img src="./resources/screenshots/command_selector.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_selector.png" width="100">
 
 The commands are:
 
@@ -58,13 +58,13 @@ The commands are:
 
 #### Command bar - search
 
-<img src="./resources/screenshots/command_bar_search.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_search.png" width="400">
 
 The first thing you'll see is a text box, this is where you enter the name of the function you want to search for.
 
 The next thing you'll see is a drop down menu, this is the search file selector, it allows you to select what type of file you want to search in.
 
-<img src="./resources/screenshots/command_bar_file.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_file.png" width="100">
 
 The options are:
 
@@ -76,11 +76,11 @@ The options are:
 
 If you select `Relative` or `Absolute` then you will see a text box appear, this is where you enter the filename.
 
-<img src="./resources/screenshots/command_bar_file_input.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_file_input.png" width="400">
 
 After that there is another dropdown menu to filter the search (before it is run) to save time.
 
-<img src="./resources/screenshots/command_bar_filter.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_filter.png" width="100">
 
 The options are:
 
@@ -94,21 +94,21 @@ The options are:
 
 If you select `Commit Hash` or `Date` then you will see a text box appear, this is where you enter the commit hash or date, with `Date Range` you will see two text boxes appear, these are where you enter the start and end dates.
 
-<img src="./resources/screenshots/command_bar_filter_input.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_filter_input.png" width="400">
 
 After that there is `Go` button, this will run the command and display the output in the viewing pane (after the command has finished).
 
-<img src="./resources/screenshots/command_bar_go.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_go.png" width="400">
 
 #### Command bar - filter
 
 Once you have ran a command and gotten some output in the viewing pane,  you can filter by switching the first drop down to filter.
 
-<img src="./resources/screenshots/filter_bar.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar.png" width="400">
 
 The options vary by if you have already filtered by lets say a date, then yo u won't be able to filter by a date range or a commit hash.
 
-<img src="./resources/screenshots/filter_bar_selector.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar_selector.png" width="100">
 
 All the options are:
 
@@ -131,21 +131,21 @@ All the options are:
 
 Every option has a text box, except for `None`.
 
-<img src="./resources/screenshots/filter_bar_input.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar_input.png" width="400">
 
 After that there is `Go` button, this will run the command and display the output in the viewing pane (after the command has finished).
 
-<img src="./resources/screenshots/filter_bar_go.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar_go.png" width="400">
 
 #### Command bar - list
 
 The list command is used to list commit hashes or dates for each commit in a git repository.
 
-<img src="./resources/screenshots/command_bar_list.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_list.png" width="400">
 
 Once you select the list command, you will see a drop down menu, this is the list type selector, it allows you to select what type of list you want to build.
 
-<img src="./resources/screenshots/command_bar_list_type.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_list_type.png" width="100">
 
 The options are:
 
@@ -155,48 +155,48 @@ The options are:
 
 After that there is `Go` button, this will run the command and display the output in the viewing pane (after the command has finished).
 
-<img src="./resources/screenshots/command_bar_list_go.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_list_go.png" width="400">
 
 ### Viewing pane
 
-<img src="./resources/screenshots/viewing_pane.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane.png" width="400">
 
 The viewing pane is where the output of the command you have built in the command bar is displayed.
 
 when you first open the app, the viewing pane will be or you filtered to the point where there is no output, so you will see a message saying `Nothing to show Please select a command`.
 
-<img src="./resources/screenshots/viewing_pane_empty.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_empty.png" width="400">
 
 If its showing you the a function whole history in the repository, as opposed to just a single commit, then the top of the viewing pane will have a left and right arrow )a button will be disabled if there is no more history to show in that direction
 ), these are used to navigate between commits along with the commit hash and date.
 
-<img src="./resources/screenshots/viewing_pane_history_arrows.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_history_arrows.png" width="400">
 
 Below that is the is where you can see all the all instances of the function in the commit along with tall left and right arrows (each button will only be shown if you can go back and forward through the files in the commit), these are used to navigate between the files that contain the function.
 
-<img src="./resources/screenshots/viewing_pane_history_files.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_history_files.png" width="400">
 
 If you filtered to a single commit, then you will see the commit hash and date at the top of the viewing pane.
 
-<img src="./resources/screenshots/viewing_pane_commit.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_commit.png" width="400">
 
 Below that is the is where you can see all the all instances of the function in the commit along with tall left and right arrows (each button will only be shown if you can go back and forward through the files in the commit), these are used to navigate between the files that contain the function.
 
-<img src="./resources/screenshots/viewing_pane_commit_files.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_commit_files.png" width="400">
 
 If you list the commit hashes or dates, then you will see a list of all the commit hashes or dates in the repository.
 
-<img src="./resources/screenshots/viewing_pane_list.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/viewing_pane_list.png" width="400">
 
 ### Status bar
 
-<img src="./resources/screenshots/status_bar.png" width="400">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/status_bar.png" width="400">
 
 The status bar is where you can see the status of the app, it will tell you if the app is loading or if there was an error or everything is fine.
 
 On the right hand side there is as a button to change the theme.
 
-<img src="./resources/screenshots/status_bar_theme.png" width="100">
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/status_bar_theme.png" width="100">
 
 ## Known issues
 
