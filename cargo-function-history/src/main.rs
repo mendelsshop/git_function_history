@@ -14,8 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     info!("started command thread");
     let config = parse_args();
     match config.function_name {
-        string if string.is_empty() => {},
-        string =>  tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?,
+        string if string.is_empty() => {}
+        string => tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?,
     };
     let app = Rc::new(RefCell::new(App::new((tx_m, rx_m)))); // TODO app is useless for now
     start_ui(app)?;

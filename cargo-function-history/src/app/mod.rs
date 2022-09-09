@@ -57,18 +57,17 @@ impl App {
         .into();
         let state = AppState::initialized();
         Self {
-                actions,
-                state,
-                input_buffer: String::new(),
-                cmd_output: CommandResult::None,
-                scroll_pos: (0, 0),
-                body_height: 0,
-                text_scroll_pos: (0, 0),
-                input_width: 0,
-                channels,
-                status: Status::Ok(None),
-            }
-        
+            actions,
+            state,
+            input_buffer: String::new(),
+            cmd_output: CommandResult::None,
+            scroll_pos: (0, 0),
+            body_height: 0,
+            text_scroll_pos: (0, 0),
+            input_width: 0,
+            channels,
+            status: Status::Ok(None),
+        }
     }
 
     pub fn status(&self) -> &Status {
