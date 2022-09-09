@@ -3,6 +3,73 @@
 # cargo function history
 
 A cargo frontend for the [git function history library](https://crates.io/crates/git-function-history).
-(WIP)
+
+## Installation
+
+cargo install cargo-function-history
+
+## Usage
+
+`cargo function-history <function-name<:filename>> <options>`
+
+or cargo-function-history `<function-name<:filename>> <options>`
+
+### Options
+
+- `--help`: display the help message
+
+- `--filter-date <date>`: filter only to this date
+
+- `--filter-commit-hash <hash>`: filter only to this commit hash
+
+- `--filter-date-range=<date1>:<date2>`: filter to the given date range
+
+- `file-absolute`: search the exact file with the filename specified after the function name
+
+- `file-relative`: search any file ending with the filename specified after the function name
+
+### using the tui
+
+Once you run the the command, a tui interface will pop up.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/startup.png" width="400">
+
+Even if you specified a search via command you ran to open the app, you will still see no function history result, because it is still loading. Once it is done loading, you will see the function history result.
+
+Now that you've opened the app, you will see its split into 3 sections:
+
+- The top section is the viewing pane. It shows the function history result.
+
+- The middle section is the command pane. Here is where you enter command, which will be executed when you press enter.
+
+- The bottom section is the status pane. It shows the status of the app.
+
+#### command-pane
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane.png" width="400">
+
+Even though the viewing pane comes first you generally wont be able to use the viewing pane without entering a command.
+
+To enter editing mode press `:` the you will see the command pane change to the command input mode, and show `:` at the start of the command pane.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-input.png" width="400">
+
+To exit editing mode press `esc`.
+
+If your command is to long to fit on the screen, you can can use the left and right arrow keys to scroll the command pane.
+
+Each command starts with one of three command types:
+
+- `search`: search for a function
+
+- `filter`: filter the current search
+
+- `list`: list the commits or dates
+
+##### command-pane-search
+
+after typing `search` you can type the function name you want to search for.
+
+## Note
 
 When specifying dates please use the RFC 2822 format, e.g. `Mon, 15 Feb 2021 15:04:05 +0000`, please put underscores instead of spaces like `Mon,_15_Feb_2021_15:04:05_+0000`.

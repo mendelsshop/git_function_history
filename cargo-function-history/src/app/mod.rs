@@ -6,7 +6,7 @@ use function_history_backend_thread::types::{
     CommandResult, CommitOrFileFilter, CommmitFilterValue, FilterType, FullCommand, HistoryFilter,
     Index, ListType, Status,
 };
-use git_function_history::{BlockType, FileType, Filter, FunctionHistory};
+use git_function_history::{BlockType, FileType, Filter};
 use std::{sync::mpsc, time::Duration};
 
 pub mod actions;
@@ -39,7 +39,6 @@ pub struct App {
 impl App {
     #[allow(clippy::new_without_default)]
     pub fn new(
-        history: Option<FunctionHistory>,
         channels: (
             mpsc::Sender<FullCommand>,
             mpsc::Receiver<(CommandResult, Status)>,
@@ -57,32 +56,7 @@ impl App {
         ]
         .into();
         let state = AppState::initialized();
-        match history {
-            Some(history) => {
-                let hist_len = history.history.len();
-                let commit_len = if hist_len > 0 {
-                    history.history[0].functions.len()
-                } else {
-                    0
-                };
-                Self {
-                    actions,
-                    state,
-                    input_buffer: String::new(),
-                    cmd_output: CommandResult::History(
-                        history,
-                        Index(hist_len, 0),
-                        Index(commit_len, 0),
-                    ),
-                    scroll_pos: (0, 0),
-                    body_height: 0,
-                    text_scroll_pos: (0, 0),
-                    input_width: 0,
-                    channels,
-                    status: Status::Ok(None),
-                }
-            }
-            None => Self {
+        Self {
                 actions,
                 state,
                 input_buffer: String::new(),
@@ -93,8 +67,8 @@ impl App {
                 input_width: 0,
                 channels,
                 status: Status::Ok(None),
-            },
-        }
+            }
+        
     }
 
     pub fn status(&self) -> &Status {
