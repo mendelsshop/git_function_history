@@ -70,6 +70,36 @@ Each command starts with one of three command types:
 
 after typing `search` you can type the function name you want to search for.
 
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-none.png" width="400">
+
+If you want your search to only be for a certain file, you first specify if it is an absolute or relative search with `absolute` or `relative`, then the file name.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-absolute.png" width="400">
+
+If you want your search to also be for a certain date, commit hash, or date range, you can specify that with `date`, `commit-hash`, or `date-range`, then the date, commit hash, or date range (for the date range each date is separated by a space).
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-absolute-date.png" width="400">
+
+If you only need your search to be for a certain date, commit hash, or date range, you can skip the the file name and filetype.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-date.png" width="400">
+
+Then press enter to execute the command, and after executing the command you will see the search result in the viewing pane.
+
+##### command-pane-filter
+
+##### command-pane-list
+
+After typing `list` you can type the type of list you want to see with `commits` or `dates`.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-list-commits.png" width="400">
+
+Then press enter to execute the command, and after executing the command you will see the list result in the viewing pane.
+
+#### viewing-pane
+
+#### status pane
+
 ## Note
 
 When specifying dates please use the RFC 2822 format, e.g. `Mon, 15 Feb 2021 15:04:05 +0000`, please put underscores instead of spaces like `Mon,_15_Feb_2021_15:04:05_+0000`.
