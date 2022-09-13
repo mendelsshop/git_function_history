@@ -93,9 +93,7 @@ pub fn command_thread(
                                     log::info!("Found functions");
                                 }
                                 tx_t.send((
-                                    CommandResult::History(
-                                        functions,
-                                    ),
+                                    CommandResult::History(functions),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -112,9 +110,7 @@ pub fn command_thread(
                                 match history.get_by_date(&date) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(
-                                                functions.clone(),
-                                            ),
+                                            CommandResult::Commit(functions.clone()),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -135,10 +131,7 @@ pub fn command_thread(
                                 match history.get_by_commit_id(&commit) {
                                     Some(functions) => {
                                         tx_t.send((
-                                            CommandResult::Commit(
-                                                functions.clone(),
-                                                
-                                            ),
+                                            CommandResult::Commit(functions.clone()),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
                                         .unwrap();
@@ -156,8 +149,8 @@ pub fn command_thread(
                                 };
                             }
                             HistoryFilter::DateRange(frst, scd) => {
-                                log::info!("Received date range from {}-{}",frst, scd);
-                                let t = match  history.get_date_range(&frst, &scd) {
+                                log::info!("Received date range from {}-{}", frst, scd);
+                                let t = match history.get_date_range(&frst, &scd) {
                                     Ok(t) => t,
                                     Err(e) => {
                                         tx_t.send((
@@ -172,9 +165,7 @@ pub fn command_thread(
                                     log::info!("Found functions in date range",);
                                 }
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -195,11 +186,7 @@ pub fn command_thread(
                                     log::info!("Found functions",);
                                 }
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -215,18 +202,13 @@ pub fn command_thread(
                                         .unwrap();
                                         continue;
                                     }
-                                
                                 };
 
                                 if log {
                                     log::info!("Found functions",);
                                 }
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -247,11 +229,7 @@ pub fn command_thread(
                                     log::info!("Found functions",);
                                 }
                                 tx_t.send((
-                                    CommandResult::History(
-                                        t,
-                                        
-                                        
-                                    ),
+                                    CommandResult::History(t),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
@@ -302,7 +280,7 @@ pub fn command_thread(
                                         log::info!("Found functions",);
                                     }
                                     tx_t.send((
-                                        CommandResult::Commit(t), 
+                                        CommandResult::Commit(t),
                                         Status::Ok(Some("Found functions".to_string())),
                                     ))
                                     .unwrap();
@@ -326,7 +304,7 @@ pub fn command_thread(
                                         log::info!("Found functions",);
                                     }
                                     tx_t.send((
-                                        CommandResult::Commit(t), 
+                                        CommandResult::Commit(t),
                                         Status::Ok(Some("Found functions".to_string())),
                                     ))
                                     .unwrap();

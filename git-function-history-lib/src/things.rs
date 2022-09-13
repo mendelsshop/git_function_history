@@ -1,5 +1,9 @@
 use chrono::{DateTime, FixedOffset};
-use std::{fmt::{self}, error::Error, collections::HashMap};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{self},
+};
 
 pub(crate) struct InternalBlock {
     pub(crate) start: Points,
@@ -423,11 +427,10 @@ impl CommitFunctions {
             date: self.date,
             current_pos: 0,
             current_iter_pos: 0,
-
         })
     }
     pub fn move_forward(&mut self) -> bool {
-        if self.current_pos >= self.functions.len()-1 {
+        if self.current_pos >= self.functions.len() - 1 {
             return false;
         }
         self.current_pos += 1;
@@ -446,19 +449,22 @@ impl CommitFunctions {
         let mut map = HashMap::new();
         map.insert("commit hash".to_string(), self.id.clone());
         map.insert("date".to_string(), self.date.to_rfc2822());
-        map.insert("file".to_string(), self.functions[self.current_pos].name.clone());
+        map.insert(
+            "file".to_string(),
+            self.functions[self.current_pos].name.clone(),
+        );
         map
     }
 
     pub fn get_file(&self) -> File {
         self.functions[self.current_pos].clone()
-    } 
+    }
     pub fn get_move_direction(&self) -> Directions {
         match self.current_pos {
             0 if self.functions.len() == 1 => Directions::None,
             0 => Directions::Forward,
-            x if x == self.functions.len()-1 => Directions::Back,
-            _ => Directions::Both
+            x if x == self.functions.len() - 1 => Directions::Back,
+            _ => Directions::Both,
         }
     }
 }
@@ -487,7 +493,6 @@ pub struct FunctionHistory {
     pub history: Vec<CommitFunctions>,
     current_iter_pos: usize,
     current_pos: usize,
-
 }
 
 impl FunctionHistory {
@@ -497,7 +502,7 @@ impl FunctionHistory {
             name,
             history,
             current_iter_pos: 0,
-            current_pos: 0
+            current_pos: 0,
         }
     }
     /// This function will return a `CommitFunctions` for the given commit id.
@@ -530,7 +535,7 @@ impl FunctionHistory {
             history: t,
             name: self.name.clone(),
             current_iter_pos: 0,
-            current_pos: 0
+            current_pos: 0,
         })
     }
 
@@ -547,7 +552,10 @@ impl FunctionHistory {
     /// println!("{}", in_impl);
     /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
     /// ```
-    pub fn get_all_functions_in_block(&self, block_type: BlockType) -> Result<Self, Box<dyn Error>> {
+    pub fn get_all_functions_in_block(
+        &self,
+        block_type: BlockType,
+    ) -> Result<Self, Box<dyn Error>> {
         let t: Vec<CommitFunctions> = self
             .history
             .iter()
@@ -560,7 +568,7 @@ impl FunctionHistory {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
-            current_iter_pos: 0
+            current_iter_pos: 0,
         })
     }
 
@@ -573,12 +581,12 @@ impl FunctionHistory {
             .collect();
         if t.is_empty() {
             return Err("no functions found in the given lines")?;
-            }
+        }
         Ok(Self {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
-            current_iter_pos: 0
+            current_iter_pos: 0,
         })
     }
 
@@ -592,17 +600,17 @@ impl FunctionHistory {
 
         if t.is_empty() {
             return Err("no functions found with the given parent")?;
-            }
+        }
         Ok(Self {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
-            current_iter_pos: 0
+            current_iter_pos: 0,
         })
     }
 
     pub fn move_forward(&mut self) -> bool {
-        if self.current_pos >= self.history.len()-1 {
+        if self.current_pos >= self.history.len() - 1 {
             return false;
         }
         self.current_pos += 1;
@@ -616,7 +624,7 @@ impl FunctionHistory {
         self.current_pos -= 1;
         true
     }
-    
+
     pub fn move_forward_file(&mut self) -> bool {
         self.history[self.current_pos].move_forward()
     }
@@ -637,12 +645,11 @@ impl FunctionHistory {
         match self.current_pos {
             0 if self.history.len() == 1 => Directions::None,
             0 => Directions::Forward,
-            x if x == self.history.len()-1 => Directions::Back,
-            _ => Directions::Both
+            x if x == self.history.len() - 1 => Directions::Back,
+            _ => Directions::Both,
         }
     }
 }
-
 
 impl fmt::Display for FunctionHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -665,5 +672,5 @@ pub enum Directions {
     Forward,
     Back,
     None,
-    Both, 
+    Both,
 }

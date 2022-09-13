@@ -79,7 +79,7 @@ impl fmt::Display for CommandResult {
             CommandResult::History(history) => {
                 write!(f, "{}", history)
             }
-            CommandResult::Commit(commit, ) => write!(f, "{}", commit),
+            CommandResult::Commit(commit) => write!(f, "{}", commit),
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {
                 for line in string {

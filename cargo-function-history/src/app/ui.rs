@@ -56,48 +56,44 @@ where
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a, B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>)  {
-    let top  = match &app.cmd_output {
+fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
+    let top = match &app.cmd_output {
         CommandResult::History(history) => {
             let metadata = history.get_metadata();
             let metadata = BTreeMap::from_iter(metadata.iter());
-            let metadata: Vec<Spans> =metadata.iter().map(|x| {
-                Spans::from(
-                    format!("{}: {}\n", x.0, x.1),
-                )
-            }).collect();
-            Some(Paragraph::new(metadata)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .style(Style::default().fg(Color::White)),
-            ))
-
+            let metadata: Vec<Spans> = metadata
+                .iter()
+                .map(|x| Spans::from(format!("{}: {}\n", x.0, x.1)))
+                .collect();
+            Some(
+                Paragraph::new(metadata)
+                    .style(Style::default().fg(Color::LightCyan))
+                    .block(Block::default().style(Style::default().fg(Color::White))),
+            )
         }
         CommandResult::Commit(commit) => {
             let metadata = commit.get_metadata();
             let metadata = BTreeMap::from_iter(metadata.iter());
-            let metadata: Vec<Spans> =metadata.iter().map(|x| {
-                Spans::from(
-                    format!("{}: {}\n", x.0, x.1),
-                )
-            }).collect();
-            Some(Paragraph::new(metadata)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .style(Style::default().fg(Color::White)),
-            ))
+            let metadata: Vec<Spans> = metadata
+                .iter()
+                .map(|x| Spans::from(format!("{}: {}\n", x.0, x.1)))
+                .collect();
+            Some(
+                Paragraph::new(metadata)
+                    .style(Style::default().fg(Color::LightCyan))
+                    .block(Block::default().style(Style::default().fg(Color::White))),
+            )
         }
-        _ => {None}
+        _ => None,
     };
-    let tick_text: Vec<Spans> = app.cmd_output
+    let tick_text: Vec<Spans> = app
+        .cmd_output
         .to_string()
         .split('\n')
         .map(|s| Spans::from(format!("{}\n", s)))
         .collect();
 
-    let body= Paragraph::new(tick_text)
+    let body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .scroll(app.scroll_pos)
         .block(

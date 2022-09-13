@@ -11,10 +11,11 @@ use eframe::{
 };
 use function_history_backend_thread::types::{
     Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, ListType, SearchFilter,
-    Status,
+    FilterType, FullCommand, HistoryFilter, HistoryFilterType, ListType, SearchFilter, Status,
 };
-use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory, things::Directions};
+use git_function_history::{
+    things::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
+};
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -64,8 +65,14 @@ impl MyEguiApp {
                 ui.add(Label::new(format!("Date: {}", commit.date)));
             });
         }
+        TopBottomPanel::top("file_name").show(ctx, |ui| {
+            ui.add(Label::new(format!(
+                "File {}",
+                commit.get_metadata()["file"]
+            )));
+        });
         match commit.get_move_direction() {
-            Directions::None  => {
+            Directions::None => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
@@ -93,15 +100,13 @@ impl MyEguiApp {
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()))
-                        });
+                        .show(ui, |ui| ui.add(Label::new(commit.get_file().to_string())));
                 });
                 if resp.clicked() {
                     commit.move_forward();
                 }
             }
-             Directions::Back => {
+            Directions::Back => {
                 println!("found at least one file index end");
                 // split the screen in two parts, leave a small part for the left arrow and the rest for the content
                 let resp = SidePanel::left("right_button")
@@ -124,7 +129,7 @@ impl MyEguiApp {
                 });
                 if resp.clicked() {
                     commit.move_back();
-                } 
+                }
             }
             Directions::Both => {
                 println!("found at least one file index middle");
@@ -187,7 +192,8 @@ impl MyEguiApp {
                     Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.get_metadata()["commit hash"], history.get_metadata()["date"]
+                        history.get_metadata()["commit hash"],
+                        history.get_metadata()["date"]
                     )),
                 );
 
