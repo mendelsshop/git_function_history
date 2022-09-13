@@ -1,7 +1,7 @@
-// use std::fmt;
+use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
@@ -47,10 +47,8 @@ where
             .as_ref(),
         )
         .split(whole_chunks);
-    app.body_height = body_chunks[0].height;
     app.get_result();
-    let body = draw_body(&app.cmd_output, app.state(), app.scroll_pos);
-    rect.render_widget(body, body_chunks[0]);
+    draw_body(app, body_chunks[0], rect);
     app.input_width = body_chunks[1].width;
     let input = draw_input(&app.input_buffer, app.state(), app.text_scroll_pos);
     rect.render_widget(input, body_chunks[1]);
@@ -58,22 +56,64 @@ where
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a>(file: &CommandResult, _state: &AppState, scroll_pos: (u16, u16)) -> Paragraph<'a> {
-    let tick_text: Vec<Spans> = file
+fn draw_body<'a, B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>)  {
+    let top  = match &app.cmd_output {
+        CommandResult::History(history) => {
+            let metadata = history.get_metadata();
+            let metadata = BTreeMap::from_iter(metadata.iter());
+            let metadata: Vec<Spans> =metadata.iter().map(|x| {
+                Spans::from(
+                    format!("{}: {}\n", x.0, x.1),
+                )
+            }).collect();
+            Some(Paragraph::new(metadata)
+            .style(Style::default().fg(Color::LightCyan))
+            .block(
+                Block::default()
+                    .style(Style::default().fg(Color::White)),
+            ))
+
+        }
+        CommandResult::Commit(commit) => {
+            let metadata = commit.get_metadata();
+            let metadata = BTreeMap::from_iter(metadata.iter());
+            let metadata: Vec<Spans> =metadata.iter().map(|x| {
+                Spans::from(
+                    format!("{}: {}\n", x.0, x.1),
+                )
+            }).collect();
+            Some(Paragraph::new(metadata)
+            .style(Style::default().fg(Color::LightCyan))
+            .block(
+                Block::default()
+                    .style(Style::default().fg(Color::White)),
+            ))
+        }
+        _ => {None}
+    };
+    let tick_text: Vec<Spans> = app.cmd_output
         .to_string()
         .split('\n')
         .map(|s| Spans::from(format!("{}\n", s)))
         .collect();
 
-    Paragraph::new(tick_text)
+    let body= Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
-        .scroll(scroll_pos)
+        .scroll(app.scroll_pos)
         .block(
             Block::default()
-                .borders(Borders::TOP)
                 .borders(Borders::BOTTOM)
                 .style(Style::default().fg(Color::White)),
-        )
+        );
+    if let Some(top) = top {
+        let mut top_pos = pos;
+        top_pos.height = 4;
+        pos.height -= 4;
+        pos.y += 4;
+        frame.render_widget(top, top_pos);
+    }
+    app.body_height = pos.height;
+    frame.render_widget(body, pos);
 }
 
 fn draw_main<'a>() -> Block<'a> {

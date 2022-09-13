@@ -11,10 +11,10 @@ use eframe::{
 };
 use function_history_backend_thread::types::{
     Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
+    FilterType, FullCommand, HistoryFilter, HistoryFilterType, ListType, SearchFilter,
     Status,
 };
-use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory};
+use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory, things::Directions};
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -57,32 +57,26 @@ impl MyEguiApp {
         }
     }
 
-    fn draw_commit(commit: (&CommitFunctions, &mut Index), ctx: &egui::Context, show: bool) {
+    fn draw_commit(commit: &mut CommitFunctions, ctx: &egui::Context, show: bool) {
         if show {
             TopBottomPanel::top("date_id").show(ctx, |ui| {
-                ui.add(Label::new(format!("Commit: {}", commit.0.id)));
-                ui.add(Label::new(format!("Date: {}", commit.0.date)));
+                ui.add(Label::new(format!("Commit: {}", commit.id)));
+                ui.add(Label::new(format!("Date: {}", commit.date)));
             });
         }
-        let mut i = 0;
-        match commit.1 {
-            Index(0, _) => {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.add(Label::new("no files found"));
-                });
-            }
-            Index(len, 0) if *len == 1 => {
+        match commit.get_move_direction() {
+            Directions::None  => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[0].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
             }
-            Index(_, 0) => {
+            Directions::Forward => {
                 // split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
                 println!("found at least one file index beginning");
                 let resp = egui::SidePanel::right("right_arrow")
@@ -100,14 +94,14 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[0].to_string()))
+                            ui.add(Label::new(commit.get_file().to_string()))
                         });
                 });
                 if resp.clicked() {
-                    i = 1;
+                    commit.move_forward();
                 }
             }
-            Index(len, d) if *d == *len - 1 => {
+             Directions::Back => {
                 println!("found at least one file index end");
                 // split the screen in two parts, leave a small part for the left arrow and the rest for the content
                 let resp = SidePanel::left("right_button")
@@ -125,16 +119,14 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[*len - 1].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
                 if resp.clicked() {
-                    i = *d - 1;
-                } else {
-                    i = *d
-                }
+                    commit.move_back();
+                } 
             }
-            Index(_, is) => {
+            Directions::Both => {
                 println!("found at least one file index middle");
                 // split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
                 let l_resp = SidePanel::left("left_arrow")
@@ -161,30 +153,27 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[*is].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
                 if l_resp.clicked() {
-                    i = *is - 1;
+                    commit.move_back();
                 } else if r_resp.clicked() {
-                    i = *is + 1;
-                } else {
-                    i = *is;
+                    commit.move_forward();
                 }
             }
         }
-        *commit.1 = Index(commit.1 .0, i);
     }
 
-    fn draw_history(history: (&FunctionHistory, &mut Index, &mut Index), ctx: &egui::Context) {
+    fn draw_history(history: &mut FunctionHistory, ctx: &egui::Context) {
         // split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
         // create a 3 line header
         TopBottomPanel::top("control history").show(ctx, |ui| {
             ui.set_height(2.0);
             ui.horizontal(|ui| {
                 let mut max = ui.available_width();
-                let l_resp = match history.1 {
-                    Index(_, 0) => {
+                let l_resp = match history.get_move_direction() {
+                    Directions::Forward => {
                         ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-").sense(Sense::hover()));
                         None
                     }
@@ -198,12 +187,12 @@ impl MyEguiApp {
                     Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.0.history[history.1 .1].id, history.0.history[history.1 .1].date
+                        history.get_metadata()["commit hash"], history.get_metadata()["date"]
                     )),
                 );
 
-                let r_resp = match history.1 {
-                    Index(len, i) if *i == *len - 1 => {
+                let r_resp = match history.get_move_direction() {
+                    Directions::Back => {
                         ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->").sense(Sense::hover()));
                         None
                     }
@@ -216,9 +205,7 @@ impl MyEguiApp {
                 match r_resp {
                     Some(r_resp) => {
                         if r_resp.clicked() {
-                            *history.1 = Index(history.1 .0, history.1 .1 + 1);
-                            // reset file index
-                            *history.2 = Index(history.2 .0, 0)
+                            history.move_forward();
                         }
                     }
                     None => {}
@@ -226,16 +213,14 @@ impl MyEguiApp {
                 match l_resp {
                     Some(l_resp) => {
                         if l_resp.clicked() {
-                            *history.1 = Index(history.1 .0, history.1 .1 - 1);
-                            // reset file index
-                            *history.2 = Index(history.2 .0, 0)
+                            history.move_back();
                         }
                     }
                     None => {}
                 }
             });
         });
-        Self::draw_commit((&history.0.history[history.1 .1], history.2), ctx, false);
+        Self::draw_commit(history.get_mut_commit(), ctx, false);
     }
 
     fn draw_commit_file_filter(&mut self, ui: &mut Ui, t: CommmitFilterValue, max: f32) {
@@ -419,7 +404,7 @@ impl eframe::App for MyEguiApp {
                 match self.command {
                     Command::Filter => {
                         match &self.cmd_output {
-                            CommandResult::History(t, _, _) => {
+                            CommandResult::History(t) => {
                                 // Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
                                 let text = match &self.history_filter_type {
                                     HistoryFilterType::None => "filter type".to_string(),
@@ -625,7 +610,7 @@ impl eframe::App for MyEguiApp {
                                     }
                                 }
                             }
-                            CommandResult::Commit(t, _) => self.draw_commit_file_filter(
+                            CommandResult::Commit(t) => self.draw_commit_file_filter(
                                 ui,
                                 CommmitFilterValue::Commit(t.clone()),
                                 max,
@@ -836,13 +821,13 @@ impl eframe::App for MyEguiApp {
             }
             // match self.commmand and render based on that
             match &mut self.cmd_output {
-                CommandResult::History(t, c_index, f_index) => {
-                    Self::draw_history((t, c_index, f_index), ctx);
+                CommandResult::History(t) => {
+                    Self::draw_history(t, ctx);
                 }
-                CommandResult::Commit(t, index) => {
+                CommandResult::Commit(t) => {
                     ui.add(Label::new(format!("Commit: {}", t.id)));
                     ui.add(Label::new(format!("Date: {}", t.date)));
-                    Self::draw_commit((t, index), ctx, true)
+                    Self::draw_commit(t, ctx, true)
                 }
                 CommandResult::File(t) => {
                     ui.add(Label::new("File"));

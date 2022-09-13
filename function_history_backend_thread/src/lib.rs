@@ -7,7 +7,7 @@ use std::{
 use git_function_history::get_function_history;
 use types::{CommitOrFileFilter, CommmitFilterValue, FilterType, FullCommand, HistoryFilter};
 
-use crate::types::{CommandResult, Index, ListType, Status};
+use crate::types::{CommandResult, ListType, Status};
 
 pub mod types;
 
@@ -89,20 +89,12 @@ pub fn command_thread(
                         }
                         match get_function_history(&name, file, filter) {
                             Ok(functions) => {
-                                let hist_len = functions.history.len();
-                                let commit_len = if hist_len > 0 {
-                                    functions.history[0].functions.len()
-                                } else {
-                                    0
-                                };
                                 if log {
-                                    log::info!("Found functions",);
+                                    log::info!("Found functions");
                                 }
                                 tx_t.send((
                                     CommandResult::History(
                                         functions,
-                                        Index(hist_len, 0),
-                                        Index(commit_len, 0),
                                     ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
@@ -122,7 +114,6 @@ pub fn command_thread(
                                         tx_t.send((
                                             CommandResult::Commit(
                                                 functions.clone(),
-                                                Index(functions.functions.len(), 0),
                                             ),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
@@ -146,7 +137,7 @@ pub fn command_thread(
                                         tx_t.send((
                                             CommandResult::Commit(
                                                 functions.clone(),
-                                                Index(functions.functions.len(), 0),
+                                                
                                             ),
                                             Status::Ok(Some("Found functions".to_string())),
                                         ))
@@ -165,33 +156,40 @@ pub fn command_thread(
                                 };
                             }
                             HistoryFilter::DateRange(frst, scd) => {
-                                let t = history.get_date_range(&frst, &scd);
-                                let hist_len = t.history.len();
-                                let commit_len = if hist_len > 0 {
-                                    t.history[0].functions.len()
-                                } else {
-                                    0
+                                log::info!("Received date range from {}-{}",frst, scd);
+                                let t = match  history.get_date_range(&frst, &scd) {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(e.to_string()),
+                                        ))
+                                        .unwrap();
+                                        continue;
+                                    }
                                 };
                                 if log {
-                                    log::info!("Found functions",);
+                                    log::info!("Found functions in date range",);
                                 }
                                 tx_t.send((
                                     CommandResult::History(
                                         t,
-                                        Index(hist_len, 0),
-                                        Index(commit_len, 0),
                                     ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
                             }
                             HistoryFilter::FunctionInBlock(block) => {
-                                let t = history.get_all_functions_in_block(block);
-                                let hist_len = t.history.len();
-                                let commit_len = if hist_len > 0 {
-                                    t.history[0].functions.len()
-                                } else {
-                                    0
+                                let t = match history.get_all_functions_in_block(block) {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(e.to_string()),
+                                        ))
+                                        .unwrap();
+                                        continue;
+                                    }
                                 };
                                 if log {
                                     log::info!("Found functions",);
@@ -199,41 +197,51 @@ pub fn command_thread(
                                 tx_t.send((
                                     CommandResult::History(
                                         t,
-                                        Index(hist_len, 0),
-                                        Index(commit_len, 0),
+                                        
+                                        
                                     ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
                             }
                             HistoryFilter::FunctionInLines(line1, line2) => {
-                                let t = history.get_all_functions_line(line1, line2);
-                                let hist_len = t.history.len();
-                                let commit_len = if hist_len > 0 {
-                                    t.history[0].functions.len()
-                                } else {
-                                    0
+                                let t = match history.get_all_functions_line(line1, line2) {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(e.to_string()),
+                                        ))
+                                        .unwrap();
+                                        continue;
+                                    }
+                                
                                 };
+
                                 if log {
                                     log::info!("Found functions",);
                                 }
                                 tx_t.send((
                                     CommandResult::History(
                                         t,
-                                        Index(hist_len, 0),
-                                        Index(commit_len, 0),
+                                        
+                                        
                                     ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
                                 .unwrap();
                             }
                             HistoryFilter::FunctionInFunction(function) => {
-                                let t = history.get_all_function_with_parent(&function);
-                                let hist_len = t.history.len();
-                                let commit_len = if hist_len > 0 {
-                                    t.history[0].functions.len()
-                                } else {
-                                    0
+                                let t = match history.get_all_function_with_parent(&function) {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        tx_t.send((
+                                            CommandResult::None,
+                                            Status::Error(e.to_string()),
+                                        ))
+                                        .unwrap();
+                                        continue;
+                                    }
                                 };
                                 if log {
                                     log::info!("Found functions",);
@@ -241,8 +249,8 @@ pub fn command_thread(
                                 tx_t.send((
                                     CommandResult::History(
                                         t,
-                                        Index(hist_len, 0),
-                                        Index(commit_len, 0),
+                                        
+                                        
                                     ),
                                     Status::Ok(Some("Found functions".to_string())),
                                 ))
@@ -266,12 +274,11 @@ pub fn command_thread(
                                             return;
                                         }
                                     };
-                                    let hist_len = t.functions.len();
                                     if log {
                                         log::info!("Found functions",);
                                     }
                                     tx_t.send((
-                                        CommandResult::Commit(t, Index(hist_len, 0)),
+                                        CommandResult::Commit(t),
                                         Status::Ok(Some("Found functions".to_string())),
                                     ))
                                     .unwrap();
@@ -291,12 +298,11 @@ pub fn command_thread(
                                             return;
                                         }
                                     };
-                                    let hist_len = t.functions.len();
                                     if log {
                                         log::info!("Found functions",);
                                     }
                                     tx_t.send((
-                                        CommandResult::Commit(t, Index(hist_len, 0)),
+                                        CommandResult::Commit(t), 
                                         Status::Ok(Some("Found functions".to_string())),
                                     ))
                                     .unwrap();
@@ -316,12 +322,11 @@ pub fn command_thread(
                                             return;
                                         }
                                     };
-                                    let hist_len = t.functions.len();
                                     if log {
                                         log::info!("Found functions",);
                                     }
                                     tx_t.send((
-                                        CommandResult::Commit(t, Index(hist_len, 0)),
+                                        CommandResult::Commit(t), 
                                         Status::Ok(Some("Found functions".to_string())),
                                     ))
                                     .unwrap();

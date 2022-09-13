@@ -4,7 +4,7 @@ use crate::app::actions::Action;
 use crate::inputs::key::Key;
 use function_history_backend_thread::types::{
     CommandResult, CommitOrFileFilter, CommmitFilterValue, FilterType, FullCommand, HistoryFilter,
-    Index, ListType, Status,
+    ListType, Status,
 };
 use git_function_history::{BlockType, FileType, Filter};
 use std::{sync::mpsc, time::Duration};
@@ -92,6 +92,7 @@ impl App {
                 }
                 Action::ScrollDown => {
                     let ot = self.scroll_pos.0 + self.body_height;
+                    log::trace!("scroll down: ot:{} output:{}", ot, self.cmd_output.len());
                     // check if there is enough body_height that we dont need to scroll more
                     if usize::from(ot) >= self.cmd_output().len() {
                         return AppReturn::Continue;
@@ -101,47 +102,24 @@ impl App {
                 }
                 // TODO reset other things
                 Action::BackCommit => {
-                    if let CommandResult::History(_, Index(_, i), _) = &mut self.cmd_output {
-                        if *i == 0 {
-                            *i = 0;
-                            return AppReturn::Continue;
-                        }
-                        self.scroll_pos.0 = 0;
-
-                        *i -= 1;
+                    if let CommandResult::History(t) = &mut self.cmd_output {
+                        t.move_back();
                     }
                     AppReturn::Continue
                 }
                 Action::ForwardCommit => {
-                    if let CommandResult::History(_, Index(len, i), _) = &mut self.cmd_output {
-                        if *len - 1 <= *i {
-                            *i = *len - 1;
-                            return AppReturn::Continue;
-                        }
-                        self.scroll_pos.0 = 0;
-                        *i += 1;
+                    if let CommandResult::History(t) = &mut self.cmd_output {
+                        t.move_forward();
                     }
                     AppReturn::Continue
                 }
                 Action::BackFile => {
                     match &mut self.cmd_output {
-                        CommandResult::History(_, _, Index(_, i)) => {
-                            if *i == 0 {
-                                *i = 0;
-                                return AppReturn::Continue;
-                            }
-                            self.scroll_pos.0 = 0;
-
-                            *i -= 1;
+                        CommandResult::History(t) => {
+                            t.move_back_file();
                         }
-                        CommandResult::Commit(_, Index(_, i)) => {
-                            if *i == 0 {
-                                *i = 0;
-                                return AppReturn::Continue;
-                            }
-                            self.scroll_pos.0 = 0;
-
-                            *i -= 1;
+                        CommandResult::Commit(t) => {
+                            t.move_back();
                         }
                         _ => {}
                     }
@@ -149,21 +127,11 @@ impl App {
                 }
                 Action::ForwardFile => {
                     match &mut self.cmd_output {
-                        CommandResult::History(_, _, Index(len, i)) => {
-                            if *len > *i {
-                                *i = *len - 1;
-                                return AppReturn::Continue;
-                            }
-                            self.scroll_pos.0 = 0;
-                            *i += 1;
+                        CommandResult::History(t) => {
+                            t.move_forward_file();
                         }
-                        CommandResult::Commit(_, Index(len, i)) => {
-                            if *len > *i {
-                                *i = *len - 1;
-                                return AppReturn::Continue;
-                            }
-                            self.scroll_pos.0 = 0;
-                            *i += 1;
+                        CommandResult::Commit(t) => {
+                            t.move_forward();
                         }
                         _ => {}
                     }
@@ -257,7 +225,7 @@ impl App {
             Some(cmd) => match cmd {
                 "filter" => {
                     match &self.cmd_output {
-                        CommandResult::History(t, _, _) => {
+                        CommandResult::History(t) => {
                             if let Some(filter) = iter.next() {
                                 match filter {
                                     "date" => {
@@ -390,7 +358,7 @@ impl App {
                                 self.status = Status::Error("No filter given".to_string());
                             }
                         }
-                        CommandResult::Commit(t, _) => {
+                        CommandResult::Commit(t) => {
                             if let Some(filter) = iter.next() {
                                 match filter {
                                     "parent" => {

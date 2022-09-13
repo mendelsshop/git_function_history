@@ -48,8 +48,8 @@ impl Default for ListType {
 
 #[derive(Debug, Clone)]
 pub enum CommandResult {
-    History(FunctionHistory, Index, Index),
-    Commit(CommitFunctions, Index),
+    History(FunctionHistory),
+    Commit(CommitFunctions),
     File(File),
     String(Vec<String>),
     None,
@@ -64,9 +64,9 @@ impl Default for CommandResult {
 impl CommandResult {
     pub fn len(&self) -> usize {
         match self {
-            CommandResult::History(history, ..) => history.to_string().len(),
-            CommandResult::Commit(commit, _) => commit.to_string().len(),
-            CommandResult::File(file) => file.to_string().len(),
+            CommandResult::History(history) => history.to_string().split('\n').count(),
+            CommandResult::Commit(commit) => commit.to_string().split('\n').count(),
+            CommandResult::File(file) => file.to_string().split('\n').count(),
             CommandResult::String(str) => str.len(),
             CommandResult::None => 0,
         }
@@ -76,10 +76,10 @@ impl CommandResult {
 impl fmt::Display for CommandResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CommandResult::History(history, t1, t2) => {
-                write!(f, "{}", history.history[t1.1].functions[t2.1])
+            CommandResult::History(history) => {
+                write!(f, "{}", history)
             }
-            CommandResult::Commit(commit, t) => write!(f, "{}", commit.functions[t.1]),
+            CommandResult::Commit(commit, ) => write!(f, "{}", commit),
             CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {
                 for line in string {
@@ -125,9 +125,6 @@ pub enum FullCommand {
     List(ListType),
     Search(String, FileType, Filter),
 }
-
-#[derive(Debug, Clone)]
-pub struct Index(pub usize, pub usize);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileTypeS {

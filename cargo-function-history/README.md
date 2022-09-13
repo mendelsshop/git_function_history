@@ -88,6 +88,34 @@ Then press enter to execute the command, and after executing the command you wil
 
 ##### command-pane-filter
 
+after running a search (or another filter) typing `filter`, lets you build a command to filter the current output.
+
+The options vary by if you have already filtered by lets say a date, then you won't be able to filter by a date range or a commit hash.
+
+All the options are:
+
+- `commit`: This option will filter the output to only the commit with the commit hash specified after the `commit` keyword
+
+- `date`: This option will filter the output to only the commit closest to the date specified after the `date` keyword
+
+- `date-range`: This option will filter the output to only the commits between the two space separated dates specified after the `date-range` keyword
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-filter-date.png" width="400">
+
+- `parent`: This option will filter the output to only the commits that contain the function you specified in your search has a parent function specified after the `parent` keyword
+- `line-range`: This option will filter the output to only the commits that contain the function you specified in your search in the lines specified after the `line-range` keyword
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-filter-lines.png" width="400">
+
+- `block`: This option will filter the output to only the commits that contain the function you specified in your search in the block specified after the `block` keyword. Valid block types are:
+  - `extern`
+  - `impl`
+  - `trait`
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-filter-block.png" width="400">
+
+After entering the command, press enter to execute the command, and after executing the command you will see the search result in the viewing pane.
+
 ##### command-pane-list
 
 After typing `list` you can type the type of list you want to see with `commits` or `dates`.
@@ -96,7 +124,7 @@ After typing `list` you can type the type of list you want to see with `commits`
 
 Then press enter to execute the command, and after executing the command you will see the list result in the viewing pane.
 
-#### viewing-pane
+#### viewing pane
 
 #### status pane
 

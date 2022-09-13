@@ -1,5 +1,5 @@
 use chrono::{DateTime, FixedOffset};
-use std::fmt::{self};
+use std::{fmt::{self}, error::Error, collections::HashMap};
 
 pub(crate) struct InternalBlock {
     pub(crate) start: Points,
@@ -321,7 +321,6 @@ impl Iterator for File {
 
 impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "File {}", self.name)?;
         for (i, function) in self.functions.iter().enumerate() {
             write!(
                 f,
@@ -348,6 +347,7 @@ pub struct CommitFunctions {
     pub id: String,
     pub functions: Vec<File>,
     pub date: DateTime<FixedOffset>,
+    current_iter_pos: usize,
     current_pos: usize,
 }
 
@@ -359,6 +359,7 @@ impl CommitFunctions {
             functions,
             date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
             current_pos: 0,
+            current_iter_pos: 0,
         }
     }
 
@@ -379,6 +380,7 @@ impl CommitFunctions {
             functions: t,
             date: self.date,
             current_pos: 0,
+            current_iter_pos: 0,
         })
     }
 
@@ -399,6 +401,7 @@ impl CommitFunctions {
             functions: t,
             date: self.date,
             current_pos: 0,
+            current_iter_pos: 0,
         })
     }
 
@@ -419,7 +422,44 @@ impl CommitFunctions {
             functions: t,
             date: self.date,
             current_pos: 0,
+            current_iter_pos: 0,
+
         })
+    }
+    pub fn move_forward(&mut self) -> bool {
+        if self.current_pos >= self.functions.len()-1 {
+            return false;
+        }
+        self.current_pos += 1;
+        true
+    }
+
+    pub fn move_back(&mut self) -> bool {
+        if self.current_pos == 0 {
+            return false;
+        }
+        self.current_pos -= 1;
+        true
+    }
+
+    pub fn get_metadata(&self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.insert("commit hash".to_string(), self.id.clone());
+        map.insert("date".to_string(), self.date.to_rfc2822());
+        map.insert("file".to_string(), self.functions[self.current_pos].name.clone());
+        map
+    }
+
+    pub fn get_file(&self) -> File {
+        self.functions[self.current_pos].clone()
+    } 
+    pub fn get_move_direction(&self) -> Directions {
+        match self.current_pos {
+            0 if self.functions.len() == 1 => Directions::None,
+            0 => Directions::Forward,
+            x if x == self.functions.len()-1 => Directions::Back,
+            _ => Directions::Both
+        }
     }
 }
 
@@ -427,19 +467,15 @@ impl Iterator for CommitFunctions {
     type Item = File;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
-        let function = self.functions.get(self.current_pos).cloned();
-        self.current_pos += 1;
+        let function = self.functions.get(self.current_iter_pos).cloned();
+        self.current_iter_pos += 1;
         function
     }
 }
 
 impl fmt::Display for CommitFunctions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Commit {}", self.id)?;
-        writeln!(f, "Date: {}", self.date.format("%Y-%m-%d %H:%M:%S"))?;
-        for file in &self.functions {
-            write!(f, "\n{}", file)?;
-        }
+        writeln!(f, "{}", self.functions[self.current_pos])?;
         Ok(())
     }
 }
@@ -449,7 +485,9 @@ impl fmt::Display for CommitFunctions {
 pub struct FunctionHistory {
     pub name: String,
     pub history: Vec<CommitFunctions>,
+    current_iter_pos: usize,
     current_pos: usize,
+
 }
 
 impl FunctionHistory {
@@ -458,7 +496,8 @@ impl FunctionHistory {
         Self {
             name,
             history,
-            current_pos: 0,
+            current_iter_pos: 0,
+            current_pos: 0
         }
     }
     /// This function will return a `CommitFunctions` for the given commit id.
@@ -472,21 +511,27 @@ impl FunctionHistory {
     }
 
     /// Given a date range in the rfc2822 format, this function will return a vector of commits in that range.
-    pub fn get_date_range(&self, start: &str, end: &str) -> Self {
+    pub fn get_date_range(&self, start: &str, end: &str) -> Result<Self, Box<dyn Error>> {
         let start = DateTime::parse_from_rfc2822(start).expect("Failed to parse date");
         let end = DateTime::parse_from_rfc2822(end).expect("Failed to parse date");
-        assert!(start <= end, "Start date is greater than end date");
-        let t = self
+        if start >= end {
+            return Err("Start date is after end date")?;
+        }
+        let t: Vec<CommitFunctions> = self
             .history
             .iter()
-            .filter(|c| c.date >= start && c.date <= end)
+            .filter(|c| c.date >= start || c.date <= end)
             .cloned()
             .collect();
-        Self {
+        if t.is_empty() {
+            return Err("no history found for the date range")?;
+        }
+        Ok(Self {
             history: t,
             name: self.name.clone(),
-            current_pos: 0,
-        }
+            current_iter_pos: 0,
+            current_pos: 0
+        })
     }
 
     /// This will return a vector of all the commit ids in the history.
@@ -502,53 +547,106 @@ impl FunctionHistory {
     /// println!("{}", in_impl);
     /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
     /// ```
-    pub fn get_all_functions_in_block(&self, block_type: BlockType) -> Self {
-        let t = self
+    pub fn get_all_functions_in_block(&self, block_type: BlockType) -> Result<Self, Box<dyn Error>> {
+        let t: Vec<CommitFunctions> = self
             .history
             .iter()
             .filter_map(|f| f.get_function_from_block(block_type))
             .collect();
-        Self {
+        if t.is_empty() {
+            return Err("no functions found in the given block")?;
+        }
+        Ok(Self {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
-        }
+            current_iter_pos: 0
+        })
     }
 
     /// This function finds all function in each commit that are between the given start and end positions.
-    pub fn get_all_functions_line(&self, start: usize, end: usize) -> Self {
-        let t = self
+    pub fn get_all_functions_line(&self, start: usize, end: usize) -> Result<Self, Box<dyn Error>> {
+        let t: Vec<CommitFunctions> = self
             .history
             .iter()
             .filter_map(|f| f.get_function_in_lines(start, end))
             .collect();
-        Self {
+        if t.is_empty() {
+            return Err("no functions found in the given lines")?;
+            }
+        Ok(Self {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
-        }
+            current_iter_pos: 0
+        })
     }
 
     /// This function finds all functions that have a parent function that has the same name as the one specified.
-    pub fn get_all_function_with_parent(&self, parent: &str) -> Self {
-        let t = self
+    pub fn get_all_function_with_parent(&self, parent: &str) -> Result<Self, Box<dyn Error>> {
+        let t: Vec<CommitFunctions> = self
             .history
             .iter()
             .filter_map(|f| f.get_function_with_parent(parent))
             .collect();
-        Self {
+
+        if t.is_empty() {
+            return Err("no functions found with the given parent")?;
+            }
+        Ok(Self {
             history: t,
             name: self.name.clone(),
             current_pos: 0,
+            current_iter_pos: 0
+        })
+    }
+
+    pub fn move_forward(&mut self) -> bool {
+        if self.current_pos >= self.history.len()-1 {
+            return false;
+        }
+        self.current_pos += 1;
+        true
+    }
+
+    pub fn move_back(&mut self) -> bool {
+        if self.current_pos == 0 {
+            return false;
+        }
+        self.current_pos -= 1;
+        true
+    }
+    
+    pub fn move_forward_file(&mut self) -> bool {
+        self.history[self.current_pos].move_forward()
+    }
+
+    pub fn move_back_file(&mut self) -> bool {
+        self.history[self.current_pos].move_back()
+    }
+
+    pub fn get_metadata(&self) -> HashMap<String, String> {
+        self.history[self.current_pos].get_metadata()
+    }
+
+    pub fn get_mut_commit(&mut self) -> &mut CommitFunctions {
+        &mut self.history[self.current_pos]
+    }
+
+    pub fn get_move_direction(&self) -> Directions {
+        match self.current_pos {
+            0 if self.history.len() == 1 => Directions::None,
+            0 => Directions::Forward,
+            x if x == self.history.len()-1 => Directions::Back,
+            _ => Directions::Both
         }
     }
 }
 
+
 impl fmt::Display for FunctionHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for commit in &self.history {
-            write!(f, "\n{}", commit)?;
-        }
+        writeln!(f, "{}", self.history[self.current_pos])?;
         Ok(())
     }
 }
@@ -556,9 +654,16 @@ impl fmt::Display for FunctionHistory {
 impl Iterator for FunctionHistory {
     type Item = CommitFunctions;
     fn next(&mut self) -> Option<Self::Item> {
-        self.history.get(self.current_pos).cloned().map(|c| {
-            self.current_pos += 1;
+        self.history.get(self.current_iter_pos).cloned().map(|c| {
+            self.current_iter_pos += 1;
             c
         })
     }
+}
+
+pub enum Directions {
+    Forward,
+    Back,
+    None,
+    Both, 
 }

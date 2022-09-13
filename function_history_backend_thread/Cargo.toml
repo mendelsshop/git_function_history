@@ -11,5 +11,5 @@ description = "threading and types for git-function-history"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-git_function_history = { path = "../git-function-history-lib", version = "0.5.4" }
+git_function_history = { path = "../git-function-history-lib"}
 log = "0.4"
