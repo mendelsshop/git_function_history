@@ -494,7 +494,7 @@ fn find_function_in_commit_with_filetype(
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", commit])
+        .args(&["ls-tree", "-r", "--name-only", "--full-tree", commit])
         .output()?;
     if !command.stderr.is_empty() {
         Err(String::from_utf8_lossy(&command.stderr))?;
@@ -527,6 +527,9 @@ fn find_function_in_commit_with_filetype(
             Err(_) => continue,
         }
     }
+    if returns.is_empty() {
+        Err("No functions found")?;
+    }
     Ok(returns)
 }
 
@@ -555,7 +558,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions.history[0]);
+                println!("{}", functions);
             }
             Err(e) => println!("{}", e),
         }
@@ -591,13 +594,11 @@ mod tests {
             FileType::Absolute("src/test_functions.txt".to_string()),
             Filter::None,
         );
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "not a rust file");
     }
     #[test]
-    fn test() {
+    fn test_date() {
         let output = get_function_history(
             "empty_test",
             FileType::None,
@@ -608,7 +609,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions.history[0]);
+                println!("{}", functions);
             }
             Err(e) => println!("{}", e),
         }
