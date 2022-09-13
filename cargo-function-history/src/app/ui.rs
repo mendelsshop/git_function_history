@@ -71,19 +71,6 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
                     .block(Block::default().style(Style::default().fg(Color::White))),
             )
         }
-        CommandResult::Commit(commit) => {
-            let metadata = commit.get_metadata();
-            let metadata = BTreeMap::from_iter(metadata.iter());
-            let metadata: Vec<Spans> = metadata
-                .iter()
-                .map(|x| Spans::from(format!("{}: {}\n", x.0, x.1)))
-                .collect();
-            Some(
-                Paragraph::new(metadata)
-                    .style(Style::default().fg(Color::LightCyan))
-                    .block(Block::default().style(Style::default().fg(Color::White))),
-            )
-        }
         _ => None,
     };
     let tick_text: Vec<Spans> = app

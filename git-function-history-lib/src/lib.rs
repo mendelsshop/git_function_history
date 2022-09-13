@@ -38,6 +38,8 @@ pub enum FileType {
     Absolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
     Relative(String),
+    /// When you want to filter only files in a specific directory
+    Directory(String),
     /// When you don't know the path to a file.
     None,
 }
@@ -53,6 +55,18 @@ pub enum Filter {
     Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
     DateRange(String, String),
+    /// When you have a absolute path to a file.
+    FileAbsolute(String),
+    /// When you have a relative path to a file and or want to find look in all files match a name.
+    FileRelative(String),
+    /// When you want to filter only files in a specific directory
+    Directory(String),
+    // when you want to filter by function that are in a specific block (impl, trait, extern)
+    FunctionInBlock(BlockType),
+    // when you want to filter by function that are in between specific lines
+    FunctionInLines(usize, usize),
+    // when you want filter by a function that has a parent function of a specific name
+    FunctionWithParent(String),
     /// When you want to filter by nothing.
     None,
 }
@@ -124,6 +138,9 @@ pub fn get_function_history(
             command.arg(end);
         }
         Filter::None => {}
+        _ => {
+            Err("filter not supported")?;
+        }
     }
     let output = command.output()?;
     if !output.stderr.is_empty() {
@@ -162,12 +179,12 @@ pub fn get_function_history(
                 }
             }
         }
-        FileType::Relative(path) => {
+        FileType::Relative(ref path) => {
             if !path.ends_with(".rs") {
                 return Err("not a rust file")?;
             }
             for commit in commits {
-                match find_function_in_commit_with_relative_path(commit.0, name, &path) {
+                match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
                         file_history.history.push(CommitFunctions::new(
                             commit.0.to_string(),
@@ -181,9 +198,10 @@ pub fn get_function_history(
                 }
             }
         }
-        FileType::None => {
+
+        FileType::None | FileType::Directory(_) => {
             for commit in commits {
-                match find_function_in_commit_with_unkown_file(commit.0, name) {
+                match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
                         file_history.history.push(CommitFunctions::new(
                             commit.0.to_string(),
@@ -468,9 +486,10 @@ fn get_function_name(mut function_header: &str) -> String {
     name
 }
 
-fn find_function_in_commit_with_unkown_file(
+fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
+    filetype: &FileType,
 ) -> Result<Vec<File>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
@@ -482,43 +501,29 @@ fn find_function_in_commit_with_unkown_file(
     }
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
     for file in file_list.split('\n') {
-        if file.ends_with(".rs") {
-            files.push(file.to_string());
+        match filetype {
+            FileType::Relative(ref path) => {
+                if file.ends_with(path) {
+                    files.push(file);
+                }
+            }
+            FileType::Directory(ref path) => {
+                if path.contains(path) {
+                    files.push(file);
+                }
+            }
+            FileType::None => {
+                if file.ends_with(".rs") {
+                    files.push(file);
+                }
+            }
+            _ => {}
         }
     }
     let mut returns = Vec::new();
     for file in files {
-        match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => returns.push(File::new(file, functions)),
-            Err(_) => continue,
-        }
-    }
-    Ok(returns)
-}
-
-fn find_function_in_commit_with_relative_path(
-    commit: &str,
-    name: &str,
-    relative_path: &str,
-) -> Result<Vec<File>, Box<dyn Error>> {
-    // get a list of all the files in the repository
-    let mut files = Vec::new();
-    let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", commit])
-        .output()?;
-    if !command.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&command.stderr))?;
-    }
-    let file_list = String::from_utf8_lossy(&command.stdout).to_string();
-    for file in file_list.split('\n') {
-        if file.ends_with(relative_path) {
-            files.push(file.to_string());
-        }
-    }
-    let mut returns = Vec::new();
-    for file in files {
-        match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => returns.push(File::new(file, functions)),
+        match find_function_in_commit(commit, file, name) {
+            Ok(functions) => returns.push(File::new(file.to_string(), functions)),
             Err(_) => continue,
         }
     }

@@ -14,6 +14,7 @@
   - [ ] finish documentation
 
 - General
+  - [ ] add the new filters to the GUI and TUI
   - [ ] clean up the code
   - [ ] add more logging in the code (and remove the `println!`s)
   - [ ] bump versions when all else is done and publish to crates.io

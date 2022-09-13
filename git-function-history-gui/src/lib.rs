@@ -2,7 +2,7 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Layout, Sense, SidePanel, Ui},
+    egui::{self, Button, Layout, Sense, SidePanel},
     epaint::Vec2,
 };
 use eframe::{
@@ -10,8 +10,8 @@ use eframe::{
     epaint::Color32,
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, ListType, SearchFilter, Status,
+    Command, CommandResult, FileTypeS, FilterType, FullCommand, HistoryFilterType, ListType,
+    SearchFilter, Status,
 };
 use git_function_history::{
     things::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
@@ -32,7 +32,6 @@ pub struct MyEguiApp {
     filter: SearchFilter,
     file_type: FileTypeS,
     history_filter_type: HistoryFilterType,
-    commit_filter_type: CommitFilterType,
 }
 
 impl MyEguiApp {
@@ -54,7 +53,6 @@ impl MyEguiApp {
             file_type: FileTypeS::None,
             filter: SearchFilter::None,
             history_filter_type: HistoryFilterType::None,
-            commit_filter_type: CommitFilterType::None,
         }
     }
 
@@ -228,122 +226,6 @@ impl MyEguiApp {
         });
         Self::draw_commit(history.get_mut_commit(), ctx, false);
     }
-
-    fn draw_commit_file_filter(&mut self, ui: &mut Ui, t: CommmitFilterValue, max: f32) {
-        // Options
-        // 1. function in block
-        // 2. function in lines
-        // 3. function in function
-        let text = match &self.commit_filter_type {
-            CommitFilterType::None => "filter type".to_string(),
-            a => a.to_string(),
-        };
-        egui::ComboBox::from_id_source("commit_combo_box")
-            .selected_text(text)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInFunction(String::new()),
-                    "function with parent",
-                );
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInBlock(String::new()),
-                    "function in block",
-                );
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInLines(String::new(), String::new()),
-                    "function in lines",
-                );
-                ui.selectable_value(&mut self.commit_filter_type, CommitFilterType::None, "none");
-            });
-        match &mut self.commit_filter_type {
-            CommitFilterType::FunctionInBlock(block) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(block));
-                });
-            }
-            CommitFilterType::FunctionInLines(line1, line2) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(line1));
-                });
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(line2));
-                });
-            }
-            CommitFilterType::FunctionInFunction(function) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(function));
-                });
-            }
-            CommitFilterType::None => {
-                // do nothing
-            }
-        }
-        let resp = ui.add(Button::new("Go"));
-        if resp.clicked() {
-            self.status = Status::Loading;
-            match &self.commit_filter_type {
-                CommitFilterType::FunctionInBlock(block) => {
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInBlock(BlockType::from_string(block)),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::FunctionInLines(line1, line2) => {
-                    let fn_in_lines = (
-                        match line1.parse::<usize>() {
-                            Ok(x) => x,
-                            Err(e) => {
-                                self.status = Status::Error(format!("{}", e));
-                                return;
-                            }
-                        },
-                        match line2.parse::<usize>() {
-                            Ok(x) => x,
-                            Err(e) => {
-                                self.status = Status::Error(format!("{}", e));
-                                return;
-                            }
-                        },
-                    );
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInLines(fn_in_lines.0, fn_in_lines.1),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::FunctionInFunction(function) => {
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInFunction(function.to_string()),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::None => {}
-            }
-        }
-    }
 }
 
 impl eframe::App for MyEguiApp {
@@ -410,7 +292,7 @@ impl eframe::App for MyEguiApp {
                 match self.command {
                     Command::Filter => {
                         match &self.cmd_output {
-                            CommandResult::History(t) => {
+                            CommandResult::History(_) => {
                                 // Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
                                 let text = match &self.history_filter_type {
                                     HistoryFilterType::None => "filter type".to_string(),
@@ -533,42 +415,42 @@ impl eframe::App for MyEguiApp {
                                         HistoryFilterType::Date(date) => {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::Date(date.to_string()),
-                                                    t.clone(),
-                                                )))
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::Date(date.to_string()),
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::CommitId(commit_id) => {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::CommitId(commit_id.to_string()),
-                                                    t.clone(),
-                                                )))
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::CommitId(commit_id.to_string()),
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::DateRange(date1, date2) => {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::DateRange(
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::DateRange(
                                                         date1.to_string(),
                                                         date2.to_string(),
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::FunctionInBlock(block) => {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInBlock(
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionInBlock(
                                                         BlockType::from_string(block),
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::FunctionInLines(line1, line2) => {
@@ -592,42 +474,31 @@ impl eframe::App for MyEguiApp {
                                             );
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInLines(
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionInLines(
                                                         fn_in_lines.0,
                                                         fn_in_lines.1,
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::FunctionInFunction(function) => {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInFunction(
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionWithParent(
                                                         function.to_string(),
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap();
                                         }
                                         HistoryFilterType::None => {}
                                     }
                                 }
                             }
-                            CommandResult::Commit(t) => self.draw_commit_file_filter(
-                                ui,
-                                CommmitFilterValue::Commit(t.clone()),
-                                max,
-                            ),
-                            CommandResult::File(t) => {
-                                self.draw_commit_file_filter(
-                                    ui,
-                                    CommmitFilterValue::File(t.clone()),
-                                    max,
-                                );
-                            }
+
                             _ => {
                                 ui.add(Label::new("No filters available"));
                             }
@@ -830,15 +701,7 @@ impl eframe::App for MyEguiApp {
                 CommandResult::History(t) => {
                     Self::draw_history(t, ctx);
                 }
-                CommandResult::Commit(t) => {
-                    ui.add(Label::new(format!("Commit: {}", t.id)));
-                    ui.add(Label::new(format!("Date: {}", t.date)));
-                    Self::draw_commit(t, ctx, true)
-                }
-                CommandResult::File(t) => {
-                    ui.add(Label::new("File"));
-                    ui.add(Label::new(t.to_string()));
-                }
+
                 CommandResult::String(t) => {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)

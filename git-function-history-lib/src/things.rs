@@ -5,6 +5,8 @@ use std::{
     fmt::{self},
 };
 
+use crate::Filter;
+
 pub(crate) struct InternalBlock {
     pub(crate) start: Points,
     pub(crate) full: Points,
@@ -244,68 +246,46 @@ impl File {
             current_pos: 0,
         }
     }
-    /// Returns all functions in the block type specified if ore else it returns none.
-    pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
-        let vec: Vec<Function> = self
-            .functions
-            .iter()
-            .filter(|f| {
-                f.block
-                    .as_ref()
-                    .map_or(false, |block| block.block_type == block_type)
-            })
-            .cloned()
-            .collect();
-        if vec.is_empty() {
-            return None;
-        }
-        Some(Self {
-            name: self.name.clone(),
-            functions: vec,
-            current_pos: 0,
-        })
-    }
 
-    /// Gets all functions which are betwwen the start an end lines specified.
-    /// If there are none the it returns none.
-    pub fn get_functin_in_lines(&self, start: usize, end: usize) -> Option<Self> {
-        let vec: Vec<Function> = self
-            .functions
-            .iter()
-            .filter(|f| f.lines.0 >= start && f.lines.1 <= end)
-            .cloned()
-            .collect();
-        if vec.is_empty() {
-            return None;
-        }
-        Some(Self {
-            name: self.name.clone(),
-            functions: vec,
-            current_pos: 0,
-        })
-    }
-
-    /// This returns a list of functions which  have a parent function that has the same name as the one specified.
-    pub fn get_function_with_parent(&self, parent: &str) -> Option<Self> {
-        let vec: Vec<Function> = self
-            .functions
-            .iter()
-            .filter(|f| {
-                if let Some(parent_function) = &f.function {
-                    for parents in parent_function {
-                        if parents.name == parent {
-                            return true;
+    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
+        let vec: Vec<Function> = match filter {
+            Filter::FunctionInBlock(block_type) => self
+                .functions
+                .iter()
+                .filter(|f| {
+                    f.block
+                        .as_ref()
+                        .map_or(false, |block| block.block_type == block_type)
+                })
+                .cloned()
+                .collect(),
+            Filter::FunctionInLines(start, end) => self
+                .functions
+                .iter()
+                .filter(|f| f.lines.0 >= start && f.lines.1 <= end)
+                .cloned()
+                .collect(),
+            Filter::FunctionWithParent(parent) => self
+                .functions
+                .iter()
+                .filter(|f| {
+                    if let Some(parent_function) = &f.function {
+                        for parents in parent_function {
+                            if parents.name == parent {
+                                return true;
+                            }
                         }
                     }
-                }
-                false
-            })
-            .cloned()
-            .collect();
+                    false
+                })
+                .cloned()
+                .collect(),
+            _ => return Err("Filter not available")?,
+        };
         if vec.is_empty() {
-            return None;
+            return Err("No functions found for filter")?;
         }
-        Some(Self {
+        Ok(Self {
             name: self.name.clone(),
             functions: vec,
             current_pos: 0,
@@ -367,68 +347,6 @@ impl CommitFunctions {
         }
     }
 
-    pub fn get_function_from_block(&self, block_type: BlockType) -> Option<Self> {
-        let t: Vec<File> = self
-            .functions
-            .iter()
-            .filter_map(|f| f.get_function_from_block(block_type))
-            .collect();
-        match t {
-            t if t.is_empty() => {
-                return None;
-            }
-            _ => {}
-        }
-        Some(Self {
-            id: self.id.clone(),
-            functions: t,
-            date: self.date,
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
-    }
-
-    pub fn get_function_in_lines(&self, start: usize, end: usize) -> Option<Self> {
-        let t: Vec<File> = self
-            .functions
-            .iter()
-            .filter_map(|f| f.get_functin_in_lines(start, end))
-            .collect();
-        match t {
-            t if t.is_empty() => {
-                return None;
-            }
-            _ => {}
-        }
-        Some(Self {
-            id: self.id.clone(),
-            functions: t,
-            date: self.date,
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
-    }
-
-    pub fn get_function_with_parent(&self, parent: &str) -> Option<Self> {
-        let t: Vec<File> = self
-            .functions
-            .iter()
-            .filter_map(|f| f.get_function_with_parent(parent))
-            .collect();
-        match t {
-            t if t.is_empty() => {
-                return None;
-            }
-            _ => {}
-        }
-        Some(Self {
-            id: self.id.clone(),
-            functions: t,
-            date: self.date,
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
-    }
     pub fn move_forward(&mut self) -> bool {
         if self.current_pos >= self.functions.len() - 1 {
             return false;
@@ -466,6 +384,48 @@ impl CommitFunctions {
             x if x == self.functions.len() - 1 => Directions::Back,
             _ => Directions::Both,
         }
+    }
+
+    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
+        let vec: Vec<File> = match filter {
+            Filter::FileAbsolute(file) => self
+                .functions
+                .iter()
+                .filter(|f| f.name == file)
+                .cloned()
+                .collect(),
+            Filter::FileRelative(file) => self
+                .functions
+                .iter()
+                .filter(|f| f.name.ends_with(&file))
+                .cloned()
+                .collect(),
+            Filter::Directory(dir) => self
+                .functions
+                .iter()
+                .filter(|f| f.name.contains(&dir))
+                .cloned()
+                .collect(),
+            Filter::FunctionInLines(..)
+            | Filter::FunctionWithParent(_)
+            | Filter::FunctionInBlock(_) => self
+                .functions
+                .iter()
+                .filter_map(|f| f.filter_by(filter.clone()).to_option())
+                .collect(),
+
+            _ => return Err("Invalid filter")?,
+        };
+        if vec.is_empty() {
+            return Err("No files found for filter")?;
+        }
+        Ok(Self {
+            id: self.id.clone(),
+            functions: vec,
+            date: self.date,
+            current_pos: 0,
+            current_iter_pos: 0,
+        })
     }
 }
 
@@ -505,108 +465,9 @@ impl FunctionHistory {
             current_pos: 0,
         }
     }
-    /// This function will return a `CommitFunctions` for the given commit id.
-    pub fn get_by_commit_id(&self, id: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| c.id == id)
-    }
-
-    /// This function will return a `CommitFunctions` for a given date in the rfc2822 format.
-    pub fn get_by_date(&self, date: &str) -> Option<&CommitFunctions> {
-        self.history.iter().find(|c| c.date.to_rfc2822() == date)
-    }
-
-    /// Given a date range in the rfc2822 format, this function will return a vector of commits in that range.
-    pub fn get_date_range(&self, start: &str, end: &str) -> Result<Self, Box<dyn Error>> {
-        let start = DateTime::parse_from_rfc2822(start).expect("Failed to parse date");
-        let end = DateTime::parse_from_rfc2822(end).expect("Failed to parse date");
-        if start >= end {
-            return Err("Start date is after end date")?;
-        }
-        let t: Vec<CommitFunctions> = self
-            .history
-            .iter()
-            .filter(|c| c.date >= start || c.date <= end)
-            .cloned()
-            .collect();
-        if t.is_empty() {
-            return Err("no history found for the date range")?;
-        }
-        Ok(Self {
-            history: t,
-            name: self.name.clone(),
-            current_iter_pos: 0,
-            current_pos: 0,
-        })
-    }
-
     /// This will return a vector of all the commit ids in the history.
     pub fn list_commit_ids(&self) -> Vec<&str> {
         self.history.iter().map(|c| c.id.as_ref()).collect()
-    }
-
-    /// This function findss all functions that have a blocktype that matches the given blocktype
-    /// so you can filter out functions that are not in for example an impl block:
-    /// ```rust
-    /// use git_function_history::{get_function_history, BlockType, Filter, FileType};
-    /// let in_impl = get_function_history("empty_test", FileType::None, Filter::None).unwrap();
-    /// println!("{}", in_impl);
-    /// assert!(in_impl.get_by_commit_id("3c7847613cf70ce81ce0e992269911451aad61c3").is_some())
-    /// ```
-    pub fn get_all_functions_in_block(
-        &self,
-        block_type: BlockType,
-    ) -> Result<Self, Box<dyn Error>> {
-        let t: Vec<CommitFunctions> = self
-            .history
-            .iter()
-            .filter_map(|f| f.get_function_from_block(block_type))
-            .collect();
-        if t.is_empty() {
-            return Err("no functions found in the given block")?;
-        }
-        Ok(Self {
-            history: t,
-            name: self.name.clone(),
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
-    }
-
-    /// This function finds all function in each commit that are between the given start and end positions.
-    pub fn get_all_functions_line(&self, start: usize, end: usize) -> Result<Self, Box<dyn Error>> {
-        let t: Vec<CommitFunctions> = self
-            .history
-            .iter()
-            .filter_map(|f| f.get_function_in_lines(start, end))
-            .collect();
-        if t.is_empty() {
-            return Err("no functions found in the given lines")?;
-        }
-        Ok(Self {
-            history: t,
-            name: self.name.clone(),
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
-    }
-
-    /// This function finds all functions that have a parent function that has the same name as the one specified.
-    pub fn get_all_function_with_parent(&self, parent: &str) -> Result<Self, Box<dyn Error>> {
-        let t: Vec<CommitFunctions> = self
-            .history
-            .iter()
-            .filter_map(|f| f.get_function_with_parent(parent))
-            .collect();
-
-        if t.is_empty() {
-            return Err("no functions found with the given parent")?;
-        }
-        Ok(Self {
-            history: t,
-            name: self.name.clone(),
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
     }
 
     pub fn move_forward(&mut self) -> bool {
@@ -641,6 +502,10 @@ impl FunctionHistory {
         &mut self.history[self.current_pos]
     }
 
+    pub fn get_commit(&self) -> &CommitFunctions {
+        &self.history[self.current_pos]
+    }
+
     pub fn get_move_direction(&self) -> Directions {
         match self.current_pos {
             0 if self.history.len() == 1 => Directions::None,
@@ -648,6 +513,55 @@ impl FunctionHistory {
             x if x == self.history.len() - 1 => Directions::Back,
             _ => Directions::Both,
         }
+    }
+
+    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
+        let vec: Vec<CommitFunctions> = match filter {
+            Filter::FunctionInLines(..)
+            | Filter::FunctionWithParent(_)
+            | Filter::FunctionInBlock(_)
+            | Filter::Directory(_)
+            | Filter::FileAbsolute(_)
+            | Filter::FileRelative(_) => self
+                .history
+                .iter()
+                .filter_map(|f| f.filter_by(filter.clone()).to_option())
+                .collect(),
+            Filter::CommitId(id) => self
+                .history
+                .iter()
+                .filter(|f| f.id == id)
+                .cloned()
+                .collect(),
+            Filter::Date(date) => self
+                .history
+                .iter()
+                .filter(|f| f.date.to_rfc2822() == date)
+                .cloned()
+                .collect(),
+            Filter::DateRange(start, end) => {
+                let start = DateTime::parse_from_rfc2822(&start).expect("Failed to parse date");
+                let end = DateTime::parse_from_rfc2822(&end).expect("Failed to parse date");
+                if start >= end {
+                    return Err("Start date is after end date")?;
+                }
+                self.history
+                    .iter()
+                    .filter(|c| c.date >= start || c.date <= end)
+                    .cloned()
+                    .collect()
+            }
+            _ => return Err("Invalid filter")?,
+        };
+        if vec.is_empty() {
+            return Err("No history found for the filter")?;
+        }
+        Ok(Self {
+            history: vec,
+            name: self.name.clone(),
+            current_pos: 0,
+            current_iter_pos: 0,
+        })
     }
 }
 
@@ -673,4 +587,17 @@ pub enum Directions {
     Back,
     None,
     Both,
+}
+
+trait ErrorToOption<T> {
+    fn to_option(self) -> Option<T>;
+}
+
+impl<T> ErrorToOption<T> for Result<T, Box<dyn Error>> {
+    fn to_option(self) -> Option<T> {
+        match self {
+            Ok(t) => Some(t),
+            Err(_) => None,
+        }
+    }
 }

@@ -3,8 +3,7 @@ use self::state::AppState;
 use crate::app::actions::Action;
 use crate::inputs::key::Key;
 use function_history_backend_thread::types::{
-    CommandResult, CommitOrFileFilter, CommmitFilterValue, FilterType, FullCommand, HistoryFilter,
-    ListType, Status,
+    CommandResult, FilterType, FullCommand, ListType, Status,
 };
 use git_function_history::{BlockType, FileType, Filter};
 use std::{sync::mpsc, time::Duration};
@@ -114,26 +113,14 @@ impl App {
                     AppReturn::Continue
                 }
                 Action::BackFile => {
-                    match &mut self.cmd_output {
-                        CommandResult::History(t) => {
-                            t.move_back_file();
-                        }
-                        CommandResult::Commit(t) => {
-                            t.move_back();
-                        }
-                        _ => {}
+                    if let CommandResult::History(t) = &mut self.cmd_output {
+                        t.move_back_file();
                     }
                     AppReturn::Continue
                 }
                 Action::ForwardFile => {
-                    match &mut self.cmd_output {
-                        CommandResult::History(t) => {
-                            t.move_forward_file();
-                        }
-                        CommandResult::Commit(t) => {
-                            t.move_forward();
-                        }
-                        _ => {}
+                    if let CommandResult::History(t) = &mut self.cmd_output {
+                        t.move_forward_file();
                     }
                     AppReturn::Continue
                 }
@@ -225,7 +212,7 @@ impl App {
             Some(cmd) => match cmd {
                 "filter" => {
                     match &self.cmd_output {
-                        CommandResult::History(t) => {
+                        CommandResult::History(_) => {
                             if let Some(filter) = iter.next() {
                                 match filter {
                                     "date" => {
@@ -233,10 +220,10 @@ impl App {
                                             let date = date.replace('_', " ");
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::Date(date),
-                                                    t.clone(),
-                                                )))
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::Date(date),
+                                                }))
                                                 .unwrap()
                                         } else {
                                             self.status =
@@ -247,10 +234,10 @@ impl App {
                                         if let Some(commit) = iter.next() {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::CommitId(commit.to_owned()),
-                                                    t.clone(),
-                                                )))
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::CommitId(commit.to_string()),
+                                                }))
                                                 .unwrap()
                                         } else {
                                             self.status =
@@ -261,12 +248,12 @@ impl App {
                                         if let Some(parent) = iter.next() {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInFunction(
-                                                        parent.to_owned(),
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionWithParent(
+                                                        parent.to_string(),
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap()
                                         } else {
                                             self.status = Status::Error(
@@ -278,12 +265,12 @@ impl App {
                                         if let Some(block) = iter.next() {
                                             self.channels
                                                 .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInBlock(
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionInBlock(
                                                         BlockType::from_string(block),
                                                     ),
-                                                    t.clone(),
-                                                )))
+                                                }))
                                                 .unwrap()
                                         } else {
                                             self.status =
@@ -298,10 +285,10 @@ impl App {
                                                 let end = end.replace('_', " ");
                                                 self.channels
                                                     .0
-                                                    .send(FullCommand::Filter(FilterType::History(
-                                                        HistoryFilter::DateRange(start, end),
-                                                        t.clone(),
-                                                    )))
+                                                    .send(FullCommand::Filter(FilterType {
+                                                        thing: self.cmd_output.clone(),
+                                                        filter: Filter::DateRange(start, end),
+                                                    }))
                                                     .unwrap()
                                             } else {
                                                 self.status =
@@ -333,189 +320,10 @@ impl App {
                                                 };
                                                 self.channels
                                                     .0
-                                                    .send(FullCommand::Filter(FilterType::History(
-                                                        HistoryFilter::FunctionInLines(
-                                                            start.to_owned(),
-                                                            end.to_owned(),
-                                                        ),
-                                                        t.clone(),
-                                                    )))
-                                                    .unwrap()
-                                            } else {
-                                                self.status =
-                                                    Status::Error("No end line given".to_string());
-                                            }
-                                        } else {
-                                            self.status =
-                                                Status::Error("No start line given".to_string());
-                                        }
-                                    }
-                                    _ => {
-                                        self.status = Status::Error("Invalid filter".to_string());
-                                    }
-                                }
-                            } else {
-                                self.status = Status::Error("No filter given".to_string());
-                            }
-                        }
-                        CommandResult::Commit(t) => {
-                            if let Some(filter) = iter.next() {
-                                match filter {
-                                    "parent" => {
-                                        if let Some(parent) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(
-                                                    FilterType::CommitOrFile(
-                                                        CommitOrFileFilter::FunctionInFunction(
-                                                            parent.to_owned(),
-                                                        ),
-                                                        CommmitFilterValue::Commit(t.clone()),
-                                                    ),
-                                                ))
-                                                .unwrap()
-                                        } else {
-                                            self.status = Status::Error(
-                                                "No parent function given".to_string(),
-                                            );
-                                        }
-                                    }
-                                    "block" => {
-                                        if let Some(block) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(
-                                                    FilterType::CommitOrFile(
-                                                        CommitOrFileFilter::FunctionInBlock(
-                                                            BlockType::from_string(block),
-                                                        ),
-                                                        CommmitFilterValue::Commit(t.clone()),
-                                                    ),
-                                                ))
-                                                .unwrap()
-                                        } else {
-                                            self.status =
-                                                Status::Error("No block type given".to_string());
-                                        }
-                                    }
-                                    "line-range" => {
-                                        if let Some(start) = iter.next() {
-                                            if let Some(end) = iter.next() {
-                                                let start = match start.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                let end = match end.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                self.channels
-                                                    .0
-                                                    .send(FullCommand::Filter(
-                                                        FilterType::CommitOrFile(
-                                                            CommitOrFileFilter::FunctionInLines(
-                                                                start.to_owned(),
-                                                                end.to_owned(),
-                                                            ),
-                                                            CommmitFilterValue::Commit(t.clone()),
-                                                        ),
-                                                    ))
-                                                    .unwrap()
-                                            } else {
-                                                self.status =
-                                                    Status::Error("No end line given".to_string());
-                                            }
-                                        } else {
-                                            self.status =
-                                                Status::Error("No start line given".to_string());
-                                        }
-                                    }
-                                    _ => {
-                                        self.status = Status::Error("Invalid filter".to_string());
-                                    }
-                                }
-                            } else {
-                                self.status = Status::Error("No filter given".to_string());
-                            }
-                        }
-                        CommandResult::File(t) => {
-                            if let Some(filter) = iter.next() {
-                                match filter {
-                                    "parent" => {
-                                        if let Some(parent) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(
-                                                    FilterType::CommitOrFile(
-                                                        CommitOrFileFilter::FunctionInFunction(
-                                                            parent.to_owned(),
-                                                        ),
-                                                        CommmitFilterValue::File(t.clone()),
-                                                    ),
-                                                ))
-                                                .unwrap()
-                                        } else {
-                                            self.status = Status::Error(
-                                                "No parent function given".to_string(),
-                                            );
-                                        }
-                                    }
-                                    "block" => {
-                                        if let Some(block) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(
-                                                    FilterType::CommitOrFile(
-                                                        CommitOrFileFilter::FunctionInBlock(
-                                                            BlockType::from_string(block),
-                                                        ),
-                                                        CommmitFilterValue::File(t.clone()),
-                                                    ),
-                                                ))
-                                                .unwrap()
-                                        } else {
-                                            self.status =
-                                                Status::Error("No block type given".to_string());
-                                        }
-                                    }
-                                    "line-range" => {
-                                        if let Some(start) = iter.next() {
-                                            if let Some(end) = iter.next() {
-                                                let start = match start.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                let end = match end.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                self.channels
-                                                    .0
-                                                    .send(FullCommand::Filter(
-                                                        FilterType::CommitOrFile(
-                                                            CommitOrFileFilter::FunctionInLines(
-                                                                start.to_owned(),
-                                                                end.to_owned(),
-                                                            ),
-                                                            CommmitFilterValue::File(t.clone()),
-                                                        ),
-                                                    ))
+                                                    .send(FullCommand::Filter(FilterType {
+                                                        thing: self.cmd_output.clone(),
+                                                        filter: Filter::FunctionInLines(start, end),
+                                                    }))
                                                     .unwrap()
                                             } else {
                                                 self.status =
