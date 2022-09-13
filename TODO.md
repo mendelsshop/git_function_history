@@ -11,6 +11,7 @@
   - [ ] fix `thread '<unnamed>' panicked at 'channel disconnected', function_history_backend_thread/src/lib.rs:33:25` error (handling when the channel is disconnected at the end of the program)
 - TUI
   - [ ] use a proper input box for the edit bar, so that delete and scrolling the input works
+  - [ ] finish documentation
 
 - General
   - [ ] clean up the code
