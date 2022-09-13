@@ -379,35 +379,33 @@ fn find_function_in_commit(
         function.function = match function_range
             .iter()
             .filter(|other| function_ranges.in_other(&other.file_line))
-            .map(|fns| FunctionBlock {
-                name: fns.name.clone(),
-                top: file_contents
-                    .lines()
-                    .nth(fns.file_line.x - 1)
-                    .unwrap_or_else(|| {
-                        panic!(
+            .map(|fns| {
+                Ok(FunctionBlock {
+                    name: fns.name.clone(),
+                    top: file_contents
+                        .lines()
+                        .nth(fns.file_line.x - 1)
+                        .unwrap_to_error(&format!(
                             "could not get line {} in file {} from commit: {}",
                             fns.file_line.y - 1,
                             file_path,
                             name
-                        )
-                    })
-                    .to_string(),
-                bottom: file_contents
-                    .lines()
-                    .nth(fns.file_line.y - 1)
-                    .unwrap_or_else(|| {
-                        panic!(
+                        ))?
+                        .to_string(),
+                    bottom: file_contents
+                        .lines()
+                        .nth(fns.file_line.y - 1)
+                        .unwrap_to_error(&format!(
                             "could not get line {} in file {} from commit: {}",
                             fns.file_line.y - 1,
                             file_path,
                             name
-                        )
-                    })
-                    .to_string(),
-                lines: (fns.file_line.x, fns.file_line.y),
+                        ))?
+                        .to_string(),
+                    lines: (fns.file_line.x, fns.file_line.y),
+                })
             })
-            .collect::<Vec<FunctionBlock>>()
+            .collect::<Result<Vec<FunctionBlock>, Box<dyn Error>>>()?
         {
             vec if vec.is_empty() => None,
             vec => Some(vec),
