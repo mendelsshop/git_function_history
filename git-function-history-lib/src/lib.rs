@@ -14,14 +14,17 @@
     clippy::return_self_not_must_use
 )]
 
-pub mod things;
+/// Different types that can extracted from the result of `get_function_history`.
+pub mod types;
 use fancy_regex::Regex as FancyRegex;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
 use std::{error::Error, process::Command};
-pub use things::{Block, BlockType, CommitFunctions, File, Function, FunctionHistory};
-use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
+pub use types::{
+    Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
+};
+use types::{InternalBlock, InternalFunctions, Points};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -32,6 +35,8 @@ lazy_static! {
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
 }
+
+/// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone)]
 pub enum FileType {
     /// When you have a absolute path to a file.
@@ -44,9 +49,7 @@ pub enum FileType {
     None,
 }
 
-/// This is filter enum is used when you only want to lookup a function with the filter
-/// it is different from the from the all the filters in the things module, because those filters are after the fact,
-/// and require that you already found all the functions in the file. Making using this filter most probably faster.
+/// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
@@ -72,6 +75,8 @@ pub enum Filter {
 }
 
 // TODO: document this
+/// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
+///
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
 /// It then goes and creates a git log command based on the filters that you pass in.
@@ -97,7 +102,7 @@ pub enum Filter {
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileType};
-/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
+/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs".to_string()), Filter::None);
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
@@ -167,7 +172,7 @@ pub fn get_function_history(
             for commit in commits {
                 match find_function_in_commit(commit.0, &path, name) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             vec![File::new(path.to_string(), contents)],
                             commit.1,
@@ -186,7 +191,7 @@ pub fn get_function_history(
             for commit in commits {
                 match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
@@ -203,7 +208,7 @@ pub fn get_function_history(
             for commit in commits {
                 match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
@@ -216,7 +221,7 @@ pub fn get_function_history(
             }
         }
     }
-    if file_history.history.is_empty() {
+    if file_history.commit_history.is_empty() {
         Err("No history found")?;
     }
     Ok(file_history)

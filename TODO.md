@@ -1,11 +1,11 @@
 # TODO
 
 - Library
-  - [ ] add more tests
-  - [ ] add more examples
-  - [ ] add documentation to new methods
-  - [ ] add more `get_*` methods whether it `get_mut_*` etc
-  - [ ] add more filter like to filter to a certain file
+  - [/] add more tests
+  - [/] add more examples
+  - [x] add documentation to new methods
+  - [x] add more `get_*` methods whether it `get_mut_*` etc
+  - [x] add more filter like to filter to a certain file
 
 - GUI
   - [ ] fix `thread '<unnamed>' panicked at 'channel disconnected', function_history_backend_thread/src/lib.rs:33:25` error (handling when the channel is disconnected at the end of the program)

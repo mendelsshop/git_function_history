@@ -14,7 +14,7 @@ use function_history_backend_thread::types::{
     SearchFilter, Status,
 };
 use git_function_history::{
-    things::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
+    types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
 };
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
@@ -59,8 +59,14 @@ impl MyEguiApp {
     fn draw_commit(commit: &mut CommitFunctions, ctx: &egui::Context, show: bool) {
         if show {
             TopBottomPanel::top("date_id").show(ctx, |ui| {
-                ui.add(Label::new(format!("Commit: {}", commit.id)));
-                ui.add(Label::new(format!("Date: {}", commit.date)));
+                ui.add(Label::new(format!(
+                    "Commit: {}",
+                    commit.get_metadata()["commit hash"]
+                )));
+                ui.add(Label::new(format!(
+                    "Date: {}",
+                    commit.get_metadata()["date"]
+                )));
             });
         }
         TopBottomPanel::top("file_name").show(ctx, |ui| {
