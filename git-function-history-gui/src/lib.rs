@@ -10,8 +10,8 @@ use eframe::{
     epaint::Color32,
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, FileTypeS, FilterType, FullCommand, HistoryFilterType, ListType,
-    SearchFilter, Status,
+    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType,
+    Status,
 };
 use git_function_history::{
     types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
@@ -29,8 +29,8 @@ pub struct MyEguiApp {
         mpsc::Sender<FullCommand>,
         mpsc::Receiver<(CommandResult, Status)>,
     ),
-    filter: SearchFilter,
-    file_type: FileTypeS,
+    filter: Filter,
+    file_type: FileType,
     history_filter_type: HistoryFilterType,
 }
 
@@ -50,8 +50,8 @@ impl MyEguiApp {
             status: Status::default(),
             list_type: ListType::default(),
             channels,
-            file_type: FileTypeS::None,
-            filter: SearchFilter::None,
+            file_type: FileType::None,
+            filter: Filter::None,
             history_filter_type: HistoryFilterType::None,
         }
     }
@@ -521,27 +521,32 @@ impl eframe::App for MyEguiApp {
                         });
 
                         let text = match &self.file_type {
-                            FileTypeS::None => "file type".to_string(),
+                            FileType::None => "file type".to_string(),
                             a => a.to_string(),
                         };
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
+                                ui.selectable_value(&mut self.file_type, FileType::None, "None");
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Relative(String::new()),
+                                    FileType::Relative(String::new()),
                                     "Relative",
                                 );
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Absolute(String::new()),
+                                    FileType::Absolute(String::new()),
                                     "Absolute",
+                                );
+                                ui.selectable_value(
+                                    &mut self.file_type,
+                                    FileType::Directory(String::new()),
+                                    "Directory",
                                 );
                             });
                         match &mut self.file_type {
-                            FileTypeS::None => {}
-                            FileTypeS::Relative(abc) => {
+                            FileType::None => {}
+                            FileType::Relative(abc) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -549,7 +554,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            FileTypeS::Absolute(atring) => {
+                            FileType::Absolute(atring) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -557,35 +562,43 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(atring));
                                 });
                             }
+                            FileType::Directory(dir) => {
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(dir));
+                                });
+                            }
                         }
                         // get filters if any
                         let text = match &self.filter {
-                            SearchFilter::None => "filter type".to_string(),
+                            Filter::None => "filter type".to_string(),
                             a => a.to_string(),
                         };
                         egui::ComboBox::from_id_source("search_search_filter_combo_box")
                             .selected_text(text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.filter, SearchFilter::None, "None");
+                                ui.selectable_value(&mut self.filter, Filter::None, "None");
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::CommitId(String::new()),
+                                    Filter::CommitId(String::new()),
                                     "Commit Hash",
                                 );
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::Date(String::new()),
+                                    Filter::Date(String::new()),
                                     "Date",
                                 );
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::DateRange(String::new(), String::new()),
+                                    Filter::DateRange(String::new(), String::new()),
                                     "Date Range",
                                 );
                             });
                         match &mut self.filter {
-                            SearchFilter::None => {}
-                            SearchFilter::CommitId(abc) => {
+                            Filter::None => {}
+                            Filter::CommitId(abc) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -593,7 +606,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            SearchFilter::Date(date) => {
+                            Filter::Date(date) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -601,7 +614,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(date));
                                 });
                             }
-                            SearchFilter::DateRange(start, end) => {
+                            Filter::DateRange(start, end) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -616,34 +629,19 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(end));
                                 });
                             }
+                            Filter::FileAbsolute(_) => todo!(),
+                            Filter::FileRelative(_) => todo!(),
+                            Filter::Directory(_) => todo!(),
+                            Filter::FunctionInBlock(_) => todo!(),
+                            Filter::FunctionInLines(_, _) => todo!(),
+                            Filter::FunctionWithParent(_) => todo!(),
                         }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            let file = match &mut self.file_type {
-                                FileTypeS::None => FileType::None,
-                                FileTypeS::Relative(s) => {
-                                    let t = FileType::Relative(s.clone());
-                                    s.clear();
-                                    t
-                                }
-                                FileTypeS::Absolute(s) => {
-                                    let t = FileType::Absolute(s.clone());
-                                    s.clear();
-                                    t
-                                }
-                            };
-                            let filter = match &mut self.filter {
-                                SearchFilter::None => Filter::None,
-                                SearchFilter::CommitId(s) => Filter::CommitId(s.clone()),
-                                SearchFilter::Date(date) => Filter::Date(date.clone()),
-                                SearchFilter::DateRange(date, scd) => {
-                                    Filter::DateRange(date.clone(), scd.clone())
-                                }
-                            };
                             self.status = Status::Loading;
                             self.channels
                                 .0
-                                .send(FullCommand::Search(self.input_buffer.clone(), file, filter))
+                                .send(FullCommand::Search(self.input_buffer.clone(), self.file_type.clone(), self.filter.clone()))
                                 .unwrap();
                         }
                     }

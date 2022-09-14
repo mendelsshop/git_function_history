@@ -126,40 +126,24 @@ pub enum FullCommand {
     Search(String, FileType, Filter),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FileTypeS {
-    None,
-    Absolute(String),
-    Relative(String),
-}
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub enum SearchFilter {
+//     CommitId(String),
+//     Date(String),
+//     DateRange(String, String),
+//     None,
+// }
 
-impl fmt::Display for FileTypeS {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FileTypeS::None => write!(f, "none"),
-            FileTypeS::Absolute(_) => write!(f, "absolute"),
-            FileTypeS::Relative(_) => write!(f, "relative"),
-        }
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SearchFilter {
-    CommitId(String),
-    Date(String),
-    DateRange(String, String),
-    None,
-}
-
-impl fmt::Display for SearchFilter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SearchFilter::CommitId(_) => write!(f, "commit hash"),
-            SearchFilter::Date(_) => write!(f, "date"),
-            SearchFilter::DateRange(_, _) => write!(f, "date range"),
-            SearchFilter::None => write!(f, "none"),
-        }
-    }
-}
+// impl fmt::Display for SearchFilter {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SearchFilter::CommitId(_) => write!(f, "commit hash"),
+//             SearchFilter::Date(_) => write!(f, "date"),
+//             SearchFilter::DateRange(_, _) => write!(f, "date range"),
+//             SearchFilter::None => write!(f, "none"),
+//         }
+//     }
+// }
 #[derive(Debug, Clone)]
 pub struct FilterType {
     pub thing: CommandResult,
