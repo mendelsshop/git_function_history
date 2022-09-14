@@ -26,10 +26,8 @@ pub use types::{
 };
 use types::{InternalBlock, InternalFunctions, Points};
 
-// read languages.json and parse the json to a const/static
 lazy_static! {
     #[derive(Debug)]
-    // this is for when we support multiple languages
     pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).expect("failed to compile regex");
     // this regex look for string chars and comments
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
@@ -74,7 +72,6 @@ pub enum Filter {
     None,
 }
 
-// TODO: document this
 /// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
 ///
 /// Checks if git is installed if its not it will error out with `git is not installed`.

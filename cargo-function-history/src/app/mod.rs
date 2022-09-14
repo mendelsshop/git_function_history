@@ -141,7 +141,6 @@ impl App {
         &self.cmd_output
     }
 
-    // TODO: figure outt what to name ceach commnad and something based on that
     pub fn run_command(&mut self) {
         // iterate through the tha commnad by space
         let iter = self.input_buffer.to_string();
@@ -470,7 +469,6 @@ impl App {
                     self.status = Status::Error(e);
                 }
                 (t, Status::Ok(msg)) => {
-                    // TODO: clear all the old positioning/scrolling data
                     self.status = Status::Ok(msg);
                     self.cmd_output = t;
                 }

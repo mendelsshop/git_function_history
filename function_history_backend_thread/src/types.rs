@@ -49,8 +49,6 @@ impl Default for ListType {
 #[derive(Debug, Clone)]
 pub enum CommandResult {
     History(FunctionHistory),
-    // Commit(CommitFunctions),
-    // File(File),
     String(Vec<String>),
     None,
 }
@@ -65,8 +63,6 @@ impl CommandResult {
     pub fn len(&self) -> usize {
         match self {
             CommandResult::History(history) => history.to_string().split('\n').count(),
-            // CommandResult::Commit(commit) => commit.to_string().split('\n').count(),
-            // CommandResult::File(file) => file.to_string().split('\n').count(),
             CommandResult::String(str) => str.len(),
             CommandResult::None => 0,
         }
@@ -79,8 +75,6 @@ impl fmt::Display for CommandResult {
             CommandResult::History(history) => {
                 write!(f, "{}", history)
             }
-            // CommandResult::Commit(commit) => write!(f, "{}", commit),
-            // CommandResult::File(file) => write!(f, "{}", file),
             CommandResult::String(string) => {
                 for line in string {
                     writeln!(f, "{}", line)?;

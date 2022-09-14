@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         string if string.is_empty() => {}
         string => tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?,
     };
-    let app = Rc::new(RefCell::new(App::new((tx_m, rx_m)))); // TODO app is useless for now
+    let app = Rc::new(RefCell::new(App::new((tx_m, rx_m))));
     start_ui(app)?;
     Ok(())
 }

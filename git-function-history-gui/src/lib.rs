@@ -15,7 +15,7 @@ use function_history_backend_thread::types::{
 use git_function_history::{
     types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
 };
-// TODO: use a logger instead of print statements
+
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
     command: Command,
@@ -243,11 +243,10 @@ impl eframe::App for MyEguiApp {
         }
         egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.add_space(20.);
-            // ui.add_space(10.);
             egui::menu::bar(ui, |ui| {
-                ui.with_layout(Layout::left_to_right(eframe::emath::Align::Center), |ui| {
-                    //         ui
-                    match &self.status {
+                ui.with_layout(
+                    Layout::left_to_right(eframe::emath::Align::Center),
+                    |ui| match &self.status {
                         Status::Loading => {
                             ui.colored_label(Color32::BLUE, "Loading...");
                         }
@@ -265,8 +264,8 @@ impl eframe::App for MyEguiApp {
                         Status::Error(a) => {
                             ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
                         }
-                    }
-                });
+                    },
+                );
                 // controls
                 ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                     let theme_btn = ui.add(Button::new({
@@ -527,7 +526,6 @@ impl eframe::App for MyEguiApp {
                         }
                     }
                     Command::Search => {
-                        // TODO: use the filetypes and searchfilter enums to hold the input buffers
                         ui.add(Label::new("Function Name:"));
                         ui.horizontal(|ui| {
                             // set the width of the input field
