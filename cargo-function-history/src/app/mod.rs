@@ -1,13 +1,12 @@
 use self::actions::Actions;
 use self::state::AppState;
-use crate::app::actions::Action;
-use crate::inputs::key::Key;
+use crate::{app::actions::Action, keys::Key};
+
 use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, Status,
 };
 use git_function_history::{BlockType, FileType, Filter};
 use std::{sync::mpsc, time::Duration};
-
 pub mod actions;
 pub mod state;
 pub mod ui;
@@ -21,13 +20,11 @@ pub enum AppReturn {
 /// The main application, containing the state
 pub struct App {
     actions: Actions,
-    state: AppState,
-    input_buffer: String,
+    pub state: AppState,
+    pub input_buffer: tui_input::Input,
     cmd_output: CommandResult,
     pub scroll_pos: (u16, u16),
     pub body_height: u16,
-    pub text_scroll_pos: (u16, u16),
-    pub input_width: u16,
     channels: (
         mpsc::Sender<FullCommand>,
         mpsc::Receiver<(CommandResult, Status)>,
@@ -58,12 +55,10 @@ impl App {
         Self {
             actions,
             state,
-            input_buffer: String::new(),
+            input_buffer: tui_input::Input::default(),
             cmd_output: CommandResult::None,
             scroll_pos: (0, 0),
             body_height: 0,
-            text_scroll_pos: (0, 0),
-            input_width: 0,
             channels,
             status: Status::Ok(None),
         }
@@ -130,62 +125,6 @@ impl App {
         }
     }
 
-    pub fn do_edit_action(&mut self, key: Key) {
-        // TODO: figyure ohow to handle the one extra character that doesnt get sohwn
-        match key {
-            Key::Esc => {
-                self.state = AppState::Looking;
-            }
-            Key::Enter => {
-                self.run_command();
-                self.input_buffer.clear();
-            }
-
-            Key::Tab => {
-                self.input_buffer.push_str("    ");
-                if self.input_width < self.input_buffer.len() as u16 {
-                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-                }
-            }
-            Key::Char(c) => {
-                self.input_buffer.push(c);
-                if self.input_width < self.input_buffer.len() as u16 {
-                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-                }
-            }
-            Key::Shift(c) => {
-                self.input_buffer.push(c.to_ascii_uppercase());
-                if self.input_width < self.input_buffer.len() as u16 {
-                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-                }
-            }
-            Key::Backspace => {
-                if !self.input_buffer.is_empty() {
-                    self.input_buffer.pop();
-                }
-                // check if we need to scroll back
-                if self.input_width > self.input_buffer.len() as u16 && self.text_scroll_pos.1 > 0 {
-                    self.text_scroll_pos.1 = self.input_buffer.len() as u16 - self.input_width;
-                }
-            }
-            Key::Left => {
-                if usize::from(self.text_scroll_pos.1) < self.input_buffer.len() {
-                    self.text_scroll_pos.1 += 1;
-                }
-            }
-            Key::Right => {
-                if self.text_scroll_pos.1 > 0 {
-                    self.text_scroll_pos.1 -= 1;
-                }
-            }
-            Key::Delete => {
-                self.input_buffer.clear();
-                self.text_scroll_pos.1 = 0;
-            }
-            _ => {}
-        }
-    }
-
     pub fn actions(&self) -> &Actions {
         &self.actions
     }
@@ -194,8 +133,8 @@ impl App {
         &self.state
     }
 
-    pub fn input_buffer(&self) -> &String {
-        &self.input_buffer
+    pub fn input_buffer(&self) -> String {
+        self.input_buffer.to_string()
     }
 
     pub fn cmd_output(&self) -> &CommandResult {
@@ -204,160 +143,190 @@ impl App {
 
     // TODO: figure outt what to name ceach commnad and something based on that
     pub fn run_command(&mut self) {
-        let mut cmd_output = CommandResult::None;
         // iterate through the tha commnad by space
-        let mut iter = self.input_buffer.trim().split(' ');
-        let cmd = iter.next();
-        match cmd {
+        let iter = self.input_buffer.to_string();
+        let mut iter = iter.trim().split(' ');
+        match iter.next() {
             Some(cmd) => match cmd {
                 "filter" => {
-                    match &self.cmd_output {
-                        CommandResult::History(_) => {
-                            if let Some(filter) = iter.next() {
-                                match filter {
-                                    "date" => {
-                                        if let Some(date) = iter.next() {
-                                            let date = date.replace('_', " ");
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::Date(date),
-                                                }))
-                                                .unwrap()
-                                        } else {
-                                            self.status =
-                                                Status::Error("No date given".to_string());
-                                        }
-                                    }
-                                    "commit" => {
-                                        if let Some(commit) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::CommitId(commit.to_string()),
-                                                }))
-                                                .unwrap()
-                                        } else {
-                                            self.status =
-                                                Status::Error("No commit given".to_string());
-                                        }
-                                    }
-                                    "parent" => {
-                                        if let Some(parent) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::FunctionWithParent(
-                                                        parent.to_string(),
-                                                    ),
-                                                }))
-                                                .unwrap()
-                                        } else {
-                                            self.status = Status::Error(
-                                                "No parent function given".to_string(),
-                                            );
-                                        }
-                                    }
-                                    "block" => {
-                                        if let Some(block) = iter.next() {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::FunctionInBlock(
-                                                        BlockType::from_string(block),
-                                                    ),
-                                                }))
-                                                .unwrap()
-                                        } else {
-                                            self.status =
-                                                Status::Error("No block type given".to_string());
-                                        }
-                                    }
-                                    "date-range" => {
-                                        if let Some(start) = iter.next() {
-                                            if let Some(end) = iter.next() {
-                                                // remove all - from the date
-                                                let start = start.replace('_', " ");
-                                                let end = end.replace('_', " ");
-                                                self.channels
-                                                    .0
-                                                    .send(FullCommand::Filter(FilterType {
-                                                        thing: self.cmd_output.clone(),
-                                                        filter: Filter::DateRange(start, end),
-                                                    }))
-                                                    .unwrap()
-                                            } else {
-                                                self.status =
-                                                    Status::Error("No end date given".to_string());
-                                            }
-                                        } else {
-                                            self.status =
-                                                Status::Error("No start date given".to_string());
-                                        }
-                                    }
-                                    "line-range" => {
-                                        if let Some(start) = iter.next() {
-                                            if let Some(end) = iter.next() {
-                                                let start = match start.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                let end = match end.parse::<usize>() {
-                                                    Ok(x) => x,
-                                                    Err(e) => {
-                                                        self.status =
-                                                            Status::Error(format!("{}", e));
-                                                        return;
-                                                    }
-                                                };
-                                                self.channels
-                                                    .0
-                                                    .send(FullCommand::Filter(FilterType {
-                                                        thing: self.cmd_output.clone(),
-                                                        filter: Filter::FunctionInLines(start, end),
-                                                    }))
-                                                    .unwrap()
-                                            } else {
-                                                self.status =
-                                                    Status::Error("No end line given".to_string());
-                                            }
-                                        } else {
-                                            self.status =
-                                                Status::Error("No start line given".to_string());
-                                        }
-                                    }
-                                    _ => {
-                                        self.status = Status::Error("Invalid filter".to_string());
+                    if let CommandResult::History(_) = &self.cmd_output {
+                        self.status = Status::Loading;
+                        if let Some(filter) = iter.next() {
+                            match filter {
+                                "date" => {
+                                    if let Some(date) = iter.next() {
+                                        let date = date.replace('_', " ");
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::Date(date),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status = Status::Error("No date given".to_string());
                                     }
                                 }
-                            } else {
-                                self.status = Status::Error("No filter given".to_string());
+                                "commit" => {
+                                    if let Some(commit) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::CommitId(commit.to_string()),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status = Status::Error("No commit given".to_string());
+                                    }
+                                }
+                                "parent" => {
+                                    if let Some(parent) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::FunctionWithParent(
+                                                    parent.to_string(),
+                                                ),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status =
+                                            Status::Error("No parent function given".to_string());
+                                    }
+                                }
+                                "block" => {
+                                    if let Some(block) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::FunctionInBlock(
+                                                    BlockType::from_string(block),
+                                                ),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status =
+                                            Status::Error("No block type given".to_string());
+                                    }
+                                }
+                                "date-range" => {
+                                    if let Some(start) = iter.next() {
+                                        if let Some(end) = iter.next() {
+                                            // remove all - from the date
+                                            let start = start.replace('_', " ");
+                                            let end = end.replace('_', " ");
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::DateRange(start, end),
+                                                }))
+                                                .unwrap()
+                                        } else {
+                                            self.status =
+                                                Status::Error("No end date given".to_string());
+                                        }
+                                    } else {
+                                        self.status =
+                                            Status::Error("No start date given".to_string());
+                                    }
+                                }
+                                "line-range" => {
+                                    if let Some(start) = iter.next() {
+                                        if let Some(end) = iter.next() {
+                                            let start = match start.parse::<usize>() {
+                                                Ok(x) => x,
+                                                Err(e) => {
+                                                    self.status = Status::Error(format!("{}", e));
+                                                    return;
+                                                }
+                                            };
+                                            let end = match end.parse::<usize>() {
+                                                Ok(x) => x,
+                                                Err(e) => {
+                                                    self.status = Status::Error(format!("{}", e));
+                                                    return;
+                                                }
+                                            };
+                                            self.channels
+                                                .0
+                                                .send(FullCommand::Filter(FilterType {
+                                                    thing: self.cmd_output.clone(),
+                                                    filter: Filter::FunctionInLines(start, end),
+                                                }))
+                                                .unwrap()
+                                        } else {
+                                            self.status =
+                                                Status::Error("No end line given".to_string());
+                                        }
+                                    } else {
+                                        self.status =
+                                            Status::Error("No start line given".to_string());
+                                    }
+                                }
+                                "file-absolute" => {
+                                    if let Some(file) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::FileAbsolute(file.to_string()),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status = Status::Error("No file given".to_string());
+                                    }
+                                }
+                                "file-relative" => {
+                                    if let Some(file) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::FileRelative(file.to_string()),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status = Status::Error("No file given".to_string());
+                                    }
+                                }
+                                "directory" => {
+                                    if let Some(dir) = iter.next() {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter: Filter::Directory(dir.to_string()),
+                                            }))
+                                            .unwrap()
+                                    } else {
+                                        self.status =
+                                            Status::Error("No directory given".to_string());
+                                    }
+                                }
+                                _ => {
+                                    self.status = Status::Error("Invalid filter".to_string());
+                                }
                             }
+                        } else {
+                            self.status = Status::Error("No filter given".to_string());
                         }
-                        _ => {
-                            if iter.next().is_some() {
-                                self.status = Status::Error("no filters available".to_string());
-                            }
-                        }
+                    } else if iter.next().is_some() {
+                        self.status = Status::Error("no filters available".to_string());
                     }
                 }
                 "search" => {
                     // check for a function name
                     if let Some(name) = iter.next() {
                         // check if there next arg stars with file or filter
+                        self.status = Status::Loading;
                         match iter.next() {
                             None => {
                                 // if there is no next arg then we are searching for a function
                                 // with the given name
-                                self.status = Status::Loading;
                                 self.channels
                                     .0
                                     .send(FullCommand::Search(
@@ -438,7 +407,6 @@ impl App {
                                         None => Filter::None,
                                     };
 
-                                    self.status = Status::Loading;
                                     self.channels
                                         .0
                                         .send(FullCommand::Search(
@@ -493,7 +461,6 @@ impl App {
                                         }
                                         _ => Filter::None,
                                     };
-                                    self.status = Status::Loading;
                                     self.channels
                                         .0
                                         .send(FullCommand::Search(
@@ -505,7 +472,6 @@ impl App {
                                 }
                                 _ => {
                                     self.status = Status::Error("Invalid file type".to_string());
-                                    return;
                                 }
                             },
                         }
@@ -513,37 +479,39 @@ impl App {
                         self.status = Status::Error("No function name given".to_string());
                     }
                 }
-                "list" => match iter.next() {
-                    Some(arg) => match arg {
-                        "dates" => {
-                            self.status = Status::Loading;
-                            self.channels
-                                .0
-                                .send(FullCommand::List(ListType::Dates))
-                                .unwrap();
+                "list" => {
+                    self.status = Status::Loading;
+                    match iter.next() {
+                        Some(arg) => match arg {
+                            "dates" => {
+                                self.channels
+                                    .0
+                                    .send(FullCommand::List(ListType::Dates))
+                                    .unwrap();
+                            }
+                            "commits" => {
+                                self.channels
+                                    .0
+                                    .send(FullCommand::List(ListType::Commits))
+                                    .unwrap();
+                            }
+                            _ => {
+                                self.status = Status::Error("Invalid list type".to_string());
+                            }
+                        },
+                        None => {
+                            self.status = Status::Error("No list type given".to_string());
                         }
-                        "commits" => {
-                            self.status = Status::Loading;
-                            self.channels
-                                .0
-                                .send(FullCommand::List(ListType::Commits))
-                                .unwrap();
-                        }
-                        _ => {}
-                    },
-                    None => {}
-                },
+                    }
+                }
                 other => {
-                    cmd_output = CommandResult::String(vec![format!("Unknown command: {}", other)]);
+                    self.status = Status::Error(format!("Invalid command: {}", other));
                 }
             },
             None => {
-                cmd_output =
-                    CommandResult::String(vec![format!("{} is not a valid command", "sd")]);
+                self.status = Status::Error("No command given".to_string());
             }
         }
-
-        self.cmd_output = cmd_output;
     }
 
     pub fn get_result(&mut self) {

@@ -49,9 +49,30 @@ where
         .split(whole_chunks);
     app.get_result();
     draw_body(app, body_chunks[0], rect);
-    app.input_width = body_chunks[1].width;
-    let input = draw_input(&app.input_buffer, app.state(), app.text_scroll_pos);
+    let width = body_chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
+    let scroll = (app.input_buffer.cursor() as u16).max(width) - width;
+    let input = Paragraph::new(app.input_buffer.value())
+        .style(match app.state() {
+            AppState::Editing => Style::default().fg(Color::Yellow),
+            _ => Style::default(),
+        })
+        .block(
+            Block::default()
+                // .borders(Borders::TOP)
+                .borders(Borders::BOTTOM)
+                .style(Style::default().fg(Color::White)),
+        )
+        .scroll((0, scroll));
     rect.render_widget(input, body_chunks[1]);
+    if let AppState::Editing = app.state() {
+        // AppState::Editing => {
+        rect.set_cursor(
+            // Put cursor past the end of the input text
+            body_chunks[1].x + (app.input_buffer.cursor() as u16).min(width),
+            // Move one line down, from the border to the input line
+            body_chunks[1].y,
+        )
+    }
     let status = draw_status(app.status());
     rect.render_widget(status, body_chunks[2]);
 }
@@ -106,30 +127,6 @@ fn draw_main<'a>() -> Block<'a> {
         .border_style(Style::default().fg(Color::White))
         .title_alignment(Alignment::Center)
         .style(Style::default().fg(Color::White))
-}
-
-fn draw_input<'a>(input: &'a str, status: &'a AppState, scroll_pos: (u16, u16)) -> Paragraph<'a> {
-    // TODO: make that the : (colon) stays at the beginning of the line at all times even when scrolling
-    match status {
-        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
-            .scroll(scroll_pos)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .borders(Borders::TOP)
-                    .borders(Borders::BOTTOM)
-                    .style(Style::default().fg(Color::White)),
-            ),
-        _ => Paragraph::new(vec![Spans::from(Span::raw(input))])
-            .scroll(scroll_pos)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .borders(Borders::TOP)
-                    .borders(Borders::BOTTOM)
-                    .style(Style::default().fg(Color::White)),
-            ),
-    }
 }
 
 fn draw_status<'a>(status: &Status) -> Paragraph<'a> {

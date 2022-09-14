@@ -124,6 +124,8 @@ After typing `list` you can type the type of list you want to see with `commits`
 
 Then press enter to execute the command, and after executing the command you will see the list result in the viewing pane.
 
+[//]: # (explain what the different keys do in edit mode based of of https://github.com/sayanarijit/tui-input/blob/main/src/backend/crossterm.rs#L12)
+
 #### viewing pane
 
 #### status pane
