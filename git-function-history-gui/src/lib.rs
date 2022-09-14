@@ -10,8 +10,7 @@ use eframe::{
     epaint::Color32,
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType,
-    Status,
+    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
 };
 use git_function_history::{
     types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
@@ -345,6 +344,21 @@ impl eframe::App for MyEguiApp {
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
+                                            HistoryFilterType::FileAbsolute(String::new()),
+                                            "file absolute",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
+                                            HistoryFilterType::FileRelative(String::new()),
+                                            "file relative",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
+                                            HistoryFilterType::Directory(String::new()),
+                                            "directory",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
                                             HistoryFilterType::None,
                                             "none",
                                         );
@@ -410,6 +424,30 @@ impl eframe::App for MyEguiApp {
                                             ui.add(TextEdit::singleline(function));
                                         });
                                     }
+                                    HistoryFilterType::FileAbsolute(file) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(file));
+                                        });
+                                    }
+                                    HistoryFilterType::FileRelative(file) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(file));
+                                        });
+                                    }
+                                    HistoryFilterType::Directory(dir) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(dir));
+                                        });
+                                    }
                                     HistoryFilterType::None => {
                                         // do nothing
                                     }
@@ -417,48 +455,19 @@ impl eframe::App for MyEguiApp {
                                 let resp = ui.add(Button::new("Go"));
                                 if resp.clicked() {
                                     self.status = Status::Loading;
-                                    match &self.history_filter_type {
+                                    let filter = match &self.history_filter_type {
                                         HistoryFilterType::Date(date) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::Date(date.to_string()),
-                                                }))
-                                                .unwrap();
+                                            Some(Filter::Date(date.to_string()))
                                         }
                                         HistoryFilterType::CommitId(commit_id) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::CommitId(commit_id.to_string()),
-                                                }))
-                                                .unwrap();
+                                            Some(Filter::CommitId(commit_id.to_string()))
                                         }
-                                        HistoryFilterType::DateRange(date1, date2) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::DateRange(
-                                                        date1.to_string(),
-                                                        date2.to_string(),
-                                                    ),
-                                                }))
-                                                .unwrap();
-                                        }
-                                        HistoryFilterType::FunctionInBlock(block) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::FunctionInBlock(
-                                                        BlockType::from_string(block),
-                                                    ),
-                                                }))
-                                                .unwrap();
-                                        }
+                                        HistoryFilterType::DateRange(date1, date2) => Some(
+                                            Filter::DateRange(date1.to_string(), date2.to_string()),
+                                        ),
+                                        HistoryFilterType::FunctionInBlock(block) => Some(
+                                            Filter::FunctionInBlock(BlockType::from_string(block)),
+                                        ),
                                         HistoryFilterType::FunctionInLines(line1, line2) => {
                                             let fn_in_lines = (
                                                 match line1.parse::<usize>() {
@@ -478,29 +487,36 @@ impl eframe::App for MyEguiApp {
                                                     }
                                                 },
                                             );
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::FunctionInLines(
-                                                        fn_in_lines.0,
-                                                        fn_in_lines.1,
-                                                    ),
-                                                }))
-                                                .unwrap();
+                                            Some(Filter::FunctionInLines(
+                                                fn_in_lines.0,
+                                                fn_in_lines.1,
+                                            ))
                                         }
                                         HistoryFilterType::FunctionInFunction(function) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType {
-                                                    thing: self.cmd_output.clone(),
-                                                    filter: Filter::FunctionWithParent(
-                                                        function.to_string(),
-                                                    ),
-                                                }))
-                                                .unwrap();
+                                            Some(Filter::FunctionWithParent(function.to_string()))
                                         }
-                                        HistoryFilterType::None => {}
+                                        HistoryFilterType::FileAbsolute(file) => {
+                                            Some(Filter::FileAbsolute(file.to_string()))
+                                        }
+                                        HistoryFilterType::FileRelative(file) => {
+                                            Some(Filter::FileRelative(file.to_string()))
+                                        }
+                                        HistoryFilterType::Directory(dir) => {
+                                            Some(Filter::Directory(dir.to_string()))
+                                        }
+                                        HistoryFilterType::None => {
+                                            self.status = Status::Ok(None);
+                                            None
+                                        }
+                                    };
+                                    if let Some(filter) = filter {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter,
+                                            }))
+                                            .unwrap();
                                     }
                                 }
                             }
@@ -521,8 +537,10 @@ impl eframe::App for MyEguiApp {
                         });
 
                         let text = match &self.file_type {
-                            FileType::None => "file type".to_string(),
-                            a => a.to_string(),
+                            FileType::Directory(_) => "directory",
+                            FileType::Absolute(_) => "absolute",
+                            FileType::Relative(_) => "relative",
+                            _ => "file type",
                         };
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(text)
@@ -573,8 +591,10 @@ impl eframe::App for MyEguiApp {
                         }
                         // get filters if any
                         let text = match &self.filter {
-                            Filter::None => "filter type".to_string(),
-                            a => a.to_string(),
+                            Filter::CommitId(_) => "commit hash".to_string(),
+                            Filter::DateRange(..) => "date range".to_string(),
+                            Filter::Date(_) => "date".to_string(),
+                            _ => "filter type".to_string(),
                         };
                         egui::ComboBox::from_id_source("search_search_filter_combo_box")
                             .selected_text(text)
@@ -629,19 +649,18 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(end));
                                 });
                             }
-                            Filter::FileAbsolute(_) => todo!(),
-                            Filter::FileRelative(_) => todo!(),
-                            Filter::Directory(_) => todo!(),
-                            Filter::FunctionInBlock(_) => todo!(),
-                            Filter::FunctionInLines(_, _) => todo!(),
-                            Filter::FunctionWithParent(_) => todo!(),
+                            _ => {}
                         }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
                             self.status = Status::Loading;
                             self.channels
                                 .0
-                                .send(FullCommand::Search(self.input_buffer.clone(), self.file_type.clone(), self.filter.clone()))
+                                .send(FullCommand::Search(
+                                    self.input_buffer.clone(),
+                                    self.file_type.clone(),
+                                    self.filter.clone(),
+                                ))
                                 .unwrap();
                         }
                     }
@@ -658,22 +677,11 @@ impl eframe::App for MyEguiApp {
                             });
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            match self.list_type {
-                                ListType::Dates => {
-                                    self.status = Status::Loading;
-                                    self.channels
-                                        .0
-                                        .send(FullCommand::List(self.list_type))
-                                        .unwrap();
-                                }
-                                ListType::Commits => {
-                                    self.status = Status::Loading;
-                                    self.channels
-                                        .0
-                                        .send(FullCommand::List(self.list_type))
-                                        .unwrap();
-                                }
-                            }
+                            self.status = Status::Loading;
+                            self.channels
+                                .0
+                                .send(FullCommand::List(self.list_type))
+                                .unwrap();
                         }
                     }
                 }

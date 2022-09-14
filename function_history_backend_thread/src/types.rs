@@ -126,24 +126,6 @@ pub enum FullCommand {
     Search(String, FileType, Filter),
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// pub enum SearchFilter {
-//     CommitId(String),
-//     Date(String),
-//     DateRange(String, String),
-//     None,
-// }
-
-// impl fmt::Display for SearchFilter {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             SearchFilter::CommitId(_) => write!(f, "commit hash"),
-//             SearchFilter::Date(_) => write!(f, "date"),
-//             SearchFilter::DateRange(_, _) => write!(f, "date range"),
-//             SearchFilter::None => write!(f, "none"),
-//         }
-//     }
-// }
 #[derive(Debug, Clone)]
 pub struct FilterType {
     pub thing: CommandResult,
@@ -158,6 +140,9 @@ pub enum HistoryFilterType {
     FunctionInLines(String, String),
     FunctionInFunction(String),
     CommitId(String),
+    FileAbsolute(String),
+    FileRelative(String),
+    Directory(String),
     None,
 }
 
@@ -170,6 +155,9 @@ impl fmt::Display for HistoryFilterType {
             HistoryFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
             HistoryFilterType::FunctionInFunction(_) => write!(f, "function in function"),
             HistoryFilterType::CommitId(_) => write!(f, "commit id"),
+            HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
+            HistoryFilterType::FileRelative(_) => write!(f, "file relative"),
+            HistoryFilterType::Directory(_) => write!(f, "directory"),
             HistoryFilterType::None => write!(f, "none"),
         }
     }

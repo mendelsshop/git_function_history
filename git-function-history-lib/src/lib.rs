@@ -19,7 +19,7 @@ pub mod types;
 use fancy_regex::Regex as FancyRegex;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::fmt::{Write, self};
+use std::fmt::Write;
 use std::{error::Error, process::Command};
 pub use types::{
     Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
@@ -37,7 +37,7 @@ lazy_static! {
 }
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileType {
     /// When you have a absolute path to a file.
     Absolute(String),
@@ -49,19 +49,8 @@ pub enum FileType {
     None,
 }
 
-impl fmt::Display for FileType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FileType::Absolute(path) => write!(f, "{}", path),
-            FileType::Relative(path) => write!(f, "{}", path),
-            FileType::Directory(path) => write!(f, "{}", path),
-            FileType::None => write!(f, ""),
-        }
-    }
-}
-
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitId(String),
@@ -83,23 +72,6 @@ pub enum Filter {
     FunctionWithParent(String),
     /// When you want to filter by nothing.
     None,
-}
-
-impl fmt::Display for Filter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Filter::CommitId(hash) => write!(f, "{}", hash),
-            Filter::Date(date) => write!(f, "{}", date),
-            Filter::DateRange(start, end) => write!(f, "{}..{}", start, end),
-            Filter::FileAbsolute(path) => write!(f, "{}", path),
-            Filter::FileRelative(path) => write!(f, "{}", path),
-            Filter::Directory(path) => write!(f, "{}", path),
-            Filter::FunctionInBlock(block) => write!(f, "{}", block),
-            Filter::FunctionInLines(start, end) => write!(f, "{}..{}", start, end),
-            Filter::FunctionWithParent(name) => write!(f, "{}", name),
-            Filter::None => write!(f, ""),
-        }
-    }
 }
 
 // TODO: document this
