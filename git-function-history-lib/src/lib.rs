@@ -14,14 +14,17 @@
     clippy::return_self_not_must_use
 )]
 
-pub mod things;
+/// Different types that can extracted from the result of `get_function_history`.
+pub mod types;
 use fancy_regex::Regex as FancyRegex;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
 use std::{error::Error, process::Command};
-pub use things::{Block, BlockType, CommitFunctions, File, Function, FunctionHistory};
-use things::{FunctionBlock, InternalBlock, InternalFunctions, Points};
+pub use types::{
+    Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
+};
+use types::{InternalBlock, InternalFunctions, Points};
 
 // read languages.json and parse the json to a const/static
 lazy_static! {
@@ -32,20 +35,22 @@ lazy_static! {
     pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
     pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
 }
-#[derive(Debug, Clone)]
+
+/// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileType {
     /// When you have a absolute path to a file.
     Absolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
     Relative(String),
+    /// When you want to filter only files in a specific directory
+    Directory(String),
     /// When you don't know the path to a file.
     None,
 }
 
-/// This is filter enum is used when you only want to lookup a function with the filter
-/// it is different from the from the all the filters in the things module, because those filters are after the fact,
-/// and require that you already found all the functions in the file. Making using this filter most probably faster.
-#[derive(Debug, Clone)]
+/// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitId(String),
@@ -53,11 +58,25 @@ pub enum Filter {
     Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
     DateRange(String, String),
+    /// When you have a absolute path to a file.
+    FileAbsolute(String),
+    /// When you have a relative path to a file and or want to find look in all files match a name.
+    FileRelative(String),
+    /// When you want to filter only files in a specific directory
+    Directory(String),
+    // when you want to filter by function that are in a specific block (impl, trait, extern)
+    FunctionInBlock(BlockType),
+    // when you want to filter by function that are in between specific lines
+    FunctionInLines(usize, usize),
+    // when you want filter by a function that has a parent function of a specific name
+    FunctionWithParent(String),
     /// When you want to filter by nothing.
     None,
 }
 
 // TODO: document this
+/// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
+///
 /// Checks if git is installed if its not it will error out with `git is not installed`.
 /// <br>
 /// It then goes and creates a git log command based on the filters that you pass in.
@@ -83,7 +102,7 @@ pub enum Filter {
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileType};
-/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs"), Filter::None);
+/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs".to_string()), Filter::None);
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
@@ -124,6 +143,9 @@ pub fn get_function_history(
             command.arg(end);
         }
         Filter::None => {}
+        _ => {
+            Err("filter not supported")?;
+        }
     }
     let output = command.output()?;
     if !output.stderr.is_empty() {
@@ -150,7 +172,7 @@ pub fn get_function_history(
             for commit in commits {
                 match find_function_in_commit(commit.0, &path, name) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             vec![File::new(path.to_string(), contents)],
                             commit.1,
@@ -162,14 +184,14 @@ pub fn get_function_history(
                 }
             }
         }
-        FileType::Relative(path) => {
+        FileType::Relative(ref path) => {
             if !path.ends_with(".rs") {
                 return Err("not a rust file")?;
             }
             for commit in commits {
-                match find_function_in_commit_with_relative_path(commit.0, name, &path) {
+                match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
@@ -181,11 +203,12 @@ pub fn get_function_history(
                 }
             }
         }
-        FileType::None => {
+
+        FileType::None | FileType::Directory(_) => {
             for commit in commits {
-                match find_function_in_commit_with_unkown_file(commit.0, name) {
+                match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.history.push(CommitFunctions::new(
+                        file_history.commit_history.push(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
@@ -198,7 +221,7 @@ pub fn get_function_history(
             }
         }
     }
-    if file_history.history.is_empty() {
+    if file_history.commit_history.is_empty() {
         Err("No history found")?;
     }
     Ok(file_history)
@@ -356,35 +379,33 @@ fn find_function_in_commit(
         function.function = match function_range
             .iter()
             .filter(|other| function_ranges.in_other(&other.file_line))
-            .map(|fns| FunctionBlock {
-                name: fns.name.clone(),
-                top: file_contents
-                    .lines()
-                    .nth(fns.file_line.x - 1)
-                    .unwrap_or_else(|| {
-                        panic!(
+            .map(|fns| {
+                Ok(FunctionBlock {
+                    name: fns.name.clone(),
+                    top: file_contents
+                        .lines()
+                        .nth(fns.file_line.x - 1)
+                        .unwrap_to_error(&format!(
                             "could not get line {} in file {} from commit: {}",
                             fns.file_line.y - 1,
                             file_path,
                             name
-                        )
-                    })
-                    .to_string(),
-                bottom: file_contents
-                    .lines()
-                    .nth(fns.file_line.y - 1)
-                    .unwrap_or_else(|| {
-                        panic!(
+                        ))?
+                        .to_string(),
+                    bottom: file_contents
+                        .lines()
+                        .nth(fns.file_line.y - 1)
+                        .unwrap_to_error(&format!(
                             "could not get line {} in file {} from commit: {}",
                             fns.file_line.y - 1,
                             file_path,
                             name
-                        )
-                    })
-                    .to_string(),
-                lines: (fns.file_line.x, fns.file_line.y),
+                        ))?
+                        .to_string(),
+                    lines: (fns.file_line.x, fns.file_line.y),
+                })
             })
-            .collect::<Vec<FunctionBlock>>()
+            .collect::<Result<Vec<FunctionBlock>, Box<dyn Error>>>()?
         {
             vec if vec.is_empty() => None,
             vec => Some(vec),
@@ -468,59 +489,49 @@ fn get_function_name(mut function_header: &str) -> String {
     name
 }
 
-fn find_function_in_commit_with_unkown_file(
+fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
+    filetype: &FileType,
 ) -> Result<Vec<File>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", commit])
+        .args(&["ls-tree", "-r", "--name-only", "--full-tree", commit])
         .output()?;
     if !command.stderr.is_empty() {
         Err(String::from_utf8_lossy(&command.stderr))?;
     }
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
     for file in file_list.split('\n') {
-        if file.ends_with(".rs") {
-            files.push(file.to_string());
+        match filetype {
+            FileType::Relative(ref path) => {
+                if file.ends_with(path) {
+                    files.push(file);
+                }
+            }
+            FileType::Directory(ref path) => {
+                if path.contains(path) {
+                    files.push(file);
+                }
+            }
+            FileType::None => {
+                if file.ends_with(".rs") {
+                    files.push(file);
+                }
+            }
+            _ => {}
         }
     }
     let mut returns = Vec::new();
     for file in files {
-        match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => returns.push(File::new(file, functions)),
+        match find_function_in_commit(commit, file, name) {
+            Ok(functions) => returns.push(File::new(file.to_string(), functions)),
             Err(_) => continue,
         }
     }
-    Ok(returns)
-}
-
-fn find_function_in_commit_with_relative_path(
-    commit: &str,
-    name: &str,
-    relative_path: &str,
-) -> Result<Vec<File>, Box<dyn Error>> {
-    // get a list of all the files in the repository
-    let mut files = Vec::new();
-    let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", commit])
-        .output()?;
-    if !command.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&command.stderr))?;
-    }
-    let file_list = String::from_utf8_lossy(&command.stdout).to_string();
-    for file in file_list.split('\n') {
-        if file.ends_with(relative_path) {
-            files.push(file.to_string());
-        }
-    }
-    let mut returns = Vec::new();
-    for file in files {
-        match find_function_in_commit(commit, &file, name) {
-            Ok(functions) => returns.push(File::new(file, functions)),
-            Err(_) => continue,
-        }
+    if returns.is_empty() {
+        Err("No functions found")?;
     }
     Ok(returns)
 }
@@ -550,7 +561,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions.history[0]);
+                println!("{}", functions);
             }
             Err(e) => println!("{}", e),
         }
@@ -586,13 +597,11 @@ mod tests {
             FileType::Absolute("src/test_functions.txt".to_string()),
             Filter::None,
         );
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "not a rust file");
     }
     #[test]
-    fn test() {
+    fn test_date() {
         let output = get_function_history(
             "empty_test",
             FileType::None,
@@ -603,7 +612,7 @@ mod tests {
         );
         match &output {
             Ok(functions) => {
-                println!("{}", functions.history[0]);
+                println!("{}", functions);
             }
             Err(e) => println!("{}", e),
         }

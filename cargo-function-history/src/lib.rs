@@ -1,13 +1,15 @@
-use std::{cell::RefCell, io::stdout, rc::Rc, time::Duration};
+use std::{cell::RefCell, io::stdout, rc::Rc};
 
 use crate::app::ui;
 use app::{state::AppState, App, AppReturn};
+use crossterm::event::{self, Event, KeyCode};
 use eyre::Result;
-use inputs::{events::Events, InputEvent};
+use keys::Key;
 use tui::{backend::CrosstermBackend, Terminal};
+use tui_input::backend::crossterm as input_backend;
 
 pub mod app;
-pub mod inputs;
+pub mod keys;
 pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
     // Configure Crossterm backend for tui
     let stdout = stdout();
@@ -17,10 +19,6 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
     terminal.clear()?;
     terminal.hide_cursor()?;
 
-    // User event handler
-    let tick_rate = Duration::from_millis(200);
-    let events = Events::new(tick_rate);
-
     loop {
         let mut app = app.borrow_mut();
 
@@ -28,21 +26,30 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         terminal.draw(|rect| ui::draw(rect, &mut app))?;
 
         // Handle inputs
-        match &mut app.state() {
-            AppState::Editing => {
-                match events.next()? {
-                    InputEvent::Input(key) => app.do_edit_action(key),
-                    InputEvent::Tick => {}
-                };
-            }
-            _ => {
-                let result = match events.next()? {
-                    InputEvent::Input(key) => app.do_action(key),
-                    InputEvent::Tick => AppReturn::Continue,
-                };
-                // Check if we should exit
-                if result == AppReturn::Exit {
-                    break;
+        if let Event::Key(key) = event::read()? {
+            match &mut app.state() {
+                AppState::Editing => match key.code {
+                    KeyCode::Enter => {
+                        app.run_command();
+                        app.input_buffer.reset();
+                    }
+                    KeyCode::Esc => {
+                        app.state = AppState::Looking;
+                    }
+                    KeyCode::Delete => {
+                        app.input_buffer.reset();
+                    }
+                    _ => {
+                        input_backend::to_input_request(Event::Key(key))
+                            .and_then(|req| app.input_buffer.handle(req));
+                    }
+                },
+                _ => {
+                    let result = app.do_action(Key::from(key));
+                    // Check if we should exit
+                    if result == AppReturn::Exit {
+                        break;
+                    }
                 }
             }
         }

@@ -102,11 +102,11 @@ After that there is `Go` button, this will run the command and display the outpu
 
 #### Command bar - filter
 
-Once you have ran a command and gotten some output in the viewing pane,  you can filter by switching the first drop down to filter.
+Once you have ran a command and gotten some output in the viewing pane, you can filter by switching the first drop down to filter.
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar.png" width="400">
 
-The options vary by if you have already filtered by lets say a date, then yo u won't be able to filter by a date range or a commit hash.
+The options vary by if you have already filtered by lets say a date, then you won't be able to filter by a date range or a commit hash.
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/filter_bar_selector.png" width="100">
 

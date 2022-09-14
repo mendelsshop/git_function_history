@@ -1,7 +1,7 @@
-// use std::fmt;
+use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
@@ -47,33 +47,77 @@ where
             .as_ref(),
         )
         .split(whole_chunks);
-    app.body_height = body_chunks[0].height;
     app.get_result();
-    let body = draw_body(&app.cmd_output, app.state(), app.scroll_pos);
-    rect.render_widget(body, body_chunks[0]);
-    app.input_width = body_chunks[1].width;
-    let input = draw_input(&app.input_buffer, app.state(), app.text_scroll_pos);
+    draw_body(app, body_chunks[0], rect);
+    let width = body_chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
+    let scroll = (app.input_buffer.cursor() as u16).max(width) - width;
+    let input = Paragraph::new(app.input_buffer.value())
+        .style(match app.state() {
+            AppState::Editing => Style::default().fg(Color::Yellow),
+            _ => Style::default(),
+        })
+        .block(
+            Block::default()
+                // .borders(Borders::TOP)
+                .borders(Borders::BOTTOM)
+                .style(Style::default().fg(Color::White)),
+        )
+        .scroll((0, scroll));
     rect.render_widget(input, body_chunks[1]);
+    if let AppState::Editing = app.state() {
+        // AppState::Editing => {
+        rect.set_cursor(
+            // Put cursor past the end of the input text
+            body_chunks[1].x + (app.input_buffer.cursor() as u16).min(width),
+            // Move one line down, from the border to the input line
+            body_chunks[1].y,
+        )
+    }
     let status = draw_status(app.status());
     rect.render_widget(status, body_chunks[2]);
 }
 
-fn draw_body<'a>(file: &CommandResult, _state: &AppState, scroll_pos: (u16, u16)) -> Paragraph<'a> {
-    let tick_text: Vec<Spans> = file
+fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
+    let top = match &app.cmd_output {
+        CommandResult::History(history) => {
+            let metadata = history.get_metadata();
+            let metadata = BTreeMap::from_iter(metadata.iter());
+            let metadata: Vec<Spans> = metadata
+                .iter()
+                .map(|x| Spans::from(format!("{}: {}\n", x.0, x.1)))
+                .collect();
+            Some(
+                Paragraph::new(metadata)
+                    .style(Style::default().fg(Color::LightCyan))
+                    .block(Block::default().style(Style::default().fg(Color::White))),
+            )
+        }
+        _ => None,
+    };
+    let tick_text: Vec<Spans> = app
+        .cmd_output
         .to_string()
         .split('\n')
         .map(|s| Spans::from(format!("{}\n", s)))
         .collect();
 
-    Paragraph::new(tick_text)
+    let body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
-        .scroll(scroll_pos)
+        .scroll(app.scroll_pos)
         .block(
             Block::default()
-                .borders(Borders::TOP)
                 .borders(Borders::BOTTOM)
                 .style(Style::default().fg(Color::White)),
-        )
+        );
+    if let Some(top) = top {
+        let mut top_pos = pos;
+        top_pos.height = 4;
+        pos.height -= 4;
+        pos.y += 4;
+        frame.render_widget(top, top_pos);
+    }
+    app.body_height = pos.height;
+    frame.render_widget(body, pos);
 }
 
 fn draw_main<'a>() -> Block<'a> {
@@ -83,30 +127,6 @@ fn draw_main<'a>() -> Block<'a> {
         .border_style(Style::default().fg(Color::White))
         .title_alignment(Alignment::Center)
         .style(Style::default().fg(Color::White))
-}
-
-fn draw_input<'a>(input: &'a str, status: &'a AppState, scroll_pos: (u16, u16)) -> Paragraph<'a> {
-    // TODO: make that the : (colon) stays at the beginning of the line at all times even when scrolling
-    match status {
-        AppState::Editing => Paragraph::new(vec![Spans::from(Span::raw(format!(":{}", input)))])
-            .scroll(scroll_pos)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .borders(Borders::TOP)
-                    .borders(Borders::BOTTOM)
-                    .style(Style::default().fg(Color::White)),
-            ),
-        _ => Paragraph::new(vec![Spans::from(Span::raw(input))])
-            .scroll(scroll_pos)
-            .style(Style::default().fg(Color::LightCyan))
-            .block(
-                Block::default()
-                    .borders(Borders::TOP)
-                    .borders(Borders::BOTTOM)
-                    .style(Style::default().fg(Color::White)),
-            ),
-    }
 }
 
 fn draw_status<'a>(status: &Status) -> Paragraph<'a> {

@@ -2,7 +2,7 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Layout, Sense, SidePanel, Ui},
+    egui::{self, Button, Layout, Sense, SidePanel},
     epaint::Vec2,
 };
 use eframe::{
@@ -10,11 +10,11 @@ use eframe::{
     epaint::Color32,
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, CommitFilterType, CommitOrFileFilter, CommmitFilterValue, FileTypeS,
-    FilterType, FullCommand, HistoryFilter, HistoryFilterType, Index, ListType, SearchFilter,
-    Status,
+    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
 };
-use git_function_history::{BlockType, CommitFunctions, FileType, Filter, FunctionHistory};
+use git_function_history::{
+    types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
+};
 // TODO: use a logger instead of print statements
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -28,10 +28,9 @@ pub struct MyEguiApp {
         mpsc::Sender<FullCommand>,
         mpsc::Receiver<(CommandResult, Status)>,
     ),
-    filter: SearchFilter,
-    file_type: FileTypeS,
+    filter: Filter,
+    file_type: FileType,
     history_filter_type: HistoryFilterType,
-    commit_filter_type: CommitFilterType,
 }
 
 impl MyEguiApp {
@@ -50,41 +49,46 @@ impl MyEguiApp {
             status: Status::default(),
             list_type: ListType::default(),
             channels,
-            file_type: FileTypeS::None,
-            filter: SearchFilter::None,
+            file_type: FileType::None,
+            filter: Filter::None,
             history_filter_type: HistoryFilterType::None,
-            commit_filter_type: CommitFilterType::None,
         }
     }
 
-    fn draw_commit(commit: (&CommitFunctions, &mut Index), ctx: &egui::Context, show: bool) {
+    fn draw_commit(commit: &mut CommitFunctions, ctx: &egui::Context, show: bool) {
         if show {
             TopBottomPanel::top("date_id").show(ctx, |ui| {
-                ui.add(Label::new(format!("Commit: {}", commit.0.id)));
-                ui.add(Label::new(format!("Date: {}", commit.0.date)));
+                ui.add(Label::new(format!(
+                    "Commit: {}",
+                    commit.get_metadata()["commit hash"]
+                )));
+                ui.add(Label::new(format!(
+                    "Date: {}",
+                    commit.get_metadata()["date"]
+                )));
             });
         }
-        let mut i = 0;
-        match commit.1 {
-            Index(0, _) => {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.add(Label::new("no files found"));
-                });
-            }
-            Index(len, 0) if *len == 1 => {
+        TopBottomPanel::top("file_name").show(ctx, |ui| {
+            ui.add(Label::new(format!(
+                "File {}",
+                commit.get_metadata()["file"]
+            )));
+        });
+        match commit.get_move_direction() {
+            Directions::None => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[0].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
             }
-            Index(_, 0) => {
+            Directions::Forward => {
                 // split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
-                println!("found at least one file index beginning");
+                log::debug!("found at least one file index beginning");
                 let resp = egui::SidePanel::right("right_arrow")
                     .show(ctx, |ui| {
                         ui.set_width(0.5);
@@ -99,16 +103,14 @@ impl MyEguiApp {
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[0].to_string()))
-                        });
+                        .show(ui, |ui| ui.add(Label::new(commit.get_file().to_string())));
                 });
                 if resp.clicked() {
-                    i = 1;
+                    commit.move_forward();
                 }
             }
-            Index(len, d) if *d == *len - 1 => {
-                println!("found at least one file index end");
+            Directions::Back => {
+                log::debug!("found at least one file index end");
                 // split the screen in two parts, leave a small part for the left arrow and the rest for the content
                 let resp = SidePanel::left("right_button")
                     .show(ctx, |ui| {
@@ -125,17 +127,15 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[*len - 1].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
                 if resp.clicked() {
-                    i = *d - 1;
-                } else {
-                    i = *d
+                    commit.move_back();
                 }
             }
-            Index(_, is) => {
-                println!("found at least one file index middle");
+            Directions::Both => {
+                log::debug!("found at least one file index middle");
                 // split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
                 let l_resp = SidePanel::left("left_arrow")
                     .show(ctx, |ui| {
@@ -161,30 +161,27 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.0.functions[*is].to_string()));
+                            ui.add(Label::new(commit.get_file().to_string()));
                         });
                 });
                 if l_resp.clicked() {
-                    i = *is - 1;
+                    commit.move_back();
                 } else if r_resp.clicked() {
-                    i = *is + 1;
-                } else {
-                    i = *is;
+                    commit.move_forward();
                 }
             }
         }
-        *commit.1 = Index(commit.1 .0, i);
     }
 
-    fn draw_history(history: (&FunctionHistory, &mut Index, &mut Index), ctx: &egui::Context) {
+    fn draw_history(history: &mut FunctionHistory, ctx: &egui::Context) {
         // split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
         // create a 3 line header
         TopBottomPanel::top("control history").show(ctx, |ui| {
             ui.set_height(2.0);
             ui.horizontal(|ui| {
                 let mut max = ui.available_width();
-                let l_resp = match history.1 {
-                    Index(_, 0) => {
+                let l_resp = match history.get_move_direction() {
+                    Directions::Forward => {
                         ui.add_sized(Vec2::new(2.0, 2.0), Button::new("<-").sense(Sense::hover()));
                         None
                     }
@@ -198,12 +195,13 @@ impl MyEguiApp {
                     Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.0.history[history.1 .1].id, history.0.history[history.1 .1].date
+                        history.get_metadata()["commit hash"],
+                        history.get_metadata()["date"]
                     )),
                 );
 
-                let r_resp = match history.1 {
-                    Index(len, i) if *i == *len - 1 => {
+                let r_resp = match history.get_move_direction() {
+                    Directions::Back => {
                         ui.add_sized(Vec2::new(2.0, 2.0), Button::new("->").sense(Sense::hover()));
                         None
                     }
@@ -216,9 +214,7 @@ impl MyEguiApp {
                 match r_resp {
                     Some(r_resp) => {
                         if r_resp.clicked() {
-                            *history.1 = Index(history.1 .0, history.1 .1 + 1);
-                            // reset file index
-                            *history.2 = Index(history.2 .0, 0)
+                            history.move_forward();
                         }
                     }
                     None => {}
@@ -226,132 +222,14 @@ impl MyEguiApp {
                 match l_resp {
                     Some(l_resp) => {
                         if l_resp.clicked() {
-                            *history.1 = Index(history.1 .0, history.1 .1 - 1);
-                            // reset file index
-                            *history.2 = Index(history.2 .0, 0)
+                            history.move_back();
                         }
                     }
                     None => {}
                 }
             });
         });
-        Self::draw_commit((&history.0.history[history.1 .1], history.2), ctx, false);
-    }
-
-    fn draw_commit_file_filter(&mut self, ui: &mut Ui, t: CommmitFilterValue, max: f32) {
-        // Options
-        // 1. function in block
-        // 2. function in lines
-        // 3. function in function
-        let text = match &self.commit_filter_type {
-            CommitFilterType::None => "filter type".to_string(),
-            a => a.to_string(),
-        };
-        egui::ComboBox::from_id_source("commit_combo_box")
-            .selected_text(text)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInFunction(String::new()),
-                    "function with parent",
-                );
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInBlock(String::new()),
-                    "function in block",
-                );
-                ui.selectable_value(
-                    &mut self.commit_filter_type,
-                    CommitFilterType::FunctionInLines(String::new(), String::new()),
-                    "function in lines",
-                );
-                ui.selectable_value(&mut self.commit_filter_type, CommitFilterType::None, "none");
-            });
-        match &mut self.commit_filter_type {
-            CommitFilterType::FunctionInBlock(block) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(block));
-                });
-            }
-            CommitFilterType::FunctionInLines(line1, line2) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(line1));
-                });
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(line2));
-                });
-            }
-            CommitFilterType::FunctionInFunction(function) => {
-                ui.horizontal(|ui| {
-                    // set the width of the input field
-                    ui.set_min_width(4.0);
-                    ui.set_max_width(max);
-                    ui.add(TextEdit::singleline(function));
-                });
-            }
-            CommitFilterType::None => {
-                // do nothing
-            }
-        }
-        let resp = ui.add(Button::new("Go"));
-        if resp.clicked() {
-            self.status = Status::Loading;
-            match &self.commit_filter_type {
-                CommitFilterType::FunctionInBlock(block) => {
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInBlock(BlockType::from_string(block)),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::FunctionInLines(line1, line2) => {
-                    let fn_in_lines = (
-                        match line1.parse::<usize>() {
-                            Ok(x) => x,
-                            Err(e) => {
-                                self.status = Status::Error(format!("{}", e));
-                                return;
-                            }
-                        },
-                        match line2.parse::<usize>() {
-                            Ok(x) => x,
-                            Err(e) => {
-                                self.status = Status::Error(format!("{}", e));
-                                return;
-                            }
-                        },
-                    );
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInLines(fn_in_lines.0, fn_in_lines.1),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::FunctionInFunction(function) => {
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType::CommitOrFile(
-                            CommitOrFileFilter::FunctionInFunction(function.to_string()),
-                            t,
-                        )))
-                        .unwrap();
-                }
-                CommitFilterType::None => {}
-            }
-        }
+        Self::draw_commit(history.get_mut_commit(), ctx, false);
     }
 }
 
@@ -419,7 +297,7 @@ impl eframe::App for MyEguiApp {
                 match self.command {
                     Command::Filter => {
                         match &self.cmd_output {
-                            CommandResult::History(t, _, _) => {
+                            CommandResult::History(_) => {
                                 // Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
                                 let text = match &self.history_filter_type {
                                     HistoryFilterType::None => "filter type".to_string(),
@@ -463,6 +341,21 @@ impl eframe::App for MyEguiApp {
                                             &mut self.history_filter_type,
                                             HistoryFilterType::FunctionInFunction(String::new()),
                                             "function in function",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
+                                            HistoryFilterType::FileAbsolute(String::new()),
+                                            "file absolute",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
+                                            HistoryFilterType::FileRelative(String::new()),
+                                            "file relative",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.history_filter_type,
+                                            HistoryFilterType::Directory(String::new()),
+                                            "directory",
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
@@ -531,6 +424,30 @@ impl eframe::App for MyEguiApp {
                                             ui.add(TextEdit::singleline(function));
                                         });
                                     }
+                                    HistoryFilterType::FileAbsolute(file) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(file));
+                                        });
+                                    }
+                                    HistoryFilterType::FileRelative(file) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(file));
+                                        });
+                                    }
+                                    HistoryFilterType::Directory(dir) => {
+                                        ui.horizontal(|ui| {
+                                            // set the width of the input field
+                                            ui.set_min_width(4.0);
+                                            ui.set_max_width(max);
+                                            ui.add(TextEdit::singleline(dir));
+                                        });
+                                    }
                                     HistoryFilterType::None => {
                                         // do nothing
                                     }
@@ -538,48 +455,19 @@ impl eframe::App for MyEguiApp {
                                 let resp = ui.add(Button::new("Go"));
                                 if resp.clicked() {
                                     self.status = Status::Loading;
-                                    match &self.history_filter_type {
+                                    let filter = match &self.history_filter_type {
                                         HistoryFilterType::Date(date) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::Date(date.to_string()),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
+                                            Some(Filter::Date(date.to_string()))
                                         }
                                         HistoryFilterType::CommitId(commit_id) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::CommitId(commit_id.to_string()),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
+                                            Some(Filter::CommitId(commit_id.to_string()))
                                         }
-                                        HistoryFilterType::DateRange(date1, date2) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::DateRange(
-                                                        date1.to_string(),
-                                                        date2.to_string(),
-                                                    ),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
-                                        }
-                                        HistoryFilterType::FunctionInBlock(block) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInBlock(
-                                                        BlockType::from_string(block),
-                                                    ),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
-                                        }
+                                        HistoryFilterType::DateRange(date1, date2) => Some(
+                                            Filter::DateRange(date1.to_string(), date2.to_string()),
+                                        ),
+                                        HistoryFilterType::FunctionInBlock(block) => Some(
+                                            Filter::FunctionInBlock(BlockType::from_string(block)),
+                                        ),
                                         HistoryFilterType::FunctionInLines(line1, line2) => {
                                             let fn_in_lines = (
                                                 match line1.parse::<usize>() {
@@ -599,44 +487,40 @@ impl eframe::App for MyEguiApp {
                                                     }
                                                 },
                                             );
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInLines(
-                                                        fn_in_lines.0,
-                                                        fn_in_lines.1,
-                                                    ),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
+                                            Some(Filter::FunctionInLines(
+                                                fn_in_lines.0,
+                                                fn_in_lines.1,
+                                            ))
                                         }
                                         HistoryFilterType::FunctionInFunction(function) => {
-                                            self.channels
-                                                .0
-                                                .send(FullCommand::Filter(FilterType::History(
-                                                    HistoryFilter::FunctionInFunction(
-                                                        function.to_string(),
-                                                    ),
-                                                    t.clone(),
-                                                )))
-                                                .unwrap();
+                                            Some(Filter::FunctionWithParent(function.to_string()))
                                         }
-                                        HistoryFilterType::None => {}
+                                        HistoryFilterType::FileAbsolute(file) => {
+                                            Some(Filter::FileAbsolute(file.to_string()))
+                                        }
+                                        HistoryFilterType::FileRelative(file) => {
+                                            Some(Filter::FileRelative(file.to_string()))
+                                        }
+                                        HistoryFilterType::Directory(dir) => {
+                                            Some(Filter::Directory(dir.to_string()))
+                                        }
+                                        HistoryFilterType::None => {
+                                            self.status = Status::Ok(None);
+                                            None
+                                        }
+                                    };
+                                    if let Some(filter) = filter {
+                                        self.channels
+                                            .0
+                                            .send(FullCommand::Filter(FilterType {
+                                                thing: self.cmd_output.clone(),
+                                                filter,
+                                            }))
+                                            .unwrap();
                                     }
                                 }
                             }
-                            CommandResult::Commit(t, _) => self.draw_commit_file_filter(
-                                ui,
-                                CommmitFilterValue::Commit(t.clone()),
-                                max,
-                            ),
-                            CommandResult::File(t) => {
-                                self.draw_commit_file_filter(
-                                    ui,
-                                    CommmitFilterValue::File(t.clone()),
-                                    max,
-                                );
-                            }
+
                             _ => {
                                 ui.add(Label::new("No filters available"));
                             }
@@ -653,27 +537,34 @@ impl eframe::App for MyEguiApp {
                         });
 
                         let text = match &self.file_type {
-                            FileTypeS::None => "file type".to_string(),
-                            a => a.to_string(),
+                            FileType::Directory(_) => "directory",
+                            FileType::Absolute(_) => "absolute",
+                            FileType::Relative(_) => "relative",
+                            _ => "file type",
                         };
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.file_type, FileTypeS::None, "None");
+                                ui.selectable_value(&mut self.file_type, FileType::None, "None");
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Relative(String::new()),
+                                    FileType::Relative(String::new()),
                                     "Relative",
                                 );
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileTypeS::Absolute(String::new()),
+                                    FileType::Absolute(String::new()),
                                     "Absolute",
+                                );
+                                ui.selectable_value(
+                                    &mut self.file_type,
+                                    FileType::Directory(String::new()),
+                                    "Directory",
                                 );
                             });
                         match &mut self.file_type {
-                            FileTypeS::None => {}
-                            FileTypeS::Relative(abc) => {
+                            FileType::None => {}
+                            FileType::Relative(abc) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -681,7 +572,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            FileTypeS::Absolute(atring) => {
+                            FileType::Absolute(atring) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -689,35 +580,45 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(atring));
                                 });
                             }
+                            FileType::Directory(dir) => {
+                                ui.horizontal(|ui| {
+                                    // set the width of the input field
+                                    ui.set_min_width(4.0);
+                                    ui.set_max_width(max);
+                                    ui.add(TextEdit::singleline(dir));
+                                });
+                            }
                         }
                         // get filters if any
                         let text = match &self.filter {
-                            SearchFilter::None => "filter type".to_string(),
-                            a => a.to_string(),
+                            Filter::CommitId(_) => "commit hash".to_string(),
+                            Filter::DateRange(..) => "date range".to_string(),
+                            Filter::Date(_) => "date".to_string(),
+                            _ => "filter type".to_string(),
                         };
                         egui::ComboBox::from_id_source("search_search_filter_combo_box")
                             .selected_text(text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.filter, SearchFilter::None, "None");
+                                ui.selectable_value(&mut self.filter, Filter::None, "None");
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::CommitId(String::new()),
+                                    Filter::CommitId(String::new()),
                                     "Commit Hash",
                                 );
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::Date(String::new()),
+                                    Filter::Date(String::new()),
                                     "Date",
                                 );
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    SearchFilter::DateRange(String::new(), String::new()),
+                                    Filter::DateRange(String::new(), String::new()),
                                     "Date Range",
                                 );
                             });
                         match &mut self.filter {
-                            SearchFilter::None => {}
-                            SearchFilter::CommitId(abc) => {
+                            Filter::None => {}
+                            Filter::CommitId(abc) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -725,7 +626,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(abc));
                                 });
                             }
-                            SearchFilter::Date(date) => {
+                            Filter::Date(date) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -733,7 +634,7 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(date));
                                 });
                             }
-                            SearchFilter::DateRange(start, end) => {
+                            Filter::DateRange(start, end) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -748,34 +649,18 @@ impl eframe::App for MyEguiApp {
                                     ui.add(TextEdit::singleline(end));
                                 });
                             }
+                            _ => {}
                         }
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            let file = match &mut self.file_type {
-                                FileTypeS::None => FileType::None,
-                                FileTypeS::Relative(s) => {
-                                    let t = FileType::Relative(s.clone());
-                                    s.clear();
-                                    t
-                                }
-                                FileTypeS::Absolute(s) => {
-                                    let t = FileType::Absolute(s.clone());
-                                    s.clear();
-                                    t
-                                }
-                            };
-                            let filter = match &mut self.filter {
-                                SearchFilter::None => Filter::None,
-                                SearchFilter::CommitId(s) => Filter::CommitId(s.clone()),
-                                SearchFilter::Date(date) => Filter::Date(date.clone()),
-                                SearchFilter::DateRange(date, scd) => {
-                                    Filter::DateRange(date.clone(), scd.clone())
-                                }
-                            };
                             self.status = Status::Loading;
                             self.channels
                                 .0
-                                .send(FullCommand::Search(self.input_buffer.clone(), file, filter))
+                                .send(FullCommand::Search(
+                                    self.input_buffer.clone(),
+                                    self.file_type.clone(),
+                                    self.filter.clone(),
+                                ))
                                 .unwrap();
                         }
                     }
@@ -792,22 +677,11 @@ impl eframe::App for MyEguiApp {
                             });
                         let resp = ui.add(Button::new("Go"));
                         if resp.clicked() {
-                            match self.list_type {
-                                ListType::Dates => {
-                                    self.status = Status::Loading;
-                                    self.channels
-                                        .0
-                                        .send(FullCommand::List(self.list_type))
-                                        .unwrap();
-                                }
-                                ListType::Commits => {
-                                    self.status = Status::Loading;
-                                    self.channels
-                                        .0
-                                        .send(FullCommand::List(self.list_type))
-                                        .unwrap();
-                                }
-                            }
+                            self.status = Status::Loading;
+                            self.channels
+                                .0
+                                .send(FullCommand::List(self.list_type))
+                                .unwrap();
                         }
                     }
                 }
@@ -836,18 +710,10 @@ impl eframe::App for MyEguiApp {
             }
             // match self.commmand and render based on that
             match &mut self.cmd_output {
-                CommandResult::History(t, c_index, f_index) => {
-                    Self::draw_history((t, c_index, f_index), ctx);
+                CommandResult::History(t) => {
+                    Self::draw_history(t, ctx);
                 }
-                CommandResult::Commit(t, index) => {
-                    ui.add(Label::new(format!("Commit: {}", t.id)));
-                    ui.add(Label::new(format!("Date: {}", t.date)));
-                    Self::draw_commit((t, index), ctx, true)
-                }
-                CommandResult::File(t) => {
-                    ui.add(Label::new("File"));
-                    ui.add(Label::new(t.to_string()));
-                }
+
                 CommandResult::String(t) => {
                     egui::ScrollArea::vertical()
                         .max_height(f32::INFINITY)

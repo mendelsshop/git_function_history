@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::slice::Iter;
 
-use crate::inputs::key::Key;
+use crate::keys::Key;
 
 /// We define all available action
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
