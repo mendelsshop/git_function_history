@@ -44,7 +44,7 @@ pub struct Function {
 }
 
 impl Function {
-    /// This is a formater almost like the fmt you use fro println!, but it takes a previous and next function.
+    /// This is a formater almost like the fmt you use for println!, but it takes a previous and next function.
     /// This is usefull for printing `CommitHistory` or a vector of functions, because if you use plain old fmt, you can get repeated lines impls, and parent function in your output.
     pub fn fmt_with_context(
         &self,

@@ -4,6 +4,11 @@ use std::sync::mpsc;
 fn main() {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
+    simple_file_logger::init_logger(
+        "git-function-history-gui",
+        simple_file_logger::LogLevel::Info,
+    )
+    .unwrap();
     function_history_backend_thread::command_thread(rx_t, tx_t, true);
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(Vec2::new(800.0, 600.0)),

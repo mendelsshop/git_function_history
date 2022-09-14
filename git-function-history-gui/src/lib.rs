@@ -89,7 +89,7 @@ impl MyEguiApp {
             }
             Directions::Forward => {
                 // split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
-                println!("found at least one file index beginning");
+                log::debug!("found at least one file index beginning");
                 let resp = egui::SidePanel::right("right_arrow")
                     .show(ctx, |ui| {
                         ui.set_width(0.5);
@@ -111,7 +111,7 @@ impl MyEguiApp {
                 }
             }
             Directions::Back => {
-                println!("found at least one file index end");
+                log::debug!("found at least one file index end");
                 // split the screen in two parts, leave a small part for the left arrow and the rest for the content
                 let resp = SidePanel::left("right_button")
                     .show(ctx, |ui| {
@@ -136,7 +136,7 @@ impl MyEguiApp {
                 }
             }
             Directions::Both => {
-                println!("found at least one file index middle");
+                log::debug!("found at least one file index middle");
                 // split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
                 let l_resp = SidePanel::left("left_arrow")
                     .show(ctx, |ui| {

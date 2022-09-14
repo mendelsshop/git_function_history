@@ -28,7 +28,7 @@ pub fn command_thread(
                     if log {
                         log::warn!("thread disconnected");
                     }
-                    panic!("channel disconnected");
+                    break;
                 }
             },
             Ok(msg) => match msg {
