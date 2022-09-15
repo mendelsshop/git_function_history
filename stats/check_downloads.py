@@ -1,10 +1,16 @@
 
 import requests
 import toml
+import json
+import sys
+from github import Github
 
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} <github token>")
+    sys.exit(1)
 # parse cargo.toml file and get list of members
 
-toml_file = toml.load("../../Cargo.toml")
+toml_file = toml.load("../Cargo.toml")
 members = toml_file["workspace"]["members"]
 
 count = 0
@@ -17,7 +23,7 @@ count = 0
 
 for member in members:
     # get the crates name from its Cargo.toml file
-    cargo_toml_file = toml.load(f"../../{member}/Cargo.toml")
+    cargo_toml_file = toml.load(f"../{member}/Cargo.toml")
     crate_name = cargo_toml_file["package"]["name"]
     print(f"crate name: {crate_name}")
     jsons = requests.get(f"https://crates.io/api/v1/crates/{crate_name}/downloads").json()
@@ -30,5 +36,14 @@ print(f"Total: {count}")
 
 # upload the results to https://github.com/mendelsshop/git_function_history/stats/downloads.json
 # with this format: {"schemaVersion":1,"label":"Crates.io Total Downloads","message":"0","color":"black"}
+base64_json = {"schemaVersion":1,"label":"Crates.io Total Downloads Downloads","message":f"{count}","color":"black"}
+base64_json = json.dumps(base64_json)
 
-requests.post("https://api.github.com/repos/mendelsshop/git_function_history/stats/downloads.json", json={"schemaVersion":1,"label":"Crates.io Total Downloads","message":count,"color":"black"})
+# using an access token
+g = Github(sys.argv[1])
+
+# get last sha
+sha = g.get_repo("mendelsshop/git_function_history").get_contents("stats/downloads.json").sha
+
+# update the file
+g.get_repo("mendelsshop/git_function_history").update_file("stats/downloads.json", "update downloads.json", base64_json, sha)
