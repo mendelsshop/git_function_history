@@ -6,7 +6,7 @@ if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <github token>")
     sys.exit(1)
 
-t = Popen(["tokei", "../", "--output=json"], stdout=PIPE, stderr=PIPE)
+t = Popen(["tokei", "--output=json"], stdout=PIPE, stderr=PIPE)
 
 stdout, stderr = t.communicate()
 if stderr:
@@ -23,7 +23,7 @@ print(f"Total: {count}")
 
 # upload the results to github
 # with this format: {"schemaVersion":1,"label":"Crates.io Total Downloads","message":"0","color":"black"}
-base64_json = {"schemaVersion":1,"label":"Crates.io Total Downloads Downloads","message":f"{count}","color":"black"}
+base64_json = {"schemaVersion":1,"label":"Total Lines of Code","message":f"{count}","color":"black"}
 base64_json = json.dumps(base64_json)
 
 # using an access token
