@@ -36,7 +36,7 @@ print(f"Total: {count}")
 
 # upload the results to https://github.com/mendelsshop/git_function_history/stats/downloads.json
 # with this format: {"schemaVersion":1,"label":"Crates.io Total Downloads","message":"0","color":"black"}
-base64_json = {"schemaVersion":1,"label":"Crates.io Total Downloads Downloads","message":f"{count}","color":"black"}
+base64_json = {"schemaVersion":1,"label":"Crates.io Total Downloads","message":f"{count}","color":"black"}
 base64_json = json.dumps(base64_json)
 
 # using an access token
