@@ -713,13 +713,13 @@ impl Iterator for FunctionHistory {
 /// Options returned when you use `get_move_direction`
 /// It tells you which way you could move through the commits or files
 pub enum Directions {
-    // You can only move forward
+    /// You can only move forward
     Forward,
-    // You can only move back
+    /// You can only move back
     Back,
-    // You can't move in any direction
+    /// You can't move in any direction
     None,
-    // You can move in both directions
+    /// You can move in both directions
     Both,
 }
 

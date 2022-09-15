@@ -9,7 +9,7 @@
 
 - GUI
   - [x] fix `thread '<unnamed>' panicked at 'channel disconnected', function_history_backend_thread/src/lib.rs:33:25` error (handling when the channel is disconnected at the end of the program)
-  - [ ] add new documentation for the new filters and fix some old documentation that talks about filter commitfunctions and files etc
+  - [x] add new documentation for the new filters and fix some old documentation that talks about filter commitfunctions and files etc
 - TUI
   - [x] use a proper input box for the edit bar, so that delete and scrolling the input works
   - [ ] finish documentation

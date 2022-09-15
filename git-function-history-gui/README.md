@@ -74,6 +74,8 @@ The options are:
 
 - `Absolute`: This option will search the exact file specified in the text box.
 
+- `Directory`: This will search any file that has the given directory
+
 If you select `Relative` or `Absolute` then you will see a text box appear, this is where you enter the filename.
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/git-function-history-gui/resources/screenshots/command_bar_file_input.png" width="400">
@@ -112,13 +114,13 @@ The options vary by if you have already filtered by lets say a date, then you wo
 
 All the options are:
 
-- `None`: This option will not filter your output.
+- `none`: This option will not filter your output.
 
-- `Commit Hash`: This option will filter the output to only the commit with the commit hash specified in the text box.
+- `commit hash`: This option will filter the output to only the commit with the commit hash specified in the text box.
 
-- `Date`: This option will filter the output to only the commit closest to the date specified in the text box.
+- `date`: This option will filter the output to only the commit closest to the date specified in the text box.
 
-- `Date Range`: This option will filter the output to only the commits between the two dates specified in the text boxes.
+- `date range`: This option will filter the output to only the commits between the two dates specified in the text boxes.
 
 - `function in function`: This option will filter the output to only the commits that contain the function you specified in your search has a parent function specified in the text box.
 
@@ -128,6 +130,12 @@ All the options are:
   - `extern`
   - `impl`
   - `trait`
+
+- `file absolute`: This option will filter the output to only the the commits that contain the has the exact file path specified in the text box
+
+- `file relative`: This option will filter the output to any file that ends with the filename specified in the text box.
+
+- `directory`: This option will filter the output to any file that has the directory specified in the text box.
 
 Every option has a text box, except for `None`.
 
@@ -204,9 +212,8 @@ On the right hand side there is as a button to change the theme.
 
 ## Future plans
 
-- [ ] Add a way to filter by file name(s)
+- [x] Add a way to filter by file name(s)
 - [ ] Add a way to filter by more git stuff (author, email, etc)
-- [ ] Add a way to filter by lifetime whether of the block, parent function, or the function itself
 - [ ] Add a way to filter by block name
 - [ ] Add a way to search multiple files at once
 

@@ -148,7 +148,7 @@ impl fmt::Display for HistoryFilterType {
             HistoryFilterType::FunctionInBlock(_) => write!(f, "function in block"),
             HistoryFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
             HistoryFilterType::FunctionInFunction(_) => write!(f, "function in function"),
-            HistoryFilterType::CommitId(_) => write!(f, "commit id"),
+            HistoryFilterType::CommitId(_) => write!(f, "commit hash"),
             HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
             HistoryFilterType::FileRelative(_) => write!(f, "file relative"),
             HistoryFilterType::Directory(_) => write!(f, "directory"),

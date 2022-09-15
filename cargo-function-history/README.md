@@ -72,7 +72,7 @@ after typing `search` you can type the function name you want to search for.
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-none.png" width="400">
 
-If you want your search to only be for a certain file, you first specify if it is an absolute or relative search with `absolute` or `relative`, then the file name.
+If you want your search to only be for a certain file, you first specify if it is an absolute or relative search with `absolute` or `relative`, then the file name, or if you want to search to any file that contains a directory you can do `directory` directory-name.
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-search-absolute.png" width="400">
 
@@ -113,6 +113,12 @@ All the options are:
   - `trait`
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-filter-block.png" width="400">
+
+- `file-absolute`: This option will filter the output to only the commits that contain the exact file you specified in your search in the file specified after the `file-absolute` keyword
+
+- `file-relative`: This option will filter the output to only the commits that contain any file that ends with the file you specified in your search in the file specified after the `file-relative` keyword
+
+- `directory`: This option will filter the output to only the commits that contain any file that contains the directory you specified in your search in the directory specified after the `file-directory` keyword
 
 After entering the command, press enter to execute the command, and after executing the command you will see the search result in the viewing pane.
 
