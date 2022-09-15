@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Update loc
       - run: |
           sudo apt-get install tokei
       - name: install python
