@@ -38,18 +38,22 @@ pub fn command_thread(
                             log::info!("list");
                         }
                         match list_type {
-                            ListType::Commits => match git_function_history::get_git_commit_hashes() {
-                                Ok(commits) => {
-                                    if log {
-                                        log::info!("found {} commits", commits.len());
+                            ListType::Commits => {
+                                match git_function_history::get_git_commit_hashes() {
+                                    Ok(commits) => {
+                                        if log {
+                                            log::info!("found {} commits", commits.len());
+                                        }
+                                        (
+                                            CommandResult::String(commits),
+                                            Status::Ok(Some("Found commits dates".to_string())),
+                                        )
                                     }
-                                    (
-                                        CommandResult::String(commits),
-                                        Status::Ok(Some("Found commits dates".to_string())),
-                                    )
+                                    Err(err) => {
+                                        (CommandResult::None, Status::Error(err.to_string()))
+                                    }
                                 }
-                                Err(err) => (CommandResult::None, Status::Error(err.to_string())),
-                            },
+                            }
                             ListType::Dates => match git_function_history::get_git_dates() {
                                 Ok(dates) => {
                                     if log {

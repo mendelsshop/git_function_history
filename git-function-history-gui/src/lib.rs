@@ -363,7 +363,8 @@ impl eframe::App for MyEguiApp {
                                         );
                                     });
                                 match &mut self.history_filter_type {
-                                    HistoryFilterType::DateRange(line1, line2)| HistoryFilterType::FunctionInLines(line1, line2) => {
+                                    HistoryFilterType::DateRange(line1, line2)
+                                    | HistoryFilterType::FunctionInLines(line1, line2) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
@@ -377,7 +378,13 @@ impl eframe::App for MyEguiApp {
                                             ui.add(TextEdit::singleline(line2));
                                         });
                                     }
-                                    HistoryFilterType::Date(dir) | HistoryFilterType::CommitHash(dir) | HistoryFilterType::FunctionInBlock(dir) | HistoryFilterType::FunctionInFunction(dir) | HistoryFilterType::FileAbsolute(dir )| HistoryFilterType::FileRelative(dir) | HistoryFilterType::Directory(dir) => {
+                                    HistoryFilterType::Date(dir)
+                                    | HistoryFilterType::CommitHash(dir)
+                                    | HistoryFilterType::FunctionInBlock(dir)
+                                    | HistoryFilterType::FunctionInFunction(dir)
+                                    | HistoryFilterType::FileAbsolute(dir)
+                                    | HistoryFilterType::FileRelative(dir)
+                                    | HistoryFilterType::Directory(dir) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
@@ -500,7 +507,9 @@ impl eframe::App for MyEguiApp {
                             });
                         match &mut self.file_type {
                             FileType::None => {}
-                            FileType::Relative(dir) | FileType::Absolute(dir) |FileType::Directory(dir) => {
+                            FileType::Relative(dir)
+                            | FileType::Absolute(dir)
+                            | FileType::Directory(dir) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -538,7 +547,7 @@ impl eframe::App for MyEguiApp {
                             });
                         match &mut self.filter {
                             Filter::None => {}
-                            Filter::CommitHash(thing) | Filter::Date(thing ) => {
+                            Filter::CommitHash(thing) | Filter::Date(thing) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
