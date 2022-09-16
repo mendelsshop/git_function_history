@@ -312,7 +312,7 @@ impl eframe::App for MyEguiApp {
                                         );
                                         ui.selectable_value(
                                             &mut self.history_filter_type,
-                                            HistoryFilterType::CommitId(String::new()),
+                                            HistoryFilterType::CommitHash(String::new()),
                                             "by commit hash",
                                         );
                                         ui.selectable_value(
@@ -363,45 +363,7 @@ impl eframe::App for MyEguiApp {
                                         );
                                     });
                                 match &mut self.history_filter_type {
-                                    HistoryFilterType::Date(date) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(date));
-                                        });
-                                    }
-                                    HistoryFilterType::CommitId(commit) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(commit));
-                                        });
-                                    }
-                                    HistoryFilterType::DateRange(date1, date2) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(date1));
-                                        });
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(date2));
-                                        });
-                                    }
-                                    HistoryFilterType::FunctionInBlock(block) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(block));
-                                        });
-                                    }
-                                    HistoryFilterType::FunctionInLines(line1, line2) => {
+                                    HistoryFilterType::DateRange(line1, line2)| HistoryFilterType::FunctionInLines(line1, line2) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
@@ -415,31 +377,7 @@ impl eframe::App for MyEguiApp {
                                             ui.add(TextEdit::singleline(line2));
                                         });
                                     }
-                                    HistoryFilterType::FunctionInFunction(function) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(function));
-                                        });
-                                    }
-                                    HistoryFilterType::FileAbsolute(file) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(file));
-                                        });
-                                    }
-                                    HistoryFilterType::FileRelative(file) => {
-                                        ui.horizontal(|ui| {
-                                            // set the width of the input field
-                                            ui.set_min_width(4.0);
-                                            ui.set_max_width(max);
-                                            ui.add(TextEdit::singleline(file));
-                                        });
-                                    }
-                                    HistoryFilterType::Directory(dir) => {
+                                    HistoryFilterType::Date(dir) | HistoryFilterType::CommitHash(dir) | HistoryFilterType::FunctionInBlock(dir) | HistoryFilterType::FunctionInFunction(dir) | HistoryFilterType::FileAbsolute(dir )| HistoryFilterType::FileRelative(dir) | HistoryFilterType::Directory(dir) => {
                                         ui.horizontal(|ui| {
                                             // set the width of the input field
                                             ui.set_min_width(4.0);
@@ -458,8 +396,8 @@ impl eframe::App for MyEguiApp {
                                         HistoryFilterType::Date(date) => {
                                             Some(Filter::Date(date.to_string()))
                                         }
-                                        HistoryFilterType::CommitId(commit_id) => {
-                                            Some(Filter::CommitId(commit_id.to_string()))
+                                        HistoryFilterType::CommitHash(commit_hash) => {
+                                            Some(Filter::CommitHash(commit_hash.to_string()))
                                         }
                                         HistoryFilterType::DateRange(date1, date2) => Some(
                                             Filter::DateRange(date1.to_string(), date2.to_string()),
@@ -562,23 +500,7 @@ impl eframe::App for MyEguiApp {
                             });
                         match &mut self.file_type {
                             FileType::None => {}
-                            FileType::Relative(abc) => {
-                                ui.horizontal(|ui| {
-                                    // set the width of the input field
-                                    ui.set_min_width(4.0);
-                                    ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(abc));
-                                });
-                            }
-                            FileType::Absolute(atring) => {
-                                ui.horizontal(|ui| {
-                                    // set the width of the input field
-                                    ui.set_min_width(4.0);
-                                    ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(atring));
-                                });
-                            }
-                            FileType::Directory(dir) => {
+                            FileType::Relative(dir) | FileType::Absolute(dir) |FileType::Directory(dir) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
@@ -589,7 +511,7 @@ impl eframe::App for MyEguiApp {
                         }
                         // get filters if any
                         let text = match &self.filter {
-                            Filter::CommitId(_) => "commit hash".to_string(),
+                            Filter::CommitHash(_) => "commit hash".to_string(),
                             Filter::DateRange(..) => "date range".to_string(),
                             Filter::Date(_) => "date".to_string(),
                             _ => "filter type".to_string(),
@@ -600,7 +522,7 @@ impl eframe::App for MyEguiApp {
                                 ui.selectable_value(&mut self.filter, Filter::None, "None");
                                 ui.selectable_value(
                                     &mut self.filter,
-                                    Filter::CommitId(String::new()),
+                                    Filter::CommitHash(String::new()),
                                     "Commit Hash",
                                 );
                                 ui.selectable_value(
@@ -616,20 +538,12 @@ impl eframe::App for MyEguiApp {
                             });
                         match &mut self.filter {
                             Filter::None => {}
-                            Filter::CommitId(abc) => {
+                            Filter::CommitHash(thing) | Filter::Date(thing ) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);
                                     ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(abc));
-                                });
-                            }
-                            Filter::Date(date) => {
-                                ui.horizontal(|ui| {
-                                    // set the width of the input field
-                                    ui.set_min_width(4.0);
-                                    ui.set_max_width(max);
-                                    ui.add(TextEdit::singleline(date));
+                                    ui.add(TextEdit::singleline(thing));
                                 });
                             }
                             Filter::DateRange(start, end) => {

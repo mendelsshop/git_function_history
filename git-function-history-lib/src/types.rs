@@ -564,8 +564,8 @@ impl FunctionHistory {
             current_pos: 0,
         }
     }
-    /// This will return a vector of all the commit ids in the history.
-    pub fn list_commit_ids(&self) -> Vec<&str> {
+    /// This will return a vector of all the commit hashess in the history.
+    pub fn list_commit_hashes(&self) -> Vec<&str> {
         self.commit_history
             .iter()
             .map(|c| c.commit_hash.as_ref())
@@ -652,7 +652,7 @@ impl FunctionHistory {
                 .iter()
                 .filter_map(|f| f.filter_by(filter.clone()).to_option())
                 .collect(),
-            Filter::CommitId(commit_hash) => self
+            Filter::CommitHash(commit_hash) => self
                 .commit_history
                 .iter()
                 .filter(|f| f.commit_hash == commit_hash)

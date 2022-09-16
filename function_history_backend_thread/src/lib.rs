@@ -38,7 +38,7 @@ pub fn command_thread(
                             log::info!("list");
                         }
                         match list_type {
-                            ListType::Commits => match git_function_history::get_git_commits() {
+                            ListType::Commits => match git_function_history::get_git_commit_hashes() {
                                 Ok(commits) => {
                                     if log {
                                         log::info!("found {} commits", commits.len());

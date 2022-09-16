@@ -163,7 +163,7 @@ impl App {
                                 }
                                 "commit" => {
                                     if let Some(commit) = iter.next() {
-                                        Some(Filter::CommitId(commit.to_string()))
+                                        Some(Filter::CommitHash(commit.to_string()))
                                     } else {
                                         self.status = Status::Error("No commit given".to_string());
                                         None
@@ -330,7 +330,7 @@ impl App {
                                                 let commit = iter.next();
                                                 match commit {
                                                     Some(commit) => {
-                                                        Filter::CommitId(commit.to_string())
+                                                        Filter::CommitHash(commit.to_string())
                                                     }
                                                     None => {
                                                         self.status = Status::Error(
@@ -385,7 +385,7 @@ impl App {
                                             let commit = iter.next();
                                             match commit {
                                                 Some(commit) => {
-                                                    Filter::CommitId(commit.to_string())
+                                                    Filter::CommitHash(commit.to_string())
                                                 }
                                                 None => {
                                                     self.status = Status::Error(

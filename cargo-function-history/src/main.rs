@@ -107,7 +107,7 @@ fn parse_args() -> Config {
                             exit(1);
                         }
                     };
-                    config.filter = Filter::CommitId(hash.to_string());
+                    config.filter = Filter::CommitHash(hash.to_string());
                 }
                 string if string.starts_with("--date-range=") => {
                     let date_range = match string.split('=').nth(1) {

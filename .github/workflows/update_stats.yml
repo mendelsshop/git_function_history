@@ -39,9 +39,3 @@ jobs:
       - name: run script
         run: |
           python stats/check_downloads.py ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-  
-

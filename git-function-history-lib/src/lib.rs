@@ -51,7 +51,7 @@ pub enum FileType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
-    CommitId(String),
+    CommitHash(String),
     /// When you want to filter by a specific date (in rfc2822 format).
     Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
@@ -123,8 +123,8 @@ pub fn get_function_history(
     command.arg("--pretty=%H;%aD");
     command.arg("--date=rfc2822");
     match filter {
-        Filter::CommitId(id) => {
-            command.arg(id);
+        Filter::CommitHash(hash) => {
+            command.arg(hash);
             command.arg("-n");
             command.arg("1");
         }
@@ -238,7 +238,7 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
 }
 
 /// List all the commit hashes in the git history.
-pub fn get_git_commits() -> Result<Vec<String>, Box<dyn Error>> {
+pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git").args(&["log", "--pretty=%H"]).output()?;
     let output = String::from_utf8(output.stdout)?;
     let output = output
