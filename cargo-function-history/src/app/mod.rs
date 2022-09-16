@@ -466,9 +466,11 @@ impl App {
         match self.channels.1.recv_timeout(Duration::from_millis(100)) {
             Ok(timeout) => match timeout {
                 (_, Status::Error(e)) => {
+                    log::info!("error recieved last command didn't work; {}", e);
                     self.status = Status::Error(e);
                 }
                 (t, Status::Ok(msg)) => {
+                    log::info!("got results of last command");
                     self.status = Status::Ok(msg);
                     self.cmd_output = t;
                 }

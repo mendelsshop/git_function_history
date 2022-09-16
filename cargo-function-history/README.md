@@ -50,7 +50,7 @@ Now that you've opened the app, you will see its split into 3 sections:
 
 Even though the viewing pane comes first you generally wont be able to use the viewing pane without entering a command.
 
-To enter editing mode press `:` the you will see the command pane change to the command input mode, and show `:` at the start of the command pane.
+To enter editing mode press `:` then you will see the command pane change to the command input mode, and show the cursor with yellow text in the input bar
 
 <img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/command-pane-input.png" width="400">
 
@@ -118,7 +118,7 @@ All the options are:
 
 - `file-relative`: This option will filter the output to only the commits that contain any file that ends with the file you specified in your search in the file specified after the `file-relative` keyword
 
-- `directory`: This option will filter the output to only the commits that contain any file that contains the directory you specified in your search in the directory specified after the `file-directory` keyword
+- `directory`: This option will filter the output to only the commits that contain any file that contains the directory you specified in your search in the directory specified after the `directory` keyword
 
 After entering the command, press enter to execute the command, and after executing the command you will see the search result in the viewing pane.
 
