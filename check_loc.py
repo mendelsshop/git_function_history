@@ -2,9 +2,12 @@ import json
 import sys
 from github import Github
 from subprocess import Popen, PIPE
+import os
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <github token>")
     sys.exit(1)
+
+os.system("git switch main")
 
 t = Popen(["tokei", "--output=json"], stdout=PIPE, stderr=PIPE)
 
@@ -30,7 +33,10 @@ base64_json = json.dumps(base64_json)
 g = Github(sys.argv[1])
 
 # get last sha
-sha = g.get_repo("mendelsshop/git_function_history").get_contents("stats/loc.json").sha
+git = g.get_repo("mendelsshop/git_function_history").get_branch("stats")
+commit = git.get_contents("loc.json")
 
 # update the file
 g.get_repo("mendelsshop/git_function_history").update_file("stats/loc.json", "update loc.json", base64_json, sha)
+
+os.system("git switch stats")
