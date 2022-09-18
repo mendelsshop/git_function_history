@@ -25,6 +25,8 @@ jobs:
           python -m pip install pygithub
       - name: run script
         run: |
+          git clone https://github.com/mendelsshop/git_function_history.git
+          cd git_function_history
           git switch stats
           python check_loc.py ${{ secrets.GITHUB_TOKEN }}
   update_downloads:
@@ -43,5 +45,7 @@ jobs:
           python -m pip install toml
       - name: run script
         run: |
+          git clone https://github.com/mendelsshop/git_function_history.git
+          cd git_function_history
           git switch stats
           python check_downloads.py ${{ secrets.GITHUB_TOKEN }}
