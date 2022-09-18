@@ -15,7 +15,7 @@ stdout, stderr = t.communicate()
 if stderr:
     print(f"Error: {stderr}")
     sys.exit(1)
-
+os.system("git switch stats")
 t = json.loads(stdout),
 code = int(t[0]['Total']['code'])
 blanks = int(t[0]['Total']['blanks'])
@@ -38,7 +38,8 @@ commit = git.get_contents("loc.json", ref="stats")
 old = commit.decoded_content
 if old == base64_json:
     print("smae")
-os.system("git switch stats")
+else: 
+    print("digg")
 exit()
 # update the file
 git.update_file("loc.json", "update loc.json", base64_json, commit.sha)
