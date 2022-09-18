@@ -35,7 +35,9 @@ g = Github(sys.argv[1])
 # get last sha
 git = g.get_repo("mendelsshop/git_function_history")
 commit = git.get_contents("loc.json", ref="stats")
-print(commit)
+old = commit.decoded_content
+if old == base64_json:
+    print("smae")
 os.system("git switch stats")
 exit()
 # update the file
