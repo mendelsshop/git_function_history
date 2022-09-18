@@ -53,5 +53,5 @@ if old == base64_json.encode():
     print("same")
 else: 
     # update the file
-    git.update_file("downloods.json", "update downloads.json", base64_json, commit.sha, branch="stats")
+    git.update_file("downloads.json", "update downloads.json", base64_json, commit.sha, branch="stats")
     print("different")
