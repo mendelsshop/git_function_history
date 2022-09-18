@@ -11,6 +11,7 @@ if len(sys.argv) != 2:
     sys.exit(1)
 # parse cargo.toml file and get list of members
 os.system("git switch main")
+os.system("ls")
 toml_file = toml.load("Cargo.toml")
 members = toml_file["workspace"]["members"]
 os.system("git switch stats")
