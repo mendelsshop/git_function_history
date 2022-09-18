@@ -17,7 +17,7 @@
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 use ra_ap_syntax::{
-    ast::{self, HasName},
+    ast::{self, HasGenericParams, HasName},
     AstNode, SourceFile,
 };
 
@@ -294,12 +294,37 @@ fn find_function_in_commit(
             block: None,
             // todo use the f.syntax().parent() to see if the function is in another function
             function: None,
-            // we can now get lifetime and generics from the ast
-            lifetime: None,
-            generics: None,
+
             // get return type and arguments from the ast
-            return_type: None,
-            arguments: None,
+            return_type: match f.ret_type() {
+                None => None,
+                Some(ty) => Some(ty.to_string()),
+            },
+            arguments: match f.param_list() {
+                None => None,
+                Some(args) => Some(
+                    args.params()
+                        .map(|arg| arg.to_string())
+                        .collect::<Vec<String>>(),
+                ),
+            },
+            // we can now get lifetime and generics from the ast
+            lifetime: match f.generic_param_list() {
+                None => None,
+                Some(lt) => Some(
+                    lt.generic_params()
+                        .map(|lt| lt.to_string())
+                        .collect::<Vec<String>>(),
+                ),
+            },
+            generics: match f.generic_param_list() {
+                None => None,
+                Some(gt) => Some(
+                    gt.generic_params()
+                        .map(|gt| gt.to_string())
+                        .collect::<Vec<String>>(),
+                ),
+            },
             lines: (start_line, end_line),
         };
         hist.push(function);
@@ -454,4 +479,27 @@ mod tests {
         println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
+
+    #[test]
+    fn expensive_tes() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            FileType::None,
+            Filter::None
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
+        let path = std::env::current_dir().unwrap();
+        println!("The current directory is {}", path.display());
+        assert!(output.is_ok());
+    }
 }
+
+
