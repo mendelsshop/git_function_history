@@ -4,15 +4,16 @@ import toml
 import json
 import sys
 from github import Github
+import os
 
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <github token>")
     sys.exit(1)
 # parse cargo.toml file and get list of members
-
+os.system("git switch main")
 toml_file = toml.load("Cargo.toml")
 members = toml_file["workspace"]["members"]
-
+os.system("git switch stats")
 count = 0
 # iterate through members and use https://crates.io/api/v1/crates/{member}/downloads to get download count
 
@@ -43,7 +44,14 @@ base64_json = json.dumps(base64_json)
 g = Github(sys.argv[1])
 
 # get last sha
-sha = g.get_repo("mendelsshop/git_function_history").get_contents("stats/downloads.json").sha
-
-# update the file
-g.get_repo("mendelsshop/git_function_history").update_file("stats/downloads.json", "update downloads.json", base64_json, sha)
+git = g.get_repo("mendelsshop/git_function_history")
+commit = git.get_contents("downloads.json", ref="stats")
+old = commit.decoded_content
+print(old)
+print(base64_json.encode())
+if old == base64_json.encode():
+    print("same")
+else: 
+    # update the file
+    git.update_file("downloods.json", "update downloads.json", base64_json, commit.sha, branch="stats")
+    print("different")

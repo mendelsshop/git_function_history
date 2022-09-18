@@ -41,8 +41,6 @@ print(base64_json.encode())
 if old == base64_json.encode():
     print("same")
 else: 
+    # update the file
+    git.update_file("loc.json", "update loc.json", base64_json, commit.sha, branch="stats")
     print("different")
-exit()
-# update the file
-git.update_file("loc.json", "update loc.json", base64_json, commit.sha)
-
