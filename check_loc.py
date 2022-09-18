@@ -38,10 +38,10 @@ commit = git.get_contents("loc.json", ref="stats")
 old = commit.decoded_content
 print(old)
 print(base64_json.encode())
-if old == base64_json:
-    print("smae")
+if old == base64_json.encode():
+    print("same")
 else: 
-    print("digg")
+    print("different")
 exit()
 # update the file
 git.update_file("loc.json", "update loc.json", base64_json, commit.sha)
