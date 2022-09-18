@@ -11,10 +11,9 @@ if len(sys.argv) != 2:
     sys.exit(1)
 # parse cargo.toml file and get list of members
 os.system("git switch main")
-os.system("dir")
 toml_file = toml.load("Cargo.toml")
 members = toml_file["workspace"]["members"]
-os.system("git switch stats")
+
 count = 0
 # iterate through members and use https://crates.io/api/v1/crates/{member}/downloads to get download count
 
@@ -33,7 +32,7 @@ for member in members:
         count += i['downloads']
     for i in jsons["version_downloads"]:
         count += i['downloads']
-
+os.system("git switch stats")
 print(f"Total: {count}")
 
 # upload the results to https://github.com/mendelsshop/git_function_history/stats/downloads.json
