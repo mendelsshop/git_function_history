@@ -6,3 +6,7 @@
 Show the git history of a function or method.
 Use the latest (beta) version by putting `"git_function_history" = { git = 'https://github.com/mendelsshop/git_function_history' }` in your cargo.toml under `[dependencies]` section.
 Use the latest [crates.io](https://crates.io/crates/git_function_history) (also beta) by putting `git_function_history = "0.5.4"` in your cargo.toml under `[dependencies]` section.
+
+## Todo/ideas
+
+- [ ] for version 7.0: use [rust analyzer parser](https://crates.io/crates/ra_ap_syntax) or the like to parse the code and find the function/method definition etc. instead of using regexes.
