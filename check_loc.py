@@ -37,7 +37,7 @@ git = g.get_repo("mendelsshop/git_function_history")
 commit = git.get_contents("loc.json", ref="stats")
 old = commit.decoded_content
 print(old)
-print(base64_json)
+print(base64_json.encode())
 if old == base64_json:
     print("smae")
 else: 
