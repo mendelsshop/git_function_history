@@ -622,4 +622,25 @@ mod tests {
         println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
+
+    #[test]
+    fn expensive_tes() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            FileType::None,
+            Filter::None
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
+        let path = std::env::current_dir().unwrap();
+        println!("The current directory is {}", path.display());
+        assert!(output.is_ok());
+    }
 }
