@@ -626,11 +626,7 @@ mod tests {
     #[test]
     fn expensive_tes() {
         let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            FileType::None,
-            Filter::None
-        );
+        let output = get_function_history("empty_test", FileType::None, Filter::None);
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
