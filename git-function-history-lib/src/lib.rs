@@ -548,6 +548,8 @@ impl<T> UwrapToError<T> for Option<T> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     #[test]
     fn found_function() {
@@ -599,6 +601,7 @@ mod tests {
     }
     #[test]
     fn test_date() {
+        let now = Utc::now();
         let output = get_function_history(
             "empty_test",
             FileType::None,
@@ -607,6 +610,8 @@ mod tests {
                 "19 Aug 2022 23:45:52 +0000".to_owned(),
             ),
         );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
