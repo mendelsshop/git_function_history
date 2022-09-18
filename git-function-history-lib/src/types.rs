@@ -3,32 +3,6 @@ use std::{collections::HashMap, error::Error, fmt};
 
 use crate::Filter;
 
-pub(crate) struct InternalBlock {
-    pub(crate) start: Points,
-    pub(crate) full: Points,
-    pub(crate) end: Points,
-    pub(crate) types: BlockType,
-    pub(crate) file_line: Points,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct InternalFunctions {
-    pub(crate) name: String,
-    pub(crate) range: Points,
-    pub(crate) file_line: Points,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct Points {
-    pub(crate) x: usize,
-    pub(crate) y: usize,
-}
-
-impl Points {
-    pub(crate) const fn in_other(&self, other: &Self) -> bool {
-        self.x > other.x && self.y < other.y
-    }
-}
 /// This holds the information about a single function each commit will have multiple of these.
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -41,6 +15,17 @@ pub struct Function {
     pub(crate) function: Option<Vec<FunctionBlock>>,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    // TODO: make a tpye for this
+    pub(crate) lifetime: Option<Vec<String>>,
+    /// The generic types of the function
+    /// TODO: make a type for this
+    pub(crate) generics: Option<Vec<String>>,
+    /// The arguments of the function
+    pub(crate) arguments: Option<Vec<String>>,
+    /// The return type of the function
+    // TODO: make a type for this
+    pub(crate) return_type: Option<String>,
 }
 
 impl Function {
@@ -220,6 +205,17 @@ pub struct FunctionBlock {
     pub(crate) bottom: String,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    // TODO: make a tpye for this
+    pub(crate) lifetime: Option<Vec<String>>,
+    /// The generic types of the function
+    /// TODO: make a type for this
+    pub(crate) generics: Option<Vec<String>>,
+    /// The arguments of the function
+    pub(crate) arguments: Option<Vec<String>>,
+    /// The return type of the function
+    // TODO: make a type for this
+    pub(crate) return_type: Option<String>,
 }
 
 impl FunctionBlock {
@@ -247,6 +243,12 @@ pub struct Block {
     pub(crate) block_type: BlockType,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    // TODO: make a tpye for this
+    pub(crate) lifetime: Option<Vec<String>>,
+    /// The generic types of the function
+    /// TODO: make a type for this
+    pub(crate) generics: Option<Vec<String>>,
 }
 
 impl Block {

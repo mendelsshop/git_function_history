@@ -16,23 +16,15 @@
 
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
-use fancy_regex::Regex as FancyRegex;
-use lazy_static::lazy_static;
-use regex::Regex;
-use std::fmt::Write;
+use ra_ap_syntax::{
+    ast::{self, HasName},
+    AstNode, SourceFile,
+};
+
 use std::{error::Error, process::Command};
 pub use types::{
     Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
 };
-use types::{InternalBlock, InternalFunctions, Points};
-
-lazy_static! {
-    #[derive(Debug)]
-    pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).expect("failed to compile regex");
-    // this regex look for string chars and comments
-    pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
-    pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
-}
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +39,7 @@ pub enum FileType {
     None,
 }
 
+// TODO: Add support for filtering by generic parameters, lifetimes, and return types.
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
@@ -265,225 +258,64 @@ fn find_function_in_commit(
     file_path: &str,
     name: &str,
 ) -> Result<Vec<Function>, Box<dyn Error>> {
+    if !file_path.contains("test") {
+        Err("not a test file")?;
+    }
     let file_contents = find_file_in_commit(commit, file_path)?;
-    let mut contents: String = "".to_string();
-    // add line numbers to the file contents
-    for (i, line) in file_contents.lines().enumerate() {
-        writeln!(contents, "{}: {}", i + 1, line)?;
-    }
-    let file_contents = contents;
-    let mut contents: Vec<Function> = Vec::new();
-    let points = get_points_from_regex(&CAPTURE_NOT_NEEDED, &file_contents);
-    let blank_content = blank_out_range(&file_contents, &points);
-    let mut function_range = Vec::new();
-    for cap in CAPTURE_FUNCTION.find_iter(&blank_content) {
-        // get the function name
-        match get_body(&blank_content, cap.end(), true) {
-            t if t.0 != 0 => {
-                let top_line: usize = file_contents[cap.start()..t.0]
-                    .split_once(':')
-                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
-                    .0
-                    .parse()?;
-                let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
-                    None => top_line,
-                };
-                function_range.push(InternalFunctions {
-                    range: Points {
-                        x: cap.start(),
-                        y: t.0,
-                    },
-                    name: get_function_name(&blank_content[cap.start()..cap.end()]),
-                    file_line: Points {
-                        x: top_line,
-                        y: bottom_line,
-                    },
-                });
-            }
-            _ => {
-                continue;
+    let mut functions = Vec::new();
+    get_function_asts(name, &file_contents, &mut functions);
+    let mut hist = Vec::new();
+    // Err("not implemented")?;
+    for f in functions {
+        let start = f.syntax().text_range().start();
+        let end = f.syntax().text_range().end();
+        let mut end_line = 0;
+        for (i, line) in file_contents.chars().enumerate() {
+            if line == '\n' {
+                if usize::from(end) < i {
+                    break;
+                }
+                end_line += 1;
             }
         }
-    }
-    let mut block_range = Vec::new();
-    for cap in CAPTURE_BLOCKS.find_iter(&blank_content) {
-        // get the function name
-        match get_body(&blank_content, cap.end() - 1, false) {
-            t if t.0 != 0 => {
-                let top_line: usize = file_contents[cap.start()..t.0]
-                    .split_once(':')
-                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
-                    .0
-                    .parse()?;
-                let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
-                    None => top_line,
-                };
-                block_range.push(InternalBlock {
-                    // range:
-                    start: Points {
-                        x: cap.start(),
-                        y: cap.end(),
-                    },
-                    full: Points {
-                        x: cap.start(),
-                        y: t.0,
-                    },
-                    end: Points { x: t.1, y: t.0 },
-                    types: match CAPTURE_BLOCKS.captures(&file_contents[cap.start()..cap.end()]) {
-                        Some(types) => {
-                            if types.name("extern").is_some() {
-                                BlockType::Extern
-                            } else if types.name("name_impl").is_some() {
-                                BlockType::Impl
-                            } else if types.name("name_trait").is_some() {
-                                BlockType::Trait
-                            } else {
-                                BlockType::Unknown
-                            }
-                        }
-                        None => BlockType::Unknown,
-                    },
-                    file_line: Points {
-                        x: top_line,
-                        y: bottom_line,
-                    },
-                });
-            }
-            _ => {
-                continue;
+        let mut start_line = 0;
+        for (i, line) in file_contents.chars().enumerate() {
+            if line == '\n' {
+                if usize::from(start) < i {
+                    break;
+                }
+                start_line += 1;
             }
         }
-    }
-    for t in &function_range {
-        if t.name != name {
-            continue;
-        }
-        let mut function = Function {
-            name: t.name.clone(),
-            contents: String::new(),
+        let function = Function {
+            name: f.name().unwrap().to_string(),
+            contents: f.to_string(),
+            // todo use the f.syntax().parent() to see if the function is in a impl/trait/extern block
             block: None,
+            // todo use the f.syntax().parent() to see if the function is in another function
             function: None,
-            lines: (t.file_line.x, t.file_line.y),
+            // we can now get lifetime and generics from the ast
+            lifetime: None,
+            generics: None,
+            // get return type and arguments from the ast
+            return_type: None,
+            arguments: None,
+            lines: (start_line, end_line),
         };
-        // check if block is in range
-        let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
-        let function_ranges = Points {
-            x: t.file_line.x,
-            y: t.file_line.y,
-        };
-        function.function = match function_range
-            .iter()
-            .filter(|other| function_ranges.in_other(&other.file_line))
-            .map(|fns| {
-                Ok(FunctionBlock {
-                    name: fns.name.clone(),
-                    top: file_contents
-                        .lines()
-                        .nth(fns.file_line.x - 1)
-                        .unwrap_to_error(&format!(
-                            "could not get line {} in file {} from commit: {}",
-                            fns.file_line.y - 1,
-                            file_path,
-                            name
-                        ))?
-                        .to_string(),
-                    bottom: file_contents
-                        .lines()
-                        .nth(fns.file_line.y - 1)
-                        .unwrap_to_error(&format!(
-                            "could not get line {} in file {} from commit: {}",
-                            fns.file_line.y - 1,
-                            file_path,
-                            name
-                        ))?
-                        .to_string(),
-                    lines: (fns.file_line.x, fns.file_line.y),
-                })
-            })
-            .collect::<Result<Vec<FunctionBlock>, Box<dyn Error>>>()?
-        {
-            vec if vec.is_empty() => None,
-            vec => Some(vec),
-        };
-        if let Some(block) = current_block {
-            function.block = Some(Block {
-                name: None,
-                top: file_contents[block.start.x..block.start.y].to_string(),
-                bottom: file_contents[block.end.x..block.end.y].to_string(),
-                block_type: block.types,
-                lines: (block.file_line.x, block.file_line.y),
-            });
-        };
-        function.contents = file_contents[t.range.x..t.range.y].to_string();
-        contents.push(function);
+        hist.push(function);
     }
-    if contents.is_empty() {
-        Err("No functions found")?;
-    }
-    Ok(contents)
+    Ok(hist)
 }
 
-fn get_points_from_regex(regex: &FancyRegex, file_contents: &str) -> Vec<(usize, usize)> {
-    let mut points: Vec<(usize, usize)> = Vec::new();
-    regex.find_iter(file_contents).for_each(|m| {
-        points.push((
-            m.as_ref().expect("regex did not work").start(),
-            m.as_ref().expect("regex did not work").end(),
-        ));
-    });
-    points
-}
-
-fn get_body(contents: &str, start_point: usize, semi_colon: bool) -> (usize, usize) {
-    let mut last_newline = 0;
-    let mut brace_count = 0;
-    let mut found_end = 0;
-    for (index, char) in contents.chars().enumerate() {
-        if index < start_point {
-            continue;
-        }
-        if found_end != 0 && char == '\n' {
-            return (index, last_newline);
-        }
-        if char == '{' {
-            brace_count += 1;
-        } else if char == '}' {
-            brace_count -= 1;
-            if brace_count == 0 {
-                found_end = index;
+fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
+    let parsed_file = SourceFile::parse(file).tree();
+    for item in parsed_file.syntax().descendants() {
+        if let Some(function) = ast::Fn::cast(item.clone()) {
+            if function.name().unwrap().text() == name {
+                functions.push(function.clone());
             }
-        } else if char == ';' && brace_count == 0 && semi_colon {
-            found_end = index;
-        } else if char == '\n' {
-            last_newline = index;
         }
     }
-    (contents.len(), last_newline)
-}
-
-fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
-    let mut new_contents = contents.to_string();
-    for (start, end) in ranges {
-        new_contents.replace_range(start..end, &" ".repeat(end - start));
-    }
-    new_contents
-}
-
-fn get_function_name(mut function_header: &str) -> String {
-    let mut name = String::new();
-    function_header = function_header
-        .split_once("fn ")
-        .unwrap_or(("", function_header))
-        .1;
-    for char in function_header.chars() {
-        if char == '(' || char == '<' || char.is_whitespace() {
-            break;
-        }
-        name.push(char);
-    }
-    name
 }
 
 fn find_function_in_commit_with_filetype(
