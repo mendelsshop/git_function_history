@@ -33,10 +33,10 @@ base64_json = json.dumps(base64_json)
 g = Github(sys.argv[1])
 
 # get last sha
-git = g.get_repo("mendelsshop/git_function_history").get_branch("stats")
-commit = git.get_contents("loc.json")
+git = g.get_repo("mendelsshop/git_function_history")
+commit = git.get_contents("loc.json", ref="stats")
 
 # update the file
-g.get_repo("mendelsshop/git_function_history").update_file("stats/loc.json", "update loc.json", base64_json, sha)
+git.update_file("loc.json", "update loc.json", base64_json, commit.sha)
 
 os.system("git switch stats")
