@@ -18,7 +18,7 @@
 pub mod types;
 use ra_ap_syntax::{
     ast::{self, HasGenericParams, HasName},
-    AstNode, SourceFile,
+    AstNode, SourceFile, SyntaxKind,
 };
 
 use std::{error::Error, process::Command};
@@ -220,7 +220,7 @@ pub fn get_function_history(
 /// List all the commits date in the git history (in rfc2822 format).
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
-        .args(&["log", "--pretty=%aD", "--date", "rfc2822"])
+        .args(["log", "--pretty=%aD", "--date", "rfc2822"])
         .output()?;
     let output = String::from_utf8(output.stdout)?;
     let output = output
@@ -232,7 +232,7 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
 
 /// List all the commit hashes in the git history.
 pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git").args(&["log", "--pretty=%H"]).output()?;
+    let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
     let output = String::from_utf8(output.stdout)?;
     let output = output
         .split('\n')
@@ -267,65 +267,93 @@ fn find_function_in_commit(
     let mut hist = Vec::new();
     // Err("not implemented")?;
     for f in functions {
-        let start = f.syntax().text_range().start();
-        let end = f.syntax().text_range().end();
-        let mut end_line = 0;
-        for (i, line) in file_contents.chars().enumerate() {
-            if line == '\n' {
-                if usize::from(end) < i {
-                    break;
-                }
-                end_line += 1;
+        let stuff = get_stuff(&f, &file_contents);
+        let generics = get_genrerics_and_lifetime(&f);
+        let mut parent = f.syntax().parent();
+        let mut parent_fn: Vec<ast::Fn> = Vec::new();
+        let mut parent_block = None;
+        while let Some(p) = parent.into_iter().next() {
+            // p.
+            if p.kind() == SyntaxKind::SOURCE_FILE {
+                break;
             }
+            ast::Fn::cast(p.clone()).map_or_else(
+                || {
+                    if let Some(block) = ast::Impl::cast(p.clone()) {
+                        let stuff = get_stuff(&block, &file_contents);
+                        let generics = get_genrerics_and_lifetime(&block);
+                        parent_block = Some(Block {
+                            name: block.self_ty().map(|ty| ty.to_string()),
+                            lifetime: generics.1,
+                            generics: generics.0,
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Impl,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                        });
+                    } else if let Some(block) = ast::Trait::cast(p.clone()) {
+                        let stuff = get_stuff(&block, &file_contents);
+                        let generics = get_genrerics_and_lifetime(&block);
+                        parent_block = Some(Block {
+                            name: block.name().map(|ty| ty.to_string()),
+                            lifetime: generics.1,
+                            generics: generics.0,
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Trait,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                        });
+                    } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
+                        let stuff = get_stuff(&block, &file_contents);
+                        parent_block = Some(Block {
+                            name: block.abi().map(|ty| ty.to_string()),
+                            lifetime: None,
+                            generics: None,
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Extern,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                        });
+                    }
+                },
+                |function| {
+                    let _stuff = get_stuff(&function, &file_contents);
+                    let _generics = get_genrerics_and_lifetime(&function);
+                    // TODO: get the functionblock and add it to the parent_fn
+                    parent_fn.push(function);
+                },
+            );
+            parent = p.parent();
         }
-        let mut start_line = 0;
-        for (i, line) in file_contents.chars().enumerate() {
-            if line == '\n' {
-                if usize::from(start) < i {
-                    break;
-                }
-                start_line += 1;
-            }
-        }
+        let mut start = stuff.0 .0;
         let function = Function {
             name: f.name().unwrap().to_string(),
-            contents: f.to_string(),
-            // todo use the f.syntax().parent() to see if the function is in a impl/trait/extern block
-            block: None,
-            // todo use the f.syntax().parent() to see if the function is in another function
+            // TODO: preserve whitspace and indentation (probaply dont use .to_string() on f)
+            contents: f
+                .to_string()
+                .lines()
+                .map(|l| {
+                    start += 1;
+                    format!(
+                        "{}: {}{}",
+                        start - 1,
+                        l,
+                        if start == stuff.0 .1 { "" } else { "\n" }
+                    )
+                })
+                .collect(),
+            block: parent_block,
             function: None,
-
-            // get return type and arguments from the ast
-            return_type: match f.ret_type() {
-                None => None,
-                Some(ty) => Some(ty.to_string()),
-            },
-            arguments: match f.param_list() {
-                None => None,
-                Some(args) => Some(
-                    args.params()
-                        .map(|arg| arg.to_string())
-                        .collect::<Vec<String>>(),
-                ),
-            },
+            return_type: f.ret_type().map(|ty| ty.to_string()),
+            arguments: f.param_list().map(|args| {
+                args.params()
+                    .map(|arg| arg.to_string())
+                    .collect::<Vec<String>>()
+            }),
             // we can now get lifetime and generics from the ast
-            lifetime: match f.generic_param_list() {
-                None => None,
-                Some(lt) => Some(
-                    lt.generic_params()
-                        .map(|lt| lt.to_string())
-                        .collect::<Vec<String>>(),
-                ),
-            },
-            generics: match f.generic_param_list() {
-                None => None,
-                Some(gt) => Some(
-                    gt.generic_params()
-                        .map(|gt| gt.to_string())
-                        .collect::<Vec<String>>(),
-                ),
-            },
-            lines: (start_line, end_line),
+            lifetime: generics.1,
+            generics: generics.0,
+            lines: (stuff.0 .0, stuff.0 .1),
         };
         hist.push(function);
     }
@@ -343,6 +371,65 @@ fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     }
 }
 
+fn get_stuff<T: AstNode>(block: &T, file: &str) -> ((usize, usize), (String, String)) {
+    let start = block.syntax().text_range().start();
+    let end = block.syntax().text_range().end();
+    // get the start and end lines
+    let mut end_line = 0;
+    for (i, line) in file.chars().enumerate() {
+        if line == '\n' {
+            if usize::from(end) < i {
+                break;
+            }
+            end_line += 1;
+        }
+    }
+    let mut start_line = 0;
+    for (i, line) in file.chars().enumerate() {
+        if line == '\n' {
+            if usize::from(start) < i {
+                break;
+            }
+            start_line += 1;
+        }
+    }
+    (
+        (start_line, end_line),
+        (
+            format!(
+                "{}: {}",
+                start_line,
+                file.lines().nth(start_line).unwrap_or("")
+            ),
+            format!(
+                "\n{}: {}",
+                end_line - 1,
+                file.lines().nth(end_line - 1).unwrap_or("")
+            ),
+        ),
+    )
+}
+
+fn get_genrerics_and_lifetime<T: HasGenericParams>(
+    block: &T,
+) -> (Option<Vec<String>>, Option<Vec<String>>) {
+    match block.generic_param_list() {
+        None => (None, None),
+        Some(gt) => (
+            Some(
+                gt.generic_params()
+                    .map(|gt| gt.to_string())
+                    .collect::<Vec<String>>(),
+            ),
+            Some(
+                gt.lifetime_params()
+                    .map(|lt| lt.to_string())
+                    .collect::<Vec<String>>(),
+            ),
+        ),
+    }
+}
+
 fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
@@ -351,7 +438,7 @@ fn find_function_in_commit_with_filetype(
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", "--full-tree", commit])
+        .args(["ls-tree", "-r", "--name-only", "--full-tree", commit])
         .output()?;
     if !command.stderr.is_empty() {
         Err(String::from_utf8_lossy(&command.stderr))?;
@@ -475,19 +562,13 @@ mod tests {
             }
             Err(e) => println!("{}", e),
         }
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
 
     #[test]
     fn expensive_tes() {
         let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            FileType::None,
-            Filter::None
-        );
+        let output = get_function_history("empty_test", FileType::None, Filter::None);
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
@@ -496,10 +577,6 @@ mod tests {
             }
             Err(e) => println!("{}", e),
         }
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
 }
-
-
