@@ -439,8 +439,7 @@ fn get_stuff<T: AstNode>(
     let mut content: String = file[*start..found_start_brace].to_string();
     if &content[..1] == "\n" {
         content = content[1..].to_string();
-    }
-    (
+    }    (
         (start_line, end_line),
         (
             content
@@ -455,7 +454,7 @@ fn get_stuff<T: AstNode>(
             format!(
                 "\n{}: {}",
                 end_line,
-                file.lines().nth(end_line - 1).unwrap_or("")
+                file.lines().nth(if end_line == file.lines().count()-1 {end_line} else {end_line - 1}).unwrap_or("")
             ),
         ),
         (starts, end_line),
@@ -619,7 +618,7 @@ mod tests {
             Ok(functions) => {
                 println!("{:?}", functions);
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("-{}-", e),
         }
         assert!(output.is_ok());
     }
