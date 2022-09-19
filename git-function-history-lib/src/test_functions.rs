@@ -32,6 +32,7 @@ impl<a>Test<a>  {
     }
 
     pub fn test_in_test() {
+        println!("test_in_test");
         pub fn empty_test() {
 
         }
