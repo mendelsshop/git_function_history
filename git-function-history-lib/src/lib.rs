@@ -556,7 +556,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.rs".to_string()),
+            FileType::Relative("src/test_functions.rs".to_string()),
             Filter::None,
         );
         let after = Utc::now() - now;
