@@ -21,7 +21,7 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
-use std::{error::Error, process::Command};
+use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
     Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
 };
@@ -264,8 +264,17 @@ fn find_function_in_commit(
     let file_contents = find_file_in_commit(commit, file_path)?;
     let mut functions = Vec::new();
     get_function_asts(name, &file_contents, &mut functions);
+    let mut starts = file_contents
+        .match_indices('\n')
+        .map(|x| x.0)
+        .collect::<Vec<_>>();
+    starts.push(0);
+    starts.sort_unstable();
+    let map = starts
+        .iter()
+        .enumerate()
+        .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
-    // Err("not implemented")?;
     for f in functions {
         let stuff = get_stuff(&f, &file_contents);
         let generics = get_genrerics_and_lifetime(&f);
@@ -273,7 +282,6 @@ fn find_function_in_commit(
         let mut parent_fn: Vec<ast::Fn> = Vec::new();
         let mut parent_block = None;
         while let Some(p) = parent.into_iter().next() {
-            // p.
             if p.kind() == SyntaxKind::SOURCE_FILE {
                 break;
             }
@@ -325,23 +333,24 @@ fn find_function_in_commit(
             );
             parent = p.parent();
         }
+
         let mut start = stuff.0 .0;
+        let bb = match map[&start] {
+            0 => 0,
+            x => x + 1,
+        };
+        let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
+            .to_string()
+            .lines()
+            .map(|l| {
+                start += 1;
+                format!("{}: {}\n", start, l,)
+            })
+            .collect();
+        let contents = contents.trim_end().to_string();
         let function = Function {
             name: f.name().unwrap().to_string(),
-            // TODO: preserve whitspace and indentation (probaply dont use .to_string() on f)
-            contents: f
-                .to_string()
-                .lines()
-                .map(|l| {
-                    start += 1;
-                    format!(
-                        "{}: {}{}",
-                        start - 1,
-                        l,
-                        if start == stuff.0 .1 { "" } else { "\n" }
-                    )
-                })
-                .collect(),
+            contents,
             block: parent_block,
             function: None,
             return_type: f.ret_type().map(|ty| ty.to_string()),
@@ -350,7 +359,6 @@ fn find_function_in_commit(
                     .map(|arg| arg.to_string())
                     .collect::<Vec<String>>()
             }),
-            // we can now get lifetime and generics from the ast
             lifetime: generics.1,
             generics: generics.0,
             lines: (stuff.0 .0, stuff.0 .1),
@@ -371,7 +379,10 @@ fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     }
 }
 
-fn get_stuff<T: AstNode>(block: &T, file: &str) -> ((usize, usize), (String, String)) {
+fn get_stuff<T: AstNode>(
+    block: &T,
+    file: &str,
+) -> ((usize, usize), (String, String), (usize, usize)) {
     let start = block.syntax().text_range().start();
     let end = block.syntax().text_range().end();
     // get the start and end lines
@@ -384,10 +395,12 @@ fn get_stuff<T: AstNode>(block: &T, file: &str) -> ((usize, usize), (String, Str
             end_line += 1;
         }
     }
+    let mut starts = 0;
     let mut start_line = 0;
     for (i, line) in file.chars().enumerate() {
         if line == '\n' {
             if usize::from(start) < i {
+                starts = i;
                 break;
             }
             start_line += 1;
@@ -398,15 +411,16 @@ fn get_stuff<T: AstNode>(block: &T, file: &str) -> ((usize, usize), (String, Str
         (
             format!(
                 "{}: {}",
-                start_line,
+                start_line + 1,
                 file.lines().nth(start_line).unwrap_or("")
             ),
             format!(
                 "\n{}: {}",
-                end_line - 1,
+                end_line,
                 file.lines().nth(end_line - 1).unwrap_or("")
             ),
         ),
+        (starts, usize::from(end)),
     )
 }
 
@@ -497,11 +511,14 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
+        let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.rs".to_string()),
+            FileType::Relative("src/test_functions.rs".to_string()),
             Filter::None,
         );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
@@ -524,7 +541,7 @@ mod tests {
     }
 
     #[test]
-    fn not_found_function() {
+    fn not_found() {
         let output = get_function_history(
             "Not_a_function",
             FileType::Absolute("src/test_functions.rs".to_string()),

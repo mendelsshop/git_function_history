@@ -90,13 +90,13 @@ impl Function {
                 match next {
                     None => {
                         for i in r_function {
-                            write!(f, "\n...\n{}", i.bottom)?;
+                            write!(f, "...\n{}", i.bottom)?;
                         }
                     }
                     Some(next_function) => match &next_function.function {
                         None => {
                             for i in r_function {
-                                write!(f, "\n...\n{}", i.bottom)?;
+                                write!(f, "...\n{}", i.bottom)?;
                             }
                         }
 
@@ -108,7 +108,7 @@ impl Function {
                                     .any(|x| x == i.lines)
                                 {
                                 } else {
-                                    write!(f, "\n...\n{}", i.bottom)?;
+                                    write!(f, "...\n{}", i.bottom)?;
                                 }
                             }
                         }
@@ -119,13 +119,13 @@ impl Function {
         match &self.block {
             None => {}
             Some(block) => match next {
-                None => write!(f, "\n...{}", block.bottom)?,
+                None => write!(f, "...{}", block.bottom)?,
                 Some(next_function) => match &next_function.block {
-                    None => write!(f, "\n...{}", block.bottom)?,
+                    None => write!(f, "...{}", block.bottom)?,
                     Some(next_block) => {
                         if next_block.lines == block.lines {
                         } else {
-                            write!(f, "\n...{}", block.bottom)?;
+                            write!(f, "...{}", block.bottom)?;
                         }
                     }
                 },
