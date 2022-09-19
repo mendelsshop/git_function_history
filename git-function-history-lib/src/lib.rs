@@ -553,11 +553,14 @@ mod tests {
     use super::*;
     #[test]
     fn found_function() {
+        let now = Utc::now();
         let output = get_function_history(
             "empty_test",
             FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
@@ -580,7 +583,7 @@ mod tests {
     }
 
     #[test]
-    fn not_found_function() {
+    fn not_found() {
         let output = get_function_history(
             "Not_a_function",
             FileType::Absolute("src/test_functions.rs".to_string()),
