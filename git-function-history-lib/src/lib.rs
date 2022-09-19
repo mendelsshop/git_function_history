@@ -276,10 +276,10 @@ fn find_function_in_commit(
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
     for f in functions {
-        let stuff = get_stuff(&f, &file_contents);
+        let stuff = get_stuff(&f, &file_contents, &map);
         let generics = get_genrerics_and_lifetime(&f);
         let mut parent = f.syntax().parent();
-        let mut parent_fn: Vec<ast::Fn> = Vec::new();
+        let mut parent_fn: Vec<FunctionBlock> = Vec::new();
         let mut parent_block = None;
         while let Some(p) = parent.into_iter().next() {
             if p.kind() == SyntaxKind::SOURCE_FILE {
@@ -288,7 +288,7 @@ fn find_function_in_commit(
             ast::Fn::cast(p.clone()).map_or_else(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
-                        let stuff = get_stuff(&block, &file_contents);
+                        let stuff = get_stuff(&block, &file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.self_ty().map(|ty| ty.to_string()),
@@ -300,7 +300,7 @@ fn find_function_in_commit(
                             lines: (stuff.0 .0, stuff.0 .1),
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
-                        let stuff = get_stuff(&block, &file_contents);
+                        let stuff = get_stuff(&block, &file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.name().map(|ty| ty.to_string()),
@@ -312,7 +312,7 @@ fn find_function_in_commit(
                             lines: (stuff.0 .0, stuff.0 .1),
                         });
                     } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
-                        let stuff = get_stuff(&block, &file_contents);
+                        let stuff = get_stuff(&block, &file_contents, &map);
                         parent_block = Some(Block {
                             name: block.abi().map(|ty| ty.to_string()),
                             lifetime: None,
@@ -325,10 +325,23 @@ fn find_function_in_commit(
                     }
                 },
                 |function| {
-                    let _stuff = get_stuff(&function, &file_contents);
-                    let _generics = get_genrerics_and_lifetime(&function);
+                    let stuff = get_stuff(&function, &file_contents, &map);
+                    let generics = get_genrerics_and_lifetime(&function);
                     // TODO: get the functionblock and add it to the parent_fn
-                    parent_fn.push(function);
+                    parent_fn.push(FunctionBlock {
+                        name: function.name().unwrap().to_string(),
+                        lifetime: generics.1,
+                        generics: generics.0,
+                        top: stuff.1 .0,
+                        bottom: stuff.1 .1,
+                        lines: (stuff.0 .0, stuff.0 .1),
+                        return_type: function.ret_type().map(|ty| ty.to_string()),
+                        arguments: function.param_list().map(|args| {
+                            args.params()
+                                .map(|arg| arg.to_string())
+                                .collect::<Vec<String>>()
+                        }),
+                    });
                 },
             );
             parent = p.parent();
@@ -352,7 +365,10 @@ fn find_function_in_commit(
             name: f.name().unwrap().to_string(),
             contents,
             block: parent_block,
-            function: None,
+            function: match parent_fn {
+                x if x.is_empty() => None,
+                x => Some(x),
+            },
             return_type: f.ret_type().map(|ty| ty.to_string()),
             arguments: f.param_list().map(|args| {
                 args.params()
@@ -382,21 +398,16 @@ fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
 fn get_stuff<T: AstNode>(
     block: &T,
     file: &str,
+    map: &HashMap<usize, &usize>,
 ) -> ((usize, usize), (String, String), (usize, usize)) {
     let start = block.syntax().text_range().start();
     let end = block.syntax().text_range().end();
     // get the start and end lines
+    let mut found_start_brace = 0;
     let mut end_line = 0;
-    for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(end) < i {
-                break;
-            }
-            end_line += 1;
-        }
-    }
     let mut starts = 0;
     let mut start_line = 0;
+    // TODO: combine these loops
     for (i, line) in file.chars().enumerate() {
         if line == '\n' {
             if usize::from(start) < i {
@@ -406,21 +417,45 @@ fn get_stuff<T: AstNode>(
             start_line += 1;
         }
     }
+    for (i, line) in file.chars().enumerate() {
+        if line == '\n' {
+            if usize::from(end) < i {
+                break;
+            }
+            end_line += 1;
+        }
+        if line == '{' && found_start_brace == 0 && usize::from(start) < i {
+            found_start_brace = i;
+        }
+    }
+    if found_start_brace == 0 {
+        found_start_brace = usize::from(start);
+    }
+    let start = map[&start_line];
+    let mut start_lines = start_line;
+    let mut content: String = file[*start..found_start_brace].to_string();
+    if &content[..1] == "\n" {
+        content = content[1..].to_string();
+    }
     (
         (start_line, end_line),
         (
-            format!(
-                "{}: {}",
-                start_line + 1,
-                file.lines().nth(start_line).unwrap_or("")
-            ),
+            content
+                .lines()
+                .map(|l| {
+                    start_lines += 1;
+                    format!("{}: {}\n", start_lines, l,)
+                })
+                .collect::<String>()
+                .trim_end()
+                .to_string(),
             format!(
                 "\n{}: {}",
                 end_line,
                 file.lines().nth(end_line - 1).unwrap_or("")
             ),
         ),
-        (starts, usize::from(end)),
+        (starts, end_line),
     )
 }
 
