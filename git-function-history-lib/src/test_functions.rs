@@ -96,3 +96,15 @@ pub fn function_within(t: String) -> i32 {
     empty_test(t)
 }
 
+pub struct Test2<T> 
+where T: super_trait {
+    pub contents: String,
+    pub history: Vec<T>,
+}
+
+impl<T> Test2<T> 
+where T: super_trait {
+    pub fn empty_test<'a>() {
+        println!("empty test");
+    }
+}
