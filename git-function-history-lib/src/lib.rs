@@ -381,6 +381,9 @@ fn find_function_in_commit(
         };
         hist.push(function);
     }
+    if hist.is_empty() {
+        Err("no function found")?;
+    }
     Ok(hist)
 }
 
@@ -582,6 +585,10 @@ mod tests {
             FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
+        match &output {
+            Ok(output) => println!("{}", output),
+            Err(error) => println!("{}", error),
+        }
         assert!(output.is_err());
     }
 
@@ -610,7 +617,7 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{:?}", functions);
             }
             Err(e) => println!("{}", e),
         }
