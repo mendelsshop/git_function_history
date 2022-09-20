@@ -7,12 +7,14 @@ pub fn not_empty_test() {
     println!("{{ {} added more chages", "{");
 }
 
+#[derive(Debug)]
 pub struct Test<a> {
     pub contents: String,
     pub history: Vec<a>,
 }
 
 impl<a>Test<a>  {
+    /// empty test
     pub fn empty_test<'a>() {
         println!("empty test");
     }
@@ -38,6 +40,7 @@ impl<a>Test<a>  {
         }
 
         pub fn test_in_test_in_test() {
+            #[derive(Debug)]
             pub fn empty_test() {
 
             }
@@ -90,6 +93,7 @@ extern "C" {
 }
 
 pub fn function_within(t: String) -> i32 {
+    //! function within
     pub fn empty_test(t: String) -> i32 {
         println!("empty test");
         t.parse()
@@ -111,6 +115,7 @@ where T: super_trait {
 
 }
 
+#[derive(Debug)]
 extern {
     pub fn empty_test(t: String) -> i32 {
         println!("empty test");
