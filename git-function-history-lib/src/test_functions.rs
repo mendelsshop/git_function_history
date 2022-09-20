@@ -1,3 +1,5 @@
+use std::error::Error;
+
 pub fn empty_test() {
 
 }
@@ -40,7 +42,6 @@ impl<a>Test<a>  {
         }
 
         pub fn test_in_test_in_test() {
-            #[derive(Debug)]
             pub fn empty_test() {
 
             }
@@ -63,8 +64,9 @@ gdg
         fn empty_test<T>() ->  String where T: super_trait {
             String::from("fn empty_test() ");
             fn broken() {
-                r#"#"}"#
+                r#"#"}"#;
             }
+            String::from("fn empty_test() ")
         }
     
 }
@@ -92,11 +94,17 @@ extern "C" {
     fn abs(input: i32) -> i32;
 }
 
-pub fn function_within(t: String) -> i32 {
+/// function why inner doc comments no worky
+pub fn function_within(t: String) -> Result<i32, Box<dyn Error>> {
     //! function within
-    pub fn empty_test(t: String) -> i32 {
+    pub fn empty_test(t: String) -> Result<i32, Box<dyn Error>> {
         println!("empty test");
-        t.parse()
+        match t.parse::<i32>() {
+            Ok(i) => Ok(i),
+            Err(e) => Err(e)?,
+        
+            
+        }
     }
     empty_test(t)
 }
@@ -115,10 +123,7 @@ where T: super_trait {
 
 }
 
-#[derive(Debug)]
-extern {
-    pub fn empty_test(t: String) -> i32 {
-        println!("empty test");
-        t.parse()
-    }
+
+extern "C" {
+    pub fn empty_test(t: String);
 }
