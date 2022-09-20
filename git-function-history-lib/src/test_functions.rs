@@ -108,5 +108,12 @@ where T: super_trait {
     pub fn empty_test<'a>() {
         println!("empty test");
     }
-    
+
+}
+
+extern {
+    pub fn empty_test(t: String) -> i32 {
+        println!("empty test");
+        t.parse()
+    }
 }
