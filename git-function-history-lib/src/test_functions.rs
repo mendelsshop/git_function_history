@@ -49,6 +49,7 @@ impl<a>Test<a>  {
     }
 }
 
+#[derive(Debug)]
 pub trait super_trait {
     fn super_trait_method(&self);
 
