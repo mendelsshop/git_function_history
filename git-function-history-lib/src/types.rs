@@ -3,32 +3,6 @@ use std::{collections::HashMap, error::Error, fmt};
 
 use crate::Filter;
 
-pub(crate) struct InternalBlock {
-    pub(crate) start: Points,
-    pub(crate) full: Points,
-    pub(crate) end: Points,
-    pub(crate) types: BlockType,
-    pub(crate) file_line: Points,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct InternalFunctions {
-    pub(crate) name: String,
-    pub(crate) range: Points,
-    pub(crate) file_line: Points,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct Points {
-    pub(crate) x: usize,
-    pub(crate) y: usize,
-}
-
-impl Points {
-    pub(crate) const fn in_other(&self, other: &Self) -> bool {
-        self.x > other.x && self.y < other.y
-    }
-}
 /// This holds the information about a single function each commit will have multiple of these.
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -38,9 +12,21 @@ pub struct Function {
     /// is the function in a block ie `impl` `trait` etc
     pub(crate) block: Option<Block>,
     /// optional parent functions
-    pub(crate) function: Option<Vec<FunctionBlock>>,
+    pub(crate) function: Vec<FunctionBlock>,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    pub(crate) lifetime: Vec<String>,
+    /// The generic types of the function
+    pub(crate) generics: Vec<String>,
+    /// The arguments of the function
+    pub(crate) arguments: Vec<String>,
+    /// The return type of the function
+    pub(crate) return_type: Option<String>,
+    /// The functions atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the functions doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl Function {
@@ -67,70 +53,38 @@ impl Function {
                 },
             },
         };
-        match &self.function {
-            None => {}
-            Some(function) => match previous {
-                None => {
-                    for i in function {
-                        write!(f, "{}\n...\n", i.top)?;
-                    }
-                }
-                Some(previous_function) => match &previous_function.function {
-                    None => {
-                        for i in function {
+        if !self.function.is_empty() {
+            for i in &self.function {
+                match previous {
+                    None => write!(f, "{}\n...\n", i.top)?,
+                    Some(previous_function) => {
+                        if previous_function
+                            .function
+                            .iter()
+                            .any(|x| x.lines == i.lines)
+                        {
+                        } else {
                             write!(f, "{}\n...\n", i.top)?;
                         }
                     }
-                    Some(previous_function_parent) => {
-                        for i in function {
-                            if previous_function_parent
-                                .iter()
-                                .map(|parent| parent.lines)
-                                .any(|x| x == i.lines)
-                            {
-                            } else {
-                                write!(f, "{}\n...\n", i.top)?;
-                            }
-                        }
-                    }
-                },
-            },
-        };
-        write!(f, "{}", self.contents)?;
-        match &self.function {
-            None => {}
-            Some(function) => {
-                let mut r_function = function.clone();
-                r_function.reverse();
-                match next {
-                    None => {
-                        for i in r_function {
-                            write!(f, "\n...\n{}", i.bottom)?;
-                        }
-                    }
-                    Some(next_function) => match &next_function.function {
-                        None => {
-                            for i in r_function {
-                                write!(f, "\n...\n{}", i.bottom)?;
-                            }
-                        }
-
-                        Some(next_function_parent) => {
-                            for i in r_function {
-                                if next_function_parent
-                                    .iter()
-                                    .map(|parent| parent.lines)
-                                    .any(|x| x == i.lines)
-                                {
-                                } else {
-                                    write!(f, "\n...\n{}", i.bottom)?;
-                                }
-                            }
-                        }
-                    },
-                }
+                };
             }
-        };
+        }
+
+        write!(f, "{}", self.contents)?;
+        if !self.function.is_empty() {
+            for i in &self.function {
+                match next {
+                    None => write!(f, "\n...{}", i.bottom)?,
+                    Some(next_function) => {
+                        if next_function.function.iter().any(|x| x.lines == i.lines) {
+                        } else {
+                            write!(f, "\n...{}", i.bottom)?;
+                        }
+                    }
+                };
+            }
+        }
         match &self.block {
             None => {}
             Some(block) => match next {
@@ -150,25 +104,30 @@ impl Function {
     }
 
     /// get metadata like line number, number of parent function etc.
-    pub fn get_metadata(&self) -> HashMap<String, String> {
+    pub fn get_metadata(&self) -> HashMap<&str, String> {
         let mut map = HashMap::new();
-        map.insert("name".to_string(), self.name.clone());
-        map.insert("lines".to_string(), format!("{:?}", self.lines));
-        map.insert("contents".to_string(), self.contents.clone());
+        map.insert("name", self.name.clone());
+        map.insert("lines", format!("{:?}", self.lines));
+        map.insert("contents", self.contents.clone());
         if let Some(block) = &self.block {
-            map.insert("block".to_string(), format!("{}", block.block_type));
+            map.insert("block", format!("{}", block.block_type));
         }
-        if let Some(function) = &self.function {
-            map.insert(
-                "number of function".to_string(),
-                format!("{}", function.len()),
-            );
-        }
+        map.insert("generics", self.generics.join(","));
+        map.insert("arguments", self.arguments.join(","));
+        map.insert("lifetime generics", self.lifetime.join(","));
+        map.insert("attributes", self.attributes.join(","));
+        map.insert("doc comments", self.doc_comments.join(","));
+        match &self.return_type {
+            None => {}
+            Some(return_type) => {
+                map.insert("return type", return_type.clone());
+            }
+        };
         map
     }
 
     /// get the parent functions
-    pub fn get_parent_function(&self) -> Option<Vec<FunctionBlock>> {
+    pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
         self.function.clone()
     }
 
@@ -184,23 +143,13 @@ impl fmt::Display for Function {
             None => {}
             Some(block) => write!(f, "{}\n...\n", block.top)?,
         };
-        match &self.function {
-            None => {}
-            Some(function) => {
-                for i in function {
-                    write!(f, "{}\n...\n", i.top)?;
-                }
-            }
-        };
+        for i in &self.function {
+            write!(f, "{}\n...\n", i.top)?;
+        }
         write!(f, "{}", self.contents)?;
-        match &self.function {
-            None => {}
-            Some(function) => {
-                for i in function {
-                    write!(f, "\n...\n{}", i.bottom)?;
-                }
-            }
-        };
+        for i in &self.function {
+            write!(f, "\n...\n{}", i.bottom)?;
+        }
         match &self.block {
             None => {}
             Some(block) => write!(f, "\n...{}", block.bottom)?,
@@ -220,6 +169,18 @@ pub struct FunctionBlock {
     pub(crate) bottom: String,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    pub(crate) lifetime: Vec<String>,
+    /// The generic types of the function
+    pub(crate) generics: Vec<String>,
+    /// The arguments of the function
+    pub(crate) arguments: Vec<String>,
+    /// The return type of the function
+    pub(crate) return_type: Option<String>,
+    /// the function atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the functions doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl FunctionBlock {
@@ -230,6 +191,17 @@ impl FunctionBlock {
         map.insert("lines".to_string(), format!("{:?}", self.lines));
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
+        map.insert("generics".to_string(), self.generics.join(","));
+        map.insert("arguments".to_string(), self.arguments.join(","));
+        map.insert("lifetime generics".to_string(), self.lifetime.join(","));
+        map.insert("attributes".to_string(), self.attributes.join(","));
+        map.insert("doc comments".to_string(), self.doc_comments.join(","));
+        match &self.return_type {
+            None => {}
+            Some(return_type) => {
+                map.insert("return type".to_string(), return_type.clone());
+            }
+        };
         map
     }
 }
@@ -247,6 +219,14 @@ pub struct Block {
     pub(crate) block_type: BlockType,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
+    /// The lifetime of the function
+    pub(crate) lifetime: Vec<String>,
+    /// The generic types of the function
+    pub(crate) generics: Vec<String>,
+    /// The blocks atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the blocks doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl Block {
@@ -260,6 +240,10 @@ impl Block {
         map.insert("lines".to_string(), format!("{:?}", self.lines));
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
+        map.insert("generics".to_string(), self.generics.join(","));
+        map.insert("lifetime generics".to_string(), self.lifetime.join(","));
+        map.insert("attributes".to_string(), self.attributes.join(","));
+        map.insert("doc comments".to_string(), self.doc_comments.join(","));
         map
     }
 }
@@ -344,11 +328,9 @@ impl File {
                 .functions
                 .iter()
                 .filter(|f| {
-                    if let Some(parent_function) = &f.function {
-                        for parents in parent_function {
-                            if parents.name == parent {
-                                return true;
-                            }
+                    for parents in &f.function {
+                        if parents.name == parent {
+                            return true;
                         }
                     }
                     false
@@ -376,6 +358,16 @@ impl File {
     /// This is used to get the functions in the file (mutable)
     pub fn get_functions_mut(&mut self) -> &mut Vec<Function> {
         &mut self.functions
+    }
+
+    /// This is will get the current function in the file
+    pub fn get_current_function(&self) -> Option<&Function> {
+        self.functions.get(self.current_pos)
+    }
+
+    /// This is will get the current function in the file (mutable)
+    pub fn get_current_function_mut(&mut self) -> Option<&mut Function> {
+        self.functions.get_mut(self.current_pos)
     }
 }
 
@@ -578,6 +570,8 @@ impl FunctionHistory {
             return;
         }
         self.current_pos += 1;
+        self.commit_history[self.current_pos].current_iter_pos = 0;
+        self.commit_history[self.current_pos].current_pos = 0;
     }
 
     /// this will move to the previous commit if possible
@@ -586,6 +580,8 @@ impl FunctionHistory {
             return;
         }
         self.current_pos -= 1;
+        self.commit_history[self.current_pos].current_iter_pos = 0;
+        self.commit_history[self.current_pos].current_pos = 0;
     }
 
     /// this will move to the next file in the current commit if possible

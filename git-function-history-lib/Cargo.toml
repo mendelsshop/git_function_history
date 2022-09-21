@@ -10,7 +10,5 @@ description = "show function history from git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lazy_static = "1.4.0"
-fancy-regex = "0.10.0"
-regex = "1.6.0"
 chrono = "0.4"
+ra_ap_syntax = "0.0.129"

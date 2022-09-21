@@ -13,26 +13,17 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
-
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
-use fancy_regex::Regex as FancyRegex;
-use lazy_static::lazy_static;
-use regex::Regex;
-use std::fmt::Write;
-use std::{error::Error, process::Command};
+use ra_ap_syntax::{
+    ast::{self, HasDocComments, HasGenericParams, HasName},
+    AstNode, SourceFile, SyntaxKind,
+};
+
+use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
     Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
 };
-use types::{InternalBlock, InternalFunctions, Points};
-
-lazy_static! {
-    #[derive(Debug)]
-    pub (crate) static ref CAPTURE_FUNCTION: Regex = Regex::new(r#".*\bfn\s*(?P<name>[^\s<>]+)(?P<lifetime><[^<>]+>)?\s*\("#).expect("failed to compile regex");
-    // this regex look for string chars and comments
-    pub (crate) static ref CAPTURE_NOT_NEEDED: FancyRegex = FancyRegex::new(r#"(["](?:\\["]|[^"])*["])|(//.*)|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)|(['][^\\'][']|['](?:\\(?:'|x[[:xdigit:]]{2}|u\{[[:xdigit:]]{1,6}\}|n|t|r)|\\\\)['])|(r(?P<hashes>[#]*)".*?"\k<hashes>)"#).expect("failed to compile regex");
-    pub (crate) static ref CAPTURE_BLOCKS: Regex = Regex::new(r#"(.*\bimpl\s*(?P<lifetime_impl><[^<>]+>)?\s*(?P<name_impl>[^\s<>]+)\s*(<[^<>]+>)?\s*(?P<for>for\s*(?P<for_type>[^\s<>]+)\s*(?P<for_lifetime><[^<>]+>)?)?\s*(?P<wher_impl>where*[^{]+)?\{)|(.*\btrait\s+(?P<name_trait>[^\s<>]+)\s*(?P<lifetime_trait><[^<>]+>)?\s*(?P<wher_trait>where[^{]+)?\{)|(.*\bextern\s*(?P<extern>".+")?\s*\{)"#).expect("failed to compile regex");
-}
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +38,7 @@ pub enum FileType {
     None,
 }
 
+// TODO: Add support for filtering by generic parameters, lifetimes, and return types.
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
@@ -227,7 +219,7 @@ pub fn get_function_history(
 /// List all the commits date in the git history (in rfc2822 format).
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
-        .args(&["log", "--pretty=%aD", "--date", "rfc2822"])
+        .args(["log", "--pretty=%aD", "--date", "rfc2822"])
         .output()?;
     let output = String::from_utf8(output.stdout)?;
     let output = output
@@ -239,7 +231,7 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
 
 /// List all the commit hashes in the git history.
 pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git").args(&["log", "--pretty=%H"]).output()?;
+    let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
     let output = String::from_utf8(output.stdout)?;
     let output = output
         .split('\n')
@@ -265,225 +257,255 @@ fn find_function_in_commit(
     file_path: &str,
     name: &str,
 ) -> Result<Vec<Function>, Box<dyn Error>> {
+    if !file_path.contains("test") {
+        Err("not a test file")?;
+    }
     let file_contents = find_file_in_commit(commit, file_path)?;
-    let mut contents: String = "".to_string();
-    // add line numbers to the file contents
-    for (i, line) in file_contents.lines().enumerate() {
-        writeln!(contents, "{}: {}", i + 1, line)?;
-    }
-    let file_contents = contents;
-    let mut contents: Vec<Function> = Vec::new();
-    let points = get_points_from_regex(&CAPTURE_NOT_NEEDED, &file_contents);
-    let blank_content = blank_out_range(&file_contents, &points);
-    let mut function_range = Vec::new();
-    for cap in CAPTURE_FUNCTION.find_iter(&blank_content) {
-        // get the function name
-        match get_body(&blank_content, cap.end(), true) {
-            t if t.0 != 0 => {
-                let top_line: usize = file_contents[cap.start()..t.0]
-                    .split_once(':')
-                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
-                    .0
-                    .parse()?;
-                let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
-                    None => top_line,
-                };
-                function_range.push(InternalFunctions {
-                    range: Points {
-                        x: cap.start(),
-                        y: t.0,
-                    },
-                    name: get_function_name(&blank_content[cap.start()..cap.end()]),
-                    file_line: Points {
-                        x: top_line,
-                        y: bottom_line,
-                    },
-                });
+    let mut functions = Vec::new();
+    get_function_asts(name, &file_contents, &mut functions);
+    let mut starts = file_contents
+        .match_indices('\n')
+        .map(|x| x.0)
+        .collect::<Vec<_>>();
+    starts.push(0);
+    starts.sort_unstable();
+    let map = starts
+        .iter()
+        .enumerate()
+        .collect::<HashMap<usize, &usize>>();
+    let mut hist = Vec::new();
+    for f in functions {
+        let stuff = get_stuff(&f, &file_contents, &map);
+        let generics = get_genrerics_and_lifetime(&f);
+        let mut parent = f.syntax().parent();
+        let mut parent_fn: Vec<FunctionBlock> = Vec::new();
+        let mut parent_block = None;
+        while let Some(p) = parent.into_iter().next() {
+            if p.kind() == SyntaxKind::SOURCE_FILE {
+                break;
             }
-            _ => {
-                continue;
-            }
+            ast::Fn::cast(p.clone()).map_or_else(
+                || {
+                    if let Some(block) = ast::Impl::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
+                        let stuff = get_stuff(&block, &file_contents, &map);
+                        let generics = get_genrerics_and_lifetime(&block);
+                        parent_block = Some(Block {
+                            name: block.self_ty().map(|ty| ty.to_string()),
+                            lifetime: generics.1,
+                            generics: generics.0,
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Impl,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
+                        });
+                    } else if let Some(block) = ast::Trait::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
+                        let stuff = get_stuff(&block, &file_contents, &map);
+                        let generics = get_genrerics_and_lifetime(&block);
+                        parent_block = Some(Block {
+                            name: block.name().map(|ty| ty.to_string()),
+                            lifetime: generics.1,
+                            generics: generics.0,
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Trait,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
+                        });
+                    } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
+                        let stuff = get_stuff(&block, &file_contents, &map);
+                        parent_block = Some(Block {
+                            name: block.abi().map(|ty| ty.to_string()),
+                            lifetime: Vec::new(),
+                            generics: Vec::new(),
+                            top: stuff.1 .0,
+                            bottom: stuff.1 .1,
+                            block_type: BlockType::Extern,
+                            lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
+                        });
+                    }
+                },
+                |function| {
+                    let stuff = get_stuff(&function, &file_contents, &map);
+                    let generics = get_genrerics_and_lifetime(&function);
+                    let attr = get_doc_comments_and_attrs(&function);
+                    parent_fn.push(FunctionBlock {
+                        name: function.name().unwrap().to_string(),
+                        lifetime: generics.1,
+                        generics: generics.0,
+                        top: stuff.1 .0,
+                        bottom: stuff.1 .1,
+                        lines: (stuff.0 .0, stuff.0 .1),
+                        return_type: function.ret_type().map(|ty| ty.to_string()),
+                        arguments: match function.param_list() {
+                            Some(args) => args
+                                .params()
+                                .map(|arg| arg.to_string())
+                                .collect::<Vec<String>>(),
+                            None => Vec::new(),
+                        },
+                        attributes: attr.1,
+                        doc_comments: attr.0,
+                    });
+                },
+            );
+            parent = p.parent();
         }
-    }
-    let mut block_range = Vec::new();
-    for cap in CAPTURE_BLOCKS.find_iter(&blank_content) {
-        // get the function name
-        match get_body(&blank_content, cap.end() - 1, false) {
-            t if t.0 != 0 => {
-                let top_line: usize = file_contents[cap.start()..t.0]
-                    .split_once(':')
-                    .unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?
-                    .0
-                    .parse()?;
-                let bottom_line = match file_contents[cap.start()..t.0].rsplit_once('\n') {
-                    Some(line) => line.1.split_once(':').unwrap_to_error("line is not indexed with a line number please file an issue at https://github.com/mendelsshop/git_function_history/")?.0.parse()?,
-                    None => top_line,
-                };
-                block_range.push(InternalBlock {
-                    // range:
-                    start: Points {
-                        x: cap.start(),
-                        y: cap.end(),
-                    },
-                    full: Points {
-                        x: cap.start(),
-                        y: t.0,
-                    },
-                    end: Points { x: t.1, y: t.0 },
-                    types: match CAPTURE_BLOCKS.captures(&file_contents[cap.start()..cap.end()]) {
-                        Some(types) => {
-                            if types.name("extern").is_some() {
-                                BlockType::Extern
-                            } else if types.name("name_impl").is_some() {
-                                BlockType::Impl
-                            } else if types.name("name_trait").is_some() {
-                                BlockType::Trait
-                            } else {
-                                BlockType::Unknown
-                            }
-                        }
-                        None => BlockType::Unknown,
-                    },
-                    file_line: Points {
-                        x: top_line,
-                        y: bottom_line,
-                    },
-                });
-            }
-            _ => {
-                continue;
-            }
-        }
-    }
-    for t in &function_range {
-        if t.name != name {
-            continue;
-        }
-        let mut function = Function {
-            name: t.name.clone(),
-            contents: String::new(),
-            block: None,
-            function: None,
-            lines: (t.file_line.x, t.file_line.y),
+        let attr = get_doc_comments_and_attrs(&f);
+        let mut start = stuff.0 .0;
+        let bb = match map[&start] {
+            0 => 0,
+            x => x + 1,
         };
-        // check if block is in range
-        let current_block = block_range.iter().find(|x| t.range.in_other(&x.full));
-        let function_ranges = Points {
-            x: t.file_line.x,
-            y: t.file_line.y,
-        };
-        function.function = match function_range
-            .iter()
-            .filter(|other| function_ranges.in_other(&other.file_line))
-            .map(|fns| {
-                Ok(FunctionBlock {
-                    name: fns.name.clone(),
-                    top: file_contents
-                        .lines()
-                        .nth(fns.file_line.x - 1)
-                        .unwrap_to_error(&format!(
-                            "could not get line {} in file {} from commit: {}",
-                            fns.file_line.y - 1,
-                            file_path,
-                            name
-                        ))?
-                        .to_string(),
-                    bottom: file_contents
-                        .lines()
-                        .nth(fns.file_line.y - 1)
-                        .unwrap_to_error(&format!(
-                            "could not get line {} in file {} from commit: {}",
-                            fns.file_line.y - 1,
-                            file_path,
-                            name
-                        ))?
-                        .to_string(),
-                    lines: (fns.file_line.x, fns.file_line.y),
-                })
+        let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
+            .to_string()
+            .lines()
+            .map(|l| {
+                start += 1;
+                format!("{}: {}\n", start, l,)
             })
-            .collect::<Result<Vec<FunctionBlock>, Box<dyn Error>>>()?
-        {
-            vec if vec.is_empty() => None,
-            vec => Some(vec),
+            .collect();
+        let contents = contents.trim_end().to_string();
+        let function = Function {
+            name: f.name().unwrap().to_string(),
+            contents,
+            block: parent_block,
+            function: parent_fn,
+            return_type: f.ret_type().map(|ty| ty.to_string()),
+            arguments: match f.param_list() {
+                Some(args) => args
+                    .params()
+                    .map(|arg| arg.to_string())
+                    .collect::<Vec<String>>(),
+                None => Vec::new(),
+            },
+            lifetime: generics.1,
+            generics: generics.0,
+            lines: (stuff.0 .0, stuff.0 .1),
+            attributes: attr.1,
+            doc_comments: attr.0,
         };
-        if let Some(block) = current_block {
-            function.block = Some(Block {
-                name: None,
-                top: file_contents[block.start.x..block.start.y].to_string(),
-                bottom: file_contents[block.end.x..block.end.y].to_string(),
-                block_type: block.types,
-                lines: (block.file_line.x, block.file_line.y),
-            });
-        };
-        function.contents = file_contents[t.range.x..t.range.y].to_string();
-        contents.push(function);
+        hist.push(function);
     }
-    if contents.is_empty() {
-        Err("No functions found")?;
+    if hist.is_empty() {
+        Err("no function found")?;
     }
-    Ok(contents)
+    Ok(hist)
 }
 
-fn get_points_from_regex(regex: &FancyRegex, file_contents: &str) -> Vec<(usize, usize)> {
-    let mut points: Vec<(usize, usize)> = Vec::new();
-    regex.find_iter(file_contents).for_each(|m| {
-        points.push((
-            m.as_ref().expect("regex did not work").start(),
-            m.as_ref().expect("regex did not work").end(),
-        ));
-    });
-    points
-}
-
-fn get_body(contents: &str, start_point: usize, semi_colon: bool) -> (usize, usize) {
-    let mut last_newline = 0;
-    let mut brace_count = 0;
-    let mut found_end = 0;
-    for (index, char) in contents.chars().enumerate() {
-        if index < start_point {
-            continue;
-        }
-        if found_end != 0 && char == '\n' {
-            return (index, last_newline);
-        }
-        if char == '{' {
-            brace_count += 1;
-        } else if char == '}' {
-            brace_count -= 1;
-            if brace_count == 0 {
-                found_end = index;
+fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
+    let parsed_file = SourceFile::parse(file).tree();
+    for item in parsed_file.syntax().descendants() {
+        if let Some(function) = ast::Fn::cast(item.clone()) {
+            if function.name().unwrap().text() == name {
+                functions.push(function.clone());
             }
-        } else if char == ';' && brace_count == 0 && semi_colon {
-            found_end = index;
-        } else if char == '\n' {
-            last_newline = index;
         }
     }
-    (contents.len(), last_newline)
 }
 
-fn blank_out_range(contents: &str, ranges: &Vec<(usize, usize)>) -> String {
-    let mut new_contents = contents.to_string();
-    for (start, end) in ranges {
-        new_contents.replace_range(start..end, &" ".repeat(end - start));
-    }
-    new_contents
-}
-
-fn get_function_name(mut function_header: &str) -> String {
-    let mut name = String::new();
-    function_header = function_header
-        .split_once("fn ")
-        .unwrap_or(("", function_header))
-        .1;
-    for char in function_header.chars() {
-        if char == '(' || char == '<' || char.is_whitespace() {
-            break;
+fn get_stuff<T: AstNode>(
+    block: &T,
+    file: &str,
+    map: &HashMap<usize, &usize>,
+) -> ((usize, usize), (String, String), (usize, usize)) {
+    let start = block.syntax().text_range().start();
+    let end = block.syntax().text_range().end();
+    // get the start and end lines
+    let mut found_start_brace = 0;
+    let mut end_line = 0;
+    let mut starts = 0;
+    let mut start_line = 0;
+    // TODO: combine these loops
+    for (i, line) in file.chars().enumerate() {
+        if line == '\n' {
+            if usize::from(start) < i {
+                starts = i;
+                break;
+            }
+            start_line += 1;
         }
-        name.push(char);
     }
-    name
+    for (i, line) in file.chars().enumerate() {
+        if line == '\n' {
+            if usize::from(end) < i {
+                break;
+            }
+            end_line += 1;
+        }
+        if line == '{' && found_start_brace == 0 && usize::from(start) < i {
+            found_start_brace = i;
+        }
+    }
+    if found_start_brace == 0 {
+        found_start_brace = usize::from(start);
+    }
+    let start = map[&start_line];
+    let mut start_lines = start_line;
+    let mut content: String = file[(*start)..=found_start_brace].to_string();
+    if &content[..1] == "\n" {
+        content = content[1..].to_string();
+    }
+    (
+        (start_line, end_line),
+        (
+            content
+                .lines()
+                .map(|l| {
+                    start_lines += 1;
+                    format!("{}: {}\n", start_lines, l,)
+                })
+                .collect::<String>()
+                .trim_end()
+                .to_string(),
+            format!(
+                "\n{}: {}",
+                end_line,
+                file.lines()
+                    .nth(if end_line == file.lines().count() - 1 {
+                        end_line
+                    } else {
+                        end_line - 1
+                    })
+                    .unwrap_or("")
+            ),
+        ),
+        (starts, end_line),
+    )
+}
+
+fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
+    match block.generic_param_list() {
+        None => (vec![], vec![]),
+        Some(gt) => (
+            gt.generic_params()
+                .map(|gt| gt.to_string())
+                .collect::<Vec<String>>(),
+            gt.lifetime_params()
+                .map(|lt| lt.to_string())
+                .collect::<Vec<String>>(),
+        ),
+    }
+}
+
+fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec<String>) {
+    (
+        block
+            .doc_comments()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>(),
+        block
+            .attrs()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>(),
+    )
 }
 
 fn find_function_in_commit_with_filetype(
@@ -494,7 +516,7 @@ fn find_function_in_commit_with_filetype(
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
-        .args(&["ls-tree", "-r", "--name-only", "--full-tree", commit])
+        .args(["ls-tree", "-r", "--name-only", "--full-tree", commit])
         .output()?;
     if !command.stderr.is_empty() {
         Err(String::from_utf8_lossy(&command.stderr))?;
@@ -589,6 +611,10 @@ mod tests {
             FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
+        match &output {
+            Ok(output) => println!("{}", output),
+            Err(error) => println!("{}", error),
+        }
         assert!(output.is_err());
     }
 
@@ -619,10 +645,8 @@ mod tests {
             Ok(functions) => {
                 println!("{}", functions);
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("-{}-", e),
         }
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
 
@@ -638,8 +662,6 @@ mod tests {
             }
             Err(e) => println!("{}", e),
         }
-        let path = std::env::current_dir().unwrap();
-        println!("The current directory is {}", path.display());
         assert!(output.is_ok());
     }
 }
