@@ -13,11 +13,10 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
-
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 use ra_ap_syntax::{
-    ast::{self, HasGenericParams, HasName},
+    ast::{self, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
 
@@ -288,6 +287,7 @@ fn find_function_in_commit(
             ast::Fn::cast(p.clone()).map_or_else(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
                         let stuff = get_stuff(&block, &file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
@@ -298,8 +298,11 @@ fn find_function_in_commit(
                             bottom: stuff.1 .1,
                             block_type: BlockType::Impl,
                             lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
                         let stuff = get_stuff(&block, &file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
@@ -310,24 +313,29 @@ fn find_function_in_commit(
                             bottom: stuff.1 .1,
                             block_type: BlockType::Trait,
                             lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
                         });
                     } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
+                        let attr = get_doc_comments_and_attrs(&block);
                         let stuff = get_stuff(&block, &file_contents, &map);
                         parent_block = Some(Block {
                             name: block.abi().map(|ty| ty.to_string()),
-                            lifetime: None,
-                            generics: None,
+                            lifetime: Vec::new(),
+                            generics: Vec::new(),
                             top: stuff.1 .0,
                             bottom: stuff.1 .1,
                             block_type: BlockType::Extern,
                             lines: (stuff.0 .0, stuff.0 .1),
+                            attributes: attr.1,
+                            doc_comments: attr.0,
                         });
                     }
                 },
                 |function| {
                     let stuff = get_stuff(&function, &file_contents, &map);
                     let generics = get_genrerics_and_lifetime(&function);
-                    // TODO: get the functionblock and add it to the parent_fn
+                    let attr = get_doc_comments_and_attrs(&function);
                     parent_fn.push(FunctionBlock {
                         name: function.name().unwrap().to_string(),
                         lifetime: generics.1,
@@ -336,22 +344,34 @@ fn find_function_in_commit(
                         bottom: stuff.1 .1,
                         lines: (stuff.0 .0, stuff.0 .1),
                         return_type: function.ret_type().map(|ty| ty.to_string()),
-                        arguments: function.param_list().map(|args| {
-                            args.params()
+                        arguments: match function.param_list() {
+                            Some(args) => args
+                                .params()
                                 .map(|arg| arg.to_string())
-                                .collect::<Vec<String>>()
-                        }),
+                                .collect::<Vec<String>>(),
+                            None => Vec::new(),
+                        },
+                        attributes: attr.1,
+                        doc_comments: attr.0,
                     });
                 },
             );
             parent = p.parent();
         }
-
+        let attr = get_doc_comments_and_attrs(&f);
         let mut start = stuff.0 .0;
         let bb = match map[&start] {
             0 => 0,
             x => x + 1,
         };
+        let ttt = f
+            .doc_comments_and_attrs()
+            .into_iter()
+            .map(|c| c.to_string())
+            .collect::<String>();
+        if !ttt.is_empty() {
+            println!("{}", ttt);
+        }
         let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
             .to_string()
             .lines()
@@ -365,19 +385,20 @@ fn find_function_in_commit(
             name: f.name().unwrap().to_string(),
             contents,
             block: parent_block,
-            function: match parent_fn {
-                x if x.is_empty() => None,
-                x => Some(x),
-            },
+            function: parent_fn,
             return_type: f.ret_type().map(|ty| ty.to_string()),
-            arguments: f.param_list().map(|args| {
-                args.params()
+            arguments: match f.param_list() {
+                Some(args) => args
+                    .params()
                     .map(|arg| arg.to_string())
-                    .collect::<Vec<String>>()
-            }),
+                    .collect::<Vec<String>>(),
+                None => Vec::new(),
+            },
             lifetime: generics.1,
             generics: generics.0,
             lines: (stuff.0 .0, stuff.0 .1),
+            attributes: attr.1,
+            doc_comments: attr.0,
         };
         hist.push(function);
     }
@@ -436,10 +457,11 @@ fn get_stuff<T: AstNode>(
     }
     let start = map[&start_line];
     let mut start_lines = start_line;
-    let mut content: String = file[*start..found_start_brace].to_string();
+    let mut content: String = file[(*start)..=found_start_brace].to_string();
     if &content[..1] == "\n" {
         content = content[1..].to_string();
-    }    (
+    }
+    (
         (start_line, end_line),
         (
             content
@@ -454,31 +476,44 @@ fn get_stuff<T: AstNode>(
             format!(
                 "\n{}: {}",
                 end_line,
-                file.lines().nth(if end_line == file.lines().count()-1 {end_line} else {end_line - 1}).unwrap_or("")
+                file.lines()
+                    .nth(if end_line == file.lines().count() - 1 {
+                        end_line
+                    } else {
+                        end_line - 1
+                    })
+                    .unwrap_or("")
             ),
         ),
         (starts, end_line),
     )
 }
 
-fn get_genrerics_and_lifetime<T: HasGenericParams>(
-    block: &T,
-) -> (Option<Vec<String>>, Option<Vec<String>>) {
+fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
     match block.generic_param_list() {
-        None => (None, None),
+        None => (vec![], vec![]),
         Some(gt) => (
-            Some(
-                gt.generic_params()
-                    .map(|gt| gt.to_string())
-                    .collect::<Vec<String>>(),
-            ),
-            Some(
-                gt.lifetime_params()
-                    .map(|lt| lt.to_string())
-                    .collect::<Vec<String>>(),
-            ),
+            gt.generic_params()
+                .map(|gt| gt.to_string())
+                .collect::<Vec<String>>(),
+            gt.lifetime_params()
+                .map(|lt| lt.to_string())
+                .collect::<Vec<String>>(),
         ),
     }
+}
+
+fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec<String>) {
+    (
+        block
+            .doc_comments()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>(),
+        block
+            .attrs()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>(),
+    )
 }
 
 fn find_function_in_commit_with_filetype(
@@ -616,7 +651,7 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
-                println!("{:?}", functions);
+                println!("{}", functions);
             }
             Err(e) => println!("-{}-", e),
         }

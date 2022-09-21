@@ -12,20 +12,24 @@ pub struct Function {
     /// is the function in a block ie `impl` `trait` etc
     pub(crate) block: Option<Block>,
     /// optional parent functions
-    pub(crate) function: Option<Vec<FunctionBlock>>,
+    pub(crate) function: Vec<FunctionBlock>,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
     // TODO: make a tpye for this
-    pub(crate) lifetime: Option<Vec<String>>,
+    pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
     /// TODO: make a type for this
-    pub(crate) generics: Option<Vec<String>>,
+    pub(crate) generics: Vec<String>,
     /// The arguments of the function
-    pub(crate) arguments: Option<Vec<String>>,
+    pub(crate) arguments: Vec<String>,
     /// The return type of the function
     // TODO: make a type for this
     pub(crate) return_type: Option<String>,
+    /// The functions atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the functions doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl Function {
@@ -52,66 +56,40 @@ impl Function {
                 },
             },
         };
-        match &self.function {
-            None => {}
-            Some(function) => match previous {
-                None => {
-                    for i in function {
-                        write!(f, "{}\n...\n", i.top)?;
-                    }
-                }
-                Some(previous_function) => match &previous_function.function {
-                    None => {
-                        for i in function {
+        if self.function.is_empty() {
+        } else {
+            for i in &self.function {
+                match previous {
+                    None => write!(f, "{}\n...\n", i.top)?,
+                    Some(previous_function) => {
+                        if previous_function
+                            .function
+                            .iter()
+                            .any(|x| x.lines == i.lines)
+                        {
+                        } else {
                             write!(f, "{}\n...\n", i.top)?;
                         }
                     }
-                    Some(previous_function_parent) => {
-                        for i in function {
-                            if previous_function_parent
-                                .iter()
-                                .map(|parent| parent.lines)
-                                .any(|x| x == i.lines)
-                            {
-                            } else {
-                                write!(f, "{}\n...\n", i.top)?;
-                            }
-                        }
-                    }
-                },
-            },
-        };
+                };
+            }
+        }
+
         write!(f, "{}", self.contents)?;
-        match &self.function {
-            None => {}
-            Some(function) => match next {
-                None => {
-                    for i in function {
-                        write!(f, "\n...{}", i.bottom)?;
-                    }
-                }
-                Some(next_function) => match &next_function.function {
-                    None => {
-                        for i in function {
+        if self.function.is_empty() {
+        } else {
+            for i in &self.function {
+                match next {
+                    None => write!(f, "\n...{}", i.bottom)?,
+                    Some(next_function) => {
+                        if next_function.function.iter().any(|x| x.lines == i.lines) {
+                        } else {
                             write!(f, "\n...{}", i.bottom)?;
                         }
                     }
-
-                    Some(next_function_parent) => {
-                        for i in function {
-                            if next_function_parent
-                                .iter()
-                                .map(|parent| parent.lines)
-                                .any(|x| x == i.lines)
-                            {
-                            } else {
-                                write!(f, "\n...{}", i.bottom)?;
-                            }
-                        }
-                    }
-                },
-            },
-        };
+                };
+            }
+        }
         match &self.block {
             None => {}
             Some(block) => match next {
@@ -139,17 +117,15 @@ impl Function {
         if let Some(block) = &self.block {
             map.insert("block".to_string(), format!("{}", block.block_type));
         }
-        if let Some(function) = &self.function {
-            map.insert(
-                "number of function".to_string(),
-                format!("{}", function.len()),
-            );
-        }
+        map.insert(
+            "number of function".to_string(),
+            format!("{}", self.function.len()),
+        );
         map
     }
 
     /// get the parent functions
-    pub fn get_parent_function(&self) -> Option<Vec<FunctionBlock>> {
+    pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
         self.function.clone()
     }
 
@@ -165,23 +141,13 @@ impl fmt::Display for Function {
             None => {}
             Some(block) => write!(f, "{}\n...\n", block.top)?,
         };
-        match &self.function {
-            None => {}
-            Some(function) => {
-                for i in function {
-                    write!(f, "{}\n...\n", i.top)?;
-                }
-            }
-        };
+        for i in &self.function {
+            write!(f, "{}\n...\n", i.top)?;
+        }
         write!(f, "{}", self.contents)?;
-        match &self.function {
-            None => {}
-            Some(function) => {
-                for i in function {
-                    write!(f, "\n...\n{}", i.bottom)?;
-                }
-            }
-        };
+        for i in &self.function {
+            write!(f, "\n...\n{}", i.bottom)?;
+        }
         match &self.block {
             None => {}
             Some(block) => write!(f, "\n...{}", block.bottom)?,
@@ -203,15 +169,18 @@ pub struct FunctionBlock {
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
     // TODO: make a tpye for this
-    pub(crate) lifetime: Option<Vec<String>>,
+    pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
     /// TODO: make a type for this
-    pub(crate) generics: Option<Vec<String>>,
+    pub(crate) generics: Vec<String>,
     /// The arguments of the function
-    pub(crate) arguments: Option<Vec<String>>,
+    pub(crate) arguments: Vec<String>,
     /// The return type of the function
-    // TODO: make a type for this
     pub(crate) return_type: Option<String>,
+    /// the function atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the functions doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl FunctionBlock {
@@ -241,10 +210,13 @@ pub struct Block {
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
     // TODO: make a tpye for this
-    pub(crate) lifetime: Option<Vec<String>>,
+    pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
-    /// TODO: make a type for this
-    pub(crate) generics: Option<Vec<String>>,
+    pub(crate) generics: Vec<String>,
+    /// The blocks atrributes
+    pub(crate) attributes: Vec<String>,
+    /// the blocks doc comments
+    pub(crate) doc_comments: Vec<String>,
 }
 
 impl Block {
@@ -342,11 +314,9 @@ impl File {
                 .functions
                 .iter()
                 .filter(|f| {
-                    if let Some(parent_function) = &f.function {
-                        for parents in parent_function {
-                            if parents.name == parent {
-                                return true;
-                            }
+                    for parents in &f.function {
+                        if parents.name == parent {
+                            return true;
                         }
                     }
                     false
