@@ -1,3 +1,5 @@
+name: release all to crates.io
+
 on:
   release:
     types: [published, released, prereleased]

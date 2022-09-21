@@ -9,7 +9,9 @@ jobs:
   update_loc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # - uses: actions/checkout@v3
+      #   with:
+      #     ref: stats
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
       - name: install tokei
@@ -23,11 +25,16 @@ jobs:
           python -m pip install pygithub
       - name: run script
         run: |
-          python stats/check_loc.py ${{ secrets.GITHUB_TOKEN }}
+          git clone https://github.com/mendelsshop/git_function_history.git
+          cd git_function_history
+          git switch stats
+          python check_loc.py ${{ secrets.GITHUB_TOKEN }}
   update_downloads:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # - uses: actions/checkout@v3
+      #   with:
+      #     ref: stats
       - name: install python
         uses: actions/setup-python@v2
       - name: install dependencies
@@ -38,4 +45,7 @@ jobs:
           python -m pip install toml
       - name: run script
         run: |
-          python stats/check_downloads.py ${{ secrets.GITHUB_TOKEN }}
+          git clone https://github.com/mendelsshop/git_function_history.git
+          cd git_function_history
+          git switch stats
+          python check_downloads.py ${{ secrets.GITHUB_TOKEN }}
