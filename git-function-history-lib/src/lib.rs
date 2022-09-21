@@ -364,14 +364,6 @@ fn find_function_in_commit(
             0 => 0,
             x => x + 1,
         };
-        let ttt = f
-            .doc_comments_and_attrs()
-            .into_iter()
-            .map(|c| c.to_string())
-            .collect::<String>();
-        if !ttt.is_empty() {
-            println!("{}", ttt);
-        }
         let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
             .to_string()
             .lines()
