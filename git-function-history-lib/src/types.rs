@@ -16,15 +16,12 @@ pub struct Function {
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
-    // TODO: make a tpye for this
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
-    /// TODO: make a type for this
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: Vec<String>,
     /// The return type of the function
-    // TODO: make a type for this
     pub(crate) return_type: Option<String>,
     /// The functions atrributes
     pub(crate) attributes: Vec<String>,
@@ -56,8 +53,7 @@ impl Function {
                 },
             },
         };
-        if self.function.is_empty() {
-        } else {
+        if !self.function.is_empty() {
             for i in &self.function {
                 match previous {
                     None => write!(f, "{}\n...\n", i.top)?,
@@ -76,8 +72,7 @@ impl Function {
         }
 
         write!(f, "{}", self.contents)?;
-        if self.function.is_empty() {
-        } else {
+        if !self.function.is_empty() {
             for i in &self.function {
                 match next {
                     None => write!(f, "\n...{}", i.bottom)?,
@@ -109,18 +104,25 @@ impl Function {
     }
 
     /// get metadata like line number, number of parent function etc.
-    pub fn get_metadata(&self) -> HashMap<String, String> {
+    pub fn get_metadata(&self) -> HashMap<&str, String> {
         let mut map = HashMap::new();
-        map.insert("name".to_string(), self.name.clone());
-        map.insert("lines".to_string(), format!("{:?}", self.lines));
-        map.insert("contents".to_string(), self.contents.clone());
+        map.insert("name", self.name.clone());
+        map.insert("lines", format!("{:?}", self.lines));
+        map.insert("contents", self.contents.clone());
         if let Some(block) = &self.block {
-            map.insert("block".to_string(), format!("{}", block.block_type));
+            map.insert("block", format!("{}", block.block_type));
         }
-        map.insert(
-            "number of function".to_string(),
-            format!("{}", self.function.len()),
-        );
+        map.insert("generics", self.generics.join(","));
+        map.insert("arguments", self.arguments.join(","));
+        map.insert("lifetime generics", self.lifetime.join(","));
+        map.insert("attributes", self.attributes.join(","));
+        map.insert("doc comments", self.doc_comments.join(","));
+        match &self.return_type {
+            None => {}
+            Some(return_type) => {
+                map.insert("return type", return_type.clone());
+            }
+        };
         map
     }
 
@@ -168,10 +170,8 @@ pub struct FunctionBlock {
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
-    // TODO: make a tpye for this
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
-    /// TODO: make a type for this
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: Vec<String>,
@@ -191,6 +191,17 @@ impl FunctionBlock {
         map.insert("lines".to_string(), format!("{:?}", self.lines));
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
+        map.insert("generics".to_string(), self.generics.join(","));
+        map.insert("arguments".to_string(), self.arguments.join(","));
+        map.insert("lifetime generics".to_string(), self.lifetime.join(","));
+        map.insert("attributes".to_string(), self.attributes.join(","));
+        map.insert("doc comments".to_string(), self.doc_comments.join(","));
+        match &self.return_type {
+            None => {}
+            Some(return_type) => {
+                map.insert("return type".to_string(), return_type.clone());
+            }
+        };
         map
     }
 }
@@ -209,7 +220,6 @@ pub struct Block {
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
-    // TODO: make a tpye for this
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
     pub(crate) generics: Vec<String>,
@@ -230,6 +240,10 @@ impl Block {
         map.insert("lines".to_string(), format!("{:?}", self.lines));
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
+        map.insert("generics".to_string(), self.generics.join(","));
+        map.insert("lifetime generics".to_string(), self.lifetime.join(","));
+        map.insert("attributes".to_string(), self.attributes.join(","));
+        map.insert("doc comments".to_string(), self.doc_comments.join(","));
         map
     }
 }
@@ -344,6 +358,16 @@ impl File {
     /// This is used to get the functions in the file (mutable)
     pub fn get_functions_mut(&mut self) -> &mut Vec<Function> {
         &mut self.functions
+    }
+
+    /// This is will get the current function in the file
+    pub fn get_current_function(&self) -> Option<&Function> {
+        self.functions.get(self.current_pos)
+    }
+
+    /// This is will get the current function in the file (mutable)
+    pub fn get_current_function_mut(&mut self) -> Option<&mut Function> {
+        self.functions.get_mut(self.current_pos)
     }
 }
 
@@ -546,6 +570,8 @@ impl FunctionHistory {
             return;
         }
         self.current_pos += 1;
+        self.commit_history[self.current_pos].current_iter_pos = 0;
+        self.commit_history[self.current_pos].current_pos = 0;
     }
 
     /// this will move to the previous commit if possible
@@ -554,6 +580,8 @@ impl FunctionHistory {
             return;
         }
         self.current_pos -= 1;
+        self.commit_history[self.current_pos].current_iter_pos = 0;
+        self.commit_history[self.current_pos].current_pos = 0;
     }
 
     /// this will move to the next file in the current commit if possible
