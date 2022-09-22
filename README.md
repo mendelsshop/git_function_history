@@ -2,6 +2,8 @@
 
 # git function history
 
+## benchmarks
+
 Parser (main) vs Regex approach benchmarks:
 | approach| expensive| relative| date-range |
 | --- | --- | --- | --- |
