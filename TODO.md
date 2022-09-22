@@ -12,10 +12,14 @@
   - [x] add new documentation for the new filters and fix some old documentation that talks about filter commitfunctions and files etc
 - TUI
   - [x] use a proper input box for the edit bar, so that delete and scrolling the input works
-  - [ ] finish documentation
+  - [x] finish documentation
 
 - General
   - [x] add the new filters to the GUI and TUI
   - [/] clean up the code
-  - [/] add more logging in the code (and remove the `println!`s)
-  - [ ] bump versions when all else is done and publish to crates.io
+  - [x] add more logging in the code (and remove the `println!`s)
+  - [x] bump versions when all else is done and publish to crates.io
+
+- version 7.0
+  - [ ] add more and better ways to filter dates
+  - [ ] add filters for git specific stuff like author, committer, etc

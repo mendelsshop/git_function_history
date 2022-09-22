@@ -1,7 +1,7 @@
 use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc};
 
 use cargo_function_history::{app::App, start_ui};
-use function_history_backend_thread::types::FullCommand;
+use function_history_backend_thread::types::{FullCommand, Status};
 use git_function_history::{FileType, Filter};
 use log::info;
 
@@ -13,11 +13,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     function_history_backend_thread::command_thread(rx_t, tx_t, true);
     info!("started command thread");
     let config = parse_args();
-    match config.function_name {
-        string if string.is_empty() => {}
-        string => tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?,
+    let status = match config.function_name {
+        string if string.is_empty() => Status::Ok(None),
+        string => {
+            tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?;
+            Status::Loading
+        }
     };
-    let app = Rc::new(RefCell::new(App::new((tx_m, rx_m))));
+    let app = Rc::new(RefCell::new(App::new((tx_m, rx_m), status)));
     start_ui(app)?;
     Ok(())
 }

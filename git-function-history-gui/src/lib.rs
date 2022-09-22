@@ -211,21 +211,15 @@ impl MyEguiApp {
                     }
                 };
 
-                match r_resp {
-                    Some(r_resp) => {
-                        if r_resp.clicked() {
-                            history.move_forward();
-                        }
+                if let Some(r_resp) = r_resp {
+                    if r_resp.clicked() {
+                        history.move_forward();
                     }
-                    None => {}
                 }
-                match l_resp {
-                    Some(l_resp) => {
-                        if l_resp.clicked() {
-                            history.move_back();
-                        }
+                if let Some(l_resp) = l_resp {
+                    if l_resp.clicked() {
+                        history.move_back();
                     }
-                    None => {}
                 }
             });
         });
@@ -614,7 +608,13 @@ impl eframe::App for MyEguiApp {
             match self.channels.1.recv_timeout(Duration::from_millis(100)) {
                 Ok(timeout) => match timeout {
                     (_, Status::Error(e)) => {
-                        log::info!("got error last command failed with {}", e);
+                        let e = e.split_once("why").unwrap_or((&e, ""));
+                        let e = format!(
+                            "error recieved last command didn't work; {}{}",
+                            e.0,
+                            e.1.split_once("why").unwrap_or(("", "")).0,
+                        );
+                        log::warn!("{}", e);
                         self.status = Status::Error(e);
                     }
                     (t, Status::Ok(msg)) => {

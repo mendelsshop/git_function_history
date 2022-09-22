@@ -661,8 +661,8 @@ impl FunctionHistory {
                 .cloned()
                 .collect(),
             Filter::DateRange(start, end) => {
-                let start = DateTime::parse_from_rfc2822(&start).expect("Failed to parse date");
-                let end = DateTime::parse_from_rfc2822(&end).expect("Failed to parse date");
+                let start = DateTime::parse_from_rfc2822(&start)?;
+                let end = DateTime::parse_from_rfc2822(&end)?;
                 if start >= end {
                     return Err("Start date is after end date")?;
                 }

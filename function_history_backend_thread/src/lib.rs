@@ -32,6 +32,7 @@ pub fn command_thread(
                 }
             },
             Ok(msg) => {
+                let now = std::time::Instant::now();
                 let msg = match msg {
                     FullCommand::List(list_type) => {
                         if log {
@@ -46,12 +47,20 @@ pub fn command_thread(
                                         }
                                         (
                                             CommandResult::String(commits),
-                                            Status::Ok(Some("Found commits dates".to_string())),
+                                            Status::Ok(Some(format!(
+                                                "Found commits dates took {}s",
+                                                now.elapsed().as_secs()
+                                            ))),
                                         )
                                     }
-                                    Err(err) => {
-                                        (CommandResult::None, Status::Error(err.to_string()))
-                                    }
+                                    Err(err) => (
+                                        CommandResult::None,
+                                        Status::Error(format!(
+                                            "Error getting commits: {} took {}s",
+                                            err,
+                                            now.elapsed().as_secs()
+                                        )),
+                                    ),
                                 }
                             }
                             ListType::Dates => match git_function_history::get_git_dates() {
@@ -61,10 +70,20 @@ pub fn command_thread(
                                     }
                                     (
                                         CommandResult::String(dates),
-                                        Status::Ok(Some("Found dates".to_string())),
+                                        Status::Ok(Some(format!(
+                                            "Found dates took {}s",
+                                            now.elapsed().as_secs()
+                                        ))),
                                     )
                                 }
-                                Err(err) => (CommandResult::None, Status::Error(err.to_string())),
+                                Err(err) => (
+                                    CommandResult::None,
+                                    Status::Error(format!(
+                                        "Error getting dates: {} took {}s",
+                                        err,
+                                        now.elapsed().as_secs()
+                                    )),
+                                ),
                             },
                         }
                     }
@@ -79,10 +98,20 @@ pub fn command_thread(
                                 }
                                 (
                                     CommandResult::History(functions),
-                                    Status::Ok(Some("Found functions".to_string())),
+                                    Status::Ok(Some(format!(
+                                        "Found functions took {}s",
+                                        now.elapsed().as_secs()
+                                    ))),
                                 )
                             }
-                            Err(err) => (CommandResult::None, Status::Error(err.to_string())),
+                            Err(err) => (
+                                CommandResult::None,
+                                Status::Error(format!(
+                                    "Error getting functions: {} took {}s",
+                                    err,
+                                    now.elapsed().as_secs()
+                                )),
+                            ),
                         }
                     }
                     FullCommand::Filter(filter) => {
@@ -97,19 +126,35 @@ pub fn command_thread(
                                     }
                                     (
                                         CommandResult::History(hist),
-                                        Status::Ok(Some("Filtered history".to_string())),
+                                        Status::Ok(Some(format!(
+                                            "Filtered history took {}s",
+                                            now.elapsed().as_secs()
+                                        ))),
                                     )
                                 }
-                                Err(err) => (CommandResult::None, Status::Error(err.to_string())),
+                                Err(err) => (
+                                    CommandResult::None,
+                                    Status::Error(format!(
+                                        "Error filtering history: {} took {}s",
+                                        err,
+                                        now.elapsed().as_secs()
+                                    )),
+                                ),
                             }
                         } else {
                             (
                                 CommandResult::None,
-                                Status::Error("Can't filter this".to_string()),
+                                Status::Error(format!(
+                                    "Can't filter this took {}s",
+                                    now.elapsed().as_secs()
+                                )),
                             )
                         }
                     }
                 };
+                if log {
+                    log::info!("thread finished in {}s", now.elapsed().as_secs());
+                }
                 tx_t.send(msg).unwrap();
             }
         }

@@ -81,7 +81,7 @@ pub enum Filter {
 /// <br>
 /// It will then go through the file and find all the functions and blocks in the file.
 /// <br>
-/// It will then go through the functions and find the ones that match the name als getting the blocks that enclose that function.
+/// It will then go through the functions and find the ones that match the name also getting the blocks that enclose that function.
 /// <br>
 /// It will then return a `FunctionHistory` struct with all the commits with files that have functions that match the name.
 /// <br>
@@ -105,10 +105,7 @@ pub fn get_function_history(
         Err("function name is empty")?;
     }
     // check if git is installed
-    Command::new("git")
-        .arg("--version")
-        .output()
-        .expect("git is not installed");
+    Command::new("git").arg("--version").output()?;
     // get the commit hitory
     let mut command = Command::new("git");
     command.arg("log");
@@ -153,6 +150,7 @@ pub fn get_function_history(
         })
         .collect::<Vec<_>>();
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
+    let mut err = "no history found".to_string();
     match file {
         FileType::Absolute(path) => {
             if !path.ends_with(".rs") {
@@ -167,7 +165,8 @@ pub fn get_function_history(
                             commit.1,
                         ));
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        err += &format!(" why: {}", e);
                         continue;
                     }
                 }
@@ -186,7 +185,8 @@ pub fn get_function_history(
                             commit.1,
                         ));
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        err += &format!(" why: {}", e);
                         continue;
                     }
                 }
@@ -203,7 +203,8 @@ pub fn get_function_history(
                             commit.1,
                         ));
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        err += &format!(" why: {}", e);
                         continue;
                     }
                 }
@@ -211,7 +212,7 @@ pub fn get_function_history(
         }
     }
     if file_history.commit_history.is_empty() {
-        Err("No history found")?;
+        return Err(err)?;
     }
     Ok(file_history)
 }
@@ -257,9 +258,6 @@ fn find_function_in_commit(
     file_path: &str,
     name: &str,
 ) -> Result<Vec<Function>, Box<dyn Error>> {
-    if !file_path.contains("test") {
-        Err("not a test file")?;
-    }
     let file_contents = find_file_in_commit(commit, file_path)?;
     let mut functions = Vec::new();
     get_function_asts(name, &file_contents, &mut functions);
@@ -403,9 +401,9 @@ fn find_function_in_commit(
 fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     let parsed_file = SourceFile::parse(file).tree();
     for item in parsed_file.syntax().descendants() {
-        if let Some(function) = ast::Fn::cast(item.clone()) {
+        if let Some(function) = ast::Fn::cast(item) {
             if function.name().unwrap().text() == name {
-                functions.push(function.clone());
+                functions.push(function);
             }
         }
     }
@@ -542,15 +540,19 @@ fn find_function_in_commit_with_filetype(
             _ => {}
         }
     }
+    let mut err = "no function found".to_string();
     let mut returns = Vec::new();
     for file in files {
         match find_function_in_commit(commit, file, name) {
             Ok(functions) => returns.push(File::new(file.to_string(), functions)),
-            Err(_) => continue,
+            Err(e) => {
+                err += &format!("why: {}", e);
+                continue;
+            }
         }
     }
     if returns.is_empty() {
-        Err("No functions found")?;
+        Err(err)?;
     }
     Ok(returns)
 }

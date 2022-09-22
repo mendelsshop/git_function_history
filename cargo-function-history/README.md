@@ -2,6 +2,8 @@
 
 # cargo function history
 
+* needs at least 15*15 terminal size
+
 A cargo frontend for the [git function history library](https://crates.io/crates/git-function-history).
 
 ## Installation
@@ -24,9 +26,9 @@ or cargo-function-history `<function-name<:filename>> <options>`
 
 - `--filter-date-range=<date1>:<date2>`: filter to the given date range
 
-- `file-absolute`: search the exact file with the filename specified after the function name
+- `--file-absolute`: search the exact file with the filename specified after the function name
 
-- `file-relative`: search any file ending with the filename specified after the function name
+- `--file-relative`: search any file ending with the filename specified after the function name
 
 ### using the tui
 
@@ -57,6 +59,8 @@ To enter editing mode press `:` then you will see the command pane change to the
 To exit editing mode press `esc`.
 
 If your command is to long to fit on the screen, you can can use the left and right arrow keys to scroll the command pane.
+
+You can also use the up and down arrow keys to scroll through your command history.
 
 Each command starts with one of three command types:
 
@@ -134,7 +138,37 @@ Then press enter to execute the command, and after executing the command you wil
 
 #### viewing pane
 
+To navigate the viewing pane you need to be in viewing mode. To enter viewing mode from editing mode press `esc`.
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/viewing-pane.png" width="400">
+
+To scroll the file in the viewing pane you can use the the `up` or `k` and `down` or `j` keys.
+
+To move to the next or previous commit you can use the `right` or `l` and `left` or `h` keys.
+
+To move through files in a commit you can use the `shift` + `right` or `l` and `shift` + `left` or `h` keys.
+
+At the top it will show the commit hash, date, and time of the commit.
+With the file name under that.
+
+The file will be shown with the function you searched for with the line numbers.
+
 #### status pane
+
+The status pane is used to display the status of the program.
+
+There are 4 different status types:
+
+- `error`: This status type is used to display errors that occur during the program execution
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/status-pane-err.png" width="400">
+
+- `warning`: This status type is used to display warnings that occur during the program execution
+- `ok`: This status type is used to show when a command has been executed successfully
+
+<img src="https://raw.githubusercontent.com/mendelsshop/git_function_history/main/cargo-function-history/resources/screenshots/status-pane-ok.png" width="400">
+
+- `loading`: This status type is used to show when the program is loading
 
 ## Note
 

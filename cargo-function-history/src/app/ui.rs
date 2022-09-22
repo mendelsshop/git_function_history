@@ -19,6 +19,10 @@ where
     B: Backend,
 {
     let size = rect.size();
+    // check if we have enough space to draw
+    if size.width < 10 || size.height < 10 {
+        panic!("Not enough space to draw");
+    }
     let main_window = draw_main();
     let mut whole_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -94,13 +98,17 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
         }
         _ => None,
     };
-    let tick_text: Vec<Spans> = app
-        .cmd_output
-        .to_string()
-        .split('\n')
-        .map(|s| Spans::from(format!("{}\n", s)))
-        .collect();
-
+    let tick_text: Vec<Spans> = match &app.cmd_output {
+        CommandResult::None => match app.status {
+            Status::Loading => vec![Spans::from("Loading...")],
+            _ => vec![Spans::from("No output")],
+        },
+        a => a
+            .to_string()
+            .split('\n')
+            .map(|s| Spans::from(format!("{}\n", s)))
+            .collect(),
+    };
     let body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .scroll(app.scroll_pos)

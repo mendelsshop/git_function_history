@@ -38,12 +38,12 @@ impl Action {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
             Action::TextEdit => &[Key::Char(':'), Key::Shift(':')],
-            Action::ScrollUp => &[Key::Up],
-            Action::ScrollDown => &[Key::Down],
-            Action::BackCommit => &[Key::Left],
-            Action::ForwardCommit => &[Key::Right],
-            Action::BackFile => &[Key::Shiftleft],
-            Action::ForwardFile => &[Key::Shiftright],
+            Action::ScrollUp => &[Key::Up, Key::Char('k')],
+            Action::ScrollDown => &[Key::Down, Key::Char('j')],
+            Action::BackCommit => &[Key::Left, Key::Char('h')],
+            Action::ForwardCommit => &[Key::Right, Key::Char('l')],
+            Action::BackFile => &[Key::Shiftleft, Key::Char('H'), Key::Shift('h')],
+            Action::ForwardFile => &[Key::Shiftright, Key::Char('L'), Key::Shift('l')],
         }
     }
 }

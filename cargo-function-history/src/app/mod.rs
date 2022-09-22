@@ -7,6 +7,7 @@ use function_history_backend_thread::types::{
 };
 use git_function_history::{BlockType, FileType, Filter};
 use std::{sync::mpsc, time::Duration};
+use tui_input::InputRequest;
 pub mod actions;
 pub mod state;
 pub mod ui;
@@ -30,6 +31,8 @@ pub struct App {
         mpsc::Receiver<(CommandResult, Status)>,
     ),
     status: Status,
+    pub history: Vec<String>,
+    pub history_index: usize,
 }
 
 impl App {
@@ -39,6 +42,7 @@ impl App {
             mpsc::Sender<FullCommand>,
             mpsc::Receiver<(CommandResult, Status)>,
         ),
+        status: Status,
     ) -> Self {
         let actions = vec![
             Action::Quit,
@@ -60,7 +64,9 @@ impl App {
             scroll_pos: (0, 0),
             body_height: 0,
             channels,
-            status: Status::Ok(None),
+            status,
+            history: vec![],
+            history_index: 0,
         }
     }
 
@@ -94,7 +100,6 @@ impl App {
                     self.scroll_pos.0 += 1;
                     AppReturn::Continue
                 }
-                // TODO reset other things
                 Action::BackCommit => {
                     if let CommandResult::History(t) = &mut self.cmd_output {
                         t.move_back();
@@ -466,7 +471,13 @@ impl App {
         match self.channels.1.recv_timeout(Duration::from_millis(100)) {
             Ok(timeout) => match timeout {
                 (_, Status::Error(e)) => {
-                    log::info!("error recieved last command didn't work; {}", e);
+                    let e = e.split_once("why").unwrap_or((&e, ""));
+                    let e = format!(
+                        " error recieved last command didn't work; {}{}",
+                        e.0,
+                        e.1.split_once("why").unwrap_or(("", "")).0,
+                    );
+                    log::warn!("{}", e);
                     self.status = Status::Error(e);
                 }
                 (t, Status::Ok(msg)) => {
@@ -482,6 +493,40 @@ impl App {
                     panic!("Thread Channel Disconnected");
                 }
             },
+        }
+    }
+    pub fn reset_and_save(&mut self) {
+        let input = self.input_buffer.to_string();
+        if !input.is_empty() {
+            self.history.push(input);
+        }
+        self.input_buffer.reset();
+    }
+
+    pub fn scroll_up(&mut self) {
+        self.history_index = self.history_index.saturating_sub(1);
+        let strs = match self.history.get(self.history_index) {
+            Some(string) => string.as_str(),
+            None => "",
+        };
+        for character in strs.chars() {
+            let req = InputRequest::InsertChar(character);
+            self.input_buffer.handle(req);
+        }
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.history_index = match self.history_index.saturating_add(1) {
+            i if i >= self.history.len() - 1 => self.history.len() - 1,
+            i => i,
+        };
+        let strs = match self.history.get(self.history_index) {
+            Some(string) => string.as_str(),
+            None => "",
+        };
+        for character in strs.chars() {
+            let req = InputRequest::InsertChar(character);
+            self.input_buffer.handle(req);
         }
     }
 }
