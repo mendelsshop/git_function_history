@@ -1,4 +1,4 @@
-use eframe::{epaint::{Vec2}, run_native};
+use eframe::{epaint::Vec2, run_native};
 use git_function_history_gui::MyEguiApp;
 use std::sync::mpsc;
 fn main() {
