@@ -24,3 +24,4 @@
 - version 7.0
   - [ ] add more and better ways to filter dates
   - [ ] add filters for git specific stuff like author, committer, etc
+  - [ ] ability to get a git repo from a url using something like git clone
