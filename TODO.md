@@ -13,6 +13,7 @@
 - TUI
   - [x] use a proper input box for the edit bar, so that delete and scrolling the input works
   - [x] finish documentation
+  - [ ] add icons for taskbars/launching the app
 
 - General
   - [x] add the new filters to the GUI and TUI
