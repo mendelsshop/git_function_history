@@ -1,4 +1,4 @@
-use eframe::{epaint::Vec2, run_native};
+use eframe::{epaint::{Vec2}, run_native};
 use git_function_history_gui::MyEguiApp;
 use std::sync::mpsc;
 fn main() {
@@ -9,10 +9,18 @@ fn main() {
         simple_file_logger::LogLevel::Info,
     )
     .unwrap();
+    use image::ImageFormat::Png;
+    const ICON: &[u8] = include_bytes!("../resources/icon1.png");
+    let icon = image::load_from_memory_with_format(ICON, Png).unwrap();
     function_history_backend_thread::command_thread(rx_t, tx_t, true);
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(Vec2::new(800.0, 600.0)),
         transparent: true,
+        icon_data: Some(eframe::IconData {
+            width: icon.width(),
+            height: icon.height(),
+            rgba: icon.into_bytes(),
+        }),
         ..Default::default()
     };
     run_native(
