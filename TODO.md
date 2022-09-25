@@ -6,6 +6,7 @@
   - [x] add documentation to new methods
   - [x] add more `get_*` methods whether it `get_mut_*` etc
   - [x] add more filter like to filter to a certain file
+  - [ ] decide when to use par_* (parallelization) vs plain methods cause of the overhead of spawning threads and the like
 
 - GUI
   - [x] fix `thread '<unnamed>' panicked at 'channel disconnected', function_history_backend_thread/src/lib.rs:33:25` error (handling when the channel is disconnected at the end of the program)
