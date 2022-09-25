@@ -19,6 +19,7 @@ use ra_ap_syntax::{
     ast::{self, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
+use rayon::prelude::{IntoParallelRefIterator, IndexedParallelIterator, ParallelIterator};
 
 use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
@@ -177,74 +178,76 @@ pub fn get_function_history(
         })
         .collect::<Vec<_>>();
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
-    let mut err = "no history found".to_string();
+    let err = "no history found".to_string();
     match file {
         FileType::Absolute(path) => {
             if !path.ends_with(".rs") {
                 return Err("not a rust file")?;
             }
-            for commit in commits {
+            file_history.commit_history.append(
+            &mut commits.par_iter().filter_map( move |commit| {
                 match find_function_in_commit(commit.0, &path, name) {
                     Ok(contents) => {
-                        file_history.commit_history.push(CommitFunctions::new(
+                        // file_history.commit_history.push(
+                            Some(CommitFunctions::new(
                             commit.0.to_string(),
                             vec![File::new(path.to_string(), contents)],
                             commit.1,
                             commit.2.to_string(),
                             commit.3.to_string(),
                             commit.4.to_string(),
-                        ));
+                        ))
                     }
-                    Err(e) => {
-                        err += &format!(" why: {}", e);
-                        continue;
+                    Err(_) => {
+                        None
                     }
                 }
-            }
+            }).collect::<Vec<_>>()
+        );
         }
+
         FileType::Relative(ref path) => {
             if !path.ends_with(".rs") {
                 return Err("not a rust file")?;
             }
-            for commit in commits {
+            file_history.commit_history.append(&mut commits.par_iter().filter_map(|commit| {
                 match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.commit_history.push(CommitFunctions::new(
+                        Some(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
                             commit.2.to_string(),
                             commit.3.to_string(),
                             commit.4.to_string(),
-                        ));
+                        ))
                     }
-                    Err(e) => {
-                        err += &format!(" why: {}", e);
-                        continue;
+                    Err(_) => {
+                        // err = e.to_string();
+                        None
                     }
                 }
-            }
+            }).collect::<Vec<_>>());
         }
 
         FileType::None | FileType::Directory(_) => {
-            for commit in commits {
+            file_history.commit_history.append(&mut commits.par_iter().filter_map(|commit| {
                 match find_function_in_commit_with_filetype(commit.0, name, &file) {
                     Ok(contents) => {
-                        file_history.commit_history.push(CommitFunctions::new(
+                        Some(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
                             commit.1,
                             commit.2.to_string(),
                             commit.3.to_string(),
                             commit.4.to_string(),
-                        ));
+                        ))
                     }
-                    Err(e) => {
-                        err += &format!(" why: {}", e);
-                        continue;
+                    Err(_) => {
+                        None
                     }
                 }
-            }
+            }).collect::<Vec<_>>());
         }
     }
     if file_history.commit_history.is_empty() {
@@ -304,13 +307,13 @@ fn find_function_in_commit(
     starts.push(0);
     starts.sort_unstable();
     let map = starts
-        .iter()
+        .par_iter()
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
-    for f in functions {
-        let stuff = get_stuff(&f, &file_contents, &map);
-        let generics = get_genrerics_and_lifetime(&f);
+    for f in &functions {
+        let stuff = get_stuff(f, &file_contents, &map);
+        let generics = get_genrerics_and_lifetime(f);
         let mut parent = f.syntax().parent();
         let mut parent_fn: Vec<FunctionBlock> = Vec::new();
         let mut parent_block = None;
@@ -392,7 +395,7 @@ fn find_function_in_commit(
             );
             parent = p.parent();
         }
-        let attr = get_doc_comments_and_attrs(&f);
+        let attr = get_doc_comments_and_attrs(f);
         let mut start = stuff.0 .0;
         let bb = match map[&start] {
             0 => 0,
@@ -436,13 +439,12 @@ fn find_function_in_commit(
 
 fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     let parsed_file = SourceFile::parse(file).tree();
-    for item in parsed_file.syntax().descendants() {
-        if let Some(function) = ast::Fn::cast(item) {
-            if function.name().unwrap().text() == name {
-                functions.push(function);
-            }
-        }
-    }
+    parsed_file
+        .syntax()
+        .descendants()
+        .filter_map(ast::Fn::cast)
+        .filter(|function| function.name().unwrap().text() == name)
+        .for_each(|function| functions.push(function));
 }
 
 fn get_stuff<T: AstNode>(
@@ -576,17 +578,16 @@ fn find_function_in_commit_with_filetype(
             _ => {}
         }
     }
-    let mut err = "no function found".to_string();
+    let err = "no function found".to_string();
     let mut returns = Vec::new();
-    for file in files {
+    returns.append(&mut files.par_iter().filter_map(|file| {
         match find_function_in_commit(commit, file, name) {
-            Ok(functions) => returns.push(File::new(file.to_string(), functions)),
-            Err(e) => {
-                err += &format!("why: {}", e);
-                continue;
+            Ok(functions) => Some(File::new((*file).to_string(), functions)),
+            Err(_) => {
+                None
             }
         }
-    }
+    }).collect());
     if returns.is_empty() {
         Err(err)?;
     }
@@ -703,3 +704,5 @@ mod tests {
         assert!(output.is_ok());
     }
 }
+
+

@@ -12,3 +12,4 @@ description = "show function history from git"
 [dependencies]
 chrono = "0.4"
 ra_ap_syntax = "0.0.129"
+rayon = "1.5.3"

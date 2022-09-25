@@ -1,4 +1,5 @@
 use chrono::{DateTime, FixedOffset};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::Filter;
@@ -568,7 +569,7 @@ impl FunctionHistory {
     /// This will return a vector of all the commit hashess in the history.
     pub fn list_commit_hashes(&self) -> Vec<&str> {
         self.commit_history
-            .iter()
+            .par_iter()
             .map(|c| c.commit_hash.as_ref())
             .collect()
     }
@@ -648,7 +649,7 @@ impl FunctionHistory {
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         let vec: Vec<CommitFunctions> = self
             .commit_history
-            .iter()
+            .par_iter()
             .filter(|f| match filter {
                 Filter::FunctionInLines(..)
                 | Filter::FunctionWithParent(_)
