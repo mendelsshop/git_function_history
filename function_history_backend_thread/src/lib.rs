@@ -91,7 +91,7 @@ pub fn command_thread(
                         if log {
                             log::info!("Searching for {} in {:?}", name, file);
                         }
-                        match get_function_history(&name, file, filter) {
+                        match get_function_history(&name, &file, filter) {
                             Ok(functions) => {
                                 if log {
                                     log::info!("Found functions");

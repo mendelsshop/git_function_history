@@ -19,11 +19,7 @@ use ra_ap_syntax::{
     ast::{self, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
-use rayon::{
-    prelude::{IndexedParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator},
-    slice::ParallelSliceMut,
-    str::ParallelString,
-};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
@@ -108,9 +104,9 @@ pub enum Filter {
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
-    file: FileType,
+    file: &FileType,
     filter: Filter,
-) -> Result<FunctionHistory, Box<dyn Error>> {
+) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
         Err("function name is empty")?;
@@ -162,60 +158,54 @@ pub fn get_function_history(
     }
     let stdout = String::from_utf8(output.stdout)?;
     let commits = stdout
-        .par_lines()
+        .lines()
         .map(|line| {
             let mut parts = line.split(';');
-            let id = parts.next().expect("no id found in git command output");
+            let id = parts
+                .next()
+                .unwrap_to_error("no id found in git command output");
             let date = parts
                 .next()
-                .expect("date is missing from git command output");
+                .unwrap_to_error("date is missing from git command output");
             let author = parts
                 .next()
-                .expect("author is missing from git command output");
+                .unwrap_to_error("author is missing from git command output");
             let email = parts
                 .next()
-                .expect("email is missing from git command output");
+                .unwrap_to_error("email is missing from git command output");
             let message = parts
                 .next()
-                .expect("message is missing from git command output");
-            (id, date, author, email, message)
+                .unwrap_to_error("message is missing from git command output");
+            Ok((id?, date?, author?, email?, message?))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
+
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
     let err = "no history found".to_string();
-    match file {
-        FileType::Absolute(path) => {
-            if !path.ends_with(".rs") {
-                return Err("not a rust file")?;
-            }
-            file_history
-                .commit_history
-                .par_extend(commits.par_iter().filter_map(move |commit| {
-                    match find_function_in_commit(commit.0, &path, name) {
-                        Ok(contents) => {
-                            // file_history.commit_history.push(
-                            Some(CommitFunctions::new(
-                                commit.0.to_string(),
-                                vec![File::new(path.to_string(), contents)],
-                                commit.1,
-                                commit.2.to_string(),
-                                commit.3.to_string(),
-                                commit.4.to_string(),
-                            ))
-                        }
-                        Err(_) => None,
-                    }
-                }));
+    // check if file is a rust file
+    if let FileType::Absolute(path) | FileType::Relative(path) = &file {
+        if !path.ends_with(".rs") {
+            Err("file is not a rust file")?;
         }
+    }
+    file_history.commit_history = commits
+        .par_iter()
+        .filter_map(|commit| {
+            match &file {
+                FileType::Absolute(path) => match find_function_in_commit(commit.0, path, name) {
+                    Ok(contents) => Some(CommitFunctions::new(
+                        commit.0.to_string(),
+                        vec![File::new(path.to_string(), contents)],
+                        commit.1,
+                        commit.2.to_string(),
+                        commit.3.to_string(),
+                        commit.4.to_string(),
+                    )),
+                    Err(_) => None,
+                },
 
-        FileType::Relative(ref path) => {
-            if !path.ends_with(".rs") {
-                return Err("not a rust file")?;
-            }
-            file_history
-                .commit_history
-                .par_extend(commits.par_iter().filter_map(|commit| {
-                    match find_function_in_commit_with_filetype(commit.0, name, &file) {
+                FileType::Relative(_) => {
+                    match find_function_in_commit_with_filetype(commit.0, name, file) {
                         Ok(contents) => Some(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
@@ -229,13 +219,10 @@ pub fn get_function_history(
                             None
                         }
                     }
-                }));
-        }
+                }
 
-        FileType::None | FileType::Directory(_) => {
-            file_history.commit_history.par_extend(
-                commits.par_iter().filter_map(
-                    |commit| match find_function_in_commit_with_filetype(commit.0, name, &file) {
+                FileType::None | FileType::Directory(_) => {
+                    match find_function_in_commit_with_filetype(commit.0, name, file) {
                         Ok(contents) => Some(CommitFunctions::new(
                             commit.0.to_string(),
                             contents,
@@ -245,11 +232,11 @@ pub fn get_function_history(
                             commit.4.to_string(),
                         )),
                         Err(_) => None,
-                    },
-                ), // .collect::<Vec<_>>(),
-            );
-        }
-    }
+                    }
+                }
+            }
+        })
+        .collect();
     if file_history.commit_history.is_empty() {
         return Err(err)?;
     }
@@ -305,10 +292,9 @@ fn find_function_in_commit(
         .map(|x| x.0)
         .collect::<Vec<_>>();
     starts.push(0);
-    // starts.sort_unstable();
-    starts.par_sort();
+    starts.sort_unstable();
     let map = starts
-        .par_iter()
+        .iter()
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
@@ -506,7 +492,7 @@ fn get_stuff<T: AstNode>(
                 "\n{}: {}",
                 end_line,
                 file.lines()
-                    .nth(if end_line == file.par_lines().count() - 1 {
+                    .nth(if end_line == file.lines().count() - 1 {
                         end_line
                     } else {
                         end_line - 1
@@ -580,13 +566,13 @@ fn find_function_in_commit_with_filetype(
         }
     }
     let err = "no function found".to_string();
-    let mut returns = Vec::new();
-    returns.par_extend(files.par_iter().filter_map(|file| {
-        match find_function_in_commit(commit, file, name) {
+    let returns: Vec<File> = files
+        .par_iter()
+        .filter_map(|file| match find_function_in_commit(commit, file, name) {
             Ok(functions) => Some(File::new((*file).to_string(), functions)),
             Err(_) => None,
-        }
-    }));
+        })
+        .collect();
     if returns.is_empty() {
         Err(err)?;
     }
@@ -594,11 +580,11 @@ fn find_function_in_commit_with_filetype(
 }
 
 trait UwrapToError<T> {
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>>;
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>>;
 }
 
 impl<T> UwrapToError<T> for Option<T> {
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         match self {
             Some(val) => Ok(val),
             None => Err(message.to_string().into()),
@@ -616,7 +602,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            FileType::Relative("src/test_functions.rs".to_string()),
+            &FileType::Relative("src/test_functions.rs".to_string()),
             Filter::None,
         );
         let after = Utc::now() - now;
@@ -633,7 +619,7 @@ mod tests {
     fn git_installed() {
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.rs".to_string()),
+            &FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
         // assert that err is "not git is not installed"
@@ -646,7 +632,7 @@ mod tests {
     fn not_found() {
         let output = get_function_history(
             "Not_a_function",
-            FileType::Absolute("src/test_functions.rs".to_string()),
+            &FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
         );
         match &output {
@@ -660,18 +646,18 @@ mod tests {
     fn not_rust_file() {
         let output = get_function_history(
             "empty_test",
-            FileType::Absolute("src/test_functions.txt".to_string()),
+            &FileType::Absolute("src/test_functions.txt".to_string()),
             Filter::None,
         );
         assert!(output.is_err());
-        assert_eq!(output.unwrap_err().to_string(), "not a rust file");
+        assert_eq!(output.unwrap_err().to_string(), "file is not a rust file");
     }
     #[test]
     fn test_date() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            FileType::None,
+            &FileType::None,
             Filter::DateRange(
                 "17 Aug 2022 11:27:23 -0400".to_owned(),
                 "19 Aug 2022 23:45:52 +0000".to_owned(),
@@ -691,7 +677,7 @@ mod tests {
     #[test]
     fn expensive_tes() {
         let now = Utc::now();
-        let output = get_function_history("empty_test", FileType::None, Filter::None);
+        let output = get_function_history("empty_test", &FileType::None, Filter::None);
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
