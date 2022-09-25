@@ -306,40 +306,33 @@ impl File {
     /// returns a new `File` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInBlock`, `Filter::FunctionInLines`, and `Filter::FunctionWithParent`.
-    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
-        let vec: Vec<Function> = match filter {
-            Filter::FunctionInBlock(block_type) => self
-                .functions
-                .iter()
-                .filter(|f| {
-                    f.block
-                        .as_ref()
-                        .map_or(false, |block| block.block_type == block_type)
-                })
-                .cloned()
-                .collect(),
-            Filter::FunctionInLines(start, end) => self
-                .functions
-                .iter()
-                .filter(|f| f.lines.0 >= start && f.lines.1 <= end)
-                .cloned()
-                .collect(),
-            Filter::FunctionWithParent(parent) => self
-                .functions
-                .iter()
-                .filter(|f| {
-                    for parents in &f.function {
-                        if parents.name == parent {
-                            return true;
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        let mut vec = Vec::new();
+        for function in &self.functions {
+            match &filter {
+                Filter::FunctionInBlock(block_type) => {
+                    if let Some(block) = &function.block {
+                        if block.block_type == *block_type {
+                            vec.push(function.clone());
                         }
                     }
-                    false
-                })
-                .cloned()
-                .collect(),
-            Filter::None => self.functions.clone(),
-            _ => return Err("Filter not available")?,
-        };
+                }
+                Filter::FunctionInLines(start, end) => {
+                    if function.lines.0 >= *start && function.lines.1 <= *end {
+                        vec.push(function.clone());
+                    }
+                }
+                Filter::FunctionWithParent(parent) => {
+                    for parents in &function.function {
+                        if parents.name == *parent {
+                            vec.push(function.clone());
+                        }
+                    }
+                }
+                Filter::None => vec.push(function.clone()),
+                _ => return Err("Filter not available")?,
+            }
+        }
         if vec.is_empty() {
             return Err("No functions found for filter")?;
         }
@@ -411,17 +404,30 @@ pub struct CommitFunctions {
     date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,
+    author: String,
+    email: String,
+    message: String,
 }
 
 impl CommitFunctions {
     /// Create a new `CommitFunctions` with the given `commit_hash`, functions, and date.
-    pub fn new(commit_hash: String, files: Vec<File>, date: &str) -> Self {
+    pub fn new(
+        commit_hash: String,
+        files: Vec<File>,
+        date: &str,
+        author: String,
+        email: String,
+        message: String,
+    ) -> Self {
         Self {
             commit_hash,
             files,
             date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
             current_pos: 0,
             current_iter_pos: 0,
+            author,
+            email,
+            message,
         }
     }
 
@@ -477,36 +483,36 @@ impl CommitFunctions {
     /// returns a new `CommitFunctions` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInBlock`, `Filter::FunctionInLines`, `Filter::FunctionWithParent`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
-    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
-        let vec: Vec<File> = match filter {
-            Filter::FileAbsolute(file) => self
-                .files
-                .iter()
-                .filter(|f| f.name == file)
-                .cloned()
-                .collect(),
-            Filter::FileRelative(file) => self
-                .files
-                .iter()
-                .filter(|f| f.name.ends_with(&file))
-                .cloned()
-                .collect(),
-            Filter::Directory(dir) => self
-                .files
-                .iter()
-                .filter(|f| f.name.contains(&dir))
-                .cloned()
-                .collect(),
-            Filter::FunctionInLines(..)
-            | Filter::FunctionWithParent(_)
-            | Filter::FunctionInBlock(_) => self
-                .files
-                .iter()
-                .filter_map(|f| f.filter_by(filter.clone()).to_option())
-                .collect(),
-            Filter::None => self.files.clone(),
-            _ => return Err("Invalid filter")?,
-        };
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        let mut vec = Vec::new();
+        for f in &self.files {
+            match filter {
+                Filter::FileAbsolute(file) => {
+                    if f.name == *file {
+                        vec.push(f.clone());
+                    }
+                }
+                Filter::FileRelative(file) => {
+                    if f.name.ends_with(file) {
+                        vec.push(f.clone());
+                    }
+                }
+                Filter::Directory(dir) => {
+                    if f.name.contains(dir) {
+                        vec.push(f.clone());
+                    }
+                }
+                Filter::FunctionInLines(..)
+                | Filter::FunctionWithParent(_)
+                | Filter::FunctionInBlock(_) => {
+                    if f.filter_by(filter).is_ok() {
+                        vec.push(f.clone());
+                    }
+                }
+                Filter::None => vec.push(f.clone()),
+                _ => Err("Invalid filter")?,
+            }
+        }
         if vec.is_empty() {
             return Err("No files found for filter")?;
         }
@@ -516,6 +522,9 @@ impl CommitFunctions {
             date: self.date,
             current_pos: 0,
             current_iter_pos: 0,
+            author: self.author.clone(),
+            email: self.email.clone(),
+            message: self.message.clone(),
         })
     }
 }
@@ -636,44 +645,38 @@ impl FunctionHistory {
     ///
     /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
     /// ```
-    pub fn filter_by(&self, filter: Filter) -> Result<Self, Box<dyn Error>> {
-        let vec: Vec<CommitFunctions> = match filter {
-            Filter::FunctionInLines(..)
-            | Filter::FunctionWithParent(_)
-            | Filter::FunctionInBlock(_)
-            | Filter::Directory(_)
-            | Filter::FileAbsolute(_)
-            | Filter::FileRelative(_) => self
-                .commit_history
-                .iter()
-                .filter_map(|f| f.filter_by(filter.clone()).to_option())
-                .collect(),
-            Filter::CommitHash(commit_hash) => self
-                .commit_history
-                .iter()
-                .filter(|f| f.commit_hash == commit_hash)
-                .cloned()
-                .collect(),
-            Filter::Date(date) => self
-                .commit_history
-                .iter()
-                .filter(|f| f.date.to_rfc2822() == date)
-                .cloned()
-                .collect(),
-            Filter::DateRange(start, end) => {
-                let start = DateTime::parse_from_rfc2822(&start)?;
-                let end = DateTime::parse_from_rfc2822(&end)?;
-                if start >= end {
-                    return Err("Start date is after end date")?;
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        let vec: Vec<CommitFunctions> = self
+            .commit_history
+            .iter()
+            .filter(|f| match filter {
+                Filter::FunctionInLines(..)
+                | Filter::FunctionWithParent(_)
+                | Filter::FunctionInBlock(_)
+                | Filter::Directory(_)
+                | Filter::FileAbsolute(_)
+                | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
+                Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
+                Filter::Date(date) => &f.date.to_rfc2822() == date,
+                Filter::DateRange(start, end) => {
+                    let start = match DateTime::parse_from_rfc2822(start) {
+                        Ok(date) => date,
+                        Err(_) => return false,
+                    };
+                    let end = match DateTime::parse_from_rfc2822(end) {
+                        Ok(date) => date,
+                        Err(_) => return false,
+                    };
+                    f.date >= start || f.date <= end
                 }
-                self.commit_history
-                    .iter()
-                    .filter(|c| c.date >= start || c.date <= end)
-                    .cloned()
-                    .collect()
-            }
-            Filter::None => self.commit_history.clone(),
-        };
+                Filter::Author(author) => &f.author == author,
+                Filter::AuthorEmail(email) => &f.email == email,
+                Filter::Message(message) => f.message.contains(message),
+                Filter::None => true,
+            })
+            .cloned()
+            .collect();
+
         if vec.is_empty() {
             return Err("No history found for the filter")?;
         }

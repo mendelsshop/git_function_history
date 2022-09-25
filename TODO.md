@@ -13,7 +13,7 @@
 - TUI
   - [x] use a proper input box for the edit bar, so that delete and scrolling the input works
   - [x] finish documentation
-  - [ ] add icons for taskbars/launching the app
+  - [x] add icons for taskbars/launching the app
 
 - General
   - [x] add the new filters to the GUI and TUI
@@ -23,5 +23,5 @@
 
 - version 7.0
   - [ ] add more and better ways to filter dates
-  - [ ] add filters for git specific stuff like author, committer, etc
+  - [x] add filters for git specific stuff like author, committer, etc
   - [ ] ability to get a git repo from a url using something like git clone

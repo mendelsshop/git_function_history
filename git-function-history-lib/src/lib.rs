@@ -60,6 +60,12 @@ pub enum Filter {
     FunctionInLines(usize, usize),
     // when you want filter by a function that has a parent function of a specific name
     FunctionWithParent(String),
+    /// when you want to filter by a any commit author name that contains a specific string
+    Author(String),
+    /// when you want to filter by a any commit author email that contains a specific string
+    AuthorEmail(String),
+    // when you want to filter by a a commit message that contains a specific string
+    Message(String),
     /// When you want to filter by nothing.
     None,
 }
@@ -109,7 +115,7 @@ pub fn get_function_history(
     // get the commit hitory
     let mut command = Command::new("git");
     command.arg("log");
-    command.arg("--pretty=%H;%aD");
+    command.arg("--pretty=%H;%aD;%aN;%aE;%s");
     command.arg("--date=rfc2822");
     match filter {
         Filter::CommitHash(hash) => {
@@ -127,6 +133,18 @@ pub fn get_function_history(
             command.arg(start);
             command.arg("--until");
             command.arg(end);
+        }
+        Filter::Author(author) => {
+            command.arg("--author");
+            command.arg(author);
+        }
+        Filter::AuthorEmail(email) => {
+            command.arg("--author");
+            command.arg(email);
+        }
+        Filter::Message(message) => {
+            command.arg("--grep");
+            command.arg(message);
         }
         Filter::None => {}
         _ => {
@@ -146,7 +164,16 @@ pub fn get_function_history(
             let date = parts
                 .next()
                 .expect("date is missing from git command output");
-            (id, date)
+            let author = parts
+                .next()
+                .expect("author is missing from git command output");
+            let email = parts
+                .next()
+                .expect("email is missing from git command output");
+            let message = parts
+                .next()
+                .expect("message is missing from git command output");
+            (id, date, author, email, message)
         })
         .collect::<Vec<_>>();
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
@@ -163,6 +190,9 @@ pub fn get_function_history(
                             commit.0.to_string(),
                             vec![File::new(path.to_string(), contents)],
                             commit.1,
+                            commit.2.to_string(),
+                            commit.3.to_string(),
+                            commit.4.to_string(),
                         ));
                     }
                     Err(e) => {
@@ -183,6 +213,9 @@ pub fn get_function_history(
                             commit.0.to_string(),
                             contents,
                             commit.1,
+                            commit.2.to_string(),
+                            commit.3.to_string(),
+                            commit.4.to_string(),
                         ));
                     }
                     Err(e) => {
@@ -201,6 +234,9 @@ pub fn get_function_history(
                             commit.0.to_string(),
                             contents,
                             commit.1,
+                            commit.2.to_string(),
+                            commit.3.to_string(),
+                            commit.4.to_string(),
                         ));
                     }
                     Err(e) => {

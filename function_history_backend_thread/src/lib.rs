@@ -119,7 +119,7 @@ pub fn command_thread(
                             if log {
                                 log::info!("Filtering history with filter {:?}", filter.filter);
                             }
-                            match hist.filter_by(filter.filter) {
+                            match hist.filter_by(&filter.filter) {
                                 Ok(hist) => {
                                     if log {
                                         log::info!("Filtered history");
