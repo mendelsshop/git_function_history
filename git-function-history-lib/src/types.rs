@@ -1,4 +1,5 @@
 use chrono::{DateTime, FixedOffset};
+#[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, error::Error, fmt};
 
@@ -569,7 +570,7 @@ impl FunctionHistory {
     /// This will return a vector of all the commit hashess in the history.
     pub fn list_commit_hashes(&self) -> Vec<&str> {
         self.commit_history
-            .par_iter()
+            .iter()
             .map(|c| c.commit_hash.as_ref())
             .collect()
     }
@@ -647,9 +648,13 @@ impl FunctionHistory {
     /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
     /// ```
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-        let vec: Vec<CommitFunctions> = self
-            .commit_history
-            .par_iter()
+        #[cfg(feature = "parallel")]
+        let t = self
+        .commit_history
+        .par_iter();
+        #[cfg(not(feature = "parallel"))]
+        let t = self.commit_history.iter();
+        let vec: Vec<CommitFunctions> = t
             .filter(|f| match filter {
                 Filter::FunctionInLines(..)
                 | Filter::FunctionWithParent(_)

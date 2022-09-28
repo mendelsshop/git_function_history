@@ -13,13 +13,16 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
+
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 use ra_ap_syntax::{
     ast::{self, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
+#[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+
 
 use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
@@ -188,8 +191,11 @@ pub fn get_function_history(
             Err("file is not a rust file")?;
         }
     }
-    file_history.commit_history = commits
-        .par_iter()
+    #[cfg(feature = "parallel")]
+    let t = commits.par_iter();
+    #[cfg(not(feature = "parallel"))]
+    let t = commits.iter();
+    file_history.commit_history = t
         .filter_map(|commit| {
             match &file {
                 FileType::Absolute(path) => match find_function_in_commit(commit.0, path, name) {
@@ -566,8 +572,11 @@ fn find_function_in_commit_with_filetype(
         }
     }
     let err = "no function found".to_string();
-    let returns: Vec<File> = files
-        .par_iter()
+    #[cfg(feature="parellel")]
+    let t = files.par_iter();
+    #[cfg(not(feature="parellel"))]
+    let t = files.iter();
+    let returns: Vec<File> = t
         .filter_map(|file| match find_function_in_commit(commit, file, name) {
             Ok(functions) => Some(File::new((*file).to_string(), functions)),
             Err(_) => None,

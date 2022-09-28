@@ -10,6 +10,11 @@ description = "cargo frontend for git-function-history"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# [features]
+# default = ["parallel"]
+# parallel = ["git_function_history/parallel", "function_history_backend_thread/parallel"]
+# not-parallel = ["git_function_history/default-features"]
+
 [dependencies]
 git_function_history = { path = "../git-function-history-lib", version = "0.6.0" }
 lazy_static = "1.3.0"
