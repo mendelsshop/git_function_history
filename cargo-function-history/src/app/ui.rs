@@ -100,17 +100,20 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
     };
     let tick_text: Vec<Spans> = match &app.cmd_output {
         CommandResult::None => match app.status {
-            Status::Loading =>
-            vec![Spans::from(format!(
+            Status::Loading => vec![Spans::from(format!(
                 "Loading{}",
-                ".".repeat(((std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .expect("Time went backwards")
-                    .as_millis()
-                    / 100)
-                    % 4) as usize)
+                ".".repeat(
+                    ((std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_millis()
+                        / 100)
+                        % 4) as usize
+                )
             ))],
-            _ => vec![Spans::from("Please enter some commands to search for a function.")],
+            _ => vec![Spans::from(
+                "Please enter some commands to search for a function.",
+            )],
         },
         a => a
             .to_string()
