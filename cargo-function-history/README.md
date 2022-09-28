@@ -10,6 +10,10 @@ A cargo frontend for the [git function history library](https://crates.io/crates
 
 cargo install cargo-function-history
 
+Or if you don't want use parallelism:
+
+cargo install cargo-function-history --no-default-features
+
 ## Usage
 
 `cargo function-history <function-name<:filename>> <options>`

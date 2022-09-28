@@ -5,4 +5,9 @@
 
 Show the git history of a function or method.
 Use the latest (beta) version by putting `"git_function_history" = { git = 'https://github.com/mendelsshop/git_function_history' }` in your cargo.toml under `[dependencies]` section.
-Use the latest [crates.io](https://crates.io/crates/git_function_history) by putting `git_function_history = "0.6.1"` in your cargo.toml under `[dependencies]` section.
+Use the latest [crates.io](https://crates.io/crates/git_function_history) by putting `git_function_history = "0.6.2"` in your cargo.toml under `[dependencies]` section.
+
+## features
+
+- parallel: use rayon to parallelize the git log search
+- --no-default-features: disable parallelism

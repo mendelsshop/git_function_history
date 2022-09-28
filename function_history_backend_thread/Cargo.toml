@@ -1,6 +1,6 @@
 [package]
 name = "function_history_backend_thread"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/mendelsshop/git_function_history/tree/main/function_history_backend_thread"
@@ -11,11 +11,11 @@ description = "threading and types for git-function-history"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
-# [features]
-# default = ["parallel"]
-# parallel = ["git_function_history/parallel"]
-# not-parallel = []
+[features]
+default = ["parallel"]
+parallel = ["git_function_history/parallel"]
+not-parallel = []
 
 [dependencies]
-git_function_history = { path = "../git-function-history-lib", version = "0.6.1" }
+git_function_history = { path = "../git-function-history-lib", version = "0.6.2", default-features = false}
 log = "0.4"

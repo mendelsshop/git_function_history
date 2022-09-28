@@ -8,6 +8,10 @@ A GUI frontend for the [git function history library](https://crates.io/crates/g
 
 cargo install git-function-history-gui
 
+or if you don't want to use parallelism:
+
+cargo install git-function-history-gui --no-default-features
+
 ### Note
 
 Under Linux you may need to install the following packages:
