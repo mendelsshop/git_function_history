@@ -195,48 +195,44 @@ pub fn get_function_history(
     #[cfg(not(feature = "parallel"))]
     let t = commits.iter();
     file_history.commit_history = t
-        .filter_map(|commit| {
-            match &file {
-                FileType::Absolute(path) => match find_function_in_commit(commit.0, path, name) {
+        .filter_map(|commit| match &file {
+            FileType::Absolute(path) => match find_function_in_commit(commit.0, path, name) {
+                Ok(contents) => Some(CommitFunctions::new(
+                    commit.0.to_string(),
+                    vec![File::new(path.to_string(), contents)],
+                    commit.1,
+                    commit.2.to_string(),
+                    commit.3.to_string(),
+                    commit.4.to_string(),
+                )),
+                Err(_) => None,
+            },
+
+            FileType::Relative(_) => {
+                match find_function_in_commit_with_filetype(commit.0, name, file) {
                     Ok(contents) => Some(CommitFunctions::new(
                         commit.0.to_string(),
-                        vec![File::new(path.to_string(), contents)],
+                        contents,
                         commit.1,
                         commit.2.to_string(),
                         commit.3.to_string(),
                         commit.4.to_string(),
                     )),
                     Err(_) => None,
-                },
-
-                FileType::Relative(_) => {
-                    match find_function_in_commit_with_filetype(commit.0, name, file) {
-                        Ok(contents) => Some(CommitFunctions::new(
-                            commit.0.to_string(),
-                            contents,
-                            commit.1,
-                            commit.2.to_string(),
-                            commit.3.to_string(),
-                            commit.4.to_string(),
-                        )),
-                        Err(_) => {
-                            None
-                        }
-                    }
                 }
+            }
 
-                FileType::None | FileType::Directory(_) => {
-                    match find_function_in_commit_with_filetype(commit.0, name, file) {
-                        Ok(contents) => Some(CommitFunctions::new(
-                            commit.0.to_string(),
-                            contents,
-                            commit.1,
-                            commit.2.to_string(),
-                            commit.3.to_string(),
-                            commit.4.to_string(),
-                        )),
-                        Err(_) => None,
-                    }
+            FileType::None | FileType::Directory(_) => {
+                match find_function_in_commit_with_filetype(commit.0, name, file) {
+                    Ok(contents) => Some(CommitFunctions::new(
+                        commit.0.to_string(),
+                        contents,
+                        commit.1,
+                        commit.2.to_string(),
+                        commit.3.to_string(),
+                        commit.4.to_string(),
+                    )),
+                    Err(_) => None,
                 }
             }
         })

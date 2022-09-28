@@ -1,4 +1,4 @@
-use std::{cell::RefCell, io::stdout, process::exit, rc::Rc, time::Duration, path::PathBuf};
+use std::{cell::RefCell, io::stdout, path::PathBuf, process::exit, rc::Rc, time::Duration};
 
 use crate::app::ui;
 use app::{state::AppState, App, AppReturn};
@@ -87,8 +87,9 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
 }
 
 fn get_history_dir() -> Result<PathBuf> {
-    let mut path = dirs::data_local_dir().ok_or_else(|| eyre::eyre!("Could not find data local dir"))?;
+    let mut path =
+        dirs::data_local_dir().ok_or_else(|| eyre::eyre!("Could not find data local dir"))?;
     path.push("cargo_function_history");
     path.push("history.txt");
     Ok(path)
-} 
+}
