@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
