@@ -23,7 +23,6 @@ use ra_ap_syntax::{
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-
 use std::{collections::HashMap, error::Error, process::Command};
 pub use types::{
     Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
@@ -572,9 +571,9 @@ fn find_function_in_commit_with_filetype(
         }
     }
     let err = "no function found".to_string();
-    #[cfg(feature="parellel")]
+    #[cfg(feature = "parellel")]
     let t = files.par_iter();
-    #[cfg(not(feature="parellel"))]
+    #[cfg(not(feature = "parellel"))]
     let t = files.iter();
     let returns: Vec<File> = t
         .filter_map(|file| match find_function_in_commit(commit, file, name) {

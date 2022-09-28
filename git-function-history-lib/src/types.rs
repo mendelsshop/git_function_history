@@ -649,9 +649,7 @@ impl FunctionHistory {
     /// ```
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]
-        let t = self
-        .commit_history
-        .par_iter();
+        let t = self.commit_history.par_iter();
         #[cfg(not(feature = "parallel"))]
         let t = self.commit_history.iter();
         let vec: Vec<CommitFunctions> = t
