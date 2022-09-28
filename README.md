@@ -1,4 +1,4 @@
-# ![Custom badge](https://img.shields.io/endpoint?color=green&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmendelsshop%2Fgit_function_history%2Fstats%2Floc.json) ![Custom badge](https://img.shields.io/endpoint?color=green&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmendelsshop%2Fgit_function_history%2Fstats%2Fdownloads.json)
+# ![Custom badge](https://img.shields.io/endpoint?color=green&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmendelsshop%2Fgit_function_history%2Fstats%2Floc.json) ![Custom badge](https://img.shields.io/endpoint?color=green&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmendelsshop%2Fgit_function_history%2Fstats%2Fdownloads.json) [![dependency status](https://deps.rs/repo/github/mendelsshop/git_function_history/status.svg)](https://deps.rs/repo/github/mendelsshop/git_function_history)
 
 # git function history
 
@@ -12,7 +12,7 @@ Parser (main) vs Regex approach benchmarks:
 
 * These benchmarks were done in debug mode on a Ryzen 7 5700u with 16Gb of ram.
 
-## Structure of this project
+## crates in this project
 
 * [git-function-history-lib](https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-lib) - the library itself
 * [function_history_backend_thread](https://github.com/mendelsshop/git_function_history/tree/main/function_history_backend_thread) - a threading middleware for the library (used by the GUI and TUI)
