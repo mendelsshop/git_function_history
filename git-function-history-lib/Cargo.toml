@@ -10,6 +10,6 @@ description = "show function history from git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4"
-ra_ap_syntax = "0.0.129"
+chrono = "0.4.22"
+ra_ap_syntax = "0.0.131"
 rayon = "1.5.3"

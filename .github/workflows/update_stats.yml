@@ -1,4 +1,4 @@
-name: update loc every 6 hours
+name: update loc & downloads every 1 hour
 on:
   schedule:
     # every 1 hour
@@ -9,9 +9,6 @@ jobs:
   update_loc:
     runs-on: ubuntu-latest
     steps:
-      # - uses: actions/checkout@v3
-      #   with:
-      #     ref: stats
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
       - name: install tokei
@@ -32,9 +29,6 @@ jobs:
   update_downloads:
     runs-on: ubuntu-latest
     steps:
-      # - uses: actions/checkout@v3
-      #   with:
-      #     ref: stats
       - name: install python
         uses: actions/setup-python@v2
       - name: install dependencies
