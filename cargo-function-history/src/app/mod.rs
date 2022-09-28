@@ -6,7 +6,7 @@ use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, Status,
 };
 use git_function_history::{BlockType, FileType, Filter};
-use std::{sync::mpsc, time::Duration};
+use std::{sync::mpsc, time::Duration, fs, io::{Write, Read}};
 use tui_input::InputRequest;
 pub mod actions;
 pub mod state;
@@ -44,6 +44,16 @@ impl App {
         ),
         status: Status,
     ) -> Self {
+        // read history from file
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(super::get_history_dir().expect("No history path")).expect("Failed to open history file");
+        let mut history = String::new();
+        file.read_to_string(&mut history).expect("Failed to read history file");
+        let history = history.split('\n').map(|s| s.to_string()).collect();
+
         let actions = vec![
             Action::Quit,
             Action::TextEdit,
@@ -65,7 +75,7 @@ impl App {
             body_height: 0,
             channels,
             status,
-            history: vec![],
+            history,
             history_index: 0,
         }
     }
@@ -496,9 +506,25 @@ impl App {
         }
     }
     pub fn reset_and_save(&mut self) {
-        let input = self.input_buffer.to_string();
+        let mut input = self.input_buffer.to_string();
         if !input.is_empty() {
-            self.history.push(input);
+            let mut file = fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(super::get_history_dir().expect("No history path"))
+            .expect("Failed to open history file");
+            // check if the last command was the same as the current one
+            if let Some(last) = self.history.last() {
+                if last != &input {
+                    input.push('\n');
+                    file.write_all(input.as_bytes()).expect("Failed to write to history file");
+                    self.history.push(input.trim().to_string());
+                }
+            } else {
+                input.push('\n');
+                file.write_all(input.as_bytes()).expect("Failed to write to history file");
+                self.history.push(input.trim().to_string());
+            }
         }
         self.input_buffer.reset();
     }

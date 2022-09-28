@@ -220,7 +220,6 @@ pub fn get_function_history(
                             commit.4.to_string(),
                         )),
                         Err(_) => {
-                            // err = e.to_string();
                             None
                         }
                     }

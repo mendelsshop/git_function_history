@@ -217,8 +217,8 @@ On the right hand side there is as a button to change the theme.
 ## Future plans
 
 - [x] Add a way to filter by file name(s)
-- [ ] Add a way to filter by more git stuff (author, email, etc)
+- [x] Add a way to filter by more git stuff (author, email, etc)
 - [ ] Add a way to filter by block name
-- [ ] Add a way to search multiple files at once
+- [/] Add a way to search multiple files at once
 
 Note: most of these features need to be added to the underlying library first.
