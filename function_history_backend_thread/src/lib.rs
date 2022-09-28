@@ -32,6 +32,7 @@ pub fn command_thread(
                 }
             },
             Ok(msg) => {
+                let now = std::time::Instant::now();
                 let msg = match msg {
                     FullCommand::List(list_type) => {
                         if log {
@@ -46,7 +47,7 @@ pub fn command_thread(
                                         }
                                         (
                                             CommandResult::String(commits),
-                                            Status::Ok(Some("Found commits dates".to_string())),
+                                            Status::Ok(Some(format!("Found commits hashes took {}s", now.elapsed().as_secs()))),
                                         )
                                     }
                                     Err(err) => {
@@ -61,7 +62,7 @@ pub fn command_thread(
                                     }
                                     (
                                         CommandResult::String(dates),
-                                        Status::Ok(Some("Found dates".to_string())),
+                                        Status::Ok(Some(format!("Found commits dates took {}s", now.elapsed().as_secs()))),
                                     )
                                 }
                                 Err(err) => (CommandResult::None, Status::Error(err.to_string())),
@@ -79,7 +80,7 @@ pub fn command_thread(
                                 }
                                 (
                                     CommandResult::History(functions),
-                                    Status::Ok(Some("Found functions".to_string())),
+                                    Status::Ok(Some(format!("Found functions took {}s", now.elapsed().as_secs()))),
                                 )
                             }
                             Err(err) => (CommandResult::None, Status::Error(err.to_string())),
@@ -97,7 +98,7 @@ pub fn command_thread(
                                     }
                                     (
                                         CommandResult::History(hist),
-                                        Status::Ok(Some("Filtered history".to_string())),
+                                        Status::Ok(Some(format!("Filtered history took {}s", now.elapsed().as_secs()))),
                                     )
                                 }
                                 Err(err) => (CommandResult::None, Status::Error(err.to_string())),
