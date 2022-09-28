@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 use function_history_backend_thread::types::Status;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -100,8 +100,17 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
     };
     let tick_text: Vec<Spans> = match &app.cmd_output {
         CommandResult::None => match app.status {
-            Status::Loading => vec![Spans::from("Loading...")],
-            _ => vec![Spans::from("No output")],
+            Status::Loading =>
+            vec![Spans::from(format!(
+                "Loading{}",
+                ".".repeat(((std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis()
+                    / 100)
+                    % 4) as usize)
+            ))],
+            _ => vec![Spans::from("Please enter some commands to search for a function.")],
         },
         a => a
             .to_string()

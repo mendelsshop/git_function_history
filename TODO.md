@@ -19,10 +19,7 @@
 - General
   - [x] add the new filters to the GUI and TUI
   - [/] clean up the code
-  - [x] add more logging in the code (and remove the `println!`s)
-  - [x] bump versions when all else is done and publish to crates.io
-
-- version 7.0
+  - [/] add more logging in the code (and remove the `println!`s)
   - [ ] add more and better ways to filter dates
   - [x] add filters for git specific stuff like author, committer, etc
   - [ ] ability to get a git repo from a url using something like git clone
