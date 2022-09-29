@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Miscellaneous Tasks
+
+- Update changelog
+
 ### Changelog
 
 - Trying to fix changelog
