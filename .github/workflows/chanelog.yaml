@@ -18,7 +18,7 @@ jobs:
           config: fixtures/cliff.toml
           args: --verbose --strip footer
         env:
-          OUTPUT: fixtures/CHANGELOG.md
+          OUTPUT: CHANGELOG.md
       - name: Print the changelog
         run: cat "${{ steps.git-cliff.outputs.changelog }}"
 
@@ -26,5 +26,5 @@ jobs:
         uses: EndBug/add-and-commit@v7
         with:
           message: "chore: update changelog"
-          add: changelog.md
+          add: ${{ steps.git-cliff.outputs.changelog }}
         
