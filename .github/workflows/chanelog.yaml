@@ -1,22 +1,14 @@
-name: generate changelog
-
-on: [push]
-
+name: Changelog
+on:
+  release:
+  push:
+    branches:
+      - master
 jobs:
   changelog:
-    name: Generate changelog
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: "✏️ Generate release changelog"
+        uses: heinrichreimer/github-changelog-generator-action@v2.3
         with:
-          fetch-depth: 0
-
-      - name: Generate a changelog
-        uses: orhun/git-cliff-action@v1
-        id: git-cliff
-        with:
-          config: cliff.toml
-          args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
+          token: ${{ secrets.GITHUB_TOKEN }} 
