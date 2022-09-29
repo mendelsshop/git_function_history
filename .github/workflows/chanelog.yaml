@@ -21,3 +21,10 @@ jobs:
           OUTPUT: fixtures/CHANGELOG.md
       - name: Print the changelog
         run: cat "${{ steps.git-cliff.outputs.changelog }}"
+
+      - name: Commit the changelog
+        uses: EndBug/add-and-commit@v7
+        with:
+          message: "chore: update changelog"
+          add: ${{ steps.git-cliff.outputs.changelog }}
+        
