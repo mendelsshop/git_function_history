@@ -1,14 +1,23 @@
-name: Changelog
-on:
-  release:
-  push:
-    branches:
-      - main
+name: Action Test
+
+on: [push]
+
 jobs:
-  changelog:
-    runs-on: ubuntu-20.04
+  git-cliff-action:
+    runs-on: ubuntu-latest
+    name: Test the git-cliff changelog generator action
     steps:
-      - name: "✏️ Generate release changelog"
-        uses: heinrichreimer/github-changelog-generator-action@v2.3
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          fetch-depth: 0
+      - name: Generate a changelog
+        id: git-cliff
+        uses: orhun/git-cliff-action@v1
+        with:
+          config: fixtures/cliff.toml
+          args: --verbose --strip footer
+        env:
+          OUTPUT: fixtures/CHANGELOG.md
+      - name: Print the changelog
+        run: cat "${{ steps.git-cliff.outputs.changelog }}"
