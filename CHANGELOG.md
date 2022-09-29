@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### Miscellaneous Tasks
+
+- Update changelog
+- Update changelog
+
+### Changelog
+
+- Trying to fix changelog
+
+### Tui
+
+- Saving search history to a file now
+
+## [2.1.0] - 2022-09-28
+
+### Library
+
+- Added git filters for commit, aothor and emai, messagel
+- More parllesim
+- Trying to optimize threading realizng the problem is not with the trreading but with something else
+- Added parelel as optinal (but default feature
+
+### Todo
+
+- Decide paarlel
+
+### Tui
+
+- Added loading ...
+
 ## [1.0.0] - 2022-09-19
 
 ### Cli/tui
@@ -21,3 +53,4 @@ All notable changes to this project will be documented in this file.
 - Started working on way to change where in whic commit/file your in
 - Edit mode via shift :  or : for maximux um campitiblity
 - Filters are done and dates should work
+
