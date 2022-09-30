@@ -14,18 +14,16 @@
     clippy::return_self_not_must_use
 )]
 
+pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
-use ra_ap_syntax::{
-    ast::{self, HasDocComments, HasGenericParams, HasName},
-    AstNode, SourceFile, SyntaxKind,
-};
+
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use std::{collections::HashMap, error::Error, process::Command};
+use std::{error::Error, process::Command};
 pub use types::{
-    Block, BlockType, CommitFunctions, File, Function, FunctionBlock, FunctionHistory,
+    CommitFunctions, File, FunctionHistory
 };
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
@@ -44,7 +42,7 @@ pub enum FileType {
 // TODO: Add support for filtering by generic parameters, lifetimes, and return types.
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum Filter<Block> {
     /// When you want to filter by a commit hash.
     CommitHash(String),
     /// When you want to filter by a specific date (in rfc2822 format).
@@ -58,7 +56,7 @@ pub enum Filter {
     /// When you want to filter only files in a specific directory
     Directory(String),
     // when you want to filter by function that are in a specific block (impl, trait, extern)
-    FunctionInBlock(BlockType),
+    FunctionInBlock(Block),
     // when you want to filter by function that are in between specific lines
     FunctionInLines(usize, usize),
     // when you want filter by a function that has a parent function of a specific name
@@ -104,11 +102,12 @@ pub enum Filter {
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
-pub fn get_function_history(
+pub fn get_function_history<T>(
     name: &str,
     file: &FileType,
-    filter: Filter,
-) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
+    filter: Filter<T>,
+    languages: &[languages::Language],
+) -> Result<FunctionHistory<T>, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
         Err("function name is empty")?;
@@ -277,265 +276,12 @@ fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn 
     Ok(String::from_utf8_lossy(&commit_history.stdout).to_string())
 }
 
-#[allow(clippy::too_many_lines)]
-// TODO: split this function into smaller functions
-fn find_function_in_commit(
-    commit: &str,
-    file_path: &str,
-    name: &str,
-) -> Result<Vec<Function>, Box<dyn Error>> {
-    let file_contents = find_file_in_commit(commit, file_path)?;
-    let mut functions = Vec::new();
-    get_function_asts(name, &file_contents, &mut functions);
-    let mut starts = file_contents
-        .match_indices('\n')
-        .map(|x| x.0)
-        .collect::<Vec<_>>();
-    starts.push(0);
-    starts.sort_unstable();
-    let map = starts
-        .iter()
-        .enumerate()
-        .collect::<HashMap<usize, &usize>>();
-    let mut hist = Vec::new();
-    for f in &functions {
-        let stuff = get_stuff(f, &file_contents, &map);
-        let generics = get_genrerics_and_lifetime(f);
-        let mut parent = f.syntax().parent();
-        let mut parent_fn: Vec<FunctionBlock> = Vec::new();
-        let mut parent_block = None;
-        while let Some(p) = parent.into_iter().next() {
-            if p.kind() == SyntaxKind::SOURCE_FILE {
-                break;
-            }
-            ast::Fn::cast(p.clone()).map_or_else(
-                || {
-                    if let Some(block) = ast::Impl::cast(p.clone()) {
-                        let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
-                        let generics = get_genrerics_and_lifetime(&block);
-                        parent_block = Some(Block {
-                            name: block.self_ty().map(|ty| ty.to_string()),
-                            lifetime: generics.1,
-                            generics: generics.0,
-                            top: stuff.1 .0,
-                            bottom: stuff.1 .1,
-                            block_type: BlockType::Impl,
-                            lines: (stuff.0 .0, stuff.0 .1),
-                            attributes: attr.1,
-                            doc_comments: attr.0,
-                        });
-                    } else if let Some(block) = ast::Trait::cast(p.clone()) {
-                        let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
-                        let generics = get_genrerics_and_lifetime(&block);
-                        parent_block = Some(Block {
-                            name: block.name().map(|ty| ty.to_string()),
-                            lifetime: generics.1,
-                            generics: generics.0,
-                            top: stuff.1 .0,
-                            bottom: stuff.1 .1,
-                            block_type: BlockType::Trait,
-                            lines: (stuff.0 .0, stuff.0 .1),
-                            attributes: attr.1,
-                            doc_comments: attr.0,
-                        });
-                    } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
-                        let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
-                        parent_block = Some(Block {
-                            name: block.abi().map(|ty| ty.to_string()),
-                            lifetime: Vec::new(),
-                            generics: Vec::new(),
-                            top: stuff.1 .0,
-                            bottom: stuff.1 .1,
-                            block_type: BlockType::Extern,
-                            lines: (stuff.0 .0, stuff.0 .1),
-                            attributes: attr.1,
-                            doc_comments: attr.0,
-                        });
-                    }
-                },
-                |function| {
-                    let stuff = get_stuff(&function, &file_contents, &map);
-                    let generics = get_genrerics_and_lifetime(&function);
-                    let attr = get_doc_comments_and_attrs(&function);
-                    parent_fn.push(FunctionBlock {
-                        name: function.name().unwrap().to_string(),
-                        lifetime: generics.1,
-                        generics: generics.0,
-                        top: stuff.1 .0,
-                        bottom: stuff.1 .1,
-                        lines: (stuff.0 .0, stuff.0 .1),
-                        return_type: function.ret_type().map(|ty| ty.to_string()),
-                        arguments: match function.param_list() {
-                            Some(args) => args
-                                .params()
-                                .map(|arg| arg.to_string())
-                                .collect::<Vec<String>>(),
-                            None => Vec::new(),
-                        },
-                        attributes: attr.1,
-                        doc_comments: attr.0,
-                    });
-                },
-            );
-            parent = p.parent();
-        }
-        let attr = get_doc_comments_and_attrs(f);
-        let mut start = stuff.0 .0;
-        let bb = match map[&start] {
-            0 => 0,
-            x => x + 1,
-        };
-        let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
-            .to_string()
-            .lines()
-            .map(|l| {
-                start += 1;
-                format!("{}: {}\n", start, l,)
-            })
-            .collect();
-        let contents = contents.trim_end().to_string();
-        let function = Function {
-            name: f.name().unwrap().to_string(),
-            contents,
-            block: parent_block,
-            function: parent_fn,
-            return_type: f.ret_type().map(|ty| ty.to_string()),
-            arguments: match f.param_list() {
-                Some(args) => args
-                    .params()
-                    .map(|arg| arg.to_string())
-                    .collect::<Vec<String>>(),
-                None => Vec::new(),
-            },
-            lifetime: generics.1,
-            generics: generics.0,
-            lines: (stuff.0 .0, stuff.0 .1),
-            attributes: attr.1,
-            doc_comments: attr.0,
-        };
-        hist.push(function);
-    }
-    if hist.is_empty() {
-        Err("no function found")?;
-    }
-    Ok(hist)
-}
 
-fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
-    let parsed_file = SourceFile::parse(file).tree();
-    parsed_file
-        .syntax()
-        .descendants()
-        .filter_map(ast::Fn::cast)
-        .filter(|function| function.name().unwrap().text() == name)
-        .for_each(|function| functions.push(function));
-}
-
-fn get_stuff<T: AstNode>(
-    block: &T,
-    file: &str,
-    map: &HashMap<usize, &usize>,
-) -> ((usize, usize), (String, String), (usize, usize)) {
-    let start = block.syntax().text_range().start();
-    let end = block.syntax().text_range().end();
-    // get the start and end lines
-    let mut found_start_brace = 0;
-    let mut end_line = 0;
-    let mut starts = 0;
-    let mut start_line = 0;
-    // TODO: combine these loops
-    for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(start) < i {
-                starts = i;
-                break;
-            }
-            start_line += 1;
-        }
-    }
-    for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(end) < i {
-                break;
-            }
-            end_line += 1;
-        }
-        if line == '{' && found_start_brace == 0 && usize::from(start) < i {
-            found_start_brace = i;
-        }
-    }
-    if found_start_brace == 0 {
-        found_start_brace = usize::from(start);
-    }
-    let start = map[&start_line];
-    let mut start_lines = start_line;
-    let mut content: String = file[(*start)..=found_start_brace].to_string();
-    if &content[..1] == "\n" {
-        content = content[1..].to_string();
-    }
-    (
-        (start_line, end_line),
-        (
-            content
-                .lines()
-                .map(|l| {
-                    start_lines += 1;
-                    format!("{}: {}\n", start_lines, l,)
-                })
-                .collect::<String>()
-                .trim_end()
-                .to_string(),
-            format!(
-                "\n{}: {}",
-                end_line,
-                file.lines()
-                    .nth(if end_line == file.lines().count() - 1 {
-                        end_line
-                    } else {
-                        end_line - 1
-                    })
-                    .unwrap_or("")
-            ),
-        ),
-        (starts, end_line),
-    )
-}
-
-fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
-    match block.generic_param_list() {
-        None => (vec![], vec![]),
-        Some(gt) => (
-            gt.generic_params()
-                .map(|gt| gt.to_string())
-                .collect::<Vec<String>>(),
-            gt.lifetime_params()
-                .map(|lt| lt.to_string())
-                .collect::<Vec<String>>(),
-        ),
-    }
-}
-
-fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec<String>) {
-    (
-        block
-            .doc_comments()
-            .map(|c| c.to_string())
-            .collect::<Vec<String>>(),
-        block
-            .attrs()
-            .map(|c| c.to_string())
-            .collect::<Vec<String>>(),
-    )
-}
-
-fn find_function_in_commit_with_filetype(
+fn find_function_in_commit_with_filetype<T>(
     commit: &str,
     name: &str,
     filetype: &FileType,
-) -> Result<Vec<File>, Box<dyn Error>> {
+) -> Result<Vec<File<T>>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
@@ -607,6 +353,7 @@ mod tests {
             "empty_test",
             &FileType::Relative("src/test_functions.rs".to_string()),
             Filter::None,
+            languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -624,6 +371,7 @@ mod tests {
             "empty_test",
             &FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
+            languages::Language::Rust,
         );
         // assert that err is "not git is not installed"
         if output.is_err() {
@@ -637,6 +385,7 @@ mod tests {
             "Not_a_function",
             &FileType::Absolute("src/test_functions.rs".to_string()),
             Filter::None,
+            languages::Language::Rust,
         );
         match &output {
             Ok(output) => println!("{}", output),
@@ -651,6 +400,7 @@ mod tests {
             "empty_test",
             &FileType::Absolute("src/test_functions.txt".to_string()),
             Filter::None,
+            languages::Language::Rust,
         );
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "file is not a rust file");
@@ -665,6 +415,7 @@ mod tests {
                 "17 Aug 2022 11:27:23 -0400".to_owned(),
                 "19 Aug 2022 23:45:52 +0000".to_owned(),
             ),
+            languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -680,7 +431,8 @@ mod tests {
     #[test]
     fn expensive_tes() {
         let now = Utc::now();
-        let output = get_function_history("empty_test", &FileType::None, Filter::None);
+        let output = get_function_history("empty_test", &FileType::None, Filter::None
+        , languages::Language::Rust);
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
