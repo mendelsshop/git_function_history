@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file.
 - Update changelog
 - Update changelog
 - Update changelog
+- Update changelog
+
+### TODO
+
+- Figure out how to map filers and seraches based languges
 
 ### Changelog
 
