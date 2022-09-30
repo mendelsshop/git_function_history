@@ -76,3 +76,75 @@ impl File<rust::Function> {
     }
 }
 
+
+impl File<python::Function> {
+    pub fn filter_by(&self, filter: &Filter<python::Class>) -> Result<Self, Box<dyn Error>> {
+        let mut vec = Vec::new();
+        for function in &self.functions {
+            match &filter {
+                Filter::FunctionInBlock(block_type) => {
+                    if let Some(block) = &function.class {
+                        if block.name == *block_type.name {
+                            vec.push(function.clone());
+                        }
+                    }
+                }
+                Filter::FunctionInLines(start, end) => {
+                    if function.lines.0 >= *start && function.lines.1 <= *end {
+                        vec.push(function.clone());
+                    }
+                }
+                Filter::FunctionWithParent(parent) => {
+                    for parents in &function.parent {
+                        if parents.name == *parent {
+                            vec.push(function.clone());
+                        }
+                    }
+                }
+                Filter::None => vec.push(function.clone()),
+                _ => return Err("Filter not available")?,
+            }
+        }
+        if vec.is_empty() {
+            return Err("No functions found for filter")?;
+        }
+        Ok(Self {
+            name: self.name.clone(),
+            functions: vec,
+            current_pos: 0,
+        })
+    }
+}
+
+impl File<c::Function> {
+    pub fn filter_by(&self, filter: &Filter<c::Function>) -> Result<Self, Box<dyn Error>> {
+        let mut vec = Vec::new();
+        for function in &self.functions {
+            match &filter {
+
+                Filter::FunctionInLines(start, end) => {
+                    if function.lines.0 >= *start && function.lines.1 <= *end {
+                        vec.push(function.clone());
+                    }
+                }
+                Filter::FunctionWithParent(parent) => {
+                    for parents in &function.parent {
+                        if parents.name == *parent {
+                            vec.push(function.clone());
+                        }
+                    }
+                }
+                Filter::None => vec.push(function.clone()),
+                _ => return Err("Filter not available")?,
+            }
+        }
+        if vec.is_empty() {
+            return Err("No functions found for filter")?;
+        }
+        Ok(Self {
+            name: self.name.clone(),
+            functions: vec,
+            current_pos: 0,
+        })
+    }
+}

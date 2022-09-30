@@ -1,22 +1,23 @@
 use std::collections::HashMap;
-
+#[derive(Debug, Clone)]
 pub struct Function {
-    name: String,
-    body: String,
-    // parameters: Params,
-    parameters: Vec<String>,
-    parent: Vec<ParentFunction>,
-    returns: Option<String>,
+    pub (crate)name: String,
+    pub (crate)body: String,
+    pub (crate)parameters: Vec<String>,
+    pub (crate)parent: Vec<ParentFunction>,
+    pub (crate)returns: Option<String>,
+    pub (crate)lines: (usize, usize),
 }
 
 impl Function {
-    pub fn new(name: String, body: String, parameters: Vec<String>, parent: Vec<ParentFunction>, returns: Option<String>) -> Self {
+    pub fn new(name: String, body: String, parameters: Vec<String>, parent: Vec<ParentFunction>, returns: Option<String>, lines: (usize, usize)) -> Self {
         Self {
             name,
             body,
             parameters,
             parent,
             returns,
+            lines,
         }
     }
 }
@@ -35,12 +36,12 @@ impl super::Function for Function {
         todo!()
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct ParentFunction {
-    name: String,
-    top: String,
-    bottom: String,
-    lines: (usize, usize),
-    parameters: Vec<String>,
-    returns: Option<String>,
+    pub (crate)name: String,
+    pub (crate)top: String,
+    pub (crate) bottom: String,
+    pub (crate)lines: (usize, usize),
+    pub (crate)parameters: Vec<String>,
+    pub (crate)returns: Option<String>,
 }

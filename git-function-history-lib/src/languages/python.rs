@@ -4,14 +4,16 @@ use rustpython_parser::{location::Location, ast::{StatementType, Located}, parse
 
 use crate::File;
 
+#[derive(Debug, Clone)]
 pub struct Function {
-    name: String,
-    body: String,
+    pub (crate) name: String,
+    pub (crate)body: String,
     // parameters: Params,
-    parameters: Vec<String>,
-    parent: Vec<ParentFunction>,
-    decorators: Vec<String>,
-    class: Option<Class>,
+    pub (crate)parameters: Vec<String>,
+    pub (crate)parent: Vec<ParentFunction>,
+    pub (crate)decorators: Vec<String>,
+    pub (crate)class: Option<Class>,
+    pub (crate)lines: (usize, usize),
     returns: Option<String>,
 }
 
@@ -26,38 +28,131 @@ impl super::Function for Function {
         previous: Option<&Self>,
         next: Option<&Self>,
     ) -> std::fmt::Result {
-        todo!()
+        match self.class {
+            Some(class) => {
+                match previous {
+                    Some(previous) => {
+                        if previous.class.is_some() {
+                            if previous.class.as_ref().unwrap().name == class.name {
+                                write!(f, "\n...\n")?;
+                            } else {
+                                write!(f, "{}", class.top)?;
+                            }
+                        } else {
+                            write!(f, "{}", class.top)?;
+                        }
+
+                    }
+                    None => {
+                        writeln!(f, "{}", class.top)?;
+                    }
+                }
+            }
+            None => {
+            }
+
+            
+        };
+        if !self.parent.is_empty() {
+            match previous {
+                None => {
+                    for parent in &self.parent {
+                        writeln!(f, "{}", parent.top)?;
+                    }
+                } 
+                Some(previous) => {
+                    for parent in &self.parent {
+                        if previous
+                        .parent
+                        .iter()
+                        .any(|x| x.lines == parent.lines)
+                    {
+                    } else {
+                        write!(f, "{}\n...\n", parent.top)?;
+                    }
+                    
+                    }
+                }
+            }
+        }
+        write!(f, "{}", self.body)?;
+        if !self.parent.is_empty() {
+            match next {
+                None => {
+                    for parent in &self.parent {
+                        writeln!(f, "{}", parent.bottom)?;
+                    }
+                } 
+                Some(next) => {
+                    for parent in &self.parent {
+                        if next
+                        .parent
+                        .iter()
+                        .any(|x| x.lines == parent.lines)
+                    {
+                    } else {
+                        write!(f, "\n...\n{}", parent.bottom)?;
+                    }
+                    
+                    }
+                }
+            }
+        }
+        match self.class {
+            Some(class) => {
+                match next {
+                    Some(next) => {
+                        if next.class.is_some() {
+                            if next.class.as_ref().unwrap().name == class.name {
+                                write!(f, "\n...\n")?;
+                            } else {
+                                write!(f, "{}", class.bottom)?;
+                            }
+                        } else {
+                            write!(f, "{}", class.bottom)?;
+                        }
+
+                    }
+                    None => {
+                        writeln!(f, "{}", class.bottom)?;
+                    }
+                }
+            }
+            None => {
+            }
+        };
+        Ok(())
     }
 
     fn get_metadata(&self) -> HashMap<&str, String> {
         todo!()
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct Params {
     args: Vec<String>,
     kwargs: Vec<String>,
     varargs: Option<String>,
     varkwargs: Option<String>,
 }
-
+#[derive(Debug, Clone)]
 pub struct Class {
-    name: String,
-    top: String,
-    bottom: String,
-    lines: (usize, usize),
-    decorators: Vec<String>,
+    pub (crate)name: String,
+    pub (crate)top: String,
+    pub (crate)bottom: String,
+    pub (crate)lines: (usize, usize),
+    pub (crate)decorators: Vec<String>,
 }
-
+#[derive(Debug, Clone)]
 pub struct ParentFunction {
-    name: String,
-    top: String,
-    bottom: String,
-    lines: (usize, usize),
-    parameters: Vec<String>,
-    decorators: Vec<String>,
-    class: Option<String>,
-    returns: Option<String>,
+    pub (crate)name: String,
+    pub (crate)top: String,
+    pub (crate)bottom: String,
+    pub (crate)lines: (usize, usize),
+    pub (crate)parameters: Vec<String>,
+    pub (crate)decorators: Vec<String>,
+    pub (crate)class: Option<String>,
+    pub (crate)returns: Option<String>,
 }
 
 pub fn get_file_in_commit(
@@ -110,6 +205,7 @@ pub fn get_file_in_commit(
                     .collect(),
                 class: None,
                 body,
+                lines: (* start , *end),
             };
             new.push(new_func);
         }

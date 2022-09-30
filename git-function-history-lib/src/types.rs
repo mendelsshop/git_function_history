@@ -65,7 +65,7 @@ impl <T>fmt::Display for File<T> {
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
 #[derive(Debug, Clone)]
-pub struct CommitFunctions<T> {
+pub struct CommitFunctions<T: Clone> {
     commit_hash: String,
     files: Vec<File<T>>,
     date: DateTime<FixedOffset>,
@@ -206,7 +206,7 @@ impl<T: Clone> Iterator for CommitFunctions<T> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for CommitFunctions<T> {
+impl<T: fmt::Display + Clone> fmt::Display for CommitFunctions<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.files[self.current_pos])?;
         Ok(())
@@ -215,14 +215,14 @@ impl<T: fmt::Display> fmt::Display for CommitFunctions<T> {
 
 /// This struct holds the a list of commits and the function that were looked up for each commit.
 #[derive(Debug, Clone)]
-pub struct FunctionHistory<T> {
+pub struct FunctionHistory<T: Clone> {
     pub(crate) name: String,
     pub(crate) commit_history: Vec<CommitFunctions<T>>,
     current_iter_pos: usize,
     current_pos: usize,
 }
 
-impl<T> FunctionHistory<T> {
+impl<T: Clone> FunctionHistory<T> {
     // creates a new `FunctionHistory` from a list of commits
     pub fn new(name: String, commit_history: Vec<CommitFunctions<T>>) -> Self {
         Self {
@@ -358,7 +358,7 @@ impl<T> FunctionHistory<T> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for FunctionHistory<T> {
+impl<T: fmt::Display + Clone> fmt::Display for FunctionHistory<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.commit_history[self.current_pos])?;
         Ok(())

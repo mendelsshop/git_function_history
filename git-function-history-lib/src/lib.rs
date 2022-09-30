@@ -102,7 +102,7 @@ pub enum Filter<Block> {
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
-pub fn get_function_history<T>(
+pub fn get_function_history<T: Clone>(
     name: &str,
     file: &FileType,
     filter: Filter<T>,

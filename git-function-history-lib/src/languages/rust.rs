@@ -46,6 +46,7 @@ impl super::Function for Function {
                 None => write!(f, "{}\n...\n", block.top)?,
                 Some(previous_function) => match &previous_function.block {
                     None => write!(f, "{}\n...\n", block.top)?,
+                // TODO: chek for different blocks
                     Some(previous_block) => {
                         if previous_block.lines == block.lines {
                         } else {
