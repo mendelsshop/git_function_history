@@ -1,16 +1,25 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
+
+use super::FunctionResult;
 #[derive(Debug, Clone)]
 pub struct Function {
-    pub (crate)name: String,
-    pub (crate)body: String,
-    pub (crate)parameters: Vec<String>,
-    pub (crate)parent: Vec<ParentFunction>,
-    pub (crate)returns: Option<String>,
-    pub (crate)lines: (usize, usize),
+    pub(crate) name: String,
+    pub(crate) body: String,
+    pub(crate) parameters: Vec<String>,
+    pub(crate) parent: Vec<ParentFunction>,
+    pub(crate) returns: Option<String>,
+    pub(crate) lines: (usize, usize),
 }
 
 impl Function {
-    pub fn new(name: String, body: String, parameters: Vec<String>, parent: Vec<ParentFunction>, returns: Option<String>, lines: (usize, usize)) -> Self {
+    pub fn new(
+        name: String,
+        body: String,
+        parameters: Vec<String>,
+        parent: Vec<ParentFunction>,
+        returns: Option<String>,
+        lines: (usize, usize),
+    ) -> Self {
         Self {
             name,
             body,
@@ -38,10 +47,18 @@ impl super::Function for Function {
 }
 #[derive(Debug, Clone)]
 pub struct ParentFunction {
-    pub (crate)name: String,
-    pub (crate)top: String,
-    pub (crate) bottom: String,
-    pub (crate)lines: (usize, usize),
-    pub (crate)parameters: Vec<String>,
-    pub (crate)returns: Option<String>,
+    pub(crate) name: String,
+    pub(crate) top: String,
+    pub(crate) bottom: String,
+    pub(crate) lines: (usize, usize),
+    pub(crate) parameters: Vec<String>,
+    pub(crate) returns: Option<String>,
+}
+
+pub(crate) fn find_function_in_commit<T: super::Function>(
+    commit: &str,
+    file_path: &str,
+    name: &str,
+) -> FunctionResult<T> {
+    todo!("find_function_in_commit")
 }

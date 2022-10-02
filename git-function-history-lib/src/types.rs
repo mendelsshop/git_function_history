@@ -3,20 +3,23 @@ use chrono::{DateTime, FixedOffset};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, error::Error, fmt};
 
-use crate::Filter;
+use crate::{
+    languages::{c, python, rust, Function, Language},
+    Filter,
+};
 
 /// This is used to store each individual file in a commit and the associated functions in that file.
 #[derive(Debug, Clone)]
-pub struct File<T> {
+pub struct File {
     /// The name of the file
     pub(crate) name: String,
-    pub(crate)functions: Vec<T>,
-    pub(crate)current_pos: usize,
+    pub(crate) functions: Vec<FileType>,
+    pub(crate) current_pos: usize,
 }
 
-impl <T> File<T> {
+impl File {
     /// Create a new file with the given name and functions
-    pub fn new(name: String, functions: Vec<T>) -> Self {
+    pub fn new(name: String, functions: Vec<FileType>) -> Self {
         Self {
             name,
             functions,
@@ -25,28 +28,28 @@ impl <T> File<T> {
     }
 
     /// This is used to get the functions in the file
-    pub const fn get_functions(&self) -> &Vec<T> {
+    pub const fn get_functions(&self) -> &Vec<FileType> {
         &self.functions
     }
 
     /// This is used to get the functions in the file (mutable)
-    pub fn get_functions_mut(&mut self) -> &mut Vec<T> {
+    pub fn get_functions_mut(&mut self) -> &mut Vec<FileType> {
         &mut self.functions
     }
 
     /// This is will get the current function in the file
-    pub fn get_current_function(&self) -> Option<&T> {
+    pub fn get_current_function(&self) -> Option<&FileType> {
         self.functions.get(self.current_pos)
     }
 
     /// This is will get the current function in the file (mutable)
-    pub fn get_current_function_mut(&mut self) -> Option<&mut T> {
+    pub fn get_current_function_mut(&mut self) -> Option<&mut FileType> {
         self.functions.get_mut(self.current_pos)
     }
 }
 
-impl<T: Clone> Iterator for File<T> {
-    type Item = T;
+impl Iterator for File {
+    type Item = FileType;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
         let function = self.functions.get(self.current_pos).cloned();
@@ -55,19 +58,26 @@ impl<T: Clone> Iterator for File<T> {
     }
 }
 
-impl <T>fmt::Display for File<T> {
+impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)
     }
 }
-
-
+#[derive(Debug, Clone)]
+pub enum FileType {
+    /// The python language
+    Python(python::Function),
+    /// The rust language
+    Rust(rust::Function),
+    /// c language
+    C(c::Function),
+}
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
 #[derive(Debug, Clone)]
-pub struct CommitFunctions<T: Clone> {
+pub struct CommitFunctions {
     commit_hash: String,
-    files: Vec<File<T>>,
+    files: Vec<File>,
     date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,
@@ -76,11 +86,11 @@ pub struct CommitFunctions<T: Clone> {
     message: String,
 }
 
-impl<T: Clone> CommitFunctions<T> {
+impl CommitFunctions {
     /// Create a new `CommitFunctions` with the given `commit_hash`, functions, and date.
     pub fn new(
         commit_hash: String,
-        files: Vec<File<T>>,
+        files: Vec<File>,
         date: &str,
         author: String,
         email: String,
@@ -128,12 +138,12 @@ impl<T: Clone> CommitFunctions<T> {
     }
 
     /// returns the current file
-    pub fn get_file(&self) -> &File<T> {
+    pub fn get_file<FileType: Function>(&self) -> &File {
         &self.files[self.current_pos]
     }
 
     /// returns the current file (mutable)
-    pub fn get_file_mut(&mut self) -> &mut File<T> {
+    pub fn get_file_mut<FileType: Function>(&mut self) -> &mut File {
         &mut self.files[self.current_pos]
     }
 
@@ -150,54 +160,55 @@ impl<T: Clone> CommitFunctions<T> {
     /// returns a new `CommitFunctions` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInBlock`, `Filter::FunctionInLines`, `Filter::FunctionWithParent`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
-    pub fn filter_by(&self, filter: &Filter<T>) -> Result<Self, Box<dyn Error>> {
-        let mut vec = Vec::new();
-        for f in &self.files {
-            match filter {
-                Filter::FileAbsolute(file) => {
-                    if f.name == *file {
-                        vec.push(f.clone());
-                    }
-                }
-                Filter::FileRelative(file) => {
-                    if f.name.ends_with(file) {
-                        vec.push(f.clone());
-                    }
-                }
-                Filter::Directory(dir) => {
-                    if f.name.contains(dir) {
-                        vec.push(f.clone());
-                    }
-                }
-                Filter::FunctionInLines(..)
-                | Filter::FunctionWithParent(_)
-                | Filter::FunctionInBlock(_) => {
-                    if f.filter_by(filter).is_ok() {
-                        vec.push(f.clone());
-                    }
-                }
-                Filter::None => vec.push(f.clone()),
-                _ => Err("Invalid filter")?,
-            }
-        }
-        if vec.is_empty() {
-            return Err("No files found for filter")?;
-        }
-        Ok(Self {
-            commit_hash: self.commit_hash.clone(),
-            files: vec,
-            date: self.date,
-            current_pos: 0,
-            current_iter_pos: 0,
-            author: self.author.clone(),
-            email: self.email.clone(),
-            message: self.message.clone(),
-        })
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        // let mut vec = Vec::new();
+        // for f in &self.files {
+        //     match filter {
+        //         Filter::FileAbsolute(file) => {
+        //             if f.name == *file {
+        //                 vec.push(f.clone());
+        //             }
+        //         }
+        //         Filter::FileRelative(file) => {
+        //             if f.name.ends_with(file) {
+        //                 vec.push(f.clone());
+        //             }
+        //         }
+        //         Filter::Directory(dir) => {
+        //             if f.name.contains(dir) {
+        //                 vec.push(f.clone());
+        //             }
+        //         }
+        //         Filter::FunctionInLines(..)
+        //         | Filter::FunctionWithParent(_)
+        //         | Filter::FunctionInBlock(_) => {
+        //             if f.filter_by(filter).is_ok() {
+        //                 vec.push(f.clone());
+        //             }
+        //         }
+        //         Filter::None => vec.push(f.clone()),
+        //         _ => Err("Invalid filter")?,
+        //     }
+        // }
+        // if vec.is_empty() {
+        //     return Err("No files found for filter")?;
+        // }
+        // Ok(Self {
+        //     commit_hash: self.commit_hash.clone(),
+        //     files: vec,
+        //     date: self.date,
+        //     current_pos: 0,
+        //     current_iter_pos: 0,
+        //     author: self.author.clone(),
+        //     email: self.email.clone(),
+        //     message: self.message.clone(),
+        // })
+        todo!()
     }
 }
 
-impl<T: Clone> Iterator for CommitFunctions<T> {
-    type Item = File<T>;
+impl Iterator for CommitFunctions {
+    type Item = File;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
         let function = self.files.get(self.current_iter_pos).cloned();
@@ -206,7 +217,7 @@ impl<T: Clone> Iterator for CommitFunctions<T> {
     }
 }
 
-impl<T: fmt::Display + Clone> fmt::Display for CommitFunctions<T> {
+impl fmt::Display for CommitFunctions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.files[self.current_pos])?;
         Ok(())
@@ -215,16 +226,17 @@ impl<T: fmt::Display + Clone> fmt::Display for CommitFunctions<T> {
 
 /// This struct holds the a list of commits and the function that were looked up for each commit.
 #[derive(Debug, Clone)]
-pub struct FunctionHistory<T: Clone> {
+pub struct FunctionHistory {
     pub(crate) name: String,
-    pub(crate) commit_history: Vec<CommitFunctions<T>>,
+    pub(crate) commit_history: Vec<CommitFunctions>,
+
     current_iter_pos: usize,
     current_pos: usize,
 }
 
-impl<T: Clone> FunctionHistory<T> {
+impl FunctionHistory {
     // creates a new `FunctionHistory` from a list of commits
-    pub fn new(name: String, commit_history: Vec<CommitFunctions<T>>) -> Self {
+    pub fn new(name: String, commit_history: Vec<CommitFunctions>) -> Self {
         Self {
             name,
             commit_history,
@@ -277,12 +289,12 @@ impl<T: Clone> FunctionHistory<T> {
     }
 
     /// returns a mutable reference to the current commit
-    pub fn get_mut_commit(&mut self) -> &mut CommitFunctions<T> {
+    pub fn get_mut_commit(&mut self) -> &mut CommitFunctions {
         &mut self.commit_history[self.current_pos]
     }
 
     /// returns a reference to the current commit
-    pub fn get_commit(&self) -> &CommitFunctions<T> {
+    pub fn get_commit(&self) -> &CommitFunctions {
         &self.commit_history[self.current_pos]
     }
 
@@ -312,61 +324,62 @@ impl<T: Clone> FunctionHistory<T> {
     ///
     /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
     /// ```
-    pub fn filter_by(&self, filter: &Filter<T>) -> Result<Self, Box<dyn Error>> {
-        #[cfg(feature = "parallel")]
-        let t = self.commit_history.par_iter();
-        #[cfg(not(feature = "parallel"))]
-        let t = self.commit_history.iter();
-        let vec: Vec<CommitFunctions> = t
-            .filter(|f| match filter {
-                Filter::FunctionInLines(..)
-                | Filter::FunctionWithParent(_)
-                | Filter::FunctionInBlock(_)
-                | Filter::Directory(_)
-                | Filter::FileAbsolute(_)
-                | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
-                Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
-                Filter::Date(date) => &f.date.to_rfc2822() == date,
-                Filter::DateRange(start, end) => {
-                    let start = match DateTime::parse_from_rfc2822(start) {
-                        Ok(date) => date,
-                        Err(_) => return false,
-                    };
-                    let end = match DateTime::parse_from_rfc2822(end) {
-                        Ok(date) => date,
-                        Err(_) => return false,
-                    };
-                    f.date >= start || f.date <= end
-                }
-                Filter::Author(author) => &f.author == author,
-                Filter::AuthorEmail(email) => &f.email == email,
-                Filter::Message(message) => f.message.contains(message),
-                Filter::None => true,
-            })
-            .cloned()
-            .collect();
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        // #[cfg(feature = "parallel")]
+        // let t = self.commit_history.par_iter();
+        // #[cfg(not(feature = "parallel"))]
+        // let t = self.commit_history.iter();
+        // let vec: Vec<CommitFunctions> = t
+        //     .filter(|f| match filter {
+        //         Filter::FunctionInLines(..)
+        //         | Filter::FunctionWithParent(_)
+        //         | Filter::FunctionInBlock(_)
+        //         | Filter::Directory(_)
+        //         | Filter::FileAbsolute(_)
+        //         | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
+        //         Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
+        //         Filter::Date(date) => &f.date.to_rfc2822() == date,
+        //         Filter::DateRange(start, end) => {
+        //             let start = match DateTime::parse_from_rfc2822(start) {
+        //                 Ok(date) => date,
+        //                 Err(_) => return false,
+        //             };
+        //             let end = match DateTime::parse_from_rfc2822(end) {
+        //                 Ok(date) => date,
+        //                 Err(_) => return false,
+        //             };
+        //             f.date >= start || f.date <= end
+        //         }
+        //         Filter::Author(author) => &f.author == author,
+        //         Filter::AuthorEmail(email) => &f.email == email,
+        //         Filter::Message(message) => f.message.contains(message),
+        //         Filter::None => true,
+        //     })
+        //     .cloned()
+        //     .collect();
 
-        if vec.is_empty() {
-            return Err("No history found for the filter")?;
-        }
-        Ok(Self {
-            commit_history: vec,
-            name: self.name.clone(),
-            current_pos: 0,
-            current_iter_pos: 0,
-        })
+        // if vec.is_empty() {
+        //     return Err("No history found for the filter")?;
+        // }
+        // Ok(Self {
+        //     commit_history: vec,
+        //     name: self.name.clone(),
+        //     current_pos: 0,
+        //     current_iter_pos: 0,
+        // })
+        todo!()
     }
 }
 
-impl<T: fmt::Display + Clone> fmt::Display for FunctionHistory<T> {
+impl fmt::Display for FunctionHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.commit_history[self.current_pos])?;
         Ok(())
     }
 }
 
-impl<T: Clone> Iterator for FunctionHistory<T> {
-    type Item = CommitFunctions<T>;
+impl Iterator for FunctionHistory {
+    type Item = CommitFunctions;
     fn next(&mut self) -> Option<Self::Item> {
         self.commit_history
             .get(self.current_iter_pos)
@@ -391,12 +404,12 @@ pub enum Directions {
     Both,
 }
 
-trait ErrorToOption<T> {
-    fn to_option(self) -> Option<T>;
+trait ErrorToOption<FileType> {
+    fn to_option(self) -> Option<FileType>;
 }
 
-impl<T> ErrorToOption<T> for Result<T, Box<dyn Error>> {
-    fn to_option(self) -> Option<T> {
+impl<FileType> ErrorToOption<FileType> for Result<FileType, Box<dyn Error>> {
+    fn to_option(self) -> Option<FileType> {
         match self {
             Ok(t) => Some(t),
             Err(_) => None,

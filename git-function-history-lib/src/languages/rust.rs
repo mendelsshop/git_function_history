@@ -1,9 +1,11 @@
-use std::{collections::HashMap, fmt, error::Error};
+use std::{collections::HashMap, error::Error, fmt};
 
 use ra_ap_syntax::{
     ast::{self, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
+
+use super::FunctionResult;
 
 /// This holds the information about a single  function each commit will have multiple of these.
 #[derive(Debug, Clone)]
@@ -46,7 +48,7 @@ impl super::Function for Function {
                 None => write!(f, "{}\n...\n", block.top)?,
                 Some(previous_function) => match &previous_function.block {
                     None => write!(f, "{}\n...\n", block.top)?,
-                // TODO: chek for different blocks
+                    // TODO: chek for different blocks
                     Some(previous_block) => {
                         if previous_block.lines == block.lines {
                         } else {
@@ -128,21 +130,18 @@ impl super::Function for Function {
         };
         map
     }
-
-
 }
 
 impl Function {
-        /// get the parent functions
-        pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
-            self.function.clone()
-        }
-    
-        /// get the block of the function
-        pub fn get_block(&self) -> Option<Block> {
-            self.block.clone()
-        }
-    
+    /// get the parent functions
+    pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
+        self.function.clone()
+    }
+
+    /// get the block of the function
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
+    }
 }
 
 impl fmt::Display for Function {
@@ -294,7 +293,7 @@ impl fmt::Display for BlockType {
 
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
-fn find_function_in_commit(
+pub(crate) fn find_function_in_commit(
     commit: &str,
     file_path: &str,
     name: &str,

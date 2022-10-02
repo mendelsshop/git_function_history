@@ -1,4 +1,4 @@
-use std::{fmt, collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{File, Filter};
 
@@ -11,21 +11,19 @@ pub enum Language {
     C,
 }
 
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Language::Python => write!(f, "python"),
+            Language::Rust => write!(f, "rust"),
+            Language::C => write!(f, "c"),
+        }
+    }
+}
+
 pub mod c;
 pub mod python;
 pub mod rust;
-
-
-// make macro that turns a language into its function struct
-macro_rules! language {
-    ($name:ident, $struct:ident) => {
-        pub fn $name() -> Language {
-            Language::$struct
-        }
-    };
-}
-
-language!(python, Python);
 
 pub trait Function {
     fn fmt_with_context(
@@ -37,114 +35,115 @@ pub trait Function {
     fn get_metadata(&self) -> HashMap<&str, String>;
 }
 
-impl File<rust::Function> {
-    pub fn filter_by(&self, filter: &Filter<rust::BlockType>) -> Result<Self, Box<dyn Error>> {
-        let mut vec = Vec::new();
-        for function in &self.functions {
-            match &filter {
-                Filter::FunctionInBlock(block_type) => {
-                    if let Some(block) = &function.block {
-                        if block.block_type == *block_type {
-                            vec.push(function.clone());
-                        }
-                    }
-                }
-                Filter::FunctionInLines(start, end) => {
-                    if function.lines.0 >= *start && function.lines.1 <= *end {
-                        vec.push(function.clone());
-                    }
-                }
-                Filter::FunctionWithParent(parent) => {
-                    for parents in &function.function {
-                        if parents.name == *parent {
-                            vec.push(function.clone());
-                        }
-                    }
-                }
-                Filter::None => vec.push(function.clone()),
-                _ => return Err("Filter not available")?,
-            }
-        }
-        if vec.is_empty() {
-            return Err("No functions found for filter")?;
-        }
-        Ok(Self {
-            name: self.name.clone(),
-            functions: vec,
-            current_pos: 0,
-        })
-    }
-}
+pub type FunctionResult<T> = Result<Vec<T>, Box<dyn Error>>;
 
+// impl File<rust::Function> {
+//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+//         let mut vec = Vec::new();
+//         for function in &self.functions {
+//             match &filter {
+//                 Filter::FunctionInBlock(block_type) => {
+//                     if let Some(block) = &function.block {
+//                         if block.block_type == *block_type {
+//                             vec.push(function.clone());
+//                         }
+//                     }
+//                 }
+//                 Filter::FunctionInLines(start, end) => {
+//                     if function.lines.0 >= *start && function.lines.1 <= *end {
+//                         vec.push(function.clone());
+//                     }
+//                 }
+//                 Filter::FunctionWithParent(parent) => {
+//                     for parents in &function.function {
+//                         if parents.name == *parent {
+//                             vec.push(function.clone());
+//                         }
+//                     }
+//                 }
+//                 Filter::None => vec.push(function.clone()),
+//                 _ => return Err("Filter not available")?,
+//             }
+//         }
+//         if vec.is_empty() {
+//             return Err("No functions found for filter")?;
+//         }
+//         Ok(Self {
+//             name: self.name.clone(),
+//             functions: vec,
+//             current_pos: 0,
+//         })
+//     }
+// }
 
-impl File<python::Function> {
-    pub fn filter_by(&self, filter: &Filter<python::Class>) -> Result<Self, Box<dyn Error>> {
-        let mut vec = Vec::new();
-        for function in &self.functions {
-            match &filter {
-                Filter::FunctionInBlock(block_type) => {
-                    if let Some(block) = &function.class {
-                        if block.name == *block_type.name {
-                            vec.push(function.clone());
-                        }
-                    }
-                }
-                Filter::FunctionInLines(start, end) => {
-                    if function.lines.0 >= *start && function.lines.1 <= *end {
-                        vec.push(function.clone());
-                    }
-                }
-                Filter::FunctionWithParent(parent) => {
-                    for parents in &function.parent {
-                        if parents.name == *parent {
-                            vec.push(function.clone());
-                        }
-                    }
-                }
-                Filter::None => vec.push(function.clone()),
-                _ => return Err("Filter not available")?,
-            }
-        }
-        if vec.is_empty() {
-            return Err("No functions found for filter")?;
-        }
-        Ok(Self {
-            name: self.name.clone(),
-            functions: vec,
-            current_pos: 0,
-        })
-    }
-}
+// impl File<python::Function> {
+//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+//         let mut vec = Vec::new();
+//         for function in &self.functions {
+//             match &filter {
+//                 Filter::FunctionInBlock(block_type) => {
+//                     if let Some(block) = &function.class {
+//                         if block.name == *block_type.name {
+//                             vec.push(function.clone());
+//                         }
+//                     }
+//                 }
+//                 Filter::FunctionInLines(start, end) => {
+//                     if function.lines.0 >= *start && function.lines.1 <= *end {
+//                         vec.push(function.clone());
+//                     }
+//                 }
+//                 Filter::FunctionWithParent(parent) => {
+//                     for parents in &function.parent {
+//                         if parents.name == *parent {
+//                             vec.push(function.clone());
+//                         }
+//                     }
+//                 }
+//                 Filter::None => vec.push(function.clone()),
+//                 _ => return Err("Filter not available")?,
+//             }
+//         }
+//         if vec.is_empty() {
+//             return Err("No functions found for filter")?;
+//         }
+//         Ok(Self {
+//             name: self.name.clone(),
+//             functions: vec,
+//             current_pos: 0,
+//         })
+//     }
+// }
 
-impl File<c::Function> {
-    pub fn filter_by(&self, filter: &Filter<c::Function>) -> Result<Self, Box<dyn Error>> {
-        let mut vec = Vec::new();
-        for function in &self.functions {
-            match &filter {
+// impl File<c::Function> {
+//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+//         let mut vec = Vec::new();
+//         for function in &self.functions {
+//             match &filter {
 
-                Filter::FunctionInLines(start, end) => {
-                    if function.lines.0 >= *start && function.lines.1 <= *end {
-                        vec.push(function.clone());
-                    }
-                }
-                Filter::FunctionWithParent(parent) => {
-                    for parents in &function.parent {
-                        if parents.name == *parent {
-                            vec.push(function.clone());
-                        }
-                    }
-                }
-                Filter::None => vec.push(function.clone()),
-                _ => return Err("Filter not available")?,
-            }
-        }
-        if vec.is_empty() {
-            return Err("No functions found for filter")?;
-        }
-        Ok(Self {
-            name: self.name.clone(),
-            functions: vec,
-            current_pos: 0,
-        })
-    }
-}
+//                 Filter::FunctionInLines(start, end) => {
+//                     if function.lines.0 >= *start && function.lines.1 <= *end {
+//                         vec.push(function.clone());
+//                     }
+//                 }
+//                 Filter::FunctionWithParent(parent) => {
+//                     for parents in &function.parent {
+//                         if parents.name == *parent {
+//                             vec.push(function.clone());
+//                         }
+//                     }
+//                 }
+//                 Filter::None => vec.push(function.clone()),
+//                 _ => return Err("Filter not available")?,
+//             }
+//         }
+//         if vec.is_empty() {
+//             return Err("No functions found for filter")?;
+//         }
+//         Ok(Self {
+//             name: self.name.clone(),
+//             functions: vec,
+//             current_pos: 0,
+//         })
+//     }
+// }

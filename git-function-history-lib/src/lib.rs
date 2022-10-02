@@ -18,13 +18,14 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
+use languages::{python, rust, Function};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{error::Error, process::Command};
-pub use types::{
-    CommitFunctions, File, FunctionHistory
-};
+pub use types::{CommitFunctions, File, FunctionHistory};
+
+use crate::languages::Language;
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,7 +43,7 @@ pub enum FileType {
 // TODO: Add support for filtering by generic parameters, lifetimes, and return types.
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter<Block> {
+pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitHash(String),
     /// When you want to filter by a specific date (in rfc2822 format).
@@ -55,11 +56,11 @@ pub enum Filter<Block> {
     FileRelative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
-    // when you want to filter by function that are in a specific block (impl, trait, extern)
-    FunctionInBlock(Block),
-    // when you want to filter by function that are in between specific lines
+    /// when you want to filter by function that are in a specific block (impl, trait, extern)
+    // FunctionInBlock(Block),
+    /// when you want to filter by function that are in between specific lines
     FunctionInLines(usize, usize),
-    // when you want filter by a function that has a parent function of a specific name
+    /// when you want filter by a function that has a parent function of a specific name
     FunctionWithParent(String),
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
@@ -102,12 +103,11 @@ pub enum Filter<Block> {
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
-pub fn get_function_history<T: Clone>(
+pub fn get_function_history(
     name: &str,
     file: &FileType,
-    filter: Filter<T>,
-    languages: &[languages::Language],
-) -> Result<FunctionHistory<T>, Box<dyn Error + Send + Sync>> {
+    langs: &languages::Language,
+) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
         Err("function name is empty")?;
@@ -119,40 +119,40 @@ pub fn get_function_history<T: Clone>(
     command.arg("log");
     command.arg("--pretty=%H;%aD;%aN;%aE;%s");
     command.arg("--date=rfc2822");
-    match filter {
-        Filter::CommitHash(hash) => {
-            command.arg(hash);
-            command.arg("-n");
-            command.arg("1");
-        }
-        Filter::Date(date) => {
-            command.arg("--since");
-            command.arg(date);
-            command.arg("--max-count=1");
-        }
-        Filter::DateRange(start, end) => {
-            command.arg("--since");
-            command.arg(start);
-            command.arg("--until");
-            command.arg(end);
-        }
-        Filter::Author(author) => {
-            command.arg("--author");
-            command.arg(author);
-        }
-        Filter::AuthorEmail(email) => {
-            command.arg("--author");
-            command.arg(email);
-        }
-        Filter::Message(message) => {
-            command.arg("--grep");
-            command.arg(message);
-        }
-        Filter::None => {}
-        _ => {
-            Err("filter not supported")?;
-        }
-    }
+    // match filter {
+    //     Filter::CommitHash(hash) => {
+    //         command.arg(hash);
+    //         command.arg("-n");
+    //         command.arg("1");
+    //     }
+    //     Filter::Date(date) => {
+    //         command.arg("--since");
+    //         command.arg(date);
+    //         command.arg("--max-count=1");
+    //     }
+    //     Filter::DateRange(start, end) => {
+    //         command.arg("--since");
+    //         command.arg(start);
+    //         command.arg("--until");
+    //         command.arg(end);
+    //     }
+    //     Filter::Author(author) => {
+    //         command.arg("--author");
+    //         command.arg(author);
+    //     }
+    //     Filter::AuthorEmail(email) => {
+    //         command.arg("--author");
+    //         command.arg(email);
+    //     }
+    //     Filter::Message(message) => {
+    //         command.arg("--grep");
+    //         command.arg(message);
+    //     }
+    //     Filter::None => {}
+    //     _ => {
+    //         Err("filter not supported")?;
+    //     }
+    // }
     let output = command.output()?;
     if !output.stderr.is_empty() {
         return Err(String::from_utf8(output.stderr)?)?;
@@ -195,20 +195,22 @@ pub fn get_function_history<T: Clone>(
     let t = commits.iter();
     file_history.commit_history = t
         .filter_map(|commit| match &file {
-            FileType::Absolute(path) => match find_function_in_commit(commit.0, path, name) {
-                Ok(contents) => Some(CommitFunctions::new(
-                    commit.0.to_string(),
-                    vec![File::new(path.to_string(), contents)],
-                    commit.1,
-                    commit.2.to_string(),
-                    commit.3.to_string(),
-                    commit.4.to_string(),
-                )),
-                Err(_) => None,
-            },
+            FileType::Absolute(path) => {
+                match find_function_in_commit(commit.0, path, name, langs) {
+                    Ok(contents) => Some(CommitFunctions::new(
+                        commit.0.to_string(),
+                        vec![File::new(path.to_string(), contents)],
+                        commit.1,
+                        commit.2.to_string(),
+                        commit.3.to_string(),
+                        commit.4.to_string(),
+                    )),
+                    Err(_) => None,
+                }
+            }
 
             FileType::Relative(_) => {
-                match find_function_in_commit_with_filetype(commit.0, name, file) {
+                match find_function_in_commit_with_filetype(commit.0, name, file, langs) {
                     Ok(contents) => Some(CommitFunctions::new(
                         commit.0.to_string(),
                         contents,
@@ -222,7 +224,7 @@ pub fn get_function_history<T: Clone>(
             }
 
             FileType::None | FileType::Directory(_) => {
-                match find_function_in_commit_with_filetype(commit.0, name, file) {
+                match find_function_in_commit_with_filetype(commit.0, name, file, langs) {
                     Ok(contents) => Some(CommitFunctions::new(
                         commit.0.to_string(),
                         contents,
@@ -276,12 +278,12 @@ fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn 
     Ok(String::from_utf8_lossy(&commit_history.stdout).to_string())
 }
 
-
-fn find_function_in_commit_with_filetype<T>(
+fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
     filetype: &FileType,
-) -> Result<Vec<File<T>>, Box<dyn Error>> {
+    langs: &Language,
+) -> Result<Vec<File>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
@@ -317,10 +319,12 @@ fn find_function_in_commit_with_filetype<T>(
     #[cfg(not(feature = "parellel"))]
     let t = files.iter();
     let returns: Vec<File> = t
-        .filter_map(|file| match find_function_in_commit(commit, file, name) {
-            Ok(functions) => Some(File::new((*file).to_string(), functions)),
-            Err(_) => None,
-        })
+        .filter_map(
+            |file| match find_function_in_commit(commit, file, name, langs) {
+                Ok(functions) => Some(File::new((*file).to_string(), functions)),
+                Err(_) => None,
+            },
+        )
         .collect();
     if returns.is_empty() {
         Err(err)?;
@@ -352,8 +356,8 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Relative("src/test_functions.rs".to_string()),
-            Filter::None,
-            languages::Language::Rust,
+            // Filter::None,
+            &languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -370,8 +374,8 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Absolute("src/test_functions.rs".to_string()),
-            Filter::None,
-            languages::Language::Rust,
+            // Filter::None,
+            &languages::Language::Rust,
         );
         // assert that err is "not git is not installed"
         if output.is_err() {
@@ -384,8 +388,8 @@ mod tests {
         let output = get_function_history(
             "Not_a_function",
             &FileType::Absolute("src/test_functions.rs".to_string()),
-            Filter::None,
-            languages::Language::Rust,
+            // Filter::None,
+            &languages::Language::Rust,
         );
         match &output {
             Ok(output) => println!("{}", output),
@@ -399,8 +403,8 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Absolute("src/test_functions.txt".to_string()),
-            Filter::None,
-            languages::Language::Rust,
+            // Filter::None,
+            &languages::Language::Rust,
         );
         assert!(output.is_err());
         assert_eq!(output.unwrap_err().to_string(), "file is not a rust file");
@@ -411,11 +415,11 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::None,
-            Filter::DateRange(
-                "17 Aug 2022 11:27:23 -0400".to_owned(),
-                "19 Aug 2022 23:45:52 +0000".to_owned(),
-            ),
-            languages::Language::Rust,
+            // Filter::DateRange(
+            //     "17 Aug 2022 11:27:23 -0400".to_owned(),
+            //     "19 Aug 2022 23:45:52 +0000".to_owned(),
+            // ),
+            &languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -431,8 +435,12 @@ mod tests {
     #[test]
     fn expensive_tes() {
         let now = Utc::now();
-        let output = get_function_history("empty_test", &FileType::None, Filter::None
-        , languages::Language::Rust);
+        let output = get_function_history(
+            "empty_test",
+            &FileType::None,
+            // Filter::None,
+            &languages::Language::Rust,
+        );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
