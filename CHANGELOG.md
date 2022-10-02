@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file.
 
 - Trying to fix changelog
 
+### Lib
+
+- Moved away from using mostly enerics to using enums
+
 ### Tui
 
 - Saving search history to a file now
