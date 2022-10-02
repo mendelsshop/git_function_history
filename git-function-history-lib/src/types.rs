@@ -1,10 +1,10 @@
 use chrono::{DateTime, FixedOffset};
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{ParallelIterator};
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
-    languages::{c, python, rust, Function, Language},
+    languages::{c, python, rust, Function},
     Filter,
 };
 
@@ -13,13 +13,13 @@ use crate::{
 pub struct File {
     /// The name of the file
     pub(crate) name: String,
-    pub(crate) functions: Vec<FileType>,
+    pub(crate) functions: FileType,
     pub(crate) current_pos: usize,
 }
 
 impl File {
     /// Create a new file with the given name and functions
-    pub fn new(name: String, functions: Vec<FileType>) -> Self {
+    pub fn new(name: String, functions: FileType) -> Self {
         Self {
             name,
             functions,
@@ -28,49 +28,96 @@ impl File {
     }
 
     /// This is used to get the functions in the file
-    pub const fn get_functions(&self) -> &Vec<FileType> {
+    pub const fn get_functions(&self) -> &FileType {
         &self.functions
     }
 
     /// This is used to get the functions in the file (mutable)
-    pub fn get_functions_mut(&mut self) -> &mut Vec<FileType> {
+    pub fn get_functions_mut(&mut self) -> &mut FileType {
         &mut self.functions
     }
 
-    /// This is will get the current function in the file
-    pub fn get_current_function(&self) -> Option<&FileType> {
-        self.functions.get(self.current_pos)
-    }
+    // /// This is will get the current function in the file
+    // pub fn get_current_function(&self) -> Option<&FileType> {
+    //     self.functions.get(self.current_pos)
+    // }
 
-    /// This is will get the current function in the file (mutable)
-    pub fn get_current_function_mut(&mut self) -> Option<&mut FileType> {
-        self.functions.get_mut(self.current_pos)
-    }
-}
-
-impl Iterator for File {
-    type Item = FileType;
-    fn next(&mut self) -> Option<Self::Item> {
-        // get the current function without removing it
-        let function = self.functions.get(self.current_pos).cloned();
-        self.current_pos += 1;
-        function
-    }
+    // /// This is will get the current function in the file (mutable)
+    // pub fn get_current_function_mut(&mut self) -> Option<&mut FileType> {
+    //     self.functions.get_mut(self.current_pos)
+    // }
 }
 
 impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
+        // write!(f, "{}", self.name)
+        match &self.functions {
+            FileType::Python(python) => {
+                for (i, function) in python.iter().enumerate() {
+                    write!(
+                        f,
+                        "{}",
+                        match i {
+                            0 => "",
+                            _ => "\n...\n",
+                        },
+                    )?;
+                    let previous = match i {
+                        0 => None,
+                        _ => python.get(i - 1),
+                    };
+                    let next = python.get(i + 1);
+                    function.fmt_with_context(f, previous, next)?;
+                }
+            }
+            FileType::Rust(rust) => {
+                for (i, function) in rust.iter().enumerate() {
+                    write!(
+                        f,
+                        "{}",
+                        match i {
+                            0 => "",
+                            _ => "\n...\n",
+                        },
+                    )?;
+                    let previous = match i {
+                        0 => None,
+                        _ => rust.get(i - 1),
+                    };
+                    let next = rust.get(i + 1);
+                    function.fmt_with_context(f, previous, next)?;
+                }
+            }
+            FileType::C(c) => {
+                for (i, function) in c.iter().enumerate() {
+                    write!(
+                        f,
+                        "{}",
+                        match i {
+                            0 => "",
+                            _ => "\n...\n",
+                        },
+                    )?;
+                    let previous = match i {
+                        0 => None,
+                        _ => c.get(i - 1),
+                    };
+                    let next = c.get(i + 1);
+                    function.fmt_with_context(f, previous, next)?;
+                }
+            }
+        };
+        Ok(())
     }
 }
 #[derive(Debug, Clone)]
 pub enum FileType {
     /// The python language
-    Python(python::Function),
+    Python(Vec<python::Function>),
     /// The rust language
-    Rust(rust::Function),
+    Rust(Vec<rust::Function>),
     /// c language
-    C(c::Function),
+    C(Vec<c::Function>),
 }
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
@@ -138,12 +185,12 @@ impl CommitFunctions {
     }
 
     /// returns the current file
-    pub fn get_file<FileType: Function>(&self) -> &File {
+    pub fn get_file(&self) -> &File {
         &self.files[self.current_pos]
     }
 
     /// returns the current file (mutable)
-    pub fn get_file_mut<FileType: Function>(&mut self) -> &mut File {
+    pub fn get_file_mut(&mut self) -> &mut File {
         &mut self.files[self.current_pos]
     }
 
@@ -160,7 +207,7 @@ impl CommitFunctions {
     /// returns a new `CommitFunctions` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInBlock`, `Filter::FunctionInLines`, `Filter::FunctionWithParent`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    pub fn filter_by(&self, _filter: &Filter) -> Result<Self, Box<dyn Error>> {
         // let mut vec = Vec::new();
         // for f in &self.files {
         //     match filter {
@@ -324,7 +371,7 @@ impl FunctionHistory {
     ///
     /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
     /// ```
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    pub fn filter_by(&self, _filter: &Filter) -> Result<Self, Box<dyn Error>> {
         // #[cfg(feature = "parallel")]
         // let t = self.commit_history.par_iter();
         // #[cfg(not(feature = "parallel"))]

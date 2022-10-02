@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
 use super::FunctionResult;
 #[derive(Debug, Clone)]
@@ -34,9 +34,9 @@ impl Function {
 impl super::Function for Function {
     fn fmt_with_context(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
+        _f: &mut std::fmt::Formatter<'_>,
+        _previous: Option<&Self>,
+        _next: Option<&Self>,
     ) -> std::fmt::Result {
         todo!()
     }
@@ -56,9 +56,9 @@ pub struct ParentFunction {
 }
 
 pub(crate) fn find_function_in_commit<T: super::Function>(
-    commit: &str,
-    file_path: &str,
-    name: &str,
+    _commit: &str,
+    _file_path: &str,
+    _name: &str,
 ) -> FunctionResult<T> {
     todo!("find_function_in_commit")
 }

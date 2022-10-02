@@ -1,7 +1,5 @@
 use std::{collections::HashMap, error::Error, fmt};
-
-use crate::{File, Filter};
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     /// The python language
     Python,
@@ -11,12 +9,23 @@ pub enum Language {
     C,
 }
 
+impl Language {
+    pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
+        match s {
+            "python" => Ok(Self::Python),
+            "rust" => Ok(Self::Rust),
+            "c" => Ok(Self::C),
+            _ => Err(format!("Unknown language: {}", s))?,
+        }
+    }
+}
+
 impl fmt::Display for Language {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Language::Python => write!(f, "python"),
-            Language::Rust => write!(f, "rust"),
-            Language::C => write!(f, "c"),
+            Self::Python => write!(f, "python"),
+            Self::Rust => write!(f, "rust"),
+            Self::C => write!(f, "c"),
         }
     }
 }

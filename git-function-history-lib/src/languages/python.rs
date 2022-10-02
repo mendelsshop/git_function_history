@@ -6,10 +6,6 @@ use rustpython_parser::{
     parser,
 };
 
-use crate::File;
-
-use super::FunctionResult;
-
 #[derive(Debug, Clone)]
 pub struct Function {
     pub(crate) name: String,
@@ -145,11 +141,12 @@ pub(crate) fn find_function_in_commit(
     name: &str,
 ) -> Result<Vec<Function>, Box<dyn std::error::Error>> {
     let file_contents = crate::find_file_in_commit(commit, file_path)?;
+
     let ast = parser::parse_program(&file_contents)?;
     let mut functions = vec![];
     let mut last = None;
     for stmt in ast.statements {
-        get_functions(stmt, &mut functions, "baz", &mut last, &mut None);
+        get_functions(stmt, &mut functions, name, &mut last, &mut None);
     }
     let mut starts = file_contents
         .match_indices('\n')
@@ -193,6 +190,9 @@ pub(crate) fn find_function_in_commit(
             };
             new.push(new_func);
         }
+    }
+    if new.is_empty() {
+        Err("No function found")?;
     }
     Ok(new)
 }
@@ -243,6 +243,7 @@ fn get_functions<'a>(
                 std::mem::swap(last, &mut new);
                 functions.push((new.0, (new.1, stmt.location)));
             } else {
+                // TODO: figure out if its the last node if so then we can push it here otherwise we need to wait for the next node
                 *last_found_fn = Some((stmt.node, stmt.location));
             }
         }

@@ -5,7 +5,12 @@ use crate::{app::actions::Action, keys::Key};
 use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, Status,
 };
-use git_function_history::{BlockType, FileType, Filter};
+use git_function_history::{
+    languages::Language,
+    // BlockType,
+    FileType,
+    Filter,
+};
 use std::{
     fs,
     io::{Read, Write},
@@ -200,15 +205,15 @@ impl App {
                                         None
                                     }
                                 }
-                                "block" => {
-                                    if let Some(block) = iter.next() {
-                                        Some(Filter::FunctionInBlock(BlockType::from_string(block)))
-                                    } else {
-                                        self.status =
-                                            Status::Error("No block type given".to_string());
-                                        None
-                                    }
-                                }
+                                // "block" => {
+                                //     if let Some(block) = iter.next() {
+                                //         Some(Filter::FunctionInBlock(BlockType::from_string(block)))
+                                //     } else {
+                                //         self.status =
+                                //             Status::Error("No block type given".to_string());
+                                //         None
+                                //     }
+                                // }
                                 "date-range" => {
                                     if let Some(start) = iter.next() {
                                         if let Some(end) = iter.next() {
@@ -315,6 +320,7 @@ impl App {
                                     name.to_string(),
                                     FileType::None,
                                     Filter::None,
+                                    Language::Rust,
                                 ))
                             }
                             Some(thing) => match thing {
@@ -388,7 +394,12 @@ impl App {
                                         None => Filter::None,
                                     };
 
-                                    Some(FullCommand::Search(name.to_string(), file_type, filter))
+                                    Some(FullCommand::Search(
+                                        name.to_string(),
+                                        file_type,
+                                        filter,
+                                        Language::Rust,
+                                    ))
                                 }
                                 "date" | "commit" | "date range" => {
                                     let filter = match thing {
@@ -439,6 +450,7 @@ impl App {
                                         name.to_string(),
                                         FileType::None,
                                         filter,
+                                        Language::Rust,
                                     ))
                                 }
                                 _ => {

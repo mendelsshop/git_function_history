@@ -5,8 +5,6 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
-use super::FunctionResult;
-
 /// This holds the information about a single  function each commit will have multiple of these.
 #[derive(Debug, Clone)]
 pub struct Function {

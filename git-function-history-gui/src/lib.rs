@@ -13,7 +13,13 @@ use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
 };
 use git_function_history::{
-    types::Directions, BlockType, CommitFunctions, FileType, Filter, FunctionHistory,
+    languages::Language,
+    types::Directions,
+    // BlockType,
+    CommitFunctions,
+    FileType,
+    Filter,
+    FunctionHistory,
 };
 
 // TODO: stop cloning everyting and use references instead
@@ -403,9 +409,10 @@ impl eframe::App for MyEguiApp {
                                         HistoryFilterType::DateRange(date1, date2) => Some(
                                             Filter::DateRange(date1.to_string(), date2.to_string()),
                                         ),
-                                        HistoryFilterType::FunctionInBlock(block) => Some(
-                                            Filter::FunctionInBlock(BlockType::from_string(block)),
-                                        ),
+                                        HistoryFilterType::FunctionInBlock(_block) => None,
+                                        // Some(
+                                        //     Filter::FunctionInBlock(BlockType::from_string(block)),
+                                        // ),
                                         HistoryFilterType::FunctionInLines(line1, line2) => {
                                             let fn_in_lines = (
                                                 match line1.parse::<usize>() {
@@ -575,6 +582,7 @@ impl eframe::App for MyEguiApp {
                                     self.input_buffer.clone(),
                                     self.file_type.clone(),
                                     self.filter.clone(),
+                                    Language::Rust,
                                 ))
                                 .unwrap();
                         }

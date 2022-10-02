@@ -16,7 +16,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let status = match config.function_name {
         string if string.is_empty() => Status::Ok(None),
         string => {
-            tx_m.send(FullCommand::Search(string, config.file_type, config.filter))?;
+            tx_m.send(FullCommand::Search(
+                string,
+                config.file_type,
+                config.filter,
+                git_function_history::languages::Language::Rust,
+            ))?;
             Status::Loading
         }
     };

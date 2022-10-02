@@ -18,7 +18,7 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
-use languages::{python, rust, Function};
+use languages::rust;
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
@@ -185,8 +185,22 @@ pub fn get_function_history(
     let err = "no history found".to_string();
     // check if file is a rust file
     if let FileType::Absolute(path) | FileType::Relative(path) = &file {
-        if !path.ends_with(".rs") {
-            Err("file is not a rust file")?;
+        match langs {
+            Language::C => {
+                if !path.ends_with(".c") || !path.ends_with(".h") {
+                    Err("file is not a c file")?;
+                }
+            }
+            Language::Python => {
+                if !path.ends_with(".py") {
+                    Err("file is not a python file")?;
+                }
+            }
+            Language::Rust => {
+                if !path.ends_with(".rs") {
+                    Err("file is not a rust file")?;
+                }
+            }
         }
     }
     #[cfg(feature = "parallel")]
@@ -196,10 +210,10 @@ pub fn get_function_history(
     file_history.commit_history = t
         .filter_map(|commit| match &file {
             FileType::Absolute(path) => {
-                match find_function_in_commit(commit.0, path, name, langs) {
+                match find_function_in_commit(commit.0, path, name, *langs) {
                     Ok(contents) => Some(CommitFunctions::new(
                         commit.0.to_string(),
-                        vec![File::new(path.to_string(), contents)],
+                        vec![contents],
                         commit.1,
                         commit.2.to_string(),
                         commit.3.to_string(),
@@ -209,22 +223,8 @@ pub fn get_function_history(
                 }
             }
 
-            FileType::Relative(_) => {
-                match find_function_in_commit_with_filetype(commit.0, name, file, langs) {
-                    Ok(contents) => Some(CommitFunctions::new(
-                        commit.0.to_string(),
-                        contents,
-                        commit.1,
-                        commit.2.to_string(),
-                        commit.3.to_string(),
-                        commit.4.to_string(),
-                    )),
-                    Err(_) => None,
-                }
-            }
-
-            FileType::None | FileType::Directory(_) => {
-                match find_function_in_commit_with_filetype(commit.0, name, file, langs) {
+            FileType::Relative(_) | FileType::None | FileType::Directory(_) => {
+                match find_function_in_commit_with_filetype(commit.0, name, file, *langs) {
                     Ok(contents) => Some(CommitFunctions::new(
                         commit.0.to_string(),
                         contents,
@@ -282,7 +282,7 @@ fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
     filetype: &FileType,
-    langs: &Language,
+    langs: Language,
 ) -> Result<Vec<File>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
@@ -306,8 +306,23 @@ fn find_function_in_commit_with_filetype(
                 }
             }
             FileType::None => {
-                if file.ends_with(".rs") {
-                    files.push(file);
+                match langs {
+                    Language::C => {
+                        if file.ends_with(".c") || file.ends_with(".h") {
+                            files.push(file);
+                        }
+                    }
+                    Language::Python => {
+                        if file.ends_with(".py") {
+                            // panic!("{:?}", file);
+                            files.push(file);
+                        }
+                    }
+                    Language::Rust => {
+                        if file.ends_with(".rs") {
+                            files.push(file);
+                        }
+                    }
                 }
             }
             _ => {}
@@ -321,7 +336,7 @@ fn find_function_in_commit_with_filetype(
     let returns: Vec<File> = t
         .filter_map(
             |file| match find_function_in_commit(commit, file, name, langs) {
-                Ok(functions) => Some(File::new((*file).to_string(), functions)),
+                Ok(functions) => Some(functions),
                 Err(_) => None,
             },
         )
@@ -330,6 +345,37 @@ fn find_function_in_commit_with_filetype(
         Err(err)?;
     }
     Ok(returns)
+}
+
+fn find_function_in_commit(
+    commit: &str,
+    file_path: &str,
+    name: &str,
+    langs: Language,
+) -> Result<File, Box<dyn Error>> {
+    match langs {
+        Language::Rust => {
+            let functions = rust::find_function_in_commit(commit, file_path, name)?;
+            Ok(File::new(
+                file_path.to_string(),
+                types::FileType::Rust(functions),
+            ))
+        }
+        Language::C => {
+            let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
+            Ok(File::new(
+                file_path.to_string(),
+                types::FileType::C(functions),
+            ))
+        }
+        Language::Python => {
+            let functions = languages::python::find_function_in_commit(commit, file_path, name)?;
+            Ok(File::new(
+                file_path.to_string(),
+                types::FileType::Python(functions),
+            ))
+        }
+    }
 }
 
 trait UwrapToError<T> {
@@ -440,6 +486,26 @@ mod tests {
             &FileType::None,
             // Filter::None,
             &languages::Language::Rust,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
+        assert!(output.is_ok());
+    }
+
+    #[test]
+    fn python() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileType::Relative("src/test_functions.py".to_string()),
+            // Filter::None,
+            &languages::Language::Python,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
