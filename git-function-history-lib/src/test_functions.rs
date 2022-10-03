@@ -53,7 +53,7 @@ impl<a>Test<a>  {
 pub trait super_trait {
     fn super_trait_method(&self);
 
-    fn empty_test<T>() ->  String where T: super_trait;
+    fn empty_test<T: Clone>() ->  String where T: super_trait;
 }
 
 impl <'a, t> super_trait for t {
