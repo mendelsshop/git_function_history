@@ -437,7 +437,7 @@ impl eframe::App for MyEguiApp {
                                                 fn_in_lines.1,
                                             ))
                                         }
-                                        HistoryFilterType::FunctionInFunction(function) => {
+                                        HistoryFilterType::FunctionInFunction(_function) => {
                                             // Some(Filter::FunctionWithParent(function.to_string()))
                                             None
                                         }

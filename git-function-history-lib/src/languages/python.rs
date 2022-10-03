@@ -163,8 +163,8 @@ pub(crate) fn find_function_in_commit(
         // get the function body based on the location
         let start = func.1 .0.row();
         let end = func.1 .1.row();
-        let start = map[&(start-1)];
-        
+        let start = map[&(start - 1)];
+
         let end = map[&(end - 1)];
         if let StatementType::FunctionDef {
             name,
@@ -176,13 +176,16 @@ pub(crate) fn find_function_in_commit(
         } = func.0
         {
             let mut start_s = func.1 .0.row();
-            let body = file_contents[*start..*end].trim_start_matches('\n').to_string().lines().map(|l| {
-                
-                let t= format!("{}: {}\n", start_s, l,);
-                start_s += 1;
-                t
-            })
-            .collect::<String>();
+            let body = file_contents[*start..*end]
+                .trim_start_matches('\n')
+                .to_string()
+                .lines()
+                .map(|l| {
+                    let t = format!("{}: {}\n", start_s, l,);
+                    start_s += 1;
+                    t
+                })
+                .collect::<String>();
             let new_func = Function {
                 name: name.to_string(),
                 returns: returns.as_ref().map(|x| x.name().to_string()),
@@ -255,37 +258,10 @@ fn get_functions<'a>(
                 *last_found_fn = Some((stmt.node, stmt.location));
             }
         }
-        StatementType::FunctionDef { body, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
-        }
-        StatementType::If { body, orelse, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
 
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
-        }
-        StatementType::While { body, orelse, .. } => {
+        StatementType::If { body, orelse, .. }
+        | StatementType::While { body, orelse, .. }
+        | StatementType::For { body, orelse, .. } => {
             fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
             fun_name1(
                 body,
@@ -304,26 +280,9 @@ fn get_functions<'a>(
                 );
             }
         }
-        StatementType::For { body, orelse, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
-        }
-        StatementType::With { body, .. } => {
+        StatementType::FunctionDef { body, .. }
+        | StatementType::ClassDef { body, .. }
+        | StatementType::With { body, .. } => {
             fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
             fun_name1(
                 body,
@@ -375,16 +334,6 @@ fn get_functions<'a>(
                     other_last_found_fn,
                 );
             }
-        }
-        StatementType::ClassDef { body, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
         }
         _ => {
             fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);

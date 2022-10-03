@@ -116,7 +116,14 @@ impl super::Function for Function {
             map.insert("block", format!("{}", block.block_type));
         }
         map.insert("generics", self.generics.join(","));
-        map.insert("arguments", self.arguments.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(","));
+        map.insert(
+            "arguments",
+            self.arguments
+                .iter()
+                .map(|(k, v)| format!("{}: {}", k, v))
+                .collect::<Vec<String>>()
+                .join(","),
+        );
         map.insert("lifetime generics", self.lifetime.join(","));
         map.insert("attributes", self.attributes.join(","));
         map.insert("doc comments", self.doc_comments.join(","));
@@ -197,7 +204,14 @@ impl FunctionBlock {
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
         map.insert("generics".to_string(), self.generics.join(","));
-        map.insert("arguments".to_string(), self.arguments.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(","));
+        map.insert(
+            "arguments".to_string(),
+            self.arguments
+                .iter()
+                .map(|(k, v)| format!("{}: {}", k, v))
+                .collect::<Vec<String>>()
+                .join(","),
+        );
         map.insert("lifetime generics".to_string(), self.lifetime.join(","));
         map.insert("attributes".to_string(), self.attributes.join(","));
         map.insert("doc comments".to_string(), self.doc_comments.join(","));
@@ -382,9 +396,13 @@ pub(crate) fn find_function_in_commit(
                         return_type: function.ret_type().map(|ty| ty.to_string()),
                         arguments: match f.param_list() {
                             Some(args) => args
-                            .params()
-                            .filter_map(|arg| arg.to_string().rsplit_once(": ").map(|x| (x.0.to_string(), x.1.to_string())))
-                            .collect::<HashMap<String, String>>() ,
+                                .params()
+                                .filter_map(|arg| {
+                                    arg.to_string()
+                                        .rsplit_once(": ")
+                                        .map(|x| (x.0.to_string(), x.1.to_string()))
+                                })
+                                .collect::<HashMap<String, String>>(),
                             None => HashMap::new(),
                         },
                         attributes: attr.1,
@@ -417,9 +435,13 @@ pub(crate) fn find_function_in_commit(
             return_type: f.ret_type().map(|ty| ty.to_string()),
             arguments: match f.param_list() {
                 Some(args) => args
-                .params()
-                .filter_map(|arg| arg.to_string().rsplit_once(": ").map(|x| (x.0.to_string(), x.1.to_string())))
-                .collect::<HashMap<String, String>>() ,
+                    .params()
+                    .filter_map(|arg| {
+                        arg.to_string()
+                            .rsplit_once(": ")
+                            .map(|x| (x.0.to_string(), x.1.to_string()))
+                    })
+                    .collect::<HashMap<String, String>>(),
                 None => HashMap::new(),
             },
             lifetime: generics.1,
@@ -544,7 +566,6 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
     )
 }
 
-
 pub enum Filter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
     FunctionInBlock(Block),
@@ -556,7 +577,7 @@ pub enum Filter {
     FunctionWithParameterType(String),
     /// when you want to filter by a function that has a specific lifetime
     FunctionWithLifetime(String),
-    /// when you want to filter by a function that has a specific generic with name 
+    /// when you want to filter by a function that has a specific generic with name
     FunctionWithGeneric(String),
     /// when you want to filter by a function that has a specific attribute
     FunctionWithAttribute(String),

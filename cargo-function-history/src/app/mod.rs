@@ -197,7 +197,7 @@ impl App {
                                     }
                                 }
                                 "parent" => {
-                                    if let Some(parent) = iter.next() {
+                                    if let Some(_parent) = iter.next() {
                                         // Some(Filter::FunctionWithParent(parent.to_string()))
                                         None
                                     } else {

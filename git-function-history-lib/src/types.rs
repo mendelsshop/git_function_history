@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 #[cfg(feature = "parallel")]
-use rayon::prelude::{ParallelIterator};
+use rayon::prelude::ParallelIterator;
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
@@ -19,7 +19,7 @@ pub struct File {
 
 impl File {
     /// Create a new file with the given name and functions
-    pub fn new(name: String, functions: FileType) -> Self {
+    pub const fn new(name: String, functions: FileType) -> Self {
         Self {
             name,
             functions,
@@ -125,7 +125,7 @@ pub enum FileType {
 pub struct CommitFunctions {
     commit_hash: String,
     files: Vec<File>,
-    pub (crate )date: DateTime<FixedOffset>,
+    pub(crate) date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,
     author: String,
