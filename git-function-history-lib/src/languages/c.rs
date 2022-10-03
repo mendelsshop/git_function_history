@@ -62,3 +62,10 @@ pub(crate) fn find_function_in_commit<T: super::Function>(
 ) -> FunctionResult<T> {
     todo!("find_function_in_commit")
 }
+
+pub enum Filter {
+    /// when you want filter by a function that has a parent function of a specific name
+    FunctionWithParent(String),
+    /// when you want to filter by a function that has a has a specific return type
+    FunctionWithReturnType(String),
+}

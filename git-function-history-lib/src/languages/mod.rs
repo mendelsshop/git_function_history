@@ -7,6 +7,17 @@ pub enum Language {
     Rust,
     /// c language
     C,
+    /// all available languages
+    All,
+}
+
+pub enum LanguageFilter {
+    /// python filter
+    Python(python::Filter),
+    /// rust filter
+    Rust(rust::Filter),
+    /// c filter
+    C(c::Filter),
 }
 
 impl Language {
@@ -15,6 +26,7 @@ impl Language {
             "python" => Ok(Self::Python),
             "rust" => Ok(Self::Rust),
             "c" => Ok(Self::C),
+            "all" => Ok(Self::All),
             _ => Err(format!("Unknown language: {}", s))?,
         }
     }
@@ -26,6 +38,7 @@ impl fmt::Display for Language {
             Self::Python => write!(f, "python"),
             Self::Rust => write!(f, "rust"),
             Self::C => write!(f, "c"),
+            Self::All => write!(f, "all"),
         }
     }
 }

@@ -200,6 +200,7 @@ pub fn get_function_history(
                     Err("file is not a rust file")?;
                 }
             }
+            Language::All => {}
         }
     }
     #[cfg(feature = "parallel")]
@@ -322,6 +323,9 @@ fn find_function_in_commit_with_filetype(
                             files.push(file);
                         }
                     }
+                    Language::All => {
+                        files.push(file);
+                    }
                 }
             }
             _ => {}
@@ -374,6 +378,31 @@ fn find_function_in_commit(
                 types::FileType::Python(functions),
             ))
         }
+        Language::All => match file_path.split('.').last() {
+            Some("rs") => {
+                let functions = rust::find_function_in_commit(commit, file_path, name)?;
+                Ok(File::new(
+                    file_path.to_string(),
+                    types::FileType::Rust(functions),
+                ))
+            }
+            Some("c") | Some("h") => {
+                let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
+                Ok(File::new(
+                    file_path.to_string(),
+                    types::FileType::C(functions),
+                ))
+            }
+            Some("py") => {
+                let functions =
+                    languages::python::find_function_in_commit(commit, file_path, name)?;
+                Ok(File::new(
+                    file_path.to_string(),
+                    types::FileType::Python(functions),
+                ))
+            }
+            _ => Err("unknown file type")?,
+        },
     }
 }
 

@@ -16,7 +16,7 @@ pub struct Function {
     pub(crate) decorators: Vec<String>,
     pub(crate) class: Option<Class>,
     pub(crate) lines: (usize, usize),
-    returns: Option<String>,
+    pub(crate) returns: Option<String>,
 }
 
 impl Function {}
@@ -339,4 +339,17 @@ fn get_functions<'a>(
             fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
         }
     }
+}
+
+pub enum Filter {
+    /// when you want to filter by function that are in a specific class
+    FunctionInClass(String),
+    /// when you want filter by a function that has a parent function of a specific name
+    FunctionWithParent(String),
+    /// when you want to filter by a function that has a has a specific return type
+    FunctionWithReturnType(String),
+    /// when you want to filter by a function that has a specific parameter name
+    FunctionWithParameterName(String),
+    /// when you want to filter by a function that has a specific decorator
+    FunctionWithDecorator(String),
 }

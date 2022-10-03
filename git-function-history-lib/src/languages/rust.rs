@@ -575,6 +575,8 @@ pub enum Filter {
     FunctionWithReturnType(String),
     /// when you want to filter by a function that has a specific parameter type
     FunctionWithParameterType(String),
+    /// when you want to filter by a function that has a specific parameter name
+    FunctionWithParameterName(String),
     /// when you want to filter by a function that has a specific lifetime
     FunctionWithLifetime(String),
     /// when you want to filter by a function that has a specific generic with name
