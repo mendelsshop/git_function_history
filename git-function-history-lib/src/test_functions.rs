@@ -110,12 +110,12 @@ pub fn function_within(t: String) -> Result<i32, Box<dyn Error>> {
     empty_test(t)
 }
 
-pub struct Test2<T> 
+pub struct Test2<A> 
 where 
-T: 
+A: 
 super_trait {
     pub contents: String,
-    pub history: Vec<T>,
+    pub history: Vec<A>,
 }
 
 impl<T> Test2<T> 
