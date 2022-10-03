@@ -118,10 +118,9 @@ super_trait {
     pub history: Vec<A>,
 }
 
-impl<A> Test2<A> 
-where 
-A: 
-super_trait {
+impl<A> Test2<A,> 
+where A:
+super_trait  + Clone{
     pub fn empty_test<'a>() {
         println!("empty test");
     }
