@@ -120,7 +120,10 @@ super_trait {
 
 impl<A> Test2<A,> 
 where A:
-super_trait  + Clone{
+super_trait  + Clone,
+T: super
+
+{
     pub fn empty_test<'a>() {
         println!("empty test");
     }
