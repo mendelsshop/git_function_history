@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 
 - Moved away from using mostly enerics to using enums
 - Python works besides for one edge case when the function is the last node
+- Non proggraming languge (pl) filters addded back
 
 ### Tui
 
