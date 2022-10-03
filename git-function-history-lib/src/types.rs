@@ -125,7 +125,7 @@ pub enum FileType {
 pub struct CommitFunctions {
     commit_hash: String,
     files: Vec<File>,
-    date: DateTime<FixedOffset>,
+    pub (crate )date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,
     author: String,
