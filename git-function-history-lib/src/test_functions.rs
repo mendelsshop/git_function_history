@@ -111,7 +111,9 @@ pub fn function_within(t: String) -> Result<i32, Box<dyn Error>> {
 }
 
 pub struct Test2<T> 
-where T: super_trait {
+where 
+T: 
+super_trait {
     pub contents: String,
     pub history: Vec<T>,
 }
