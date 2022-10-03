@@ -438,7 +438,8 @@ impl eframe::App for MyEguiApp {
                                             ))
                                         }
                                         HistoryFilterType::FunctionInFunction(function) => {
-                                            Some(Filter::FunctionWithParent(function.to_string()))
+                                            // Some(Filter::FunctionWithParent(function.to_string()))
+                                            None
                                         }
                                         HistoryFilterType::FileAbsolute(file) => {
                                             Some(Filter::FileAbsolute(file.to_string()))

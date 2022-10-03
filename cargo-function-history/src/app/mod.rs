@@ -198,7 +198,8 @@ impl App {
                                 }
                                 "parent" => {
                                     if let Some(parent) = iter.next() {
-                                        Some(Filter::FunctionWithParent(parent.to_string()))
+                                        // Some(Filter::FunctionWithParent(parent.to_string()))
+                                        None
                                     } else {
                                         self.status =
                                             Status::Error("No parent function given".to_string());

@@ -163,7 +163,8 @@ pub(crate) fn find_function_in_commit(
         // get the function body based on the location
         let start = func.1 .0.row();
         let end = func.1 .1.row();
-        let start = map[&(start - 1)];
+        let start = map[&(start-1)];
+        
         let end = map[&(end - 1)];
         if let StatementType::FunctionDef {
             name,
@@ -174,7 +175,14 @@ pub(crate) fn find_function_in_commit(
             ..
         } = func.0
         {
-            let body = file_contents[*start..*end].to_string();
+            let mut start_s = func.1 .0.row();
+            let body = file_contents[*start..*end].trim_start_matches('\n').to_string().lines().map(|l| {
+                
+                let t= format!("{}: {}\n", start_s, l,);
+                start_s += 1;
+                t
+            })
+            .collect::<String>();
             let new_func = Function {
                 name: name.to_string(),
                 returns: returns.as_ref().map(|x| x.name().to_string()),

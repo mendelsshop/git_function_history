@@ -56,12 +56,10 @@ pub enum Filter {
     FileRelative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
-    /// when you want to filter by function that are in a specific block (impl, trait, extern)
-    // FunctionInBlock(Block),
+
     /// when you want to filter by function that are in between specific lines
     FunctionInLines(usize, usize),
-    /// when you want filter by a function that has a parent function of a specific name
-    FunctionWithParent(String),
+
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
@@ -106,6 +104,7 @@ pub enum Filter {
 pub fn get_function_history(
     name: &str,
     file: &FileType,
+    filter: &Filter,
     langs: &languages::Language,
 ) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
@@ -119,40 +118,40 @@ pub fn get_function_history(
     command.arg("log");
     command.arg("--pretty=%H;%aD;%aN;%aE;%s");
     command.arg("--date=rfc2822");
-    // match filter {
-    //     Filter::CommitHash(hash) => {
-    //         command.arg(hash);
-    //         command.arg("-n");
-    //         command.arg("1");
-    //     }
-    //     Filter::Date(date) => {
-    //         command.arg("--since");
-    //         command.arg(date);
-    //         command.arg("--max-count=1");
-    //     }
-    //     Filter::DateRange(start, end) => {
-    //         command.arg("--since");
-    //         command.arg(start);
-    //         command.arg("--until");
-    //         command.arg(end);
-    //     }
-    //     Filter::Author(author) => {
-    //         command.arg("--author");
-    //         command.arg(author);
-    //     }
-    //     Filter::AuthorEmail(email) => {
-    //         command.arg("--author");
-    //         command.arg(email);
-    //     }
-    //     Filter::Message(message) => {
-    //         command.arg("--grep");
-    //         command.arg(message);
-    //     }
-    //     Filter::None => {}
-    //     _ => {
-    //         Err("filter not supported")?;
-    //     }
-    // }
+    match filter {
+        Filter::CommitHash(hash) => {
+            command.arg(hash);
+            command.arg("-n");
+            command.arg("1");
+        }
+        Filter::Date(date) => {
+            command.arg("--since");
+            command.arg(date);
+            command.arg("--max-count=1");
+        }
+        Filter::DateRange(start, end) => {
+            command.arg("--since");
+            command.arg(start);
+            command.arg("--until");
+            command.arg(end);
+        }
+        Filter::Author(author) => {
+            command.arg("--author");
+            command.arg(author);
+        }
+        Filter::AuthorEmail(email) => {
+            command.arg("--author");
+            command.arg(email);
+        }
+        Filter::Message(message) => {
+            command.arg("--grep");
+            command.arg(message);
+        }
+        Filter::None => {}
+        _ => {
+            Err("filter not supported")?;
+        }
+    }
     let output = command.output()?;
     if !output.stderr.is_empty() {
         return Err(String::from_utf8(output.stderr)?)?;
@@ -402,7 +401,7 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Relative("src/test_functions.rs".to_string()),
-            // Filter::None,
+            &Filter::None,
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
@@ -420,7 +419,7 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Absolute("src/test_functions.rs".to_string()),
-            // Filter::None,
+            &Filter::None,
             &languages::Language::Rust,
         );
         // assert that err is "not git is not installed"
@@ -434,7 +433,7 @@ mod tests {
         let output = get_function_history(
             "Not_a_function",
             &FileType::Absolute("src/test_functions.rs".to_string()),
-            // Filter::None,
+            &Filter::None,
             &languages::Language::Rust,
         );
         match &output {
@@ -449,7 +448,7 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Absolute("src/test_functions.txt".to_string()),
-            // Filter::None,
+            &Filter::None,
             &languages::Language::Rust,
         );
         assert!(output.is_err());
@@ -461,10 +460,10 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::None,
-            // Filter::DateRange(
-            //     "17 Aug 2022 11:27:23 -0400".to_owned(),
-            //     "19 Aug 2022 23:45:52 +0000".to_owned(),
-            // ),
+            &Filter::DateRange(
+                "27 Sep 2022 11:27:23 -0400".to_owned(),
+                "04 Oct 2022 23:45:52 +0000".to_owned(),
+            ),
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
@@ -484,7 +483,7 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::None,
-            // Filter::None,
+            &Filter::None,
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
@@ -504,7 +503,10 @@ mod tests {
         let output = get_function_history(
             "empty_test",
             &FileType::Relative("src/test_functions.py".to_string()),
-            // Filter::None,
+            &Filter::DateRange(
+                "03 Oct 2022 11:27:23 -0400".to_owned(),
+                "04 Oct 2022 23:45:52 +0000".to_owned(),
+            ),
             &languages::Language::Python,
         );
         let after = Utc::now() - now;

@@ -22,7 +22,7 @@ pub struct Function {
     /// The generic types of the function
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
-    pub(crate) arguments: Vec<String>,
+    pub(crate) arguments: HashMap<String, String>,
     /// The return type of the function
     pub(crate) return_type: Option<String>,
     /// The functions atrributes
@@ -116,7 +116,7 @@ impl super::Function for Function {
             map.insert("block", format!("{}", block.block_type));
         }
         map.insert("generics", self.generics.join(","));
-        map.insert("arguments", self.arguments.join(","));
+        map.insert("arguments", self.arguments.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(","));
         map.insert("lifetime generics", self.lifetime.join(","));
         map.insert("attributes", self.attributes.join(","));
         map.insert("doc comments", self.doc_comments.join(","));
@@ -179,7 +179,7 @@ pub struct FunctionBlock {
     /// The generic types of the function
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
-    pub(crate) arguments: Vec<String>,
+    pub(crate) arguments: HashMap<String, String>,
     /// The return type of the function
     pub(crate) return_type: Option<String>,
     /// the function atrributes
@@ -197,7 +197,7 @@ impl FunctionBlock {
         map.insert("signature".to_string(), self.top.clone());
         map.insert("bottom".to_string(), self.bottom.clone());
         map.insert("generics".to_string(), self.generics.join(","));
-        map.insert("arguments".to_string(), self.arguments.join(","));
+        map.insert("arguments".to_string(), self.arguments.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(","));
         map.insert("lifetime generics".to_string(), self.lifetime.join(","));
         map.insert("attributes".to_string(), self.attributes.join(","));
         map.insert("doc comments".to_string(), self.doc_comments.join(","));
@@ -380,12 +380,12 @@ pub(crate) fn find_function_in_commit(
                         bottom: stuff.1 .1,
                         lines: (stuff.0 .0, stuff.0 .1),
                         return_type: function.ret_type().map(|ty| ty.to_string()),
-                        arguments: match function.param_list() {
+                        arguments: match f.param_list() {
                             Some(args) => args
-                                .params()
-                                .map(|arg| arg.to_string())
-                                .collect::<Vec<String>>(),
-                            None => Vec::new(),
+                            .params()
+                            .filter_map(|arg| arg.to_string().rsplit_once(": ").map(|x| (x.0.to_string(), x.1.to_string())))
+                            .collect::<HashMap<String, String>>() ,
+                            None => HashMap::new(),
                         },
                         attributes: attr.1,
                         doc_comments: attr.0,
@@ -417,10 +417,10 @@ pub(crate) fn find_function_in_commit(
             return_type: f.ret_type().map(|ty| ty.to_string()),
             arguments: match f.param_list() {
                 Some(args) => args
-                    .params()
-                    .map(|arg| arg.to_string())
-                    .collect::<Vec<String>>(),
-                None => Vec::new(),
+                .params()
+                .filter_map(|arg| arg.to_string().rsplit_once(": ").map(|x| (x.0.to_string(), x.1.to_string())))
+                .collect::<HashMap<String, String>>() ,
+                None => HashMap::new(),
             },
             lifetime: generics.1,
             generics: generics.0,
@@ -517,6 +517,7 @@ fn get_stuff<T: AstNode>(
 }
 
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
+    // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
     match block.generic_param_list() {
         None => (vec![], vec![]),
         Some(gt) => (
@@ -541,4 +542,22 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
             .map(|c| c.to_string())
             .collect::<Vec<String>>(),
     )
+}
+
+
+pub enum Filter {
+    /// when you want to filter by function that are in a specific block (impl, trait, extern)
+    FunctionInBlock(Block),
+    /// when you want filter by a function that has a parent function of a specific name
+    FunctionWithParent(String),
+    /// when you want to filter by a function that has a has a specific return type
+    FunctionWithReturnType(String),
+    /// when you want to filter by a function that has a specific parameter type
+    FunctionWithParameterType(String),
+    /// when you want to filter by a function that has a specific lifetime
+    FunctionWithLifetime(String),
+    /// when you want to filter by a function that has a specific generic with name 
+    FunctionWithGeneric(String),
+    /// when you want to filter by a function that has a specific attribute
+    FunctionWithAttribute(String),
 }
