@@ -27,6 +27,7 @@ All notable changes to this project will be documented in this file.
 - Python works besides for one edge case when the function is the last node
 - Non proggraming languge (pl) filters addded back
 - Added ability to search in all supported languages
+- Pl filters now working very messy and boilerplatety
 
 ### Tui
 
