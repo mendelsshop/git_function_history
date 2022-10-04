@@ -1,10 +1,11 @@
 use chrono::{DateTime, FixedOffset};
+use rayon::prelude::IntoParallelRefIterator;
 #[cfg(feature = "parallel")]
 use rayon::prelude::ParallelIterator;
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
-    languages::{c, python, rust, Function},
+    languages::{c, python, rust, Function, LanguageFilter},
     Filter,
 };
 
@@ -37,22 +38,113 @@ impl File {
         &mut self.functions
     }
 
-    // /// This is will get the current function in the file
-    // pub fn get_current_function(&self) -> Option<&FileType> {
-    //     self.functions.get(self.current_pos)
-    // }
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        match filter {
+            Filter::FunctionInLines(..) | Filter::PLFilter(_) => {}
+            Filter::None => return Ok(self.clone()),
+            _ => return Err("Filter not available")?,
+        }
+        let mut new_file = self.clone();
+        new_file.functions = match &self.functions {
+            FileType::Rust(functions, _) => {
+                let mut vec = Vec::new();
+                for function in functions {
+                    match &filter {
+                        Filter::FunctionInLines(start, end) => {
+                            if function.lines.0 >= *start && function.lines.1 <= *end {
+                                vec.push(function.clone());
+                            }
+                        }
+                        Filter::PLFilter(LanguageFilter::Rust(filter)) => {
+                            if filter.matches(function) {
+                                vec.push(function.clone());
+                            }
+                        }
+                        _ => return Err("Filter not available")?,
+                    }
+                }
+                if vec.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+                FileType::Rust(vec, 0)
+            }
 
-    // /// This is will get the current function in the file (mutable)
-    // pub fn get_current_function_mut(&mut self) -> Option<&mut FileType> {
-    //     self.functions.get_mut(self.current_pos)
-    // }
+            FileType::Python(functions, _) => {
+                let mut vec = Vec::new();
+                for function in functions {
+                    match &filter {
+                        Filter::FunctionInLines(start, end) => {
+                            if function.lines.0 >= *start && function.lines.1 <= *end {
+                                vec.push(function.clone());
+                            }
+                        }
+                        Filter::PLFilter(LanguageFilter::Python(filter)) => {
+                            if filter.matches(function) {
+                                vec.push(function.clone());
+                            }
+                        }
+                        _ => return Err("Filter not available")?,
+                    }
+                }
+                if vec.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+                FileType::Python(vec, 0)
+            }
+            FileType::C(functions, _) => {
+                let mut vec = Vec::new();
+                for function in functions {
+                    match &filter {
+                        Filter::FunctionInLines(start, end) => {
+                            if function.lines.0 >= *start && function.lines.1 <= *end {
+                                vec.push(function.clone());
+                            }
+                        }
+                        Filter::PLFilter(LanguageFilter::C(filter)) => {
+                            if filter.matches(function) {
+                                vec.push(function.clone());
+                            }
+                        }
+                        _ => return Err("Filter not available")?,
+                    }
+                }
+                if vec.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+                FileType::C(vec, 0)
+            }
+        };
+        match &new_file.functions {
+            FileType::C(functions, _) => {
+                if functions.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+            }
+            FileType::Python(functions, _) => {
+                if functions.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+            }
+            FileType::Rust(functions, _) => {
+                if functions.is_empty() {
+                    return Err("No functions found for filter")?;
+                }
+            }
+        }
+        Ok(new_file)
+    }
+
+    /// This is will get the current function in the file
+    pub fn get_current_function(&self) -> Option<FunctionType> {
+        self.functions.get(self.current_pos)
+    }
 }
 
 impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // write!(f, "{}", self.name)
         match &self.functions {
-            FileType::Python(python) => {
+            FileType::Python(python, _) => {
                 for (i, function) in python.iter().enumerate() {
                     write!(
                         f,
@@ -70,7 +162,7 @@ impl fmt::Display for File {
                     function.fmt_with_context(f, previous, next)?;
                 }
             }
-            FileType::Rust(rust) => {
+            FileType::Rust(rust, _) => {
                 for (i, function) in rust.iter().enumerate() {
                     write!(
                         f,
@@ -88,7 +180,7 @@ impl fmt::Display for File {
                     function.fmt_with_context(f, previous, next)?;
                 }
             }
-            FileType::C(c) => {
+            FileType::C(c, _) => {
                 for (i, function) in c.iter().enumerate() {
                     write!(
                         f,
@@ -110,14 +202,104 @@ impl fmt::Display for File {
         Ok(())
     }
 }
+
+pub enum FunctionType {
+    Python(python::Function),
+    Rust(rust::Function),
+    C(c::Function),
+}
+
+impl FunctionType {
+    pub const fn get_lines(&self) -> (usize, usize) {
+        match self {
+            Self::Python(python) => python.lines,
+            Self::Rust(rust) => rust.lines,
+            Self::C(c) => c.lines,
+        }
+    }
+}
+
+impl Iterator for File {
+    type Item = FunctionType;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current = self.current_pos;
+        self.current_pos += 1;
+
+        match &self.functions {
+            FileType::Python(python, _) => {
+                python.get(current).map(|f| FunctionType::Python(f.clone()))
+            }
+            FileType::Rust(rust, _) => rust.get(current).map(|f| FunctionType::Rust(f.clone())),
+            FileType::C(c, _) => c.get(current).map(|f| FunctionType::C(f.clone())),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum FileType {
     /// The python language
-    Python(Vec<python::Function>),
+    Python(Vec<python::Function>, usize),
     /// The rust language
-    Rust(Vec<rust::Function>),
+    Rust(Vec<rust::Function>, usize),
     /// c language
-    C(Vec<c::Function>),
+    C(Vec<c::Function>, usize),
+}
+
+impl Iterator for FileType {
+    type Item = FunctionType;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Python(python, pos) => python.get(*pos).map(|f| {
+                *pos += 1;
+                FunctionType::Python(f.clone())
+            }),
+            Self::Rust(rust, pos) => rust.get(*pos).map(|f| {
+                *pos += 1;
+                FunctionType::Rust(f.clone())
+            }),
+
+            Self::C(c, pos) => c.get(*pos).map(|f| {
+                *pos += 1;
+                FunctionType::C(f.clone())
+            }),
+        }
+    }
+}
+
+impl FileType {
+    pub fn get(&self, index: usize) -> Option<FunctionType> {
+        match self {
+            Self::Rust(rust, _) => rust
+                .get(index)
+                .map(|function| FunctionType::Rust(function.clone())),
+            Self::C(c, _) => c
+                .get(index)
+                .map(|function| FunctionType::C(function.clone())),
+            Self::Python(python, _) => python
+                .get(index)
+                .map(|function| FunctionType::Python(function.clone())),
+        }
+    }
+
+    pub fn get_current<
+        T: Clone + From<python::Function> + From<c::Function> + From<rust::Function>,
+    >(
+        &self,
+    ) -> Vec<T> {
+        match self {
+            Self::Python(python, _pos) => python
+                .iter()
+                .map(|function| T::from(function.clone()))
+                .collect(),
+            Self::Rust(rust, _pos) => rust
+                .iter()
+                .map(|function| T::from(function.clone()))
+                .collect(),
+            Self::C(c, _pos) => c.iter().map(|function| T::from(function.clone())).collect(),
+        }
+    }
 }
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
@@ -206,51 +388,48 @@ impl CommitFunctions {
 
     /// returns a new `CommitFunctions` by filtering the current one by the filter specified (does not modify the current one).
     ///
-    /// valid filters are: `Filter::FunctionInBlock`, `Filter::FunctionInLines`, `Filter::FunctionWithParent`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
-    pub fn filter_by(&self, _filter: &Filter) -> Result<Self, Box<dyn Error>> {
-        // let mut vec = Vec::new();
-        // for f in &self.files {
-        //     match filter {
-        //         Filter::FileAbsolute(file) => {
-        //             if f.name == *file {
-        //                 vec.push(f.clone());
-        //             }
-        //         }
-        //         Filter::FileRelative(file) => {
-        //             if f.name.ends_with(file) {
-        //                 vec.push(f.clone());
-        //             }
-        //         }
-        //         Filter::Directory(dir) => {
-        //             if f.name.contains(dir) {
-        //                 vec.push(f.clone());
-        //             }
-        //         }
-        //         Filter::FunctionInLines(..)
-        //         | Filter::FunctionWithParent(_)
-        //         | Filter::FunctionInBlock(_) => {
-        //             if f.filter_by(filter).is_ok() {
-        //                 vec.push(f.clone());
-        //             }
-        //         }
-        //         Filter::None => vec.push(f.clone()),
-        //         _ => Err("Invalid filter")?,
-        //     }
-        // }
-        // if vec.is_empty() {
-        //     return Err("No files found for filter")?;
-        // }
-        // Ok(Self {
-        //     commit_hash: self.commit_hash.clone(),
-        //     files: vec,
-        //     date: self.date,
-        //     current_pos: 0,
-        //     current_iter_pos: 0,
-        //     author: self.author.clone(),
-        //     email: self.email.clone(),
-        //     message: self.message.clone(),
-        // })
-        todo!()
+    /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        match filter {
+            Filter::FileAbsolute(_)
+            | Filter::FileRelative(_)
+            | Filter::Directory(_)
+            | Filter::FunctionInLines(..)
+            | Filter::PLFilter(_) => {}
+            Filter::None => {
+                return Ok(self.clone());
+            }
+            _ => Err("Invalid filter")?,
+        }
+        #[cfg(feature = "parallel")]
+        let t = self.files.iter();
+        #[cfg(not(feature = "parallel"))]
+        let t = self.files.iter();
+        let vec: Vec<_> = t
+            .filter(|f| match filter {
+                Filter::FileAbsolute(file) => f.name == *file,
+                Filter::FileRelative(file) => f.name.ends_with(file),
+                Filter::Directory(dir) => f.name.contains(dir),
+                Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).is_ok(),
+                Filter::None => true,
+                _ => false,
+            })
+            .cloned()
+            .collect();
+
+        if vec.is_empty() {
+            return Err("No files found for filter")?;
+        }
+        Ok(Self {
+            commit_hash: self.commit_hash.clone(),
+            files: vec,
+            date: self.date,
+            current_pos: 0,
+            current_iter_pos: 0,
+            author: self.author.clone(),
+            email: self.email.clone(),
+            message: self.message.clone(),
+        })
     }
 }
 
@@ -371,50 +550,49 @@ impl FunctionHistory {
     ///
     /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
     /// ```
-    pub fn filter_by(&self, _filter: &Filter) -> Result<Self, Box<dyn Error>> {
-        // #[cfg(feature = "parallel")]
-        // let t = self.commit_history.par_iter();
-        // #[cfg(not(feature = "parallel"))]
-        // let t = self.commit_history.iter();
-        // let vec: Vec<CommitFunctions> = t
-        //     .filter(|f| match filter {
-        //         Filter::FunctionInLines(..)
-        //         | Filter::FunctionWithParent(_)
-        //         | Filter::FunctionInBlock(_)
-        //         | Filter::Directory(_)
-        //         | Filter::FileAbsolute(_)
-        //         | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
-        //         Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
-        //         Filter::Date(date) => &f.date.to_rfc2822() == date,
-        //         Filter::DateRange(start, end) => {
-        //             let start = match DateTime::parse_from_rfc2822(start) {
-        //                 Ok(date) => date,
-        //                 Err(_) => return false,
-        //             };
-        //             let end = match DateTime::parse_from_rfc2822(end) {
-        //                 Ok(date) => date,
-        //                 Err(_) => return false,
-        //             };
-        //             f.date >= start || f.date <= end
-        //         }
-        //         Filter::Author(author) => &f.author == author,
-        //         Filter::AuthorEmail(email) => &f.email == email,
-        //         Filter::Message(message) => f.message.contains(message),
-        //         Filter::None => true,
-        //     })
-        //     .cloned()
-        //     .collect();
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+        #[cfg(feature = "parallel")]
+        let t = self.commit_history.par_iter();
+        #[cfg(not(feature = "parallel"))]
+        let t = self.commit_history.iter();
+        let vec: Vec<CommitFunctions> = t
+            .filter(|f| match filter {
+                Filter::FunctionInLines(..)
+                | Filter::Directory(_)
+                | Filter::FileAbsolute(_)
+                | Filter::PLFilter(_)
+                | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
+                Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
+                Filter::Date(date) => &f.date.to_rfc2822() == date,
+                Filter::DateRange(start, end) => {
+                    let start = match DateTime::parse_from_rfc2822(start) {
+                        Ok(date) => date,
+                        Err(_) => return false,
+                    };
+                    let end = match DateTime::parse_from_rfc2822(end) {
+                        Ok(date) => date,
+                        Err(_) => return false,
+                    };
+                    f.date >= start || f.date <= end
+                }
 
-        // if vec.is_empty() {
-        //     return Err("No history found for the filter")?;
-        // }
-        // Ok(Self {
-        //     commit_history: vec,
-        //     name: self.name.clone(),
-        //     current_pos: 0,
-        //     current_iter_pos: 0,
-        // })
-        todo!()
+                Filter::Author(author) => &f.author == author,
+                Filter::AuthorEmail(email) => &f.email == email,
+                Filter::Message(message) => f.message.contains(message),
+                Filter::None => true,
+            })
+            .cloned()
+            .collect();
+
+        if vec.is_empty() {
+            return Err("No history found for the filter")?;
+        }
+        Ok(Self {
+            commit_history: vec,
+            name: self.name.clone(),
+            current_pos: 0,
+            current_iter_pos: 0,
+        })
     }
 }
 

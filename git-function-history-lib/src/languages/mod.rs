@@ -10,7 +10,7 @@ pub enum Language {
     /// all available languages
     All,
 }
-
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LanguageFilter {
     /// python filter
     Python(python::Filter),

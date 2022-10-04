@@ -18,7 +18,7 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
-use languages::rust;
+use languages::{rust, LanguageFilter};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
@@ -56,16 +56,16 @@ pub enum Filter {
     FileRelative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
-
     /// when you want to filter by function that are in between specific lines
     FunctionInLines(usize, usize),
-
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
     AuthorEmail(String),
     // when you want to filter by a a commit message that contains a specific string
     Message(String),
+    /// when you want to filter by proggramming language filter
+    PLFilter(LanguageFilter),
     /// When you want to filter by nothing.
     None,
 }
@@ -361,21 +361,21 @@ fn find_function_in_commit(
             let functions = rust::find_function_in_commit(commit, file_path, name)?;
             Ok(File::new(
                 file_path.to_string(),
-                types::FileType::Rust(functions),
+                types::FileType::Rust(functions, 0),
             ))
         }
         Language::C => {
             let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
             Ok(File::new(
                 file_path.to_string(),
-                types::FileType::C(functions),
+                types::FileType::C(functions, 0),
             ))
         }
         Language::Python => {
             let functions = languages::python::find_function_in_commit(commit, file_path, name)?;
             Ok(File::new(
                 file_path.to_string(),
-                types::FileType::Python(functions),
+                types::FileType::Python(functions, 0),
             ))
         }
         Language::All => match file_path.split('.').last() {
@@ -383,14 +383,14 @@ fn find_function_in_commit(
                 let functions = rust::find_function_in_commit(commit, file_path, name)?;
                 Ok(File::new(
                     file_path.to_string(),
-                    types::FileType::Rust(functions),
+                    types::FileType::Rust(functions, 0),
                 ))
             }
-            Some("c") | Some("h") => {
+            Some("c" | "h") => {
                 let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
                 Ok(File::new(
                     file_path.to_string(),
-                    types::FileType::C(functions),
+                    types::FileType::C(functions, 0),
                 ))
             }
             Some("py") => {
@@ -398,7 +398,7 @@ fn find_function_in_commit(
                     languages::python::find_function_in_commit(commit, file_path, name)?;
                 Ok(File::new(
                     file_path.to_string(),
-                    types::FileType::Python(functions),
+                    types::FileType::Python(functions, 0),
                 ))
             }
             _ => Err("unknown file type")?,

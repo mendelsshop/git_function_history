@@ -340,7 +340,7 @@ fn get_functions<'a>(
         }
     }
 }
-
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     /// when you want to filter by function that are in a specific class
     FunctionInClass(String),
@@ -352,4 +352,25 @@ pub enum Filter {
     FunctionWithParameterName(String),
     /// when you want to filter by a function that has a specific decorator
     FunctionWithDecorator(String),
+}
+
+impl Filter {
+    pub fn matches(&self, function: &Function) -> bool {
+        match self {
+            Self::FunctionInClass(class) => {
+                function.class.as_ref().map_or(false, |x| x.name == *class)
+            }
+            Self::FunctionWithParent(parent) => function.parent.iter().any(|x| x.name == *parent),
+            Self::FunctionWithReturnType(return_type) => function
+                .returns
+                .as_ref()
+                .map_or(false, |x| x == return_type),
+            Self::FunctionWithParameterName(parameter_name) => {
+                function.parameters.iter().any(|x| x == parameter_name)
+            }
+            Self::FunctionWithDecorator(decorator) => {
+                function.decorators.iter().any(|x| x == decorator)
+            }
+        }
+    }
 }

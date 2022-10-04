@@ -226,7 +226,7 @@ impl FunctionBlock {
 }
 
 /// This holds information about when a function is in an impl/trait/extern block
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block {
     /// The name of the block ie for `impl` it would be the type were impling for
     pub(crate) name: Option<String>,
@@ -565,10 +565,10 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
             .collect::<Vec<String>>(),
     )
 }
-
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
-    FunctionInBlock(Block),
+    FunctionInBlock(BlockType),
     /// when you want filter by a function that has a parent function of a specific name
     FunctionWithParent(String),
     /// when you want to filter by a function that has a has a specific return type
@@ -583,4 +583,28 @@ pub enum Filter {
     FunctionWithGeneric(String),
     /// when you want to filter by a function that has a specific attribute
     FunctionWithAttribute(String),
+}
+
+impl Filter {
+    pub fn matches(&self, function: &Function) -> bool {
+        match self {
+            Self::FunctionInBlock(block_type) => function
+                .block
+                .as_ref()
+                .map_or(false, |block| block.block_type == *block_type),
+            Self::FunctionWithParent(parent) => function.function.iter().any(|f| f.name == *parent),
+            Self::FunctionWithReturnType(return_type) => {
+                function.return_type == Some(return_type.to_string())
+            }
+            Self::FunctionWithParameterType(parameter_type) => {
+                function.arguments.values().any(|x| x == parameter_type)
+            }
+            Self::FunctionWithParameterName(parameter_name) => {
+                function.arguments.keys().any(|x| x == parameter_name)
+            }
+            Self::FunctionWithLifetime(lifetime) => function.lifetime.contains(lifetime),
+            Self::FunctionWithGeneric(generic) => function.generics.contains(generic),
+            Self::FunctionWithAttribute(attribute) => function.attributes.contains(attribute),
+        }
+    }
 }
