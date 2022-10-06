@@ -23,7 +23,7 @@ use languages::{rust, LanguageFilter};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{error::Error, process::Command};
-pub use types::{CommitFunctions, File, FunctionHistory};
+pub use types::{Commit, File, FunctionHistory};
 
 use crate::languages::Language;
 
@@ -185,22 +185,31 @@ pub fn get_function_history(
     // check if file is a rust file
     if let FileType::Absolute(path) | FileType::Relative(path) = &file {
         match langs {
+            #[cfg(feature = "c-lang")]
             Language::C => {
                 if !path.ends_with(".c") || !path.ends_with(".h") {
-                    Err("file is not a c file")?;
+                    Err(format!("file is not a c file: {}", path))?;
                 }
             }
             Language::Python => {
                 if !path.ends_with(".py") {
-                    Err("file is not a python file")?;
+                    Err(format!("file is not a python file: {}", path))?;
                 }
             }
             Language::Rust => {
                 if !path.ends_with(".rs") {
-                    Err("file is not a rust file")?;
+                    Err(format!("file is not a rust file: {}", path))?;
                 }
             }
-            Language::All => {}
+            Language::All => {
+                if !path.ends_with(".rs")
+                    || !path.ends_with(".py")
+                    || !path.ends_with(".c")
+                    || !path.ends_with(".h")
+                {
+                    Err(format!("file is supported: {}", path))?;
+                }
+            }
         }
     }
     #[cfg(feature = "parallel")]
@@ -211,7 +220,7 @@ pub fn get_function_history(
         .filter_map(|commit| match &file {
             FileType::Absolute(path) => {
                 match find_function_in_commit(commit.0, path, name, *langs) {
-                    Ok(contents) => Some(CommitFunctions::new(
+                    Ok(contents) => Some(Commit::new(
                         commit.0.to_string(),
                         vec![contents],
                         commit.1,
@@ -225,7 +234,7 @@ pub fn get_function_history(
 
             FileType::Relative(_) | FileType::None | FileType::Directory(_) => {
                 match find_function_in_commit_with_filetype(commit.0, name, file, *langs) {
-                    Ok(contents) => Some(CommitFunctions::new(
+                    Ok(contents) => Some(Commit::new(
                         commit.0.to_string(),
                         contents,
                         commit.1,
@@ -307,6 +316,7 @@ fn find_function_in_commit_with_filetype(
             }
             FileType::None => {
                 match langs {
+                    #[cfg(feature = "c-lang")]
                     Language::C => {
                         if file.ends_with(".c") || file.ends_with(".h") {
                             files.push(file);
@@ -364,6 +374,7 @@ fn find_function_in_commit(
                 types::FileType::Rust(functions, 0),
             ))
         }
+        #[cfg(feature = "c-lang")]
         Language::C => {
             let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
             Ok(File::new(
@@ -386,6 +397,7 @@ fn find_function_in_commit(
                     types::FileType::Rust(functions, 0),
                 ))
             }
+            #[cfg(feature = "c-lang")]
             Some("c" | "h") => {
                 let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
                 Ok(File::new(
@@ -537,6 +549,30 @@ mod tests {
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
             &languages::Language::Python,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
+        assert!(output.is_ok());
+    }
+
+    #[test]
+    #[cfg(feature = "c-lang")]
+    fn c_lang() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileType::Relative("src/test_functions.c".to_string()),
+            &Filter::DateRange(
+                "03 Oct 2022 11:27:23 -0400".to_owned(),
+                "05 Oct 2022 23:45:52 +0000".to_owned(),
+            ),
+            &languages::Language::C,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());

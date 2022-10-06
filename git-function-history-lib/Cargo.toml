@@ -11,6 +11,7 @@ description = "show function history from git"
 [features]
 default = ["parallel"]
 parallel = ["dep:rayon"]
+c-lang = []
 
 [dependencies]
 chrono = "0.4.22"

@@ -15,8 +15,7 @@ use function_history_backend_thread::types::{
 use git_function_history::{
     languages::Language,
     types::Directions,
-    // BlockType,
-    CommitFunctions,
+    Commit,
     FileType,
     Filter,
     FunctionHistory,
@@ -61,7 +60,7 @@ impl MyEguiApp {
         }
     }
 
-    fn draw_commit(commit: &mut CommitFunctions, ctx: &egui::Context, show: bool) {
+    fn draw_commit(commit: &mut Commit, ctx: &egui::Context, show: bool) {
         if show {
             TopBottomPanel::top("date_id").show(ctx, |ui| {
                 ui.add(Label::new(format!(

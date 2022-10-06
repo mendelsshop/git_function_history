@@ -11,3 +11,4 @@ Use the latest [crates.io](https://crates.io/crates/git_function_history) by put
 
 - parallel: use rayon to parallelize the git log search
 - --no-default-features: disable parallelism
+- c-lang: adds support c (requires you to have a c compiler installed) (see the [c-lib]() docs for more information)

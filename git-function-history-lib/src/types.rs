@@ -5,9 +5,12 @@ use rayon::prelude::ParallelIterator;
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
-    languages::{c, python, rust, Function, LanguageFilter},
+    languages::{python, rust, Function, LanguageFilter},
     Filter,
 };
+
+#[cfg(feature = "c-lang")]
+use crate::languages::c;
 
 /// This is used to store each individual file in a commit and the associated functions in that file.
 #[derive(Debug, Clone)]
@@ -91,6 +94,7 @@ impl File {
                 }
                 FileType::Python(vec, 0)
             }
+            #[cfg(feature = "c-lang")]
             FileType::C(functions, _) => {
                 let mut vec = Vec::new();
                 for function in functions {
@@ -115,6 +119,7 @@ impl File {
             }
         };
         match &new_file.functions {
+            #[cfg(feature = "c-lang")]
             FileType::C(functions, _) => {
                 if functions.is_empty() {
                     return Err("No functions found for filter")?;
@@ -180,6 +185,7 @@ impl fmt::Display for File {
                     function.fmt_with_context(f, previous, next)?;
                 }
             }
+            #[cfg(feature = "c-lang")]
             FileType::C(c, _) => {
                 for (i, function) in c.iter().enumerate() {
                     write!(
@@ -206,6 +212,7 @@ impl fmt::Display for File {
 pub enum FunctionType {
     Python(python::Function),
     Rust(rust::Function),
+    #[cfg(feature = "c-lang")]
     C(c::Function),
 }
 
@@ -214,6 +221,7 @@ impl FunctionType {
         match self {
             Self::Python(python) => python.lines,
             Self::Rust(rust) => rust.lines,
+            #[cfg(feature = "c-lang")]
             Self::C(c) => c.lines,
         }
     }
@@ -231,6 +239,7 @@ impl Iterator for File {
                 python.get(current).map(|f| FunctionType::Python(f.clone()))
             }
             FileType::Rust(rust, _) => rust.get(current).map(|f| FunctionType::Rust(f.clone())),
+            #[cfg(feature = "c-lang")]
             FileType::C(c, _) => c.get(current).map(|f| FunctionType::C(f.clone())),
         }
     }
@@ -242,6 +251,7 @@ pub enum FileType {
     Python(Vec<python::Function>, usize),
     /// The rust language
     Rust(Vec<rust::Function>, usize),
+    #[cfg(feature = "c-lang")]
     /// c language
     C(Vec<c::Function>, usize),
 }
@@ -259,7 +269,7 @@ impl Iterator for FileType {
                 *pos += 1;
                 FunctionType::Rust(f.clone())
             }),
-
+            #[cfg(feature = "c-lang")]
             Self::C(c, pos) => c.get(*pos).map(|f| {
                 *pos += 1;
                 FunctionType::C(f.clone())
@@ -274,6 +284,7 @@ impl FileType {
             Self::Rust(rust, _) => rust
                 .get(index)
                 .map(|function| FunctionType::Rust(function.clone())),
+            #[cfg(feature = "c-lang")]
             Self::C(c, _) => c
                 .get(index)
                 .map(|function| FunctionType::C(function.clone())),
@@ -282,9 +293,12 @@ impl FileType {
                 .map(|function| FunctionType::Python(function.clone())),
         }
     }
-
+    #[cfg(feature = "c-lang")]
     pub fn get_current<
-        T: Clone + From<python::Function> + From<c::Function> + From<rust::Function>,
+        T: Clone + From<python::Function> + 
+        
+        From<c::Function> + 
+        From<rust::Function>,
     >(
         &self,
     ) -> Vec<T> {
@@ -300,11 +314,30 @@ impl FileType {
             Self::C(c, _pos) => c.iter().map(|function| T::from(function.clone())).collect(),
         }
     }
+
+    #[cfg(not(feature = "c-lang"))]
+    pub fn get_current<
+        T: Clone + From<python::Function> + From<rust::Function>,
+    >(
+        &self,
+    ) -> Vec<T> {
+        match self {
+            Self::Python(python, _pos) => python
+                .iter()
+                .map(|function| T::from(function.clone()))
+                .collect(),
+            Self::Rust(rust, _pos) => rust
+                .iter()
+                .map(|function| T::from(function.clone()))
+                .collect(),
+        }
+    }
+    
 }
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
 #[derive(Debug, Clone)]
-pub struct CommitFunctions {
+pub struct Commit {
     commit_hash: String,
     files: Vec<File>,
     pub(crate) date: DateTime<FixedOffset>,
@@ -315,8 +348,8 @@ pub struct CommitFunctions {
     message: String,
 }
 
-impl CommitFunctions {
-    /// Create a new `CommitFunctions` with the given `commit_hash`, functions, and date.
+impl Commit {
+    /// Create a new `Commit` with the given `commit_hash`, functions, and date.
     pub fn new(
         commit_hash: String,
         files: Vec<File>,
@@ -386,7 +419,7 @@ impl CommitFunctions {
         }
     }
 
-    /// returns a new `CommitFunctions` by filtering the current one by the filter specified (does not modify the current one).
+    /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
@@ -433,7 +466,7 @@ impl CommitFunctions {
     }
 }
 
-impl Iterator for CommitFunctions {
+impl Iterator for Commit {
     type Item = File;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
@@ -443,7 +476,7 @@ impl Iterator for CommitFunctions {
     }
 }
 
-impl fmt::Display for CommitFunctions {
+impl fmt::Display for Commit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.files[self.current_pos])?;
         Ok(())
@@ -454,7 +487,7 @@ impl fmt::Display for CommitFunctions {
 #[derive(Debug, Clone)]
 pub struct FunctionHistory {
     pub(crate) name: String,
-    pub(crate) commit_history: Vec<CommitFunctions>,
+    pub(crate) commit_history: Vec<Commit>,
 
     current_iter_pos: usize,
     current_pos: usize,
@@ -462,7 +495,7 @@ pub struct FunctionHistory {
 
 impl FunctionHistory {
     // creates a new `FunctionHistory` from a list of commits
-    pub fn new(name: String, commit_history: Vec<CommitFunctions>) -> Self {
+    pub fn new(name: String, commit_history: Vec<Commit>) -> Self {
         Self {
             name,
             commit_history,
@@ -515,12 +548,12 @@ impl FunctionHistory {
     }
 
     /// returns a mutable reference to the current commit
-    pub fn get_mut_commit(&mut self) -> &mut CommitFunctions {
+    pub fn get_mut_commit(&mut self) -> &mut Commit {
         &mut self.commit_history[self.current_pos]
     }
 
     /// returns a reference to the current commit
-    pub fn get_commit(&self) -> &CommitFunctions {
+    pub fn get_commit(&self) -> &Commit {
         &self.commit_history[self.current_pos]
     }
 
@@ -555,7 +588,7 @@ impl FunctionHistory {
         let t = self.commit_history.par_iter();
         #[cfg(not(feature = "parallel"))]
         let t = self.commit_history.iter();
-        let vec: Vec<CommitFunctions> = t
+        let vec: Vec<Commit> = t
             .filter(|f| match filter {
                 Filter::FunctionInLines(..)
                 | Filter::Directory(_)
@@ -604,7 +637,7 @@ impl fmt::Display for FunctionHistory {
 }
 
 impl Iterator for FunctionHistory {
-    type Item = CommitFunctions;
+    type Item = Commit;
     fn next(&mut self) -> Option<Self::Item> {
         self.commit_history
             .get(self.current_iter_pos)
