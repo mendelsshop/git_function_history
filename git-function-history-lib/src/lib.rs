@@ -218,21 +218,10 @@ pub fn get_function_history(
     let t = commits.iter();
     file_history.commit_history = t
         .filter_map(|commit| match &file {
-            FileType::Absolute(path) => {
-                match find_function_in_commit(commit.0, path, name, *langs) {
-                    Ok(contents) => Some(Commit::new(
-                        commit.0.to_string(),
-                        vec![contents],
-                        commit.1,
-                        commit.2.to_string(),
-                        commit.3.to_string(),
-                        commit.4.to_string(),
-                    )),
-                    Err(_) => None,
-                }
-            }
-
-            FileType::Relative(_) | FileType::None | FileType::Directory(_) => {
+            FileType::Absolute(_)
+            | FileType::Relative(_)
+            | FileType::None
+            | FileType::Directory(_) => {
                 match find_function_in_commit_with_filetype(commit.0, name, file, *langs) {
                     Ok(contents) => Some(Commit::new(
                         commit.0.to_string(),
@@ -309,6 +298,11 @@ fn find_function_in_commit_with_filetype(
                     files.push(file);
                 }
             }
+            FileType::Absolute(ref path) => {
+                if file == path {
+                    files.push(file);
+                }
+            }
             FileType::Directory(ref path) => {
                 if path.contains(path) {
                     files.push(file);
@@ -334,11 +328,16 @@ fn find_function_in_commit_with_filetype(
                         }
                     }
                     Language::All => {
-                        files.push(file);
+                        if file.ends_with(".rs")
+                            || file.ends_with(".py")
+                            || file.ends_with(".c")
+                            || file.ends_with(".h")
+                        {
+                            files.push(file);
+                        }
                     }
                 }
             }
-            _ => {}
         }
     }
     let err = "no function found".to_string();
@@ -347,12 +346,7 @@ fn find_function_in_commit_with_filetype(
     #[cfg(not(feature = "parellel"))]
     let t = files.iter();
     let returns: Vec<File> = t
-        .filter_map(
-            |file| match find_function_in_commit(commit, file, name, langs) {
-                Ok(functions) => Some(functions),
-                Err(_) => None,
-            },
-        )
+        .filter_map(|file| find_function_in_commit(commit, file, name, langs).ok())
         .collect();
     if returns.is_empty() {
         Err(err)?;
@@ -418,11 +412,11 @@ fn find_function_in_commit(
     }
 }
 
-trait UwrapToError<T> {
+trait UnwrapToError<T> {
     fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>>;
 }
 
-impl<T> UwrapToError<T> for Option<T> {
+impl<T> UnwrapToError<T> for Option<T> {
     fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         match self {
             Some(val) => Ok(val),

@@ -1,5 +1,4 @@
-use std::{collections::HashMap};
-
+use std::collections::HashMap;
 
 use super::FunctionResult;
 #[derive(Debug, Clone)]
@@ -63,7 +62,7 @@ pub(crate) fn find_function_in_commit<T: super::Function>(
 ) -> FunctionResult<T> {
     println!("Finding function {} in commit {}", name, commit);
     let file_contents = crate::find_file_in_commit(commit, file_path)?;
- 
+
     todo!("find_function_in_commit")
 }
 #[derive(Debug, Clone, PartialEq, Eq)]

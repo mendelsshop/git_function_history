@@ -13,12 +13,7 @@ use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
 };
 use git_function_history::{
-    languages::Language,
-    types::Directions,
-    Commit,
-    FileType,
-    Filter,
-    FunctionHistory,
+    languages::Language, types::Directions, Commit, FileType, Filter, FunctionHistory,
 };
 
 // TODO: stop cloning everyting and use references instead

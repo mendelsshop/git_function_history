@@ -295,10 +295,7 @@ impl FileType {
     }
     #[cfg(feature = "c-lang")]
     pub fn get_current<
-        T: Clone + From<python::Function> + 
-        
-        From<c::Function> + 
-        From<rust::Function>,
+        T: Clone + From<python::Function> + From<c::Function> + From<rust::Function>,
     >(
         &self,
     ) -> Vec<T> {
@@ -316,11 +313,7 @@ impl FileType {
     }
 
     #[cfg(not(feature = "c-lang"))]
-    pub fn get_current<
-        T: Clone + From<python::Function> + From<rust::Function>,
-    >(
-        &self,
-    ) -> Vec<T> {
+    pub fn get_current<T: Clone + From<python::Function> + From<rust::Function>>(&self) -> Vec<T> {
         match self {
             Self::Python(python, _pos) => python
                 .iter()
@@ -332,7 +325,6 @@ impl FileType {
                 .collect(),
         }
     }
-    
 }
 
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
