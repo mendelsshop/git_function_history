@@ -35,8 +35,8 @@ impl super::Function for CFunction {
     fn fmt_with_context(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        previous: Box<Option<&Self>>,
-        next: Box<Option<&Self>>,
+        previous: Option<&Self>,
+        next: Option<&Self>,
     ) -> std::fmt::Result {
         todo!()
     }

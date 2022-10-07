@@ -553,6 +553,10 @@ mod tests {
             Err(e) => println!("{}", e),
         }
         assert!(output.is_ok());
+        let output = output.unwrap();
+        let commit = output.get_commit();
+        let file = commit.get_file();
+        let functions = file.get_functions();
     }
 
     #[test]

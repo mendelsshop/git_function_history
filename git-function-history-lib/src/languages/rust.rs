@@ -46,8 +46,8 @@ impl super::Function for RustFunction {
     fn fmt_with_context(
         &self,
         f: &mut fmt::Formatter<'_>,
-        previous: Box<Option<&RustFunction>>,
-        next: Box<Option<&RustFunction>>,
+        previous: Option<&Self>,
+        next: Option<&Self>,
     ) -> fmt::Result {
         match &self.block {
             None => {}

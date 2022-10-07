@@ -51,12 +51,12 @@ pub mod c;
 pub mod python;
 pub mod rust;
 
-pub trait Function: fmt::Debug + Clone  + fmt::Display   {
+pub trait Function: fmt::Debug   + fmt::Display  {
     fn fmt_with_context(
         &self,
         f: &mut fmt::Formatter<'_>,
-        previous: Box<Option<&Self>>,
-        next: Box<Option<&Self>>,
+        previous: Option<&Self>,
+        next: Option<&Self>,
     ) -> fmt::Result;
     fn get_metadata(&self) -> HashMap<&str, String>;
 

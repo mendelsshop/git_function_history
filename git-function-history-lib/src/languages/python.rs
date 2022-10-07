@@ -49,8 +49,8 @@ impl super::Function for PythonFunction {
     fn fmt_with_context(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        previous: Box<Option<&Self>>,
-        next: Box<Option<&Self>>,
+        previous: Option<&Self>,
+        next: Option<&Self>,
     ) -> std::fmt::Result {
         match &self.class {
             Some(class) => match previous.as_ref() {
