@@ -5,9 +5,11 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
+use super::LanguageFilter;
+
 /// This holds the information about a single  function each commit will have multiple of these.
 #[derive(Debug, Clone)]
-pub struct Function {
+pub struct RustFunction {
     pub(crate) name: String,
     /// The actual code of the function
     pub(crate) contents: String,
@@ -31,18 +33,25 @@ pub struct Function {
     pub(crate) doc_comments: Vec<String>,
 }
 
-impl super::Function for Function {
+impl super::Function for RustFunction {
+    fn matches(&self, filter: &LanguageFilter) -> bool {
+        if let LanguageFilter::Rust(filt) = filter {
+            filt.matches(self)
+        } else {
+            false
+        }
+    }
     /// This is a formater almost like the fmt you use for println!, but it takes a previous and next function.
     /// This is usefull for printing `CommitHistory` or a vector of functions, because if you use plain old fmt, you can get repeated lines impls, and parent function in your output.
     fn fmt_with_context(
         &self,
         f: &mut fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
+        previous: Box<Option<&RustFunction>>,
+        next: Box<Option<&RustFunction>>,
     ) -> fmt::Result {
         match &self.block {
             None => {}
-            Some(block) => match previous {
+            Some(block) => match previous.as_ref() {
                 None => write!(f, "{}\n...\n", block.top)?,
                 Some(previous_function) => match &previous_function.block {
                     None => write!(f, "{}\n...\n", block.top)?,
@@ -58,7 +67,7 @@ impl super::Function for Function {
         };
         if !self.function.is_empty() {
             for i in &self.function {
-                match previous {
+                match previous.as_ref() {
                     None => write!(f, "{}\n...\n", i.top)?,
                     Some(previous_function) => {
                         if previous_function
@@ -77,7 +86,7 @@ impl super::Function for Function {
         write!(f, "{}", self.contents)?;
         if !self.function.is_empty() {
             for i in &self.function {
-                match next {
+                match next.as_ref() {
                     None => write!(f, "\n...{}", i.bottom)?,
                     Some(next_function) => {
                         if next_function.function.iter().any(|x| x.lines == i.lines) {
@@ -90,7 +99,7 @@ impl super::Function for Function {
         }
         match &self.block {
             None => {}
-            Some(block) => match next {
+            Some(block) => match next.as_ref() {
                 None => write!(f, "\n...{}", block.bottom)?,
                 Some(next_function) => match &next_function.block {
                     None => write!(f, "\n...{}", block.bottom)?,
@@ -135,9 +144,13 @@ impl super::Function for Function {
         };
         map
     }
+
+    fn get_lines(&self) -> (usize, usize) {
+        self.lines
+    }
 }
 
-impl Function {
+impl RustFunction {
     /// get the parent functions
     pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
         self.function.clone()
@@ -149,7 +162,7 @@ impl Function {
     }
 }
 
-impl fmt::Display for Function {
+impl fmt::Display for RustFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.block {
             None => {}
@@ -309,7 +322,7 @@ pub(crate) fn find_function_in_commit(
     commit: &str,
     file_path: &str,
     name: &str,
-) -> Result<Vec<Function>, Box<dyn Error>> {
+) -> Result<Vec<RustFunction>, Box<dyn Error>> {
     let file_contents = crate::find_file_in_commit(commit, file_path)?;
     let mut functions = Vec::new();
     get_function_asts(name, &file_contents, &mut functions);
@@ -427,7 +440,7 @@ pub(crate) fn find_function_in_commit(
             })
             .collect();
         let contents = contents.trim_end().to_string();
-        let function = Function {
+        let function = RustFunction {
             name: f.name().unwrap().to_string(),
             contents,
             block: parent_block,
@@ -586,7 +599,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn matches(&self, function: &Function) -> bool {
+    pub fn matches(&self, function: &RustFunction) -> bool {
         match self {
             Self::FunctionInBlock(block_type) => function
                 .block

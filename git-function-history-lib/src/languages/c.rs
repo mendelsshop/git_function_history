@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::FunctionResult;
 #[derive(Debug, Clone)]
-pub struct Function {
+pub struct CFunction {
     pub(crate) name: String,
     pub(crate) body: String,
     pub(crate) parameters: Vec<String>,
@@ -31,18 +31,29 @@ impl Function {
     }
 }
 
-impl super::Function for Function {
+impl super::Function for CFunction {
     fn fmt_with_context(
         &self,
-        _f: &mut std::fmt::Formatter<'_>,
-        _previous: Option<&Self>,
-        _next: Option<&Self>,
+        f: &mut std::fmt::Formatter<'_>,
+        previous: Box<Option<&Self>>,
+        next: Box<Option<&Self>>,
     ) -> std::fmt::Result {
         todo!()
     }
 
     fn get_metadata(&self) -> HashMap<&str, String> {
         todo!()
+    }
+    fn get_lines(&self) -> (usize, usize) {
+        self.lines
+    }
+
+    fn matches(&self, filter: &LanguageFilter) -> bool {
+        if let LanguageFilter::C(filt) = filter {
+            filt.matches(self)
+        } else {
+            false
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -74,7 +85,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn matches(&self, function: &Function) -> bool {
+    pub fn matches(&self, function: &CFunction) -> bool {
         match self {
             Self::FunctionWithParent(parent) => function
                 .parent

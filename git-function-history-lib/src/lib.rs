@@ -185,7 +185,7 @@ pub fn get_function_history(
     // check if file is a rust file
     if let FileType::Absolute(path) | FileType::Relative(path) = &file {
         match langs {
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Language::C => {
                 if !path.ends_with(".c") || !path.ends_with(".h") {
                     Err(format!("file is not a c file: {}", path))?;
@@ -310,7 +310,7 @@ fn find_function_in_commit_with_filetype(
             }
             FileType::None => {
                 match langs {
-                    #[cfg(feature = "c-lang")]
+                    #[cfg(feature = "c_lang")]
                     Language::C => {
                         if file.ends_with(".c") || file.ends_with(".h") {
                             files.push(file);
@@ -368,7 +368,7 @@ fn find_function_in_commit(
                 types::FileType::Rust(functions, 0),
             ))
         }
-        #[cfg(feature = "c-lang")]
+        #[cfg(feature = "c_lang")]
         Language::C => {
             let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
             Ok(File::new(
@@ -391,7 +391,7 @@ fn find_function_in_commit(
                     types::FileType::Rust(functions, 0),
                 ))
             }
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
                 let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
                 Ok(File::new(
@@ -556,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "c-lang")]
+    #[cfg(feature = "c_lang")]
     fn c_lang() {
         let now = Utc::now();
         let output = get_function_history(

@@ -5,7 +5,7 @@ pub enum Language {
     Python,
     /// The rust language
     Rust,
-    #[cfg(feature = "c-lang")]
+    #[cfg(feature = "c_lang")]
     /// c language
     C,
     /// all available languages
@@ -17,7 +17,7 @@ pub enum LanguageFilter {
     Python(python::Filter),
     /// rust filter
     Rust(rust::Filter),
-    #[cfg(feature = "c-lang")]
+    #[cfg(feature = "c_lang")]
     /// c filter
     C(c::Filter),
 }
@@ -27,7 +27,7 @@ impl Language {
         match s {
             "python" => Ok(Self::Python),
             "rust" => Ok(Self::Rust),
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             "c" => Ok(Self::C),
             "all" => Ok(Self::All),
             _ => Err(format!("Unknown language: {}", s))?,
@@ -40,25 +40,29 @@ impl fmt::Display for Language {
         match self {
             Self::Python => write!(f, "python"),
             Self::Rust => write!(f, "rust"),
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Self::C => write!(f, "c"),
             Self::All => write!(f, "all"),
         }
     }
 }
-#[cfg(feature = "c-lang")]
+#[cfg(feature = "c_lang")]
 pub mod c;
 pub mod python;
 pub mod rust;
 
-pub trait Function {
+pub trait Function: fmt::Debug + Clone  + fmt::Display   {
     fn fmt_with_context(
         &self,
         f: &mut fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
+        previous: Box<Option<&Self>>,
+        next: Box<Option<&Self>>,
     ) -> fmt::Result;
     fn get_metadata(&self) -> HashMap<&str, String>;
+
+    fn get_lines(&self) -> (usize, usize);
+
+    fn matches(&self, filter: &LanguageFilter) -> bool;
 }
 
 pub type FunctionResult<T> = Result<Vec<T>, Box<dyn Error>>;

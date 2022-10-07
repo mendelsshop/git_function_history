@@ -2,16 +2,182 @@ use chrono::{DateTime, FixedOffset};
 use rayon::prelude::IntoParallelRefIterator;
 #[cfg(feature = "parallel")]
 use rayon::prelude::ParallelIterator;
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt::{self, Formatter, Display}};
 
 use crate::{
     languages::{python, rust, Function, LanguageFilter},
     Filter,
 };
 
-#[cfg(feature = "c-lang")]
+#[cfg(feature = "c_lang")]
 use crate::languages::c;
+pub mod new_ideas {
 
+    use std::{fmt::{self, Formatter, Display, Debug}, error::Error};
+
+    use enum_dispatch::enum_dispatch;
+
+    use crate::{languages::{Language, Function, rust::{self, RustFunction}, python::{self, PythonFunction} , LanguageFilter}, Filter};
+
+    #[cfg(feature = "c_lang")]
+    use crate::languages::c;
+    #[derive(Debug, Clone)]
+    pub struct File<T: Function + Clone + Display + Debug> {
+        pub(crate) path: String,
+        pub(crate) functions: Vec<T>,
+        pub(crate) current_position: usize,
+    }
+
+    impl<T: Function + Clone + Display + Debug> File<T> {
+        pub fn new(path: String, functions: Vec<T>) -> File<T> {
+            File { path, functions, current_position: 0 }
+        }
+    }
+
+    impl <T: Function + Clone + Display + Debug>Display for File<T> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            for (i, function) in self.functions.iter().enumerate() {
+                write!(
+                    f,
+                    "{}",
+                    match i {
+                        0 => "",
+                        _ => "\n...\n",
+                    },
+                )?;
+                let previous = match i {
+                    0 => None,
+                    _ => self.functions.get(i - 1),
+                };
+                let next = self.functions.get(i + 1);
+                function.fmt_with_context(f, Box::new(previous), Box::new(next))?;
+            }
+            Ok(())
+        }
+    }
+
+
+
+
+    #[enum_dispatch]
+    pub trait FileTrait<T: Function  + Clone + Display + Debug>{
+        fn get_path(&self) -> &str;
+        fn get_functions(&self) -> &Vec<T>;
+        fn filter_by(&self, filter: Filter) -> Result<File<T>, Box<dyn Error>> {
+            let mut functions: Vec<T> = self.get_functions().clone();
+            match filter {
+                Filter::PLFilter(pl_filter) => {
+                    functions = functions.into_iter().filter(|function| {function.matches(&pl_filter)}).collect();
+                }
+                Filter::FunctionInLines(start, end) => {
+                    functions = functions
+                        .into_iter()
+                        .filter(|function| {
+                            let (start_line, end_line) = function.get_lines();
+                            start_line >= start && end_line <= end
+                        })
+                        .collect();
+                }
+                _ => {
+                    return Err(format!("Filter {:?} not implemented", filter).into());
+                }
+
+            }
+
+            Ok(File { path: self.get_path().to_string(), functions, current_position: 0 })
+        }
+    }
+    #[enum_dispatch(FileTrait<T>)]
+    #[derive(Debug, Clone)]
+    
+    pub enum FileType {
+        Python(PythonFile),
+        Rust(RustFile),
+        #[cfg(feature = "c_lang")]
+        C(CFile),
+    }
+    impl FileType {
+        pub fn filter_by(&self, filter: Filter) -> Result<FileType, Box<dyn Error>> {
+            match self {
+                FileType::Python(file) => {
+                    let filtered_file = file.filter_by(filter)?;
+                    Ok(FileType::Python(filtered_file))
+                }
+                FileType::Rust(file) => {
+                    let filtered_file = file.filter_by(filter)?;
+                    Ok(FileType::Rust(filtered_file))
+                }
+                #[cfg(feature = "c_lang")]
+                FileType::C(file) => {
+                    let filtered_file = file.filter_by(filter)?;
+                    Ok(FileType::C(filtered_file))
+                }
+            }
+        }
+    }
+    type PythonFile = File<PythonFunction>;
+    impl FileTrait<PythonFunction> for PythonFile {
+ 
+        fn get_path(&self) -> &str {
+            &self.path
+        }
+        fn get_functions(&self) -> &Vec<PythonFunction> {
+            &self.functions
+        }
+    }
+        
+
+    type RustFile = File<RustFunction>;
+
+    impl FileTrait<RustFunction> for RustFile {
+
+        fn get_path(&self) -> &str {
+            &self.path
+        }
+        fn get_functions(&self) -> &Vec<RustFunction> {
+            &self.functions
+        }
+    }
+
+    #[cfg(feature = "c_lang")]
+    pub type CFile = File<c::Function>;
+
+    #[cfg(feature = "c_lang")]
+    impl FileTrait<c::Function> for CFile {
+        fn get_path(&self) -> &str {
+            &self.path
+        }
+        fn get_functions(&self) -> &Vec<c::Function> {
+            &self.functions
+        }
+    }
+    impl <T: Function + Clone + Display + Debug>Iterator for File<T> {
+        type Item = T;
+        fn next(&mut self) -> Option<Self::Item> {
+            self.functions.get(self.current_position).map(|function| {
+                self.current_position += 1;
+                function.clone()
+            })
+        }
+
+    }
+
+    #[test]
+    fn test_file() {
+        let file: PythonFile = File::new("test.py".to_owned(), vec![]);
+
+        
+        let file: FileType = file.into();
+        // file.g
+        // let file = Box::new(file);
+        // file.
+        // assert_eq!(file.
+        // assert_eq!(file.get_functions().len(), 2);
+        // assert_eq!(file.get_functions()[0].get_name(), "test");
+        // assert_eq!(file.get_functions()[1].get_name(), "test2");
+    }
+    
+}
 /// This is used to store each individual file in a commit and the associated functions in that file.
 #[derive(Debug, Clone)]
 pub struct File {
@@ -94,7 +260,7 @@ impl File {
                 }
                 FileType::Python(vec, 0)
             }
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             FileType::C(functions, _) => {
                 let mut vec = Vec::new();
                 for function in functions {
@@ -119,7 +285,7 @@ impl File {
             }
         };
         match &new_file.functions {
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             FileType::C(functions, _) => {
                 if functions.is_empty() {
                     return Err("No functions found for filter")?;
@@ -145,8 +311,8 @@ impl File {
     }
 }
 
-impl fmt::Display for File {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for File {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // write!(f, "{}", self.name)
         match &self.functions {
             FileType::Python(python, _) => {
@@ -164,7 +330,7 @@ impl fmt::Display for File {
                         _ => python.get(i - 1),
                     };
                     let next = python.get(i + 1);
-                    function.fmt_with_context(f, previous, next)?;
+                    function.fmt_with_context(f, Box::new(previous), Box::new(next));
                 }
             }
             FileType::Rust(rust, _) => {
@@ -182,10 +348,10 @@ impl fmt::Display for File {
                         _ => rust.get(i - 1),
                     };
                     let next = rust.get(i + 1);
-                    function.fmt_with_context(f, previous, next)?;
+                    function.fmt_with_context(f, Box::new(previous), Box::new(next));
                 }
             }
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             FileType::C(c, _) => {
                 for (i, function) in c.iter().enumerate() {
                     write!(
@@ -201,7 +367,7 @@ impl fmt::Display for File {
                         _ => c.get(i - 1),
                     };
                     let next = c.get(i + 1);
-                    function.fmt_with_context(f, previous, next)?;
+                    function.fmt_with_context(f, Box::new(previous), Box::new(next));
                 }
             }
         };
@@ -210,9 +376,9 @@ impl fmt::Display for File {
 }
 
 pub enum FunctionType {
-    Python(python::Function),
-    Rust(rust::Function),
-    #[cfg(feature = "c-lang")]
+    Python(python::PythonFunction),
+    Rust(rust::RustFunction),
+    #[cfg(feature = "c_lang")]
     C(c::Function),
 }
 
@@ -221,7 +387,7 @@ impl FunctionType {
         match self {
             Self::Python(python) => python.lines,
             Self::Rust(rust) => rust.lines,
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Self::C(c) => c.lines,
         }
     }
@@ -239,7 +405,7 @@ impl Iterator for File {
                 python.get(current).map(|f| FunctionType::Python(f.clone()))
             }
             FileType::Rust(rust, _) => rust.get(current).map(|f| FunctionType::Rust(f.clone())),
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             FileType::C(c, _) => c.get(current).map(|f| FunctionType::C(f.clone())),
         }
     }
@@ -248,10 +414,10 @@ impl Iterator for File {
 #[derive(Debug, Clone)]
 pub enum FileType {
     /// The python language
-    Python(Vec<python::Function>, usize),
+    Python(Vec<python::PythonFunction>, usize),
     /// The rust language
-    Rust(Vec<rust::Function>, usize),
-    #[cfg(feature = "c-lang")]
+    Rust(Vec<rust::RustFunction>, usize),
+    #[cfg(feature = "c_lang")]
     /// c language
     C(Vec<c::Function>, usize),
 }
@@ -269,7 +435,7 @@ impl Iterator for FileType {
                 *pos += 1;
                 FunctionType::Rust(f.clone())
             }),
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Self::C(c, pos) => c.get(*pos).map(|f| {
                 *pos += 1;
                 FunctionType::C(f.clone())
@@ -284,7 +450,7 @@ impl FileType {
             Self::Rust(rust, _) => rust
                 .get(index)
                 .map(|function| FunctionType::Rust(function.clone())),
-            #[cfg(feature = "c-lang")]
+            #[cfg(feature = "c_lang")]
             Self::C(c, _) => c
                 .get(index)
                 .map(|function| FunctionType::C(function.clone())),
@@ -293,9 +459,9 @@ impl FileType {
                 .map(|function| FunctionType::Python(function.clone())),
         }
     }
-    #[cfg(feature = "c-lang")]
+    #[cfg(feature = "c_lang")]
     pub fn get_current<
-        T: Clone + From<python::Function> + From<c::Function> + From<rust::Function>,
+        T: Clone + From<python::Function> + From<c::Function> + From<rust::RustFunction>,
     >(
         &self,
     ) -> Vec<T> {
@@ -312,8 +478,8 @@ impl FileType {
         }
     }
 
-    #[cfg(not(feature = "c-lang"))]
-    pub fn get_current<T: Clone + From<python::Function> + From<rust::Function>>(&self) -> Vec<T> {
+    #[cfg(not(feature = "c_lang"))]
+    pub fn get_current<T: Clone + From<python::PythonFunction> + From<rust::RustFunction>>(&self) -> Vec<T> {
         match self {
             Self::Python(python, _pos) => python
                 .iter()
@@ -468,8 +634,8 @@ impl Iterator for Commit {
     }
 }
 
-impl fmt::Display for Commit {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for Commit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.files[self.current_pos])?;
         Ok(())
     }
@@ -621,8 +787,8 @@ impl FunctionHistory {
     }
 }
 
-impl fmt::Display for FunctionHistory {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for FunctionHistory {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.commit_history[self.current_pos])?;
         Ok(())
     }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use rustpython_parser::{
     ast::{Located, StatementType},
@@ -6,8 +6,10 @@ use rustpython_parser::{
     parser,
 };
 
+use super::LanguageFilter;
+
 #[derive(Debug, Clone)]
-pub struct Function {
+pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
     // parameters: Params,
@@ -19,17 +21,39 @@ pub struct Function {
     pub(crate) returns: Option<String>,
 }
 
-impl Function {}
+impl fmt::Display for PythonFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.class {
+            Some(ref class) => write!(f, "{}", class.top)?,
+            None => {}
+        }
+        for parent in &self.parent {
+            write!(f, "{}", parent.top)?;
+        }
+        write!(f, "{}", self.body)?;
+        for parent in &self.parent {
+            write!(f, "{}", parent.bottom)?;
+        }
+        match self.class {
+            Some(ref class) => write!(f, "{}", class.bottom),
+            None => Ok(()),
+        }
+    }
+}
+impl PythonFunction {}
 
-impl super::Function for Function {
+impl super::Function for PythonFunction {
+    fn get_lines(&self) -> (usize, usize) {
+        self.lines
+    }
     fn fmt_with_context(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
+        previous: Box<Option<&Self>>,
+        next: Box<Option<&Self>>,
     ) -> std::fmt::Result {
         match &self.class {
-            Some(class) => match previous {
+            Some(class) => match previous.as_ref() {
                 Some(previous) => {
                     if previous.class.is_some() {
                         if previous.class.as_ref().unwrap().name == class.name {
@@ -48,7 +72,7 @@ impl super::Function for Function {
             None => {}
         };
         if !self.parent.is_empty() {
-            match previous {
+            match previous.as_ref() {
                 None => {
                     for parent in &self.parent {
                         writeln!(f, "{}", parent.top)?;
@@ -66,7 +90,7 @@ impl super::Function for Function {
         }
         write!(f, "{}", self.body)?;
         if !self.parent.is_empty() {
-            match next {
+            match next.as_ref() {
                 None => {
                     for parent in &self.parent {
                         writeln!(f, "{}", parent.bottom)?;
@@ -83,7 +107,7 @@ impl super::Function for Function {
             }
         }
         match &self.class {
-            Some(class) => match next {
+            Some(class) => match next.as_ref() {
                 Some(next) => {
                     if next.class.is_some() {
                         if next.class.as_ref().unwrap().name == class.name {
@@ -106,6 +130,14 @@ impl super::Function for Function {
 
     fn get_metadata(&self) -> HashMap<&str, String> {
         todo!()
+    }
+
+    fn matches(&self, filter: &LanguageFilter) -> bool {
+        if let LanguageFilter::Python(filt) = filter {
+            filt.matches(self)
+        } else {
+            false
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -139,7 +171,7 @@ pub(crate) fn find_function_in_commit(
     commit: &str,
     file_path: &str,
     name: &str,
-) -> Result<Vec<Function>, Box<dyn std::error::Error>> {
+) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
     let file_contents = crate::find_file_in_commit(commit, file_path)?;
 
     let ast = parser::parse_program(&file_contents)?;
@@ -186,7 +218,7 @@ pub(crate) fn find_function_in_commit(
                     t
                 })
                 .collect::<String>();
-            let new_func = Function {
+            let new_func = PythonFunction {
                 name: name.to_string(),
                 returns: returns.as_ref().map(|x| x.name().to_string()),
                 parameters: args.args.iter().map(|x| x.arg.to_string()).collect(),
@@ -355,7 +387,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn matches(&self, function: &Function) -> bool {
+    pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
             Self::FunctionInClass(class) => {
                 function.class.as_ref().map_or(false, |x| x.name == *class)
