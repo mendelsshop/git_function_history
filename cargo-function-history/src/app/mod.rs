@@ -8,7 +8,7 @@ use function_history_backend_thread::types::{
 use git_function_history::{
     languages::Language,
     // BlockType,
-    FileType,
+    FileFilterType,
     Filter,
 };
 use std::{
@@ -319,7 +319,7 @@ impl App {
                                 // with the given name
                                 Some(FullCommand::Search(
                                     name.to_string(),
-                                    FileType::None,
+                                    FileFilterType::None,
                                     Filter::None,
                                     Language::Rust,
                                 ))
@@ -328,9 +328,13 @@ impl App {
                                 "relative" | "absolute" => {
                                     let file_type = match iter.next() {
                                         Some(filter) => match thing {
-                                            "relative" => FileType::Relative(filter.to_string()),
-                                            "absolute" => FileType::Absolute(filter.to_string()),
-                                            _ => FileType::None,
+                                            "relative" => {
+                                                FileFilterType::Relative(filter.to_string())
+                                            }
+                                            "absolute" => {
+                                                FileFilterType::Absolute(filter.to_string())
+                                            }
+                                            _ => FileFilterType::None,
                                         },
                                         None => {
                                             self.status =
@@ -449,7 +453,7 @@ impl App {
                                     };
                                     Some(FullCommand::Search(
                                         name.to_string(),
-                                        FileType::None,
+                                        FileFilterType::None,
                                         filter,
                                         Language::Rust,
                                     ))

@@ -5,14 +5,16 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
-use super::LanguageFilter;
+use crate::impl_function_trait;
+
+use super::FunctionTrait;
 
 /// This holds the information about a single  function each commit will have multiple of these.
 #[derive(Debug, Clone)]
 pub struct RustFunction {
     pub(crate) name: String,
     /// The actual code of the function
-    pub(crate) contents: String,
+    pub(crate) body: String,
     /// is the function in a block ie `impl` `trait` etc
     pub(crate) block: Option<Block>,
     /// optional parent functions
@@ -31,123 +33,6 @@ pub struct RustFunction {
     pub(crate) attributes: Vec<String>,
     /// the functions doc comments
     pub(crate) doc_comments: Vec<String>,
-}
-
-impl super::Function for RustFunction {
-    fn matches(&self, filter: &LanguageFilter) -> bool {
-        if let LanguageFilter::Rust(filt) = filter {
-            filt.matches(self)
-        } else {
-            false
-        }
-    }
-    /// This is a formater almost like the fmt you use for println!, but it takes a previous and next function.
-    /// This is usefull for printing `CommitHistory` or a vector of functions, because if you use plain old fmt, you can get repeated lines impls, and parent function in your output.
-    fn fmt_with_context(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
-    ) -> fmt::Result {
-        match &self.block {
-            None => {}
-            Some(block) => match previous.as_ref() {
-                None => write!(f, "{}\n...\n", block.top)?,
-                Some(previous_function) => match &previous_function.block {
-                    None => write!(f, "{}\n...\n", block.top)?,
-                    // TODO: chek for different blocks
-                    Some(previous_block) => {
-                        if previous_block.lines == block.lines {
-                        } else {
-                            write!(f, "{}\n...\n", block.top)?;
-                        }
-                    }
-                },
-            },
-        };
-        if !self.function.is_empty() {
-            for i in &self.function {
-                match previous.as_ref() {
-                    None => write!(f, "{}\n...\n", i.top)?,
-                    Some(previous_function) => {
-                        if previous_function
-                            .function
-                            .iter()
-                            .any(|x| x.lines == i.lines)
-                        {
-                        } else {
-                            write!(f, "{}\n...\n", i.top)?;
-                        }
-                    }
-                };
-            }
-        }
-
-        write!(f, "{}", self.contents)?;
-        if !self.function.is_empty() {
-            for i in &self.function {
-                match next.as_ref() {
-                    None => write!(f, "\n...{}", i.bottom)?,
-                    Some(next_function) => {
-                        if next_function.function.iter().any(|x| x.lines == i.lines) {
-                        } else {
-                            write!(f, "\n...{}", i.bottom)?;
-                        }
-                    }
-                };
-            }
-        }
-        match &self.block {
-            None => {}
-            Some(block) => match next.as_ref() {
-                None => write!(f, "\n...{}", block.bottom)?,
-                Some(next_function) => match &next_function.block {
-                    None => write!(f, "\n...{}", block.bottom)?,
-                    Some(next_block) => {
-                        if next_block.lines == block.lines {
-                        } else {
-                            write!(f, "\n...{}", block.bottom)?;
-                        }
-                    }
-                },
-            },
-        };
-        Ok(())
-    }
-
-    /// get metadata like line number, number of parent function etc.
-    fn get_metadata(&self) -> HashMap<&str, String> {
-        let mut map = HashMap::new();
-        map.insert("name", self.name.clone());
-        map.insert("lines", format!("{:?}", self.lines));
-        map.insert("contents", self.contents.clone());
-        if let Some(block) = &self.block {
-            map.insert("block", format!("{}", block.block_type));
-        }
-        map.insert("generics", self.generics.join(","));
-        map.insert(
-            "arguments",
-            self.arguments
-                .iter()
-                .map(|(k, v)| format!("{}: {}", k, v))
-                .collect::<Vec<String>>()
-                .join(","),
-        );
-        map.insert("lifetime generics", self.lifetime.join(","));
-        map.insert("attributes", self.attributes.join(","));
-        map.insert("doc comments", self.doc_comments.join(","));
-        match &self.return_type {
-            None => {}
-            Some(return_type) => {
-                map.insert("return type", return_type.clone());
-            }
-        };
-        map
-    }
-
-    fn get_lines(&self) -> (usize, usize) {
-        self.lines
-    }
 }
 
 impl RustFunction {
@@ -171,7 +56,7 @@ impl fmt::Display for RustFunction {
         for i in &self.function {
             write!(f, "{}\n...\n", i.top)?;
         }
-        write!(f, "{}", self.contents)?;
+        write!(f, "{}", self.body)?;
         for i in &self.function {
             write!(f, "\n...\n{}", i.bottom)?;
         }
@@ -323,7 +208,7 @@ pub(crate) fn find_function_in_commit(
     name: &str,
 ) -> Result<Vec<RustFunction>, Box<dyn Error>> {
     let mut functions = Vec::new();
-    get_function_asts(name, &file_contents, &mut functions);
+    get_function_asts(name, file_contents, &mut functions);
     let mut starts = file_contents
         .match_indices('\n')
         .map(|x| x.0)
@@ -336,7 +221,7 @@ pub(crate) fn find_function_in_commit(
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
     for f in &functions {
-        let stuff = get_stuff(f, &file_contents, &map);
+        let stuff = get_stuff(f, file_contents, &map);
         let generics = get_genrerics_and_lifetime(f);
         let mut parent = f.syntax().parent();
         let mut parent_fn: Vec<FunctionBlock> = Vec::new();
@@ -349,7 +234,7 @@ pub(crate) fn find_function_in_commit(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
+                        let stuff = get_stuff(&block, file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.self_ty().map(|ty| ty.to_string()),
@@ -364,7 +249,7 @@ pub(crate) fn find_function_in_commit(
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
+                        let stuff = get_stuff(&block, file_contents, &map);
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.name().map(|ty| ty.to_string()),
@@ -379,7 +264,7 @@ pub(crate) fn find_function_in_commit(
                         });
                     } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, &file_contents, &map);
+                        let stuff = get_stuff(&block, file_contents, &map);
                         parent_block = Some(Block {
                             name: block.abi().map(|ty| ty.to_string()),
                             lifetime: Vec::new(),
@@ -394,7 +279,7 @@ pub(crate) fn find_function_in_commit(
                     }
                 },
                 |function| {
-                    let stuff = get_stuff(&function, &file_contents, &map);
+                    let stuff = get_stuff(&function, file_contents, &map);
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
                     parent_fn.push(FunctionBlock {
@@ -437,10 +322,10 @@ pub(crate) fn find_function_in_commit(
                 format!("{}: {}\n", start, l,)
             })
             .collect();
-        let contents = contents.trim_end().to_string();
+        let body = contents.trim_end().to_string();
         let function = RustFunction {
             name: f.name().unwrap().to_string(),
-            contents,
+            body,
             block: parent_block,
             function: parent_fn,
             return_type: f.ret_type().map(|ty| ty.to_string()),
@@ -618,4 +503,53 @@ impl Filter {
             Self::FunctionWithAttribute(attribute) => function.attributes.contains(attribute),
         }
     }
+}
+
+impl FunctionTrait for RustFunction {
+    fn get_tops(&self) -> Vec<String> {
+        let mut tops = Vec::new();
+        match &self.block {
+            Some(block) => {
+                tops.push(block.top.clone());
+            }
+            None => {}
+        }
+        for parent in &self.function {
+            tops.push(parent.top.clone());
+        }
+        tops
+    }
+
+    fn get_total_lines(&self) -> (usize, usize) {
+        match &self.block {
+            Some(block) => (block.lines.0, self.lines.1),
+            None => {
+                let mut start = self.lines.0;
+                let mut end = self.lines.1;
+                for parent in &self.function {
+                    if parent.lines.0 < start {
+                        start = parent.lines.0;
+                        end = parent.lines.1;
+                    }
+                }
+                (start, end)
+            }
+        }
+    }
+
+    fn get_bottoms(&self) -> Vec<String> {
+        let mut bottoms = Vec::new();
+        match &self.block {
+            Some(block) => {
+                bottoms.push(block.bottom.clone());
+            }
+            None => {}
+        }
+        for parent in &self.function {
+            bottoms.push(parent.bottom.clone());
+        }
+        bottoms
+    }
+
+    impl_function_trait!(RustFunction);
 }

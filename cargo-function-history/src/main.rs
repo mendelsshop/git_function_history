@@ -2,7 +2,7 @@ use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc};
 
 use cargo_function_history::{app::App, start_ui};
 use function_history_backend_thread::types::{FullCommand, Status};
-use git_function_history::{FileType, Filter};
+use git_function_history::{FileFilterType, Filter};
 use log::info;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -46,21 +46,21 @@ fn usage() -> ! {
 struct Config {
     function_name: String,
     filter: Filter,
-    file_type: FileType,
+    file_type: FileFilterType,
 }
 
 fn parse_args() -> Config {
     let mut config = Config {
         function_name: String::new(),
         filter: Filter::None,
-        file_type: FileType::None,
+        file_type: FileFilterType::None,
     };
     env::args().enumerate().skip(1).for_each(|arg| {
         if arg.0 == 1 {
             println!("{}", arg.1);
             match arg.1.split_once(':') {
                 Some(string_tuple) => {
-                    config.file_type = FileType::Relative(string_tuple.1.replace('\\', "/"));
+                    config.file_type = FileFilterType::Relative(string_tuple.1.replace('\\', "/"));
                     config.function_name = string_tuple.0.to_string();
                 }
                 None => {
@@ -74,12 +74,12 @@ fn parse_args() -> Config {
                 }
                 "--file-absolute" => {
                     match &config.file_type {
-                        FileType::None => {
+                        FileFilterType::None => {
                             eprintln!("Error no file name specified");
                             exit(1);
                         }
-                        FileType::Relative(path) => {
-                            config.file_type = FileType::Absolute(path.to_string());
+                        FileFilterType::Relative(path) => {
+                            config.file_type = FileFilterType::Absolute(path.to_string());
 
                         }
                         _ => {}
@@ -87,12 +87,12 @@ fn parse_args() -> Config {
                 }
                 "--file-relative" => {
                     match &config.file_type {
-                        FileType::None => {
+                        FileFilterType::None => {
                             eprintln!("Error no file name specified");
                             exit(1);
                         }
-                        FileType::Absolute(path) => {
-                            config.file_type = FileType::Relative(path.to_string());
+                        FileFilterType::Absolute(path) => {
+                            config.file_type = FileFilterType::Relative(path.to_string());
                         }
                         _ => {}
                     }

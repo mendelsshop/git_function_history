@@ -6,7 +6,9 @@ use rustpython_parser::{
     parser,
 };
 
-use super::LanguageFilter;
+use crate::impl_function_trait;
+
+use super::FunctionTrait;
 
 #[derive(Debug, Clone)]
 pub struct PythonFunction {
@@ -23,9 +25,8 @@ pub struct PythonFunction {
 
 impl fmt::Display for PythonFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.class {
-            Some(ref class) => write!(f, "{}", class.top)?,
-            None => {}
+        if let Some(ref class) = self.class {
+            write!(f, "{}", class.top)?
         }
         for parent in &self.parent {
             write!(f, "{}", parent.top)?;
@@ -34,112 +35,12 @@ impl fmt::Display for PythonFunction {
         for parent in &self.parent {
             write!(f, "{}", parent.bottom)?;
         }
-        match self.class {
-            Some(ref class) => write!(f, "{}", class.bottom),
-            None => Ok(()),
-        }
+        self.class
+            .as_ref()
+            .map_or(Ok(()), |class| write!(f, "{}", class.bottom))
     }
 }
-impl PythonFunction {}
 
-impl super::Function for PythonFunction {
-    fn get_lines(&self) -> (usize, usize) {
-        self.lines
-    }
-    fn fmt_with_context(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
-    ) -> std::fmt::Result {
-        match &self.class {
-            Some(class) => match previous.as_ref() {
-                Some(previous) => {
-                    if previous.class.is_some() {
-                        if previous.class.as_ref().unwrap().name == class.name {
-                            write!(f, "\n...\n")?;
-                        } else {
-                            write!(f, "{}", class.top)?;
-                        }
-                    } else {
-                        write!(f, "{}", class.top)?;
-                    }
-                }
-                None => {
-                    writeln!(f, "{}", class.top)?;
-                }
-            },
-            None => {}
-        };
-        if !self.parent.is_empty() {
-            match previous.as_ref() {
-                None => {
-                    for parent in &self.parent {
-                        writeln!(f, "{}", parent.top)?;
-                    }
-                }
-                Some(previous) => {
-                    for parent in &self.parent {
-                        if previous.parent.iter().any(|x| x.lines == parent.lines) {
-                        } else {
-                            write!(f, "{}\n...\n", parent.top)?;
-                        }
-                    }
-                }
-            }
-        }
-        write!(f, "{}", self.body)?;
-        if !self.parent.is_empty() {
-            match next.as_ref() {
-                None => {
-                    for parent in &self.parent {
-                        writeln!(f, "{}", parent.bottom)?;
-                    }
-                }
-                Some(next) => {
-                    for parent in &self.parent {
-                        if next.parent.iter().any(|x| x.lines == parent.lines) {
-                        } else {
-                            write!(f, "\n...\n{}", parent.bottom)?;
-                        }
-                    }
-                }
-            }
-        }
-        match &self.class {
-            Some(class) => match next.as_ref() {
-                Some(next) => {
-                    if next.class.is_some() {
-                        if next.class.as_ref().unwrap().name == class.name {
-                            write!(f, "\n...\n")?;
-                        } else {
-                            write!(f, "{}", class.bottom)?;
-                        }
-                    } else {
-                        write!(f, "{}", class.bottom)?;
-                    }
-                }
-                None => {
-                    writeln!(f, "{}", class.bottom)?;
-                }
-            },
-            None => {}
-        };
-        Ok(())
-    }
-
-    fn get_metadata(&self) -> HashMap<&str, String> {
-        todo!()
-    }
-
-    fn matches(&self, filter: &LanguageFilter) -> bool {
-        if let LanguageFilter::Python(filt) = filter {
-            filt.matches(self)
-        } else {
-            false
-        }
-    }
-}
 #[derive(Debug, Clone)]
 pub struct Params {
     args: Vec<String>,
@@ -169,11 +70,10 @@ pub struct ParentFunction {
 
 pub(crate) fn find_function_in_commit(
     file_contents: &str,
-    
+
     name: &str,
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
-
-    let ast = parser::parse_program(&file_contents)?;
+    let ast = parser::parse_program(file_contents)?;
     let mut functions = vec![];
     let mut last = None;
     for stmt in ast.statements {
@@ -404,4 +304,52 @@ impl Filter {
             }
         }
     }
+}
+
+impl FunctionTrait for PythonFunction {
+    fn get_tops(&self) -> Vec<String> {
+        let mut tops = Vec::new();
+        match &self.class {
+            Some(block) => {
+                tops.push(block.top.clone());
+            }
+            None => {}
+        }
+        for parent in &self.parent {
+            tops.push(parent.top.clone());
+        }
+        tops
+    }
+
+    fn get_total_lines(&self) -> (usize, usize) {
+        match &self.class {
+            Some(block) => (block.lines.0, self.lines.1),
+            None => {
+                let mut start = self.lines.0;
+                let mut end = self.lines.1;
+                for parent in &self.parent {
+                    if parent.lines.0 < start {
+                        start = parent.lines.0;
+                        end = parent.lines.1;
+                    }
+                }
+                (start, end)
+            }
+        }
+    }
+
+    fn get_bottoms(&self) -> Vec<String> {
+        let mut bottoms = Vec::new();
+        match &self.class {
+            Some(block) => {
+                bottoms.push(block.bottom.clone());
+            }
+            None => {}
+        }
+        for parent in &self.parent {
+            bottoms.push(parent.bottom.clone());
+        }
+        bottoms
+    }
+    impl_function_trait!(PythonFunction);
 }

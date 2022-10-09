@@ -2,336 +2,89 @@ use chrono::{DateTime, FixedOffset};
 use rayon::prelude::IntoParallelRefIterator;
 #[cfg(feature = "parallel")]
 use rayon::prelude::ParallelIterator;
-use std::{collections::HashMap, error::Error, fmt::{self, Formatter, Display}};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{self, Display, Formatter},
+};
 
 use crate::{
-    languages::{python::{self, PythonFunction}, rust::{self, RustFunction}, Function, LanguageFilter},
+    languages::{FileTrait, FunctionTrait, PythonFile, RustFile},
     Filter,
 };
 
 #[cfg(feature = "c_lang")]
-use crate::languages::c;
-
-/// This is used to store each individual file in a commit and the associated functions in that file.
-#[derive(Debug, Clone)]
-pub struct File {
-    /// The name of the file
-    pub(crate) name: String,
-    pub(crate) functions: FileType,
-    pub(crate) current_pos: usize,
-}
-
-impl File {
-    /// Create a new file with the given name and functions
-    pub const fn new(name: String, functions: FileType) -> Self {
-        Self {
-            name,
-            functions,
-            current_pos: 0,
-        }
-    }
-
-    /// This is used to get the functions in the file
-    pub const fn get_functions(&self) -> &FileType {
-        &self.functions
-    }
-
-    /// This is used to get the functions in the file (mutable)
-    pub fn get_functions_mut(&mut self) -> &mut FileType {
-        &mut self.functions
-    }
-
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-        match filter {
-            Filter::FunctionInLines(..) | Filter::PLFilter(_) => {}
-            Filter::None => return Ok(self.clone()),
-            _ => return Err("Filter not available")?,
-        }
-        let mut new_file = self.clone();
-        new_file.functions = match &self.functions {
-            FileType::Rust(functions, _) => {
-                let mut vec = Vec::new();
-                for function in functions {
-                    match &filter {
-                        Filter::FunctionInLines(start, end) => {
-                            if function.lines.0 >= *start && function.lines.1 <= *end {
-                                vec.push(function.clone());
-                            }
-                        }
-                        Filter::PLFilter(LanguageFilter::Rust(filter)) => {
-                            if filter.matches(function) {
-                                vec.push(function.clone());
-                            }
-                        }
-                        _ => return Err("Filter not available")?,
-                    }
-                }
-                if vec.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-                FileType::Rust(vec, 0)
-            }
-
-            FileType::Python(functions, _) => {
-                let mut vec = Vec::new();
-                for function in functions {
-                    match &filter {
-                        Filter::FunctionInLines(start, end) => {
-                            if function.lines.0 >= *start && function.lines.1 <= *end {
-                                vec.push(function.clone());
-                            }
-                        }
-                        Filter::PLFilter(LanguageFilter::Python(filter)) => {
-                            if filter.matches(function) {
-                                vec.push(function.clone());
-                            }
-                        }
-                        _ => return Err("Filter not available")?,
-                    }
-                }
-                if vec.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-                FileType::Python(vec, 0)
-            }
-            #[cfg(feature = "c_lang")]
-            FileType::C(functions, _) => {
-                let mut vec = Vec::new();
-                for function in functions {
-                    match &filter {
-                        Filter::FunctionInLines(start, end) => {
-                            if function.lines.0 >= *start && function.lines.1 <= *end {
-                                vec.push(function.clone());
-                            }
-                        }
-                        Filter::PLFilter(LanguageFilter::C(filter)) => {
-                            if filter.matches(function) {
-                                vec.push(function.clone());
-                            }
-                        }
-                        _ => return Err("Filter not available")?,
-                    }
-                }
-                if vec.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-                FileType::C(vec, 0)
-            }
-        };
-        match &new_file.functions {
-            #[cfg(feature = "c_lang")]
-            FileType::C(functions, _) => {
-                if functions.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-            }
-            FileType::Python(functions, _) => {
-                if functions.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-            }
-            FileType::Rust(functions, _) => {
-                if functions.is_empty() {
-                    return Err("No functions found for filter")?;
-                }
-            }
-        }
-        Ok(new_file)
-    }
-
-    /// This is will get the current function in the file
-    pub fn get_current_function(&self) -> Option<FunctionType> {
-        self.functions.get(self.current_pos)
-    }
-}
-
-impl Display for File {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // write!(f, "{}", self.name)
-        match &self.functions {
-            FileType::Python(python, _) => {
-                for (i, function) in python.iter().enumerate() {
-                    write!(
-                        f,
-                        "{}",
-                        match i {
-                            0 => "",
-                            _ => "\n...\n",
-                        },
-                    )?;
-                    let previous = match i {
-                        0 => None,
-                        _ => python.get(i - 1),
-                    };
-                    let next = python.get(i + 1);
-                    function.fmt_with_context(f, previous,next);
-                }
-            }
-            FileType::Rust(rust, _) => {
-                for (i, function) in rust.iter().enumerate() {
-                    write!(
-                        f,
-                        "{}",
-                        match i {
-                            0 => "",
-                            _ => "\n...\n",
-                        },
-                    )?;
-                    let previous = match i {
-                        0 => None,
-                        _ => rust.get(i - 1),
-                    };
-                    let next = rust.get(i + 1);
-                    function.fmt_with_context(f, previous,next);
-                }
-            }
-            #[cfg(feature = "c_lang")]
-            FileType::C(c, _) => {
-                for (i, function) in c.iter().enumerate() {
-                    write!(
-                        f,
-                        "{}",
-                        match i {
-                            0 => "",
-                            _ => "\n...\n",
-                        },
-                    )?;
-                    let previous = match i {
-                        0 => None,
-                        _ => c.get(i - 1),
-                    };
-                    let next = c.get(i + 1);
-                    function.fmt_with_context(f, previous,next);
-                }
-            }
-        };
-        Ok(())
-    }
-}
-
-pub enum FunctionType {
-    Python(python::PythonFunction),
-    Rust(rust::RustFunction),
-    #[cfg(feature = "c_lang")]
-    C(c::Function),
-}
-
-impl FunctionType {
-    pub const fn get_lines(&self) -> (usize, usize) {
-        match self {
-            Self::Python(python) => python.lines,
-            Self::Rust(rust) => rust.lines,
-            #[cfg(feature = "c_lang")]
-            Self::C(c) => c.lines,
-        }
-    }
-}
-
-impl Iterator for File {
-    type Item = FunctionType;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current_pos;
-        self.current_pos += 1;
-
-        match &self.functions {
-            FileType::Python(python, _) => {
-                python.get(current).map(|f| FunctionType::Python(f.clone()))
-            }
-            FileType::Rust(rust, _) => rust.get(current).map(|f| FunctionType::Rust(f.clone())),
-            #[cfg(feature = "c_lang")]
-            FileType::C(c, _) => c.get(current).map(|f| FunctionType::C(f.clone())),
-        }
-    }
-}
+use crate::languages::CFile;
 
 #[derive(Debug, Clone)]
 pub enum FileType {
-    /// The python language
-    Python(Vec<python::PythonFunction>, usize),
-    /// The rust language
-    Rust(Vec<rust::RustFunction>, usize),
+    Rust(RustFile),
+    Python(PythonFile),
     #[cfg(feature = "c_lang")]
-    /// c language
-    C(Vec<c::Function>, usize),
+    C(CFile),
 }
 
-impl Iterator for FileType {
-    type Item = FunctionType;
-
-    fn next(&mut self) -> Option<Self::Item> {
+impl FileTrait for FileType {
+    fn get_file_name(&self) -> String {
         match self {
-            Self::Python(python, pos) => python.get(*pos).map(|f| {
-                *pos += 1;
-                FunctionType::Python(f.clone())
-            }),
-            Self::Rust(rust, pos) => rust.get(*pos).map(|f| {
-                *pos += 1;
-                FunctionType::Rust(f.clone())
-            }),
+            Self::Rust(file) => file.get_file_name(),
+            Self::Python(file) => file.get_file_name(),
             #[cfg(feature = "c_lang")]
-            Self::C(c, pos) => c.get(*pos).map(|f| {
-                *pos += 1;
-                FunctionType::C(f.clone())
-            }),
+            FileType::C(file) => file.get_file_name(),
         }
     }
-}
-
-impl FileType {
-    pub fn get(&self, index: usize) -> Option<FunctionType> {
+    fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>> {
         match self {
-            Self::Rust(rust, _) => rust
-                .get(index)
-                .map(|function| FunctionType::Rust(function.clone())),
+            Self::Rust(file) => file.get_functions(),
+            Self::Python(file) => file.get_functions(),
             #[cfg(feature = "c_lang")]
-            Self::C(c, _) => c
-                .get(index)
-                .map(|function| FunctionType::C(function.clone())),
-            Self::Python(python, _) => python
-                .get(index)
-                .map(|function| FunctionType::Python(function.clone())),
-        }
-    }
-    #[cfg(feature = "c_lang")]
-    pub fn get_current<
-        T: Clone + From<python::Function> + From<c::Function> + From<rust::RustFunction>,
-    >(
-        &self,
-    ) -> Vec<T> {
-        match self {
-            Self::Python(python, _pos) => python
-                .iter()
-                .map(|function| T::from(function.clone()))
-                .collect(),
-            Self::Rust(rust, _pos) => rust
-                .iter()
-                .map(|function| T::from(function.clone()))
-                .collect(),
-            Self::C(c, _pos) => c.iter().map(|function| T::from(function.clone())).collect(),
+            FileType::C(file) => file.get_functions(),
         }
     }
 
-    #[cfg(not(feature = "c_lang"))]
-    pub fn get_current<T: Clone + From<python::PythonFunction> + From<rust::RustFunction>>(&self) -> Vec<T> {
+    fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         match self {
-            Self::Python(python, _pos) => python
-                .iter()
-                .map(|function| T::from(function.clone()))
-                .collect(),
-            Self::Rust(rust, _pos) => rust
-                .iter()
-                .map(|function| T::from(function.clone()))
-                .collect(),
+            Self::Rust(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(Self::Rust(filtered))
+            }
+            Self::Python(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(Self::Python(filtered))
+            }
+            #[cfg(feature = "c_lang")]
+            FileType::C(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(FileType::C(filtered))
+            }
+        }
+    }
+
+    fn get_current(&self) -> Option<Box<dyn FunctionTrait>> {
+        match self {
+            Self::Rust(file) => file.get_current(),
+            Self::Python(file) => file.get_current(),
+            #[cfg(feature = "c_lang")]
+            FileType::C(file) => file.get_current(),
         }
     }
 }
 
+impl fmt::Display for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Rust(file) => write!(f, "{}", file),
+            Self::Python(file) => write!(f, "{}", file),
+            #[cfg(feature = "c_lang")]
+            FileType::C(file) => write!(f, "{}", file),
+        }
+    }
+}
 /// This holds information like date and commit `commit_hash` and also the list of function found in the commit.
 #[derive(Debug, Clone)]
 pub struct Commit {
     commit_hash: String,
-    files: Vec<File>,
+    files: Vec<FileType>,
     pub(crate) date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,
@@ -344,7 +97,7 @@ impl Commit {
     /// Create a new `Commit` with the given `commit_hash`, functions, and date.
     pub fn new(
         commit_hash: String,
-        files: Vec<File>,
+        files: Vec<FileType>,
         date: &str,
         author: String,
         email: String,
@@ -386,18 +139,18 @@ impl Commit {
         map.insert("date".to_string(), self.date.to_rfc2822());
         map.insert(
             "file".to_string(),
-            self.files[self.current_pos].name.clone(),
+            self.files[self.current_pos].get_file_name(),
         );
         map
     }
 
     /// returns the current file
-    pub fn get_file(&self) -> &File {
+    pub fn get_file(&self) -> &FileType {
         &self.files[self.current_pos]
     }
 
     /// returns the current file (mutable)
-    pub fn get_file_mut(&mut self) -> &mut File {
+    pub fn get_file_mut(&mut self) -> &mut FileType {
         &mut self.files[self.current_pos]
     }
 
@@ -432,9 +185,9 @@ impl Commit {
         let t = self.files.iter();
         let vec: Vec<_> = t
             .filter(|f| match filter {
-                Filter::FileAbsolute(file) => f.name == *file,
-                Filter::FileRelative(file) => f.name.ends_with(file),
-                Filter::Directory(dir) => f.name.contains(dir),
+                Filter::FileAbsolute(file) => f.get_file_name() == *file,
+                Filter::FileRelative(file) => f.get_file_name().ends_with(file),
+                Filter::Directory(dir) => f.get_file_name().contains(dir),
                 Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).is_ok(),
                 Filter::None => true,
                 _ => false,
@@ -459,7 +212,7 @@ impl Commit {
 }
 
 impl Iterator for Commit {
-    type Item = File;
+    type Item = FileType;
     fn next(&mut self) -> Option<Self::Item> {
         // get the current function without removing it
         let function = self.files.get(self.current_iter_pos).cloned();

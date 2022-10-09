@@ -13,23 +13,29 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
-pub mod new_types;
 pub mod languages;
+
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
 use languages::{rust, LanguageFilter};
+
+use languages::{PythonFile, RustFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+pub use types::FileType;
+
+#[cfg(feature = "c_lang")]
+use languages::CFile;
 
 use std::{error::Error, process::Command};
-pub use types::{Commit, File, FunctionHistory};
+pub use types::{Commit, FunctionHistory};
 
 use crate::languages::Language;
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FileType {
+pub enum FileFilterType {
     /// When you have a absolute path to a file.
     Absolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
@@ -103,7 +109,7 @@ pub enum Filter {
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
-    file: &FileType,
+    file: &FileFilterType,
     filter: &Filter,
     langs: &languages::Language,
 ) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
@@ -183,7 +189,7 @@ pub fn get_function_history(
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
     let err = "no history found".to_string();
     // check if file is a rust file
-    if let FileType::Absolute(path) | FileType::Relative(path) = &file {
+    if let FileFilterType::Absolute(path) | FileFilterType::Relative(path) = &file {
         match langs {
             #[cfg(feature = "c_lang")]
             Language::C => {
@@ -218,10 +224,10 @@ pub fn get_function_history(
     let t = commits.iter();
     file_history.commit_history = t
         .filter_map(|commit| match &file {
-            FileType::Absolute(_)
-            | FileType::Relative(_)
-            | FileType::None
-            | FileType::Directory(_) => {
+            FileFilterType::Absolute(_)
+            | FileFilterType::Relative(_)
+            | FileFilterType::None
+            | FileFilterType::Directory(_) => {
                 match find_function_in_commit_with_filetype(commit.0, name, file, *langs) {
                     Ok(contents) => Some(Commit::new(
                         commit.0.to_string(),
@@ -279,9 +285,9 @@ fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn 
 fn find_function_in_commit_with_filetype(
     commit: &str,
     name: &str,
-    filetype: &FileType,
+    filetype: &FileFilterType,
     langs: Language,
-) -> Result<Vec<File>, Box<dyn Error>> {
+) -> Result<Vec<FileType>, Box<dyn Error>> {
     // get a list of all the files in the repository
     let mut files = Vec::new();
     let command = Command::new("git")
@@ -293,22 +299,22 @@ fn find_function_in_commit_with_filetype(
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
     for file in file_list.split('\n') {
         match filetype {
-            FileType::Relative(ref path) => {
+            FileFilterType::Relative(ref path) => {
                 if file.ends_with(path) {
                     files.push(file);
                 }
             }
-            FileType::Absolute(ref path) => {
+            FileFilterType::Absolute(ref path) => {
                 if file == path {
                     files.push(file);
                 }
             }
-            FileType::Directory(ref path) => {
+            FileFilterType::Directory(ref path) => {
                 if path.contains(path) {
                     files.push(file);
                 }
             }
-            FileType::None => {
+            FileFilterType::None => {
                 match langs {
                     #[cfg(feature = "c_lang")]
                     Language::C => {
@@ -345,7 +351,7 @@ fn find_function_in_commit_with_filetype(
     let t = files.par_iter();
     #[cfg(not(feature = "parellel"))]
     let t = files.iter();
-    let returns: Vec<File> = t
+    let returns: Vec<FileType> = t
         .filter_map(|file| find_function_in_commit(commit, file, name, langs).ok())
         .collect();
     if returns.is_empty() {
@@ -359,54 +365,41 @@ fn find_function_in_commit(
     file_path: &str,
     name: &str,
     langs: Language,
-) -> Result<File, Box<dyn Error>> {
+) -> Result<FileType, Box<dyn Error>> {
     let fc = find_file_in_commit(commit, file_path)?;
     match langs {
         Language::Rust => {
             let functions = rust::find_function_in_commit(&fc, name)?;
-            Ok(File::new(
-                file_path.to_string(),
-                types::FileType::Rust(functions, 0),
-            ))
+            Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
             let functions = languages::c::find_function_in_commit(&fc, name)?;
-            Ok(File::new(
-                file_path.to_string(),
-                types::FileType::C(functions, 0),
-            ))
+            Ok(FileType::C(CFile::new(name.to_string(), functions)))
         }
         Language::Python => {
             let functions = languages::python::find_function_in_commit(&fc, name)?;
-            Ok(File::new(
-                file_path.to_string(),
-                types::FileType::Python(functions, 0),
-            ))
+            Ok(FileType::Python(PythonFile::new(
+                name.to_string(),
+                functions,
+            )))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
                 let functions = rust::find_function_in_commit(&fc, name)?;
-                Ok(File::new(
-                    file_path.to_string(),
-                    types::FileType::Rust(functions, 0),
-                ))
+                Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
                 let functions = languages::c::find_function_in_commit(&fc, name)?;
-                Ok(File::new(
-                    file_path.to_string(),
-                    types::FileType::C(functions, 0),
-                ))
+                Ok(FileType::C(CFile::new(name.to_string(), functions)))
             }
             Some("py") => {
-                let functions =
-                    languages::python::find_function_in_commit(&fc, name)?;
-                Ok(File::new(
-                    file_path.to_string(),
-                    types::FileType::Python(functions, 0),
-                ))
+                let functions = languages::python::find_function_in_commit(&fc, name)?;
+                Ok(FileType::Python(PythonFile::new(
+                    name.to_string(),
+                    functions,
+                )))
             }
             _ => Err("unknown file type")?,
         },
@@ -430,13 +423,15 @@ impl<T> UnwrapToError<T> for Option<T> {
 mod tests {
     use chrono::Utc;
 
+    use crate::languages::FileTrait;
+
     use super::*;
     #[test]
     fn found_function() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            &FileType::Relative("src/test_functions.rs".to_string()),
+            &FileFilterType::Relative("src/test_functions.rs".to_string()),
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -454,7 +449,7 @@ mod tests {
     fn git_installed() {
         let output = get_function_history(
             "empty_test",
-            &FileType::Absolute("src/test_functions.rs".to_string()),
+            &FileFilterType::Absolute("src/test_functions.rs".to_string()),
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -468,7 +463,7 @@ mod tests {
     fn not_found() {
         let output = get_function_history(
             "Not_a_function",
-            &FileType::Absolute("src/test_functions.rs".to_string()),
+            &FileFilterType::Absolute("src/test_functions.rs".to_string()),
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -483,7 +478,7 @@ mod tests {
     fn not_rust_file() {
         let output = get_function_history(
             "empty_test",
-            &FileType::Absolute("src/test_functions.txt".to_string()),
+            &FileFilterType::Absolute("src/test_functions.txt".to_string()),
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -495,7 +490,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            &FileType::None,
+            &FileFilterType::None,
             &Filter::DateRange(
                 "27 Sep 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
@@ -518,7 +513,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            &FileType::None,
+            &FileFilterType::None,
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -538,7 +533,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            &FileType::Relative("src/test_functions.py".to_string()),
+            &FileFilterType::Relative("src/test_functions.py".to_string()),
             &Filter::DateRange(
                 "03 Oct 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
@@ -557,7 +552,7 @@ mod tests {
         let output = output.unwrap();
         let commit = output.get_commit();
         let file = commit.get_file();
-        let functions = file.get_functions();
+        let _functions = file.get_functions();
     }
 
     #[test]
@@ -566,7 +561,7 @@ mod tests {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
-            &FileType::Relative("src/test_functions.c".to_string()),
+            &FileFilterType::Relative("src/test_functions.c".to_string()),
             &Filter::DateRange(
                 "03 Oct 2022 11:27:23 -0400".to_owned(),
                 "05 Oct 2022 23:45:52 +0000".to_owned(),

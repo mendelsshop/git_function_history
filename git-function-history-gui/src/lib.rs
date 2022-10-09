@@ -13,7 +13,7 @@ use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
 };
 use git_function_history::{
-    languages::Language, types::Directions, Commit, FileType, Filter, FunctionHistory,
+    languages::Language, types::Directions, Commit, FileFilterType, Filter, FunctionHistory,
 };
 
 // TODO: stop cloning everyting and use references instead
@@ -29,7 +29,7 @@ pub struct MyEguiApp {
         mpsc::Receiver<(CommandResult, Status)>,
     ),
     filter: Filter,
-    file_type: FileType,
+    file_type: FileFilterType,
     history_filter_type: HistoryFilterType,
 }
 
@@ -49,7 +49,7 @@ impl MyEguiApp {
             status: Status::default(),
             list_type: ListType::default(),
             channels,
-            file_type: FileType::None,
+            file_type: FileFilterType::None,
             filter: Filter::None,
             history_filter_type: HistoryFilterType::None,
         }
@@ -476,36 +476,40 @@ impl eframe::App for MyEguiApp {
                         });
 
                         let text = match &self.file_type {
-                            FileType::Directory(_) => "directory",
-                            FileType::Absolute(_) => "absolute",
-                            FileType::Relative(_) => "relative",
+                            FileFilterType::Directory(_) => "directory",
+                            FileFilterType::Absolute(_) => "absolute",
+                            FileFilterType::Relative(_) => "relative",
                             _ => "file type",
                         };
                         egui::ComboBox::from_id_source("search_file_combo_box")
                             .selected_text(text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut self.file_type, FileType::None, "None");
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileType::Relative(String::new()),
+                                    FileFilterType::None,
+                                    "None",
+                                );
+                                ui.selectable_value(
+                                    &mut self.file_type,
+                                    FileFilterType::Relative(String::new()),
                                     "Relative",
                                 );
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileType::Absolute(String::new()),
+                                    FileFilterType::Absolute(String::new()),
                                     "Absolute",
                                 );
                                 ui.selectable_value(
                                     &mut self.file_type,
-                                    FileType::Directory(String::new()),
+                                    FileFilterType::Directory(String::new()),
                                     "Directory",
                                 );
                             });
                         match &mut self.file_type {
-                            FileType::None => {}
-                            FileType::Relative(dir)
-                            | FileType::Absolute(dir)
-                            | FileType::Directory(dir) => {
+                            FileFilterType::None => {}
+                            FileFilterType::Relative(dir)
+                            | FileFilterType::Absolute(dir)
+                            | FileFilterType::Directory(dir) => {
                                 ui.horizontal(|ui| {
                                     // set the width of the input field
                                     ui.set_min_width(4.0);

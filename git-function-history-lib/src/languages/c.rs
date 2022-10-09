@@ -1,6 +1,9 @@
-use std::collections::HashMap;
+use std::{error::Error, fmt};
 
-use super::FunctionResult;
+use crate::impl_function_trait;
+
+use super::FunctionTrait;
+
 #[derive(Debug, Clone)]
 pub struct CFunction {
     pub(crate) name: String,
@@ -11,7 +14,7 @@ pub struct CFunction {
     pub(crate) lines: (usize, usize),
 }
 
-impl Function {
+impl CFunction {
     pub fn new(
         name: String,
         body: String,
@@ -31,31 +34,26 @@ impl Function {
     }
 }
 
-impl super::Function for CFunction {
-    fn fmt_with_context(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
-    ) -> std::fmt::Result {
-        todo!()
-    }
-
-    fn get_metadata(&self) -> HashMap<&str, String> {
-        todo!()
-    }
-    fn get_lines(&self) -> (usize, usize) {
-        self.lines
-    }
-
-    fn matches(&self, filter: &LanguageFilter) -> bool {
-        if let LanguageFilter::C(filt) = filter {
-            filt.matches(self)
-        } else {
-            false
+impl fmt::Display for CFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        if !self.parameters.is_empty() {
+            write!(f, "(")?;
+            for (i, param) in self.parameters.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", param)?;
+            }
+            write!(f, ")")?;
         }
+        if let Some(ret) = &self.returns {
+            write!(f, " -> {}", ret)?;
+        }
+        Ok(())
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct ParentFunction {
     pub(crate) name: String,
@@ -66,13 +64,11 @@ pub struct ParentFunction {
     pub(crate) returns: Option<String>,
 }
 
-pub(crate) fn find_function_in_commit<T: super::Function>(
-    commit: &str,
-    file_path: &str,
+pub(crate) fn find_function_in_commit(
+    file_contents: &str,
     name: &str,
-) -> FunctionResult<T> {
-    println!("Finding function {} in commit {}", name, commit);
-    let file_contents = crate::find_file_in_commit(commit, file_path)?;
+) -> Result<Vec<CFunction>, Box<dyn Error>> {
+    println!("Finding function {} in commit {}", name, file_contents);
 
     todo!("find_function_in_commit")
 }
@@ -97,4 +93,36 @@ impl Filter {
                 .map_or(false, |r| r == return_type),
         }
     }
+}
+
+impl FunctionTrait for CFunction {
+    fn get_total_lines(&self) -> (usize, usize) {
+        let mut start = self.lines.0;
+        let mut end = self.lines.1;
+        for parent in &self.parent {
+            if parent.lines.0 < start {
+                start = parent.lines.0;
+                end = parent.lines.1;
+            }
+        }
+        (start, end)
+    }
+
+    fn get_tops(&self) -> Vec<String> {
+        let mut tops = Vec::new();
+        for parent in &self.parent {
+            tops.push(parent.top.clone());
+        }
+        tops
+    }
+
+    fn get_bottoms(&self) -> Vec<String> {
+        let mut bottoms = Vec::new();
+        for parent in &self.parent {
+            bottoms.push(parent.bottom.clone());
+        }
+        bottoms
+    }
+
+    impl_function_trait!(CFunction);
 }

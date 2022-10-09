@@ -1,6 +1,6 @@
 use std::fmt;
 
-use git_function_history::{languages::Language, FileType, Filter, FunctionHistory};
+use git_function_history::{languages::Language, FileFilterType, Filter, FunctionHistory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
@@ -117,7 +117,7 @@ impl Default for Status {
 pub enum FullCommand {
     Filter(FilterType),
     List(ListType),
-    Search(String, FileType, Filter, Language),
+    Search(String, FileFilterType, Filter, Language),
 }
 
 #[derive(Debug, Clone)]

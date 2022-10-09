@@ -1,4 +1,13 @@
-use std::{collections::HashMap, error::Error, fmt};
+use crate::Filter;
+use std::{
+    error::Error,
+    fmt::{self, Display},
+};
+
+use self::{python::PythonFunction, rust::RustFunction};
+
+#[cfg(feature = "c_lang")]
+use self::c::CFunction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     /// The python language
@@ -51,129 +60,177 @@ pub mod c;
 pub mod python;
 pub mod rust;
 
-pub trait Function: fmt::Debug   + fmt::Display  {
-    fn fmt_with_context(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-        previous: Option<&Self>,
-        next: Option<&Self>,
-    ) -> fmt::Result;
-    fn get_metadata(&self) -> HashMap<&str, String>;
-
+pub trait FunctionTrait: fmt::Debug + fmt::Display {
+    fn get_tops(&self) -> Vec<String>;
     fn get_lines(&self) -> (usize, usize);
-
-    fn matches(&self, filter: &LanguageFilter) -> bool;
+    fn get_total_lines(&self) -> (usize, usize);
+    fn get_name(&self) -> String;
+    fn get_bottoms(&self) -> Vec<String>;
+    fn get_body(&self) -> String;
 }
 
-pub type FunctionResult<T> = Result<Vec<T>, Box<dyn Error>>;
+// mace macro that generates get_lines, get_body,get_name
+#[macro_export]
+macro_rules! impl_function_trait {
+    ($name:ident) => {
+        fn get_lines(&self) -> (usize, usize) {
+            self.lines
+        }
 
-// impl File<rust::Function> {
-//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-//         let mut vec = Vec::new();
-//         for function in &self.functions {
-//             match &filter {
-//                 Filter::FunctionInBlock(block_type) => {
-//                     if let Some(block) = &function.block {
-//                         if block.block_type == *block_type {
-//                             vec.push(function.clone());
-//                         }
-//                     }
-//                 }
-//                 Filter::FunctionInLines(start, end) => {
-//                     if function.lines.0 >= *start && function.lines.1 <= *end {
-//                         vec.push(function.clone());
-//                     }
-//                 }
-//                 Filter::FunctionWithParent(parent) => {
-//                     for parents in &function.function {
-//                         if parents.name == *parent {
-//                             vec.push(function.clone());
-//                         }
-//                     }
-//                 }
-//                 Filter::None => vec.push(function.clone()),
-//                 _ => return Err("Filter not available")?,
-//             }
-//         }
-//         if vec.is_empty() {
-//             return Err("No functions found for filter")?;
-//         }
-//         Ok(Self {
-//             name: self.name.clone(),
-//             functions: vec,
-//             current_pos: 0,
-//         })
-//     }
-// }
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+        fn get_body(&self) -> String {
+            self.body.clone()
+        }
+    };
+}
 
-// impl File<python::Function> {
-//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-//         let mut vec = Vec::new();
-//         for function in &self.functions {
-//             match &filter {
-//                 Filter::FunctionInBlock(block_type) => {
-//                     if let Some(block) = &function.class {
-//                         if block.name == *block_type.name {
-//                             vec.push(function.clone());
-//                         }
-//                     }
-//                 }
-//                 Filter::FunctionInLines(start, end) => {
-//                     if function.lines.0 >= *start && function.lines.1 <= *end {
-//                         vec.push(function.clone());
-//                     }
-//                 }
-//                 Filter::FunctionWithParent(parent) => {
-//                     for parents in &function.parent {
-//                         if parents.name == *parent {
-//                             vec.push(function.clone());
-//                         }
-//                     }
-//                 }
-//                 Filter::None => vec.push(function.clone()),
-//                 _ => return Err("Filter not available")?,
-//             }
-//         }
-//         if vec.is_empty() {
-//             return Err("No functions found for filter")?;
-//         }
-//         Ok(Self {
-//             name: self.name.clone(),
-//             functions: vec,
-//             current_pos: 0,
-//         })
-//     }
-// }
+pub fn fmt_with_context<T: FunctionTrait + Display>(
+    current: &T,
+    prev: Option<&T>,
+    next: Option<&T>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
+    match (prev, next) {
+        (Some(prev), Some(next)) => {
+            if prev.get_total_lines() == current.get_total_lines()
+                && next.get_total_lines() == current.get_total_lines()
+            {
+                write!(f, "{}", current.get_body())?;
+            } else if prev.get_total_lines() == current.get_total_lines() {
+                write!(f, "{}", current.get_body())?;
+                write!(f, "{}", current.get_bottoms().join("\n"))?;
+            } else if next.get_total_lines() == current.get_total_lines() {
+                write!(f, "{}", current.get_tops().join("\n"))?;
+                write!(f, "{}", current.get_body())?;
+            } else {
+                write!(f, "{}", current)?;
+            }
+        }
+        (Some(prev), None) => {
+            if prev.get_total_lines() == current.get_total_lines() {
+                write!(f, "{}", current.get_body())?;
+            } else {
+                write!(f, "{}", current)?;
+            }
+        }
+        (None, Some(next)) => {
+            if next.get_total_lines() == current.get_total_lines() {
+                write!(f, "{}", current.get_body())?;
+            } else {
+                write!(f, "{}", current)?;
+            }
+        }
+        (None, None) => {
+            // print the function
+            write!(f, "{}", current)?;
+        }
+    }
+    Ok(())
+}
 
-// impl File<c::Function> {
-//     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-//         let mut vec = Vec::new();
-//         for function in &self.functions {
-//             match &filter {
+// functiontrait is not object safe, so we can't implement it for a trait object ie box<dyn FunctionTrait>
+pub trait FileTrait: fmt::Debug + fmt::Display {
+    fn get_file_name(&self) -> String;
+    fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
+    fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>>
+    where
+        Self: Sized;
+    fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
+}
 
-//                 Filter::FunctionInLines(start, end) => {
-//                     if function.lines.0 >= *start && function.lines.1 <= *end {
-//                         vec.push(function.clone());
-//                     }
-//                 }
-//                 Filter::FunctionWithParent(parent) => {
-//                     for parents in &function.parent {
-//                         if parents.name == *parent {
-//                             vec.push(function.clone());
-//                         }
-//                     }
-//                 }
-//                 Filter::None => vec.push(function.clone()),
-//                 _ => return Err("Filter not available")?,
-//             }
-//         }
-//         if vec.is_empty() {
-//             return Err("No functions found for filter")?;
-//         }
-//         Ok(Self {
-//             name: self.name.clone(),
-//             functions: vec,
-//             current_pos: 0,
-//         })
-//     }
-// }
+// make a macro that generates the code for the different languages
+macro_rules! make_file {
+    ($name:ident, $function:ident, $filtername:ident) => {
+        #[derive(Debug, Clone)]
+        pub struct $name {
+            file_name: String,
+            functions: Vec<$function>,
+            current_pos: usize,
+        }
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                for (index, func) in self.functions.iter().enumerate() {
+                    write!(
+                        f,
+                        "{}",
+                        match index {
+                            0 => "",
+                            _ => "\n...\n",
+                        },
+                    )?;
+                    let previous = match index {
+                        0 => None,
+                        _ => Some(&self.functions[index - 1]),
+                    };
+                    let next = self.functions.get(index + 1);
+                    crate::languages::fmt_with_context(func, previous, next, f)?;
+                }
+                Ok(())
+            }
+        }
+
+        impl FileTrait for $name {
+            fn get_file_name(&self) -> String {
+                self.file_name.clone()
+            }
+            fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>> {
+                self.functions
+                    .clone()
+                    .iter()
+                    .cloned()
+                    .map(|x| Box::new(x) as Box<dyn FunctionTrait>)
+                    .collect()
+            }
+            fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+                let mut filtered_functions = Vec::new();
+                if let Filter::PLFilter(LanguageFilter::$filtername(_))
+                | Filter::FunctionInLines(..) = filter
+                {
+                } else if let Filter::None = filter {
+                    return Ok(self.clone());
+                } else {
+                    return Err("filter not supported for this type")?;
+                }
+                for function in &self.functions {
+                    match filter {
+                        Filter::FunctionInLines(start, end) => {
+                            if function.get_lines().0 >= *start && function.get_lines().1 <= *end {
+                                filtered_functions.push(function.clone());
+                            }
+                        }
+                        Filter::PLFilter(LanguageFilter::$filtername(filter)) => {
+                            if filter.matches(function) {
+                                filtered_functions.push(function.clone());
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                Ok($name::new(self.file_name.clone(), filtered_functions))
+            }
+            fn get_current(&self) -> Option<Box<dyn FunctionTrait>> {
+                self.functions
+                    .get(self.current_pos)
+                    .map(|function| Box::new(function.clone()) as Box<dyn FunctionTrait>)
+            }
+        }
+
+        impl $name {
+            pub fn new(file_name: String, functions: Vec<$function>) -> Self {
+                $name {
+                    file_name,
+                    functions,
+                    current_pos: 0,
+                }
+            }
+        }
+    };
+}
+
+make_file!(PythonFile, PythonFunction, Python);
+make_file!(RustFile, RustFunction, Rust);
+#[cfg(feature = "c_lang")]
+make_file!(CFile, CFunction, C);
