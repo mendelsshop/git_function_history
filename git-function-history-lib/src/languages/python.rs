@@ -168,11 +168,10 @@ pub struct ParentFunction {
 }
 
 pub(crate) fn find_function_in_commit(
-    commit: &str,
-    file_path: &str,
+    file_contents: &str,
+    
     name: &str,
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
-    let file_contents = crate::find_file_in_commit(commit, file_path)?;
 
     let ast = parser::parse_program(&file_contents)?;
     let mut functions = vec![];

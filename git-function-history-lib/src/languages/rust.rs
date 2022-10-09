@@ -319,11 +319,9 @@ impl fmt::Display for BlockType {
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub(crate) fn find_function_in_commit(
-    commit: &str,
-    file_path: &str,
+    file_contents: &str,
     name: &str,
 ) -> Result<Vec<RustFunction>, Box<dyn Error>> {
-    let file_contents = crate::find_file_in_commit(commit, file_path)?;
     let mut functions = Vec::new();
     get_function_asts(name, &file_contents, &mut functions);
     let mut starts = file_contents

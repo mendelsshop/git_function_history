@@ -1,0 +1,20 @@
+repo: struct {history: Vec<commit>}
+commit: struct {commit_hash: string commit_date: string ... files: Vec<filetype>}
+filetype: enum {python(python_file), rust(rust_file), ...} all variants implement a common trait
+FileTrait trait: {
+    get_file_name(&self) -> string
+    get_function(&self) -> Vec<implents function trait>
+    ... 
+}
+
+File: struct {file_name: string functions: Vec<implemnts function trait>} 
+python_file: File where functions is a Vec<python_function>
+rust_file: File where functions is a Vec<rust_function>
+
+
+FunctionTrait trait: {
+    fmt_with_context(&self, prev option<self type>, next option<self type>) -> io::Result<()>
+    ...
+}
+
+functiontrait is implemented by python_function and rust_function, and is not object safe.

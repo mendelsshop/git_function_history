@@ -13,7 +13,7 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use
 )]
-
+pub mod new_types;
 pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
@@ -360,9 +360,10 @@ fn find_function_in_commit(
     name: &str,
     langs: Language,
 ) -> Result<File, Box<dyn Error>> {
+    let fc = find_file_in_commit(commit, file_path)?;
     match langs {
         Language::Rust => {
-            let functions = rust::find_function_in_commit(commit, file_path, name)?;
+            let functions = rust::find_function_in_commit(&fc, name)?;
             Ok(File::new(
                 file_path.to_string(),
                 types::FileType::Rust(functions, 0),
@@ -370,14 +371,14 @@ fn find_function_in_commit(
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
-            let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
+            let functions = languages::c::find_function_in_commit(&fc, name)?;
             Ok(File::new(
                 file_path.to_string(),
                 types::FileType::C(functions, 0),
             ))
         }
         Language::Python => {
-            let functions = languages::python::find_function_in_commit(commit, file_path, name)?;
+            let functions = languages::python::find_function_in_commit(&fc, name)?;
             Ok(File::new(
                 file_path.to_string(),
                 types::FileType::Python(functions, 0),
@@ -385,7 +386,7 @@ fn find_function_in_commit(
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
-                let functions = rust::find_function_in_commit(commit, file_path, name)?;
+                let functions = rust::find_function_in_commit(&fc, name)?;
                 Ok(File::new(
                     file_path.to_string(),
                     types::FileType::Rust(functions, 0),
@@ -393,7 +394,7 @@ fn find_function_in_commit(
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
-                let functions = languages::c::find_function_in_commit(commit, file_path, name)?;
+                let functions = languages::c::find_function_in_commit(&fc, name)?;
                 Ok(File::new(
                     file_path.to_string(),
                     types::FileType::C(functions, 0),
@@ -401,7 +402,7 @@ fn find_function_in_commit(
             }
             Some("py") => {
                 let functions =
-                    languages::python::find_function_in_commit(commit, file_path, name)?;
+                    languages::python::find_function_in_commit(&fc, name)?;
                 Ok(File::new(
                     file_path.to_string(),
                     types::FileType::Python(functions, 0),
