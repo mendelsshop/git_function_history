@@ -18,4 +18,3 @@ chrono = "0.4.22"
 ra_ap_syntax = "0.0.131"
 rayon = { version = "1.5.1", optional = true }
 rustpython-parser = "0.1.2"
-enum_dispatch = "0.3.8"
