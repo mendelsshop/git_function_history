@@ -203,7 +203,7 @@ impl fmt::Display for BlockType {
 
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
-pub(crate) fn find_function_in_commit(
+pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<RustFunction>, Box<dyn Error>> {

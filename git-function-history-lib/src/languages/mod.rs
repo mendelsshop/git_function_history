@@ -234,3 +234,29 @@ make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
 #[cfg(feature = "c_lang")]
 make_file!(CFile, CFunction, C);
+
+// make macro that auto genertes the test parse_<lang>_file_time
+macro_rules! make_file_time_test {
+    ($name:ident, $extname:ident, $function:ident) => {
+        #[test]
+        fn $name() {
+            let file = include_str!(concat!(
+                "..\\..\\src\\test_functions.",
+                stringify!($extname)
+            ));
+            let start = std::time::Instant::now();
+            let ok = $function::find_function_in_file(file, "empty_test");
+            let end = std::time::Instant::now();
+            println!("{} took {:?}", stringify!($name), end - start);
+            assert!(ok.is_ok());
+        }
+    };
+}
+#[cfg(test)]
+mod lang_tests {
+    use super::*;
+    make_file_time_test!(python_parses, py, python);
+    make_file_time_test!(rust_parses, rs, rust);
+    #[cfg(feature = "c_lang")]
+    make_file_time_test!(c_parses, c, c);
+}

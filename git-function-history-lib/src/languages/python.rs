@@ -68,7 +68,7 @@ pub struct ParentFunction {
     pub(crate) returns: Option<String>,
 }
 
-pub(crate) fn find_function_in_commit(
+pub(crate) fn find_function_in_file(
     file_contents: &str,
 
     name: &str,

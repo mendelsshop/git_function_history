@@ -213,7 +213,7 @@ pub fn get_function_history(
                     || !path.ends_with(".c")
                     || !path.ends_with(".h")
                 {
-                    Err(format!("file is supported: {}", path))?;
+                    Err(format!("file is not supported: {}", path))?;
                 }
             }
         }
@@ -352,7 +352,7 @@ fn find_function_in_commit_with_filetype(
     #[cfg(not(feature = "parellel"))]
     let t = files.iter();
     let returns: Vec<FileType> = t
-        .filter_map(|file| find_function_in_commit(commit, file, name, langs).ok())
+        .filter_map(|file| find_function_in_file_with_commit(commit, file, name, langs).ok())
         .collect();
     if returns.is_empty() {
         Err(err)?;
@@ -360,7 +360,7 @@ fn find_function_in_commit_with_filetype(
     Ok(returns)
 }
 
-fn find_function_in_commit(
+fn find_function_in_file_with_commit(
     commit: &str,
     file_path: &str,
     name: &str,
@@ -369,16 +369,16 @@ fn find_function_in_commit(
     let fc = find_file_in_commit(commit, file_path)?;
     match langs {
         Language::Rust => {
-            let functions = rust::find_function_in_commit(&fc, name)?;
+            let functions = rust::find_function_in_file(&fc, name)?;
             Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
-            let functions = languages::c::find_function_in_commit(&fc, name)?;
+            let functions = languages::c::find_function_in_file(&fc, name)?;
             Ok(FileType::C(CFile::new(name.to_string(), functions)))
         }
         Language::Python => {
-            let functions = languages::python::find_function_in_commit(&fc, name)?;
+            let functions = languages::python::find_function_in_file(&fc, name)?;
             Ok(FileType::Python(PythonFile::new(
                 name.to_string(),
                 functions,
@@ -386,16 +386,16 @@ fn find_function_in_commit(
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
-                let functions = rust::find_function_in_commit(&fc, name)?;
+                let functions = rust::find_function_in_file(&fc, name)?;
                 Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
-                let functions = languages::c::find_function_in_commit(&fc, name)?;
+                let functions = languages::c::find_function_in_file(&fc, name)?;
                 Ok(FileType::C(CFile::new(name.to_string(), functions)))
             }
             Some("py") => {
-                let functions = languages::python::find_function_in_commit(&fc, name)?;
+                let functions = languages::python::find_function_in_file(&fc, name)?;
                 Ok(FileType::Python(PythonFile::new(
                     name.to_string(),
                     functions,
@@ -483,7 +483,10 @@ mod tests {
             &languages::Language::Rust,
         );
         assert!(output.is_err());
-        assert_eq!(output.unwrap_err().to_string(), "file is not a rust file");
+        assert!(output
+            .unwrap_err()
+            .to_string()
+            .contains("file is not a rust file"));
     }
     #[test]
     fn test_date() {
@@ -577,5 +580,20 @@ mod tests {
             Err(e) => println!("{}", e),
         }
         assert!(output.is_ok());
+    }
+
+    #[test]
+    fn parse_commit() {
+        let commit_hash = "d098bba8be70106060f7250b80add703b7673d0e";
+        let now = Utc::now();
+        let t = find_function_in_commit_with_filetype(
+            commit_hash,
+            "empty_test",
+            &FileFilterType::None,
+            languages::Language::All,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        assert!(t.is_ok());
     }
 }
