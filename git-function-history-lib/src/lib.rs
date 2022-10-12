@@ -248,6 +248,56 @@ pub fn get_function_history(
     Ok(file_history)
 }
 
+macro_rules! get_function_history {
+    ($name:expr) => {
+        get_function_history($name, &FileFilterType::None, &Filter::None, &Language::All)
+    };
+    ($name:expr, file: $files:expr) => {
+        get_function_history($name, &$files, &Filter::None, &Language::All)
+    };
+    ($name:expr, filter: $filter:expr) => {
+        get_function_history($name, &FileFilterType::None, &$filter, &Language::All)
+    };
+    ($name:expr, language: $lang:expr) => {
+        get_function_history($name, &FileFilterType::None, &Filter::None, &$lang)
+    };
+    ($name:expr, file: $files:expr, filter: $filter:expr) => {
+        get_function_history($name, &$files, &$filter, &Language::All)
+    };
+    ($name:expr, file: $files:expr, language: $lang:expr) => {
+        get_function_history($name, &$files, &Filter::None, &$lang)
+    };
+    ($name:expr, filter: $filter:expr, language: $lang:expr) => {
+        get_function_history($name, &FileFilterType::None, $filter, &$lang)
+    };
+    ($name:expr, file: $files:expr, filter: $filter:expr, language: $lang:expr) => {
+        get_function_history($name, &$files, &$filter, &$lang)
+    };
+
+
+
+
+
+
+
+
+}
+
+#[test]
+fn t_blah() {
+    let t = "empty_test";
+    let t = get_function_history!(t);
+    match t {
+        Ok(t) => {
+            println!("{t}")
+        }
+        Err(_) => {}
+    }
+    let t = get_function_history!("", file: FileFilterType::None);
+    let t = get_function_history!("", filter: &Filter::None, language: Language::Rust);
+
+}
+
 /// List all the commits date in the git history (in rfc2822 format).
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
