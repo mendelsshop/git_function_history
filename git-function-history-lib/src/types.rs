@@ -84,7 +84,7 @@ impl fmt::Display for FileType {
 #[derive(Debug, Clone)]
 pub struct Commit {
     commit_hash: String,
-    files: Vec<FileType>,
+    pub(crate) files: Vec<FileType>,
     pub(crate) date: DateTime<FixedOffset>,
     current_iter_pos: usize,
     current_pos: usize,

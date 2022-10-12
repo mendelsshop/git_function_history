@@ -193,7 +193,7 @@ pub fn get_function_history(
         match langs {
             #[cfg(feature = "c_lang")]
             Language::C => {
-                if !path.ends_with(".c") || !path.ends_with(".h") {
+                if !path.ends_with(".c") && !path.ends_with(".h") {
                     Err(format!("file is not a c file: {}", path))?;
                 }
             }
@@ -518,13 +518,14 @@ mod tests {
             "empty_test",
             &FileFilterType::None,
             &Filter::None,
-            &languages::Language::Rust,
+            &languages::Language::All,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
+                println!("{:?} functions", functions.get_commit().files);
             }
             Err(e) => println!("{}", e),
         }
