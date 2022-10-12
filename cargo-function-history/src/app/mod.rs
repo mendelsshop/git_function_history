@@ -313,160 +313,230 @@ impl App {
                     if let Some(name) = iter.next() {
                         // check if there next arg stars with file or filter
                         self.status = Status::Loading;
-                        let search = match iter.next() {
-                            None => {
-                                // if there is no next arg then we are searching for a function
-                                // with the given name
-                                Some(FullCommand::Search(
-                                    name.to_string(),
-                                    FileFilterType::None,
-                                    Filter::None,
-                                    Language::Rust,
-                                ))
-                            }
-                            Some(thing) => match thing {
-                                "relative" | "absolute" => {
-                                    let file_type = match iter.next() {
-                                        Some(filter) => match thing {
-                                            "relative" => {
-                                                FileFilterType::Relative(filter.to_string())
-                                            }
-                                            "absolute" => {
-                                                FileFilterType::Absolute(filter.to_string())
-                                            }
-                                            _ => FileFilterType::None,
-                                        },
-                                        None => {
+                        let mut file = FileFilterType::None;
+                        let mut filter = Filter::None;
+                        let mut lang = Language::All;
+                        // let search = match iter.next() {
+                        //     None => {
+                        //         // if there is no next arg then we are searching for a function
+                        //         // with the given name
+                        //         Some(FullCommand::Search(
+                        //             name.to_string(),
+                        //             FileFilterType::None,
+                        //             Filter::None,
+                        //             Language::Rust,
+                        //         ))
+                        //     }
+                        //     Some(thing) => match thing {
+                        //         "relative" | "absolute" => {
+                        //             let file_type = match iter.next() {
+                        //                 Some(filter) => match thing {
+                        //                     "relative" => {
+                        //                         FileFilterType::Relative(filter.to_string())
+                        //                     }
+                        //                     "absolute" => {
+                        //                         FileFilterType::Absolute(filter.to_string())
+                        //                     }
+                        //                     _ => FileFilterType::None,
+                        //                 },
+                        //                 None => {
+                        //                     self.status =
+                        //                         Status::Error("No filter given".to_string());
+                        //                     return;
+                        //                 }
+                        //             };
+                        //             let filter = match iter.next() {
+                        //                 Some(filter) => match filter {
+                        //                     "date" => {
+                        //                         let date = iter.next();
+                        //                         match date {
+                        //                             Some(date) => {
+                        //                                 let date = date.replace('_', " ");
+                        //                                 Filter::Date(date)
+                        //                             }
+                        //                             None => {
+                        //                                 self.status = Status::Error(
+                        //                                     "No date given".to_string(),
+                        //                                 );
+                        //                                 return;
+                        //                             }
+                        //                         }
+                        //                     }
+                        //                     "commit" => {
+                        //                         let commit = iter.next();
+                        //                         match commit {
+                        //                             Some(commit) => {
+                        //                                 Filter::CommitHash(commit.to_string())
+                        //                             }
+                        //                             None => {
+                        //                                 self.status = Status::Error(
+                        //                                     "No commit given".to_string(),
+                        //                                 );
+                        //                                 return;
+                        //                             }
+                        //                         }
+                        //                     }
+                        //                     "date range" => {
+                        //                         let start = iter.next();
+                        //                         let end = iter.next();
+                        //                         match (start, end) {
+                        //                             (Some(start), Some(end)) => {
+                        //                                 let start = start.replace('_', " ");
+                        //                                 let end = end.replace('_', " ");
+                        //                                 Filter::DateRange(start, end)
+                        //                             }
+                        //                             _ => {
+                        //                                 self.status = Status::Error(
+                        //                                     "No date range given".to_string(),
+                        //                                 );
+                        //                                 return;
+                        //                             }
+                        //                         }
+                        //                     }
+                        //                     _ => {
+                        //                         self.status =
+                        //                             Status::Error("No filter given".to_string());
+                        //                         return;
+                        //                     }
+                        //                 },
+                        //                 None => Filter::None,
+                        //             };
+                        //             Some(FullCommand::Search(
+                        //                 name.to_string(),
+                        //                 file_type,
+                        //                 filter,
+                        //                 Language::Rust,
+                        //             ))
+                        //         }
+                        //         "date" | "commit" | "date range" => {
+                        //             let filter = match thing {
+                        //                 "date" => {
+                        //                     let date = iter.next();
+                        //                     match date {
+                        //                         Some(date) => Filter::Date(date.to_string()),
+                        //                         None => {
+                        //                             self.status =
+                        //                                 Status::Error("No date given".to_string());
+                        //                             return;
+                        //                         }
+                        //                     }
+                        //                 }
+                        //                 "commit" => {
+                        //                     let commit = iter.next();
+                        //                     match commit {
+                        //                         Some(commit) => {
+                        //                             Filter::CommitHash(commit.to_string())
+                        //                         }
+                        //                         None => {
+                        //                             self.status = Status::Error(
+                        //                                 "No commit given".to_string(),
+                        //                             );
+                        //                             return;
+                        //                         }
+                        //                     }
+                        //                 }
+                        //                 "date range" => {
+                        //                     let start = iter.next();
+                        //                     let end = iter.next();
+                        //                     match (start, end) {
+                        //                         (Some(start), Some(end)) => Filter::DateRange(
+                        //                             start.to_string(),
+                        //                             end.to_string(),
+                        //                         ),
+                        //                         _ => {
+                        //                             self.status = Status::Error(
+                        //                                 "No date range given".to_string(),
+                        //                             );
+                        //                             return;
+                        //                         }
+                        //                     }
+                        //                 }
+                        //                 _ => Filter::None,
+                        //             };
+                        //             Some(FullCommand::Search(
+                        //                 name.to_string(),
+                        //                 FileFilterType::None,
+                        //                 filter,
+                        //                 Language::Rust,
+                        //             ))
+                        //         }
+                        //         "language" => {
+                        //             let language = iter.next();
+                        //             match language {
+                        //                 Some(language) => {
+                        //                     let language = match language {
+                        //                         "rust" => Language::Rust,
+                        //                         "python" => Language::Python,
+                        //                         "c" => Language::C,
+                        //                         _ => {
+                        //                             self.status = Status::Error(
+                        //                                 "Invalid language".to_string(),
+                        //                             );
+                        //                             return;
+                        //                         }
+                        //                     };
+                        //                     Some(FullCommand::Search(
+                        //                         name.to_string(),
+                        //                         FileFilterType::None,
+                        //                         Filter::None,
+                        //                         language,
+                        //                     ))
+                        //                 }
+                        //                 None => {
+                        //                     self.status =
+                        //                         Status::Error("No language given".to_string());
+                        //                     return;
+                        //                 }
+                        //             }
+                        //         }
+                        //         _ => {
+                        //             self.status = Status::Error("Invalid file type".to_string());
+                        //             None
+                        //         }
+                        //     },
+                        // };
+                        for i in iter.collect::<Vec<_>>().windows(2) {
+                            match i {
+                                ["relative", filepath] => {
+                                    file = FileFilterType::Relative(filepath.to_string());
+                                }
+                                ["absolute", filepath] => {
+                                    file = FileFilterType::Absolute(filepath.to_string());
+                                }
+                                ["date", date] => {
+                                    filter = Filter::Date(date.to_string());
+                                }
+                                ["commit", commit] => {
+                                    filter = Filter::CommitHash(commit.to_string());
+                                }
+                                ["date range", start, end] => {
+                                    filter = Filter::DateRange(start.to_string(), end.to_string());
+                                }
+                                ["language", language] => {
+                                    lang = match language {
+                                        &"rust" => Language::Rust,
+                                        &"python" => Language::Python,
+                                        #[cfg(feature = "c_lang")]
+                                        &"c" => Language::C,
+                                        _ => {
                                             self.status =
-                                                Status::Error("No filter given".to_string());
+                                                Status::Error("Invalid language".to_string());
                                             return;
                                         }
                                     };
-                                    let filter = match iter.next() {
-                                        Some(filter) => match filter {
-                                            "date" => {
-                                                let date = iter.next();
-                                                match date {
-                                                    Some(date) => {
-                                                        let date = date.replace('_', " ");
-                                                        Filter::Date(date)
-                                                    }
-                                                    None => {
-                                                        self.status = Status::Error(
-                                                            "No date given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            "commit" => {
-                                                let commit = iter.next();
-                                                match commit {
-                                                    Some(commit) => {
-                                                        Filter::CommitHash(commit.to_string())
-                                                    }
-                                                    None => {
-                                                        self.status = Status::Error(
-                                                            "No commit given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            "date range" => {
-                                                let start = iter.next();
-                                                let end = iter.next();
-                                                match (start, end) {
-                                                    (Some(start), Some(end)) => {
-                                                        let start = start.replace('_', " ");
-                                                        let end = end.replace('_', " ");
-                                                        Filter::DateRange(start, end)
-                                                    }
-                                                    _ => {
-                                                        self.status = Status::Error(
-                                                            "No date range given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            _ => {
-                                                self.status =
-                                                    Status::Error("No filter given".to_string());
-                                                return;
-                                            }
-                                        },
-                                        None => Filter::None,
-                                    };
+                                }
 
-                                    Some(FullCommand::Search(
-                                        name.to_string(),
-                                        file_type,
-                                        filter,
-                                        Language::Rust,
-                                    ))
-                                }
-                                "date" | "commit" | "date range" => {
-                                    let filter = match thing {
-                                        "date" => {
-                                            let date = iter.next();
-                                            match date {
-                                                Some(date) => Filter::Date(date.to_string()),
-                                                None => {
-                                                    self.status =
-                                                        Status::Error("No date given".to_string());
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        "commit" => {
-                                            let commit = iter.next();
-                                            match commit {
-                                                Some(commit) => {
-                                                    Filter::CommitHash(commit.to_string())
-                                                }
-                                                None => {
-                                                    self.status = Status::Error(
-                                                        "No commit given".to_string(),
-                                                    );
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        "date range" => {
-                                            let start = iter.next();
-                                            let end = iter.next();
-                                            match (start, end) {
-                                                (Some(start), Some(end)) => Filter::DateRange(
-                                                    start.to_string(),
-                                                    end.to_string(),
-                                                ),
-                                                _ => {
-                                                    self.status = Status::Error(
-                                                        "No date range given".to_string(),
-                                                    );
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        _ => Filter::None,
-                                    };
-                                    Some(FullCommand::Search(
-                                        name.to_string(),
-                                        FileFilterType::None,
-                                        filter,
-                                        Language::Rust,
-                                    ))
-                                }
                                 _ => {
-                                    self.status = Status::Error("Invalid file type".to_string());
-                                    None
+                                    self.status = Status::Error(format!("Invalid search {}", i[0]));
+                                    return;
                                 }
-                            },
-                        };
-                        if let Some(search) = search {
-                            self.channels.0.send(search).unwrap();
+                            }
                         }
+
+                        self.channels
+                            .0
+                            .send(FullCommand::Search(name.to_string(), file, filter, lang))
+                            .unwrap();
                     } else {
                         self.status = Status::Error("No function name given".to_string());
                     }

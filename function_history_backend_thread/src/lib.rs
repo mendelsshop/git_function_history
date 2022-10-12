@@ -89,7 +89,13 @@ pub fn command_thread(
                     }
                     FullCommand::Search(name, file, filter, lang) => {
                         if log {
-                            log::info!("Searching for {} in {:?}", name, file);
+                            log::info!(
+                                "Searching for {} in {:?} with language {} and filter {:?}",
+                                name,
+                                file,
+                                lang,
+                                filter
+                            );
                         }
                         match get_function_history(&name, &file, &filter, &lang) {
                             Ok(functions) => {

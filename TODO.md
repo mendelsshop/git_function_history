@@ -23,5 +23,6 @@
   - [ ] add more and better ways to filter dates
   - [x] add filters for git specific stuff like author, committer, etc
   - [ ] ability to get a git repo from a url using something like git clone
-  - [ ] add support for other languages (currently only supports rust)
+  - [/] add support for other languages (currently only supports rust)
   - [x] save search queries and filters to a file
+  - [ ] rework the way filters and filefilters are handled ie maybe use a builder pattern

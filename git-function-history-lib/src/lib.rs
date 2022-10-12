@@ -248,45 +248,38 @@ pub fn get_function_history(
     Ok(file_history)
 }
 
-macro_rules! get_function_history {
-    ($name:expr) => {
-        get_function_history($name, &FileFilterType::None, &Filter::None, &Language::All)
-    };
-    ($name:expr, file: $files:expr) => {
-        get_function_history($name, &$files, &Filter::None, &Language::All)
-    };
-    ($name:expr, filter: $filter:expr) => {
-        get_function_history($name, &FileFilterType::None, &$filter, &Language::All)
-    };
-    ($name:expr, language: $lang:expr) => {
-        get_function_history($name, &FileFilterType::None, &Filter::None, &$lang)
-    };
-    ($name:expr, file: $files:expr, filter: $filter:expr) => {
-        get_function_history($name, &$files, &$filter, &Language::All)
-    };
-    ($name:expr, file: $files:expr, language: $lang:expr) => {
-        get_function_history($name, &$files, &Filter::None, &$lang)
-    };
-    ($name:expr, filter: $filter:expr, language: $lang:expr) => {
-        get_function_history($name, &FileFilterType::None, $filter, &$lang)
-    };
-    ($name:expr, file: $files:expr, filter: $filter:expr, language: $lang:expr) => {
-        get_function_history($name, &$files, &$filter, &$lang)
-    };
+struct MacroOpts<'a> {
+    name: &'a str,
+    file: FileFilterType,
+    filter: Filter,
+    language: Language,
 }
 
-#[test]
-fn t_blah() {
-    let t = "empty_test";
-    let t = get_function_history!(t);
-    match t {
-        Ok(t) => {
-            println!("{t}")
+impl Default for MacroOpts<'_> {
+    fn default() -> Self {
+        Self {
+            name: "",
+            file: FileFilterType::None,
+            filter: Filter::None,
+            language: Language::All,
         }
-        Err(_) => {}
     }
-    let t = get_function_history!("", file: FileFilterType::None);
-    let t = get_function_history!("", filter: &Filter::None, language: Language::Rust);
+}
+
+#[macro_export]
+macro_rules! get_function_history {
+    ($($variant:ident = $value:expr),*) => {{
+        let mut opts = MacroOpts::default();
+        $(
+            opts.$variant = $value;
+        )*
+        get_function_history(
+            &opts.name,
+            &opts.file,
+            &opts.filter,
+            &opts.language
+        )
+    }};
 }
 
 /// List all the commits date in the git history (in rfc2822 format).
@@ -365,7 +358,6 @@ fn find_function_in_commit_with_filetype(
                     }
                     Language::Python => {
                         if file.ends_with(".py") {
-                            // panic!("{:?}", file);
                             files.push(file);
                         }
                     }
@@ -377,6 +369,7 @@ fn find_function_in_commit_with_filetype(
                     Language::All => {
                         if file.ends_with(".rs")
                             || file.ends_with(".py")
+                            // TODO: use cfg!() macro to check if c_lang is enabled
                             || file.ends_with(".c")
                             || file.ends_with(".h")
                         {

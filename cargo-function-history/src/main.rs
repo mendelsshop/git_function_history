@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 string,
                 config.file_type,
                 config.filter,
-                git_function_history::languages::Language::Rust,
+                config.language,
             ))?;
             Status::Loading
         }
@@ -38,7 +38,10 @@ fn usage() -> ! {
     println!("  --file-relative - search any file ending with the filename specified after the function name");
     println!("  --filter-date=<date> - filter to the given date");
     println!("  --filter-commit-hash=<hash> - filter to the given commit hash");
-    println!(" --filter-date-range=<date1>:<date2> - filter to the given date range");
+    println!("  --filter-date-range=<date1>:<date2> - filter to the given date range");
+    println!("  --lang=[lang] - filter to the given language");
+    println!("      Available languages: rust, python, c, all");
+    println!("      Default: all");
     exit(1);
 }
 
@@ -47,6 +50,7 @@ struct Config {
     function_name: String,
     filter: Filter,
     file_type: FileFilterType,
+    language: git_function_history::languages::Language,
 }
 
 fn parse_args() -> Config {
@@ -54,10 +58,13 @@ fn parse_args() -> Config {
         function_name: String::new(),
         filter: Filter::None,
         file_type: FileFilterType::None,
+        language: git_function_history::languages::Language::All,
     };
     env::args().enumerate().skip(1).for_each(|arg| {
         if arg.0 == 1 {
-            println!("{}", arg.1);
+            if arg.1 == "--help" {
+                usage();
+            }
             match arg.1.split_once(':') {
                 Some(string_tuple) => {
                     config.file_type = FileFilterType::Relative(string_tuple.1.replace('\\', "/"));
@@ -133,6 +140,34 @@ fn parse_args() -> Config {
                         }
                     };
                     config.filter = Filter::DateRange(date_range.0.to_string(), date_range.1.to_string());
+                }
+                string if string.starts_with("--lang=") => {
+                    let lang = match string.split('=').nth(1) {
+                        Some(string) => string,
+                        None => {
+                            eprintln!("Error no language specified");
+                            exit(1);
+                        }
+                    };
+                    match lang {
+                        "rust" => {
+                            config.language = git_function_history::languages::Language::Rust;
+                        }
+                        "python" => {
+                            config.language = git_function_history::languages::Language::Python;
+                        }
+                        #[cfg(feature = "c_lang")]
+                        "c" => {
+                            config.language = git_function_history::languages::Language::C;
+                        }
+                        "all" => {
+                            config.language = git_function_history::languages::Language::All;
+                        }
+                        _ => {
+                            eprintln!("Error invalid language specified");
+                            exit(1);
+                        }
+                    }
                 }
                 _ => {
                     println!("Error:\n\tUnknown argument: {}\n\tTip: use --help to see available arguments.", arg.1);
