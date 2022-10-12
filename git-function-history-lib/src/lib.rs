@@ -273,14 +273,6 @@ macro_rules! get_function_history {
     ($name:expr, file: $files:expr, filter: $filter:expr, language: $lang:expr) => {
         get_function_history($name, &$files, &$filter, &$lang)
     };
-
-
-
-
-
-
-
-
 }
 
 #[test]
@@ -295,7 +287,6 @@ fn t_blah() {
     }
     let t = get_function_history!("", file: FileFilterType::None);
     let t = get_function_history!("", filter: &Filter::None, language: Language::Rust);
-
 }
 
 /// List all the commits date in the git history (in rfc2822 format).

@@ -26,7 +26,7 @@ pub struct PythonFunction {
 impl fmt::Display for PythonFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref class) = self.class {
-            write!(f, "{}", class.top)?
+            write!(f, "{}", class.top)?;
         }
         for parent in &self.parent {
             write!(f, "{}", parent.top)?;
