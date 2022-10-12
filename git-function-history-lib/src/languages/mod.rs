@@ -234,24 +234,24 @@ make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
 #[cfg(feature = "c_lang")]
 make_file!(CFile, CFunction, C);
-
+use std::path::MAIN_SEPARATOR;
 // make macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
-    ($name:ident, $extname:ident, $function:ident) => {
+    ($name:ident, $extname:ident, $function:ident)=> {
         #[test]
         fn $name() {
-            let file = include_str!(concat!(
-                "..\\..\\src\\test_functions.",
-                stringify!($extname)
-            ));
+            let file = std::env::current_dir().unwrap().to_path_buf().join(MAIN_SEPARATOR.to_string() + "src" + MAIN_SEPARATOR.to_string().as_str() + "test_functions." + stringify!($extname)); 
+            let file = std::fs::read_to_string(file).unwrap();
             let start = std::time::Instant::now();
-            let ok = $function::find_function_in_file(file, "empty_test");
+            let ok = $function::find_function_in_file(&file, "empty_test");
             let end = std::time::Instant::now();
             println!("{} took {:?}", stringify!($name), end - start);
             assert!(ok.is_ok());
         }
     };
 }
+
+
 #[cfg(test)]
 mod lang_tests {
     use super::*;

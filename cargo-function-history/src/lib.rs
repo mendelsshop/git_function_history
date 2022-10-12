@@ -58,7 +58,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                             app.scroll_down();
                         }
                         _ => {
-                            input_backend::to_input_request(Event::Key(key))
+                            input_backend::to_input_request(&Event::Key(key))
                                 .and_then(|req| app.input_buffer.handle(req));
                         }
                     },
