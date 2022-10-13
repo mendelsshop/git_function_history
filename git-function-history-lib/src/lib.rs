@@ -31,7 +31,7 @@ use languages::CFile;
 use std::{error::Error, process::Command};
 pub use types::{Commit, FunctionHistory};
 
-use crate::languages::Language;
+pub use crate::languages::Language;
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,8 +102,8 @@ pub enum Filter {
 /// # examples
 ///
 /// ```
-/// use git_function_history::{get_function_history, Filter, FileType};
-/// let t = get_function_history("empty_test", FileType::Absolute("src/test_functions.rs".to_string()), Filter::None);
+/// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
+/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
@@ -248,11 +248,12 @@ pub fn get_function_history(
     Ok(file_history)
 }
 
-struct MacroOpts<'a> {
-    name: &'a str,
-    file: FileFilterType,
-    filter: Filter,
-    language: Language,
+/// used for the `get_function_history` macro internally (you don't have to touch this)
+pub struct MacroOpts<'a> {
+    pub name: &'a str,
+    pub file: FileFilterType,
+    pub filter: Filter,
+    pub language: Language,
 }
 
 impl Default for MacroOpts<'_> {
@@ -266,10 +267,37 @@ impl Default for MacroOpts<'_> {
     }
 }
 
+/// macro to get the history of a function
+/// wrapper around the `get_function_history` function
+///
+/// # examples
+/// ```rust
+/// use git_function_history::{get_function_history, languages::Language, Filter, FileFilterType};
+/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None, language = Language::Rust);
+/// ```
+///
+/// everything is optional but the name, and in no particular order
+///
+/// ```rust
+/// use git_function_history::{get_function_history, FileFilterType};
+/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()));
+/// ```
+///
+/// ```rust
+///
+/// use git_function_history::{get_function_history, Filter, FileFilterType};
+/// git_function_history::get_function_history!(name = "main", filter = Filter::None, file = FileFilterType::Relative("src/main.rs".to_string()));
+/// ```
+///
+/// Default values are:
+///
+/// - file: `FileFilterType::None`
+/// - filter: `Filter::None`
+/// - language: `Language::All`
 #[macro_export]
 macro_rules! get_function_history {
     ($($variant:ident = $value:expr),*) => {{
-        let mut opts = MacroOpts::default();
+        let mut opts = $crate::MacroOpts::default();
         $(
             opts.$variant = $value;
         )*
@@ -404,34 +432,40 @@ fn find_function_in_file_with_commit(
     match langs {
         Language::Rust => {
             let functions = rust::find_function_in_file(&fc, name)?;
-            Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
+            Ok(FileType::Rust(RustFile::new(
+                file_path.to_string(),
+                functions,
+            )))
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
             let functions = languages::c::find_function_in_file(&fc, name)?;
-            Ok(FileType::C(CFile::new(name.to_string(), functions)))
+            Ok(FileType::C(CFile::new(file_path.to_string(), functions)))
         }
         Language::Python => {
             let functions = languages::python::find_function_in_file(&fc, name)?;
             Ok(FileType::Python(PythonFile::new(
-                name.to_string(),
+                file_path.to_string(),
                 functions,
             )))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
                 let functions = rust::find_function_in_file(&fc, name)?;
-                Ok(FileType::Rust(RustFile::new(name.to_string(), functions)))
+                Ok(FileType::Rust(RustFile::new(
+                    file_path.to_string(),
+                    functions,
+                )))
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
                 let functions = languages::c::find_function_in_file(&fc, name)?;
-                Ok(FileType::C(CFile::new(name.to_string(), functions)))
+                Ok(FileType::C(CFile::new(file_path.to_string(), functions)))
             }
             Some("py") => {
                 let functions = languages::python::find_function_in_file(&fc, name)?;
                 Ok(FileType::Python(PythonFile::new(
-                    name.to_string(),
+                    file_path.to_string(),
                     functions,
                 )))
             }

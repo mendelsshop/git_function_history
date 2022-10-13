@@ -322,11 +322,11 @@ impl FunctionHistory {
     ///
     /// # examples
     /// ```rust
-    /// use git_function_history::{get_function_history, Filter, FileType};
+    /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
     ///
-    /// let history = get_function_history("new", FileType::None, Filter::None).unwrap();
+    /// let history = get_function_history("new", &FileFilterType::None, &Filter::None, &Language::Rust).unwrap();
     ///
-    /// history.filter_by(Filter::Directory("app".to_string())).unwrap();
+    /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]

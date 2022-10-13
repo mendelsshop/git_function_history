@@ -70,7 +70,6 @@ pub struct ParentFunction {
 
 pub(crate) fn find_function_in_file(
     file_contents: &str,
-
     name: &str,
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
     let ast = parser::parse_program(file_contents)?;

@@ -240,14 +240,11 @@ macro_rules! make_file_time_test {
     ($name:ident, $extname:ident, $function:ident) => {
         #[test]
         fn $name() {
-            let file = std::env::current_dir().unwrap().to_path_buf().join(
-                MAIN_SEPARATOR.to_string()
-                    + "src"
-                    + MAIN_SEPARATOR.to_string().as_str()
-                    + "test_functions."
-                    + stringify!($extname),
-            );
-            let file = std::fs::read_to_string(file).unwrap();
+            let mut file = std::env::current_dir().unwrap();
+            file.push("src");
+            file.push("test_functions.".to_string() + stringify!($extname));
+            let file = std::fs::read_to_string(file.clone())
+                .expect(format!("could not read file {:?}", file).as_str());
             let start = std::time::Instant::now();
             let ok = $function::find_function_in_file(&file, "empty_test");
             let end = std::time::Instant::now();
