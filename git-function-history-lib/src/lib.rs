@@ -593,7 +593,9 @@ mod tests {
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
-                println!("{:?} functions", functions.get_commit().files);
+                functions.get_commit().files.iter().for_each(|file| {
+                    println!("{}", file);
+                });
             }
             Err(e) => println!("{}", e),
         }

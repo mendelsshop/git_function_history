@@ -14,6 +14,7 @@ description = "cargo frontend for git-function-history"
 default = ["parallel"]
 parallel = ["git_function_history/parallel", "function_history_backend_thread/parallel"]
 not-parallel = []
+c_lang = ["function_history_backend_thread/c_lang", "git_function_history/c_lang"]
 
 [dependencies]
 git_function_history = { path = "../git-function-history-lib", version = "0.6.2", default-features = false}

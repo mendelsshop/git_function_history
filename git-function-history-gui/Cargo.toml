@@ -14,6 +14,7 @@ description = "GUI frontend for git-function-history"
 default = ["parallel"]
 parallel = ["git_function_history/parallel", "function_history_backend_thread/parallel"]
 not-parallel = []
+c_lang = ["git_function_history/c_lang", "function_history_backend_thread/c_lang"]
 
 [dependencies]
 eframe = {version = "0.19.0", features = ["dark-light"]}
