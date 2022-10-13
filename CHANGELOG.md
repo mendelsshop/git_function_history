@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file.
 
 - Trying to fix changelog
 
+### Gui
+
+- Added scrollbar to command builder & now supports other languages
+
 ### Lib
 
 - Moved away from using mostly enerics to using enums
