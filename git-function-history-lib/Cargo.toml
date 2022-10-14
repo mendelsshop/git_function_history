@@ -9,7 +9,7 @@ categories = ["tools", "git"]
 description = "show function history from git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["parallel", "unstable"]
+default = ["parallel"]
 parallel = ["dep:rayon"]
 c_lang = []
 unstable = ["dep:gosyn", "dep:javaparser"]
