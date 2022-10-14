@@ -119,17 +119,7 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<GoFunction>, Box<dyn Error>> {
-    let mut starts = file_contents
-        .match_indices('\n')
-        .map(|x| x.0)
-        .collect::<Vec<_>>();
-    starts.push(0);
-    starts.sort_unstable();
-    let map = starts
-        .iter()
-        .enumerate()
-        .collect::<HashMap<usize, &usize>>();
-    println!("map: {:?}", map);
+    // TODO: use expect() instead of unwrap() for better error handling
     let parsed_file = gosyn::parse_source(file_contents)
         .map_err(|e| format!("{:?}", e))?
         .decl;
@@ -138,32 +128,47 @@ pub(crate) fn find_function_in_file(
         .filter_map(|decl| match decl {
             gosyn::ast::Declaration::Function(func) => {
                 if func.name.name == name {
-                    println!("{}", func.typ.pos);
 
                     let mut lines = (func.name.pos, func.body.as_ref().unwrap().pos.1);
+                    match func.recv {
+                        Some(recv) => {
+                            lines.0 = recv.pos();
+                        }
+                        None => {}
+                    }
+                    lines.0 =file_contents[..lines.0].rfind("func").unwrap();
                     for i in &func.docs {
                         if i.pos < lines.0 {
                             lines.0 = i.pos;
                         }
                     }
                     let body = file_contents[lines.0..lines.1 + 1].to_string();
-                    println!("body: {}", body);
-                    for i in 0..func.name.pos {
-                        if file_contents.chars().nth(i).unwrap() == '\n' {
-                            lines.0 = i + 1;
-                            break;
+                    let mut start_line = 0;
+                    for i in file_contents.chars().enumerate() {
+                        if i.1 == '\n' {
+                            if i.0 > lines.0 {
+                                lines.0 = i.0;
+                                break;
+                            }
+                            start_line += 1;
                         }
+
                     }
-                    for i in func.body.as_ref().unwrap().pos.1..file_contents.len() {
-                        if file_contents.chars().nth(i).unwrap() == '\n' {
-                            lines.1 = i;
-                            break;
+                    let mut end_line = 0;
+                    for i in file_contents.chars().enumerate() {
+                        if i.1 == '\n' {
+                            if i.0 > lines.1 {
+                                lines.1 = i.0;
+                                break;
+                            }
+                            end_line += 1;
                         }
                     }
 
-                    lines.0 = *map.keys().find(|x| **x >= lines.0).unwrap();
-                    // lines.1 = *map.keys().rfind(|x| **x >= lines.1).unwrap();
+                    lines.0 = start_line;
+                    lines.1 = end_line;
 
+                    println!("lines: {:?}-", lines);
                     let parameters = func
                         .typ
                         .params
@@ -187,6 +192,7 @@ pub(crate) fn find_function_in_file(
                             .collect(),
                     )
                     .filter(|x: &String| !x.is_empty());
+                    // TODO: get parent functions
                     let parent = vec![];
                     Some(GoFunction::new(
                         func.name.name,
@@ -214,20 +220,27 @@ mod t {
         let file_contents = r#"
 package main
 import "fmt"
-//g
 
-func mains() {
+
+func    (s *Selection) mains() {
     
     fmt.Println("Hello, World!")
 
-}    "#;
+}
+
+func  mains() {
+    fmt.Println("Hello, World!")
+}
+
+
+"#;
         let functions = find_function_in_file(file_contents, "mains").unwrap();
         println!("{:#?}", functions[0]);
-        assert_eq!(functions.len(), 1);
-        assert_eq!(functions[0].name, "main");
+        assert_eq!(functions.len(), 2);
+        assert_eq!(functions[0].name, "mains");
         assert_eq!(functions[0].parameters.len(), 0);
         assert_eq!(functions[0].parent.len(), 0);
         assert_eq!(functions[0].returns, None);
-        assert_eq!(functions[0].lines, (3, 5));
+        assert_eq!(functions[0].lines, (5, 9));
     }
 }
