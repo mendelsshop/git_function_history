@@ -353,7 +353,7 @@ pub(crate) fn find_function_in_file(
     }
     Ok(hist)
 }
-
+#[inline]
 fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     let parsed_file = SourceFile::parse(file).tree();
     parsed_file
@@ -363,7 +363,7 @@ fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
         .filter(|function| function.name().unwrap().text() == name)
         .for_each(|function| functions.push(function));
 }
-
+#[inline]
 fn get_stuff<T: AstNode>(
     block: &T,
     file: &str,
@@ -433,7 +433,7 @@ fn get_stuff<T: AstNode>(
         (starts, end_line),
     )
 }
-
+#[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
     // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
     match block.generic_param_list() {
@@ -448,7 +448,7 @@ fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, V
         ),
     }
 }
-
+#[inline]
 fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec<String>) {
     (
         block

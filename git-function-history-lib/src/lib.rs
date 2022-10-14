@@ -309,7 +309,7 @@ macro_rules! get_function_history {
         )
     }};
 }
-
+#[inline]
 /// List all the commits date in the git history (in rfc2822 format).
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
@@ -322,7 +322,7 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
         .collect::<Vec<String>>();
     Ok(output)
 }
-
+#[inline]
 /// List all the commit hashes in the git history.
 pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
@@ -333,7 +333,7 @@ pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
         .collect::<Vec<String>>();
     Ok(output)
 }
-
+#[inline]
 fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
     let commit_history = Command::new("git")
         .args(format!("show {}:{}", commit, file_path).split(' '))

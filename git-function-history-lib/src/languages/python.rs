@@ -137,7 +137,7 @@ pub(crate) fn find_function_in_file(
     }
     Ok(new)
 }
-
+#[inline]
 fn fun_name1(
     body: Vec<Located<StatementType>>,
     functions: &mut Vec<(StatementType, (Location, Location))>,
@@ -155,7 +155,7 @@ fn fun_name1(
         );
     }
 }
-
+#[inline]
 fn fun_name(
     other_last_found_fn: &mut Option<(StatementType, Location)>,
     last_found_fn: &mut Option<(StatementType, Location)>,

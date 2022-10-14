@@ -63,7 +63,7 @@ pub struct ParentFunction {
     pub(crate) parameters: Vec<String>,
     pub(crate) returns: Option<String>,
 }
-
+#[inline]
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
