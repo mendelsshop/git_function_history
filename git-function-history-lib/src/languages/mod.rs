@@ -3,7 +3,7 @@ use std::{
     error::Error,
     fmt::{self, Display},
 };
-
+// TODO: lisp/scheme js go(https://docs.rs/gosyn/latest/gosyn/) ruby(https://docs.rs/lib-ruby-parser/latest/lib_ruby_parser/) java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
 use self::{python::PythonFunction, rust::RustFunction};
 
 #[cfg(feature = "c_lang")]
@@ -59,6 +59,12 @@ impl fmt::Display for Language {
 pub mod c;
 pub mod python;
 pub mod rust;
+pub mod ruby;
+#[cfg(feature = "unstable")]
+pub mod go;
+#[cfg(feature = "unstable")]
+pub mod java;
+
 
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
     fn get_tops(&self) -> Vec<String>;
