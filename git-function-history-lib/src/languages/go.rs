@@ -1,4 +1,4 @@
-use std::{error::Error, fmt, collections::HashMap};
+use std::{collections::HashMap, error::Error, fmt};
 
 use crate::impl_function_trait;
 
@@ -81,7 +81,6 @@ impl ParentFunction {
     }
 }
 
-
 impl FunctionTrait for GoFunction {
     impl_function_trait!(GoFunction);
 
@@ -116,7 +115,6 @@ impl FunctionTrait for GoFunction {
     }
 }
 
-
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
@@ -131,62 +129,80 @@ pub(crate) fn find_function_in_file(
         .iter()
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
-        println!("map: {:?}", map);
-    let parsed_file = gosyn::parse_source(file_contents).map_err(|e| format!("{:?}", e))?.decl;
-     Ok(parsed_file
+    println!("map: {:?}", map);
+    let parsed_file = gosyn::parse_source(file_contents)
+        .map_err(|e| format!("{:?}", e))?
+        .decl;
+    Ok(parsed_file
         .into_iter()
         .filter_map(|decl| match decl {
             gosyn::ast::Declaration::Function(func) => {
                 if func.name.name == name {
-                println!("{}", func.typ.pos);
+                    println!("{}", func.typ.pos);
 
-                let mut lines = (func.name.pos, func.body.as_ref().unwrap().pos.1);
-                for i in &func.docs {
-                    if i.pos < lines.0 {
-                        lines.0 = i.pos;
+                    let mut lines = (func.name.pos, func.body.as_ref().unwrap().pos.1);
+                    for i in &func.docs {
+                        if i.pos < lines.0 {
+                            lines.0 = i.pos;
+                        }
                     }
-                }
-                let body = file_contents[lines.0..lines.1+1].to_string();
-                println!("body: {}", body);
-                for i in 0..func.name.pos {
-                    if file_contents.chars().nth(i).unwrap() == '\n' {
-                        lines.0 = i + 1;
-                        break;
+                    let body = file_contents[lines.0..lines.1 + 1].to_string();
+                    println!("body: {}", body);
+                    for i in 0..func.name.pos {
+                        if file_contents.chars().nth(i).unwrap() == '\n' {
+                            lines.0 = i + 1;
+                            break;
+                        }
                     }
-                }
-                for i in func.body.as_ref().unwrap().pos.1..file_contents.len() {
-                    if file_contents.chars().nth(i).unwrap() == '\n' {
-                        lines.1 = i;
-                        break;
+                    for i in func.body.as_ref().unwrap().pos.1..file_contents.len() {
+                        if file_contents.chars().nth(i).unwrap() == '\n' {
+                            lines.1 = i;
+                            break;
+                        }
                     }
-                }
 
-                
-                lines.0 = *map.keys().find(|x| **x >= lines.0).unwrap();
-                // lines.1 = *map.keys().rfind(|x| **x >= lines.1).unwrap();
-                
-                let parameters = func.typ.params.list.iter().map(|p| &p.tag.as_ref().unwrap().value).map(|x| x.to_string()).collect();
-                let returns = Some(func.typ.result.list.iter().map(|p| p.name.iter().map(|x| &x.clone().name).map(|x| x.to_string()).collect::<String>()).collect()).filter(|x: &String| !x.is_empty());
-                let parent = vec![];
-                Some(GoFunction::new(
-                    func.name.name,
-                    body,
-                    parameters,
-                    parent,
-                    returns,
-                    lines,
-                ))
+                    lines.0 = *map.keys().find(|x| **x >= lines.0).unwrap();
+                    // lines.1 = *map.keys().rfind(|x| **x >= lines.1).unwrap();
+
+                    let parameters = func
+                        .typ
+                        .params
+                        .list
+                        .iter()
+                        .map(|p| &p.tag.as_ref().unwrap().value)
+                        .map(|x| x.to_string())
+                        .collect();
+                    let returns = Some(
+                        func.typ
+                            .result
+                            .list
+                            .iter()
+                            .map(|p| {
+                                p.name
+                                    .iter()
+                                    .map(|x| &x.clone().name)
+                                    .map(|x| x.to_string())
+                                    .collect::<String>()
+                            })
+                            .collect(),
+                    )
+                    .filter(|x: &String| !x.is_empty());
+                    let parent = vec![];
+                    Some(GoFunction::new(
+                        func.name.name,
+                        body,
+                        parameters,
+                        parent,
+                        returns,
+                        lines,
+                    ))
                 } else {
                     None
                 }
-
-        
             }
             _ => None,
         })
         .collect::<Vec<_>>())
-
-
 }
 
 #[cfg(test)]

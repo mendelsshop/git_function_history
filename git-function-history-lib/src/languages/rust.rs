@@ -522,7 +522,7 @@ impl FunctionTrait for RustFunction {
 
     fn get_total_lines(&self) -> (usize, usize) {
         match &self.block {
-            Some(block) => (block.lines.0, self.lines.1),
+            Some(block) => (block.lines.0, block.lines.1),
             None => {
                 let mut start = self.lines.0;
                 let mut end = self.lines.1;

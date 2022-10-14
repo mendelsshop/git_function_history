@@ -57,14 +57,13 @@ impl fmt::Display for Language {
 }
 #[cfg(feature = "c_lang")]
 pub mod c;
-pub mod python;
-pub mod rust;
-pub mod ruby;
 #[cfg(feature = "unstable")]
 pub mod go;
 #[cfg(feature = "unstable")]
 pub mod java;
-
+pub mod python;
+pub mod ruby;
+pub mod rust;
 
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
     fn get_tops(&self) -> Vec<String>;
