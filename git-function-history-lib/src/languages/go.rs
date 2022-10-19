@@ -33,20 +33,7 @@ impl GoFunction {
 
 impl fmt::Display for GoFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)?;
-        if !self.parameters.is_empty() {
-            write!(f, "(")?;
-            for (i, param) in self.parameters.iter().enumerate() {
-                if i != 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}", param)?;
-            }
-            write!(f, ")")?;
-        }
-        if let Some(ret) = &self.returns {
-            write!(f, " -> {}", ret)?;
-        }
+        write!(f, "{}", self.body)?;
         Ok(())
     }
 }
@@ -151,7 +138,6 @@ pub(crate) fn find_function_in_file(
                             .collect(),
                     )
                     .filter(|x: &String| !x.is_empty());
-                    // TODO: get parent functions
                     Some(GoFunction::new(
                         func.name.name,
                         body,

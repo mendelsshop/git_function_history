@@ -688,4 +688,25 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         assert!(t.is_ok());
     }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn go() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileFilterType::Relative("src/test_functions.go".to_string()),
+            &Filter::None,
+            &languages::Language::Go,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
+        assert!(output.is_ok());
+    }
 }
