@@ -168,43 +168,25 @@ pub(crate) fn find_function_in_file(
         .collect::<Vec<_>>())
 }
 
-#[cfg(test)]
-mod t {
-    use super::*;
 
-    #[test]
-    fn test_go() {
-        let file_contents = r#"
-package main
-import "fmt"
-
-
-func    (s *Selection) mains() {
-    
-    fmt.Println("Hello, World!")
-
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Filter {
+    FunctionWithParameter(String),
+    FunctionWithReturnType(String),
+    FunctionInLines(usize, usize),
 }
 
-func  mains() {
-    fmt.Println("Hello, World!")
-}
-
-func p() {
-    
-    // func mains() {
-
-    // }
-    // mains();
-}
-
-
-"#;
-        let functions = find_function_in_file(file_contents, "mains").unwrap();
-        println!("{:#?}", functions[0]);
-        assert_eq!(functions.len(), 2);
-        assert_eq!(functions[0].name, "mains");
-        assert_eq!(functions[0].parameters.len(), 0);
-        assert_eq!(functions[0].returns, None);
-        assert_eq!(functions[0].lines, (5, 9));
+impl Filter {
+    pub fn matches(&self, func: &GoFunction) -> bool {
+        match self {
+            Filter::FunctionWithParameter(param) => {
+                func.parameters.iter().any(|x| x.contains(param))
+            }
+            Filter::FunctionWithReturnType(ret) => func.returns.as_ref().map(|x| x.contains(ret)).unwrap_or(false),
+            Filter::FunctionInLines(start, end) => {
+                let (s, e) = func.get_total_lines();
+                s >= *start && e <= *end
+            }
+        }
     }
 }

@@ -600,6 +600,8 @@ impl eframe::App for MyEguiApp {
 
                                     Language::Python => "Python",
                                     Language::All => "Language",
+                                    #[cfg(feature = "unstable")]
+                                    Language::Go => "Go",
                                 };
                                 egui::ComboBox::from_id_source("search_language_combo_box")
                                     .selected_text(text)

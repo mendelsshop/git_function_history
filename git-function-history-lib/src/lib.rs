@@ -27,6 +27,8 @@ pub use types::FileType;
 
 #[cfg(feature = "c_lang")]
 use languages::CFile;
+#[cfg(feature = "unstable")]
+use languages::GoFile;
 
 use std::{error::Error, process::Command};
 pub use types::{Commit, FunctionHistory};
@@ -195,6 +197,12 @@ pub fn get_function_history(
             Language::C => {
                 if !path.ends_with(".c") && !path.ends_with(".h") {
                     Err(format!("file is not a c file: {}", path))?;
+                }
+            }
+            #[cfg(feature = "unstable")]
+            Language::Go => {
+                if !path.ends_with(".go") {
+                    Err(format!("file is not a go file: {}", path))?;
                 }
             }
             Language::Python => {
@@ -384,6 +392,12 @@ fn find_function_in_commit_with_filetype(
                             files.push(file);
                         }
                     }
+                    #[cfg(feature = "unstable")]
+                    Language::Go => {
+                        if file.ends_with(".go") {
+                            files.push(file);
+                        }
+                    }
                     Language::Python => {
                         if file.ends_with(".py") {
                             files.push(file);
@@ -400,6 +414,8 @@ fn find_function_in_commit_with_filetype(
                             // TODO: use cfg!() macro to check if c_lang is enabled
                             || file.ends_with(".c")
                             || file.ends_with(".h")
+                            // TODO: use cfg!() macro to check if unstable is enabled
+                            || file.ends_with(".go")
                         {
                             files.push(file);
                         }
@@ -441,6 +457,11 @@ fn find_function_in_file_with_commit(
         Language::C => {
             let functions = languages::c::find_function_in_file(&fc, name)?;
             Ok(FileType::C(CFile::new(file_path.to_string(), functions)))
+        }
+        #[cfg(feature = "unstable")]
+        Language::Go => {
+            let functions = languages::go::find_function_in_file(&fc, name)?;
+            Ok(FileType::Go(GoFile::new(file_path.to_string(), functions)))
         }
         Language::Python => {
             let functions = languages::python::find_function_in_file(&fc, name)?;

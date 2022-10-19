@@ -8,6 +8,9 @@ use self::{python::PythonFunction, rust::RustFunction};
 
 #[cfg(feature = "c_lang")]
 use self::c::CFunction;
+
+#[cfg(feature = "unstable")]
+use go::GoFunction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     /// The python language
@@ -17,6 +20,9 @@ pub enum Language {
     #[cfg(feature = "c_lang")]
     /// c language
     C,
+    #[cfg(feature = "unstable")]
+    /// The go language
+    Go,
     /// all available languages
     All,
 }
@@ -29,6 +35,9 @@ pub enum LanguageFilter {
     #[cfg(feature = "c_lang")]
     /// c filter
     C(c::Filter),
+    #[cfg(feature = "unstable")]
+    /// go filter
+    Go(go::Filter),
 }
 
 impl Language {
@@ -38,6 +47,8 @@ impl Language {
             "rust" => Ok(Self::Rust),
             #[cfg(feature = "c_lang")]
             "c" => Ok(Self::C),
+            #[cfg(feature = "unstable")]
+            "go" => Ok(Self::Go),
             "all" => Ok(Self::All),
             _ => Err(format!("Unknown language: {}", s))?,
         }
@@ -51,6 +62,8 @@ impl fmt::Display for Language {
             Self::Rust => write!(f, "rust"),
             #[cfg(feature = "c_lang")]
             Self::C => write!(f, "c"),
+            #[cfg(feature = "unstable")]
+            Self::Go => write!(f, "go"),
             Self::All => write!(f, "all"),
         }
     }
@@ -239,6 +252,8 @@ make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
 #[cfg(feature = "c_lang")]
 make_file!(CFile, CFunction, C);
+#[cfg(feature = "unstable")]
+make_file!(GoFile, GoFunction, Go);
 use std::path::MAIN_SEPARATOR;
 // make macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
@@ -266,4 +281,6 @@ mod lang_tests {
     make_file_time_test!(rust_parses, rs, rust);
     #[cfg(feature = "c_lang")]
     make_file_time_test!(c_parses, c, c);
+    #[cfg(feature = "unstable")]
+    make_file_time_test!(go_parses, go, go);
 }

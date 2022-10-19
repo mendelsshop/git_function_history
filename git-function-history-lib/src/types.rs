@@ -16,12 +16,17 @@ use crate::{
 #[cfg(feature = "c_lang")]
 use crate::languages::CFile;
 
+#[cfg(feature = "unstable")]
+use crate::languages::GoFile;
+
 #[derive(Debug, Clone)]
 pub enum FileType {
     Rust(RustFile),
     Python(PythonFile),
     #[cfg(feature = "c_lang")]
     C(CFile),
+    #[cfg(feature = "unstable")]
+    Go(GoFile),
 }
 
 impl FileTrait for FileType {
@@ -31,6 +36,8 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_file_name(),
             #[cfg(feature = "c_lang")]
             FileType::C(file) => file.get_file_name(),
+            #[cfg(feature = "unstable")]
+            FileType::Go(file) => file.get_file_name(),
         }
     }
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>> {
@@ -39,6 +46,8 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_functions(),
             #[cfg(feature = "c_lang")]
             FileType::C(file) => file.get_functions(),
+            #[cfg(feature = "unstable")]
+            FileType::Go(file) => file.get_functions(),
         }
     }
 
@@ -57,6 +66,11 @@ impl FileTrait for FileType {
                 let filtered = file.filter_by(filter)?;
                 Ok(FileType::C(filtered))
             }
+            #[cfg(feature = "unstable")]
+            FileType::Go(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(FileType::Go(filtered))
+            }
         }
     }
 
@@ -66,6 +80,8 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_current(),
             #[cfg(feature = "c_lang")]
             FileType::C(file) => file.get_current(),
+            #[cfg(feature = "unstable")]
+            FileType::Go(file) => file.get_current(),
         }
     }
 }
@@ -77,6 +93,8 @@ impl fmt::Display for FileType {
             Self::Python(file) => write!(f, "{}", file),
             #[cfg(feature = "c_lang")]
             FileType::C(file) => write!(f, "{}", file),
+            #[cfg(feature = "unstable")]
+            FileType::Go(file) => write!(f, "{}", file),
         }
     }
 }
