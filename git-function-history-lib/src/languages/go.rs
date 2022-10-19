@@ -168,7 +168,6 @@ pub(crate) fn find_function_in_file(
         .collect::<Vec<_>>())
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
     FunctionWithParameter(String),
@@ -182,7 +181,11 @@ impl Filter {
             Filter::FunctionWithParameter(param) => {
                 func.parameters.iter().any(|x| x.contains(param))
             }
-            Filter::FunctionWithReturnType(ret) => func.returns.as_ref().map(|x| x.contains(ret)).unwrap_or(false),
+            Filter::FunctionWithReturnType(ret) => func
+                .returns
+                .as_ref()
+                .map(|x| x.contains(ret))
+                .unwrap_or(false),
             Filter::FunctionInLines(start, end) => {
                 let (s, e) = func.get_total_lines();
                 s >= *start && e <= *end
