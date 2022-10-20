@@ -38,6 +38,7 @@ impl RubyFunction {
 
 impl fmt::Display for RubyFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        println!("{:?}", self.class);
         match &self.class {
             Some(class) => write!(f, "{}", class.top)?,
             None => {}
@@ -70,25 +71,66 @@ pub(crate) fn find_function_in_file(
     let fns = get_functions_from_node(&ast, &None, name);
     fns.iter()
         .map(|(f, c)| {
+            let mut start_line = 0;
+            for i in file_contents.chars().enumerate() {
+                if i.1 == '\n' {
+                    if i.0 > f.expression_l.begin {
+                        break;
+                    }
+                    start_line += 1;
+                }
+            }
+            let mut end_line = 0;
+            for i in file_contents.chars().enumerate() {
+                if i.1 == '\n' {
+                    if i.0 > f.expression_l.end {
+                        break;
+                    }
+                    end_line += 1;
+                }
+            }
             let class = c.as_ref().map(|c| RubyClass {
                 name: parser_class_name(c),
-                // TODO: turn the positions into lines
-                line: (f.expression_l.begin, f.expression_l.end),
+                line: (start_line, end_line),
                 superclass: None,
                 // TODO: get top and bottom
                 top: String::new(),
                 bottom: String::new(),
             });
+            // get the lines from map using f.expression_l.begin and f.expression_l.end
+            let mut start_line = 0;
+            for i in file_contents.chars().enumerate() {
+                if i.1 == '\n' {
+                    if i.0 > f.expression_l.begin {
+                        break;
+                    }
+                    start_line += 1;
+                }
+            }
+            let mut end_line = 0;
+            for i in file_contents.chars().enumerate() {
+                if i.1 == '\n' {
+                    if i.0 > f.expression_l.end {
+                        break;
+                    }
+                    end_line += 1;
+                }
+            }
+            let mut starts = start_line;
             Ok(RubyFunction {
                 name: f.name.clone(),
-                // TODO: turn the positions into lines
-                lines: (f.expression_l.begin, f.expression_l.end),
+                lines: (start_line, end_line),
                 class,
-                // TODO: put line numbers in here
+                // TODO: start at the beginning of the line of the func keyword
                 body: f
                     .expression_l
                     .source(&parsed.input)
-                    .expect("Failed to get function body"),
+                    .expect("Failed to get function body").lines()
+                    .map(|l| {
+                        starts += 1;
+                        format!("{}: {}\n", starts, l,)
+                    })
+                    .collect(),
                 args: f
                     .args
                     .clone()

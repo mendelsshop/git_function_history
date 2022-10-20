@@ -261,7 +261,7 @@ make_file!(CFile, CFunction, C);
 #[cfg(feature = "unstable")]
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
-use std::path::MAIN_SEPARATOR;
+
 // make macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
     ($name:ident, $extname:ident, $function:ident) => {
