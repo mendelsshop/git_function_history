@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    languages::{FileTrait, FunctionTrait, PythonFile, RustFile},
+    languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile},
     Filter,
 };
 
@@ -27,6 +27,7 @@ pub enum FileType {
     C(CFile),
     #[cfg(feature = "unstable")]
     Go(GoFile),
+    Ruby(RubyFile),
 }
 
 impl FileTrait for FileType {
@@ -38,6 +39,7 @@ impl FileTrait for FileType {
             FileType::C(file) => file.get_file_name(),
             #[cfg(feature = "unstable")]
             FileType::Go(file) => file.get_file_name(),
+            Self::Ruby(file) => file.get_file_name(),
         }
     }
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>> {
@@ -48,6 +50,7 @@ impl FileTrait for FileType {
             FileType::C(file) => file.get_functions(),
             #[cfg(feature = "unstable")]
             FileType::Go(file) => file.get_functions(),
+            Self::Ruby(file) => file.get_functions(),
         }
     }
 
@@ -71,6 +74,10 @@ impl FileTrait for FileType {
                 let filtered = file.filter_by(filter)?;
                 Ok(FileType::Go(filtered))
             }
+            Self::Ruby(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(Self::Ruby(filtered))
+            }
         }
     }
 
@@ -82,6 +89,7 @@ impl FileTrait for FileType {
             FileType::C(file) => file.get_current(),
             #[cfg(feature = "unstable")]
             FileType::Go(file) => file.get_current(),
+            Self::Ruby(file) => file.get_current(),
         }
     }
 }
@@ -95,6 +103,7 @@ impl fmt::Display for FileType {
             FileType::C(file) => write!(f, "{}", file),
             #[cfg(feature = "unstable")]
             FileType::Go(file) => write!(f, "{}", file),
+            Self::Ruby(file) => write!(f, "{}", file),
         }
     }
 }
@@ -431,9 +440,6 @@ trait ErrorToOption<FileType> {
 
 impl<FileType> ErrorToOption<FileType> for Result<FileType, Box<dyn Error>> {
     fn to_option(self) -> Option<FileType> {
-        match self {
-            Ok(t) => Some(t),
-            Err(_) => None,
-        }
+        self.map_or(None, |t| Some(t))
     }
 }

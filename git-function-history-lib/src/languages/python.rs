@@ -308,12 +308,9 @@ impl Filter {
 impl FunctionTrait for PythonFunction {
     fn get_tops(&self) -> Vec<String> {
         let mut tops = Vec::new();
-        match &self.class {
-            Some(block) => {
-                tops.push(block.top.clone());
-            }
-            None => {}
-        }
+        self.class.as_ref().map_or((), |block| {
+            tops.push(block.top.clone());
+        });
         for parent in &self.parent {
             tops.push(parent.top.clone());
         }
@@ -321,30 +318,24 @@ impl FunctionTrait for PythonFunction {
     }
 
     fn get_total_lines(&self) -> (usize, usize) {
-        match &self.class {
-            Some(block) => block.lines,
-            None => {
-                let mut start = self.lines.0;
-                let mut end = self.lines.1;
-                for parent in &self.parent {
-                    if parent.lines.0 < start {
-                        start = parent.lines.0;
-                        end = parent.lines.1;
-                    }
+        self.class.as_ref().map_or_else(|| {
+            let mut start = self.lines.0;
+            let mut end = self.lines.1;
+            for parent in &self.parent {
+                if parent.lines.0 < start {
+                    start = parent.lines.0;
+                    end = parent.lines.1;
                 }
-                (start, end)
             }
-        }
+            (start, end)
+        }, |block| block.lines)
     }
 
     fn get_bottoms(&self) -> Vec<String> {
         let mut bottoms = Vec::new();
-        match &self.class {
-            Some(block) => {
-                bottoms.push(block.bottom.clone());
-            }
-            None => {}
-        }
+        self.class.as_ref().map_or((), |block| {
+            bottoms.push(block.bottom.clone());
+        });
         for parent in &self.parent {
             bottoms.push(parent.bottom.clone());
         }

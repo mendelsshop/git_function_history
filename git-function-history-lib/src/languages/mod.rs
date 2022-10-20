@@ -4,7 +4,7 @@ use std::{
     fmt::{self, Display},
 };
 // TODO: lisp/scheme js go(https://docs.rs/gosyn/latest/gosyn/) ruby(https://docs.rs/lib-ruby-parser/latest/lib_ruby_parser/) java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
-use self::{python::PythonFunction, rust::RustFunction};
+use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
 
 #[cfg(feature = "c_lang")]
 use self::c::CFunction;
@@ -23,6 +23,8 @@ pub enum Language {
     #[cfg(feature = "unstable")]
     /// The go language
     Go,
+    /// the Ruby language
+    Ruby,
     /// all available languages
     All,
 }
@@ -38,6 +40,8 @@ pub enum LanguageFilter {
     #[cfg(feature = "unstable")]
     /// go filter
     Go(go::Filter),
+    /// ruby filter
+    Ruby(ruby::Filter),
 }
 
 impl Language {
@@ -50,6 +54,7 @@ impl Language {
             #[cfg(feature = "unstable")]
             "go" => Ok(Self::Go),
             "all" => Ok(Self::All),
+            "ruby" => Ok(Self::Ruby),
             _ => Err(format!("Unknown language: {}", s))?,
         }
     }
@@ -64,6 +69,7 @@ impl fmt::Display for Language {
             Self::C => write!(f, "c"),
             #[cfg(feature = "unstable")]
             Self::Go => write!(f, "go"),
+            Self::Ruby => write!(f, "ruby"),
             Self::All => write!(f, "all"),
         }
     }
@@ -254,6 +260,7 @@ make_file!(RustFile, RustFunction, Rust);
 make_file!(CFile, CFunction, C);
 #[cfg(feature = "unstable")]
 make_file!(GoFile, GoFunction, Go);
+make_file!(RubyFile, RubyFunction, Ruby);
 use std::path::MAIN_SEPARATOR;
 // make macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
@@ -283,4 +290,5 @@ mod lang_tests {
     make_file_time_test!(c_parses, c, c);
     #[cfg(feature = "unstable")]
     make_file_time_test!(go_parses, go, go);
+    make_file_time_test!(ruby_parses, rb, ruby);
 }

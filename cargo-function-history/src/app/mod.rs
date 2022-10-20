@@ -341,6 +341,7 @@ impl App {
                                         &"c" => Language::C,
                                         #[cfg(feature = "unstable")]
                                         &"go" => Language::Go,
+                                        &"ruby" => Language::Ruby,
                                         _ => {
                                             self.status =
                                                 Status::Error("Invalid language".to_string());

@@ -113,12 +113,9 @@ impl FunctionBlock {
         map.insert("lifetime generics".to_string(), self.lifetime.join(","));
         map.insert("attributes".to_string(), self.attributes.join(","));
         map.insert("doc comments".to_string(), self.doc_comments.join(","));
-        match &self.return_type {
-            None => {}
-            Some(return_type) => {
-                map.insert("return type".to_string(), return_type.clone());
-            }
-        };
+        self.return_type.as_ref().map_or((), |return_type| {
+            map.insert("return type".to_string(), return_type.clone());
+        });
         map
     }
 }
@@ -290,17 +287,14 @@ pub(crate) fn find_function_in_file(
                         bottom: stuff.1 .1,
                         lines: (stuff.0 .0, stuff.0 .1),
                         return_type: function.ret_type().map(|ty| ty.to_string()),
-                        arguments: match f.param_list() {
-                            Some(args) => args
-                                .params()
-                                .filter_map(|arg| {
-                                    arg.to_string()
-                                        .rsplit_once(": ")
-                                        .map(|x| (x.0.to_string(), x.1.to_string()))
-                                })
-                                .collect::<HashMap<String, String>>(),
-                            None => HashMap::new(),
-                        },
+                        arguments: f.param_list().map_or_else( HashMap::new, |args| args
+                        .params()
+                        .filter_map(|arg| {
+                            arg.to_string()
+                                .rsplit_once(": ")
+                                .map(|x| (x.0.to_string(), x.1.to_string()))
+                        })
+                        .collect::<HashMap<String, String>>()),
                         attributes: attr.1,
                         doc_comments: attr.0,
                     });
@@ -329,17 +323,14 @@ pub(crate) fn find_function_in_file(
             block: parent_block,
             function: parent_fn,
             return_type: f.ret_type().map(|ty| ty.to_string()),
-            arguments: match f.param_list() {
-                Some(args) => args
-                    .params()
-                    .filter_map(|arg| {
-                        arg.to_string()
-                            .rsplit_once(": ")
-                            .map(|x| (x.0.to_string(), x.1.to_string()))
-                    })
-                    .collect::<HashMap<String, String>>(),
-                None => HashMap::new(),
-            },
+            arguments: f.param_list().map_or_else(HashMap::new, |args| args
+            .params()
+            .filter_map(|arg| {
+                arg.to_string()
+                    .rsplit_once(": ")
+                    .map(|x| (x.0.to_string(), x.1.to_string()))
+            })
+            .collect::<HashMap<String, String>>()),
             lifetime: generics.1,
             generics: generics.0,
             lines: (stuff.0 .0, stuff.0 .1),
@@ -436,17 +427,14 @@ fn get_stuff<T: AstNode>(
 #[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
     // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
-    match block.generic_param_list() {
-        None => (vec![], vec![]),
-        Some(gt) => (
-            gt.generic_params()
-                .map(|gt| gt.to_string())
-                .collect::<Vec<String>>(),
-            gt.lifetime_params()
-                .map(|lt| lt.to_string())
-                .collect::<Vec<String>>(),
-        ),
-    }
+    block.generic_param_list().map_or_else(|| (vec![], vec![]), |gt| (
+        gt.generic_params()
+            .map(|gt| gt.to_string())
+            .collect::<Vec<String>>(),
+        gt.lifetime_params()
+            .map(|lt| lt.to_string())
+            .collect::<Vec<String>>(),
+    ))
 }
 #[inline]
 fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec<String>) {
@@ -508,12 +496,9 @@ impl Filter {
 impl FunctionTrait for RustFunction {
     fn get_tops(&self) -> Vec<String> {
         let mut tops = Vec::new();
-        match &self.block {
-            Some(block) => {
-                tops.push(block.top.clone());
-            }
-            None => {}
-        }
+        self.block.as_ref().map_or((), |block| {
+            tops.push(block.top.clone());
+        });
         for parent in &self.function {
             tops.push(parent.top.clone());
         }
@@ -521,30 +506,24 @@ impl FunctionTrait for RustFunction {
     }
 
     fn get_total_lines(&self) -> (usize, usize) {
-        match &self.block {
-            Some(block) => (block.lines.0, block.lines.1),
-            None => {
-                let mut start = self.lines.0;
-                let mut end = self.lines.1;
-                for parent in &self.function {
-                    if parent.lines.0 < start {
-                        start = parent.lines.0;
-                        end = parent.lines.1;
-                    }
+        self.block.as_ref().map_or_else(|| {
+            let mut start = self.lines.0;
+            let mut end = self.lines.1;
+            for parent in &self.function {
+                if parent.lines.0 < start {
+                    start = parent.lines.0;
+                    end = parent.lines.1;
                 }
-                (start, end)
             }
-        }
+            (start, end)
+        }, |block| (block.lines.0, block.lines.1))    
     }
 
     fn get_bottoms(&self) -> Vec<String> {
         let mut bottoms = Vec::new();
-        match &self.block {
-            Some(block) => {
-                bottoms.push(block.bottom.clone());
-            }
-            None => {}
-        }
+        self.block.as_ref().map_or((), |block| {
+            bottoms.push(block.bottom.clone());
+        });
         for parent in &self.function {
             bottoms.push(parent.bottom.clone());
         }

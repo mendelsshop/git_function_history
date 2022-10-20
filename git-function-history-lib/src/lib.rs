@@ -18,7 +18,7 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
-use languages::{rust, LanguageFilter};
+use languages::{rust, LanguageFilter, RubyFile};
 
 use languages::{PythonFile, RustFile};
 #[cfg(feature = "parallel")]
@@ -171,19 +171,19 @@ pub fn get_function_history(
             let mut parts = line.split(';');
             let id = parts
                 .next()
-                .unwrap_to_error("no id found in git command output");
+                .unwrap_to_error_sync("no id found in git command output");
             let date = parts
                 .next()
-                .unwrap_to_error("date is missing from git command output");
+                .unwrap_to_error_sync("date is missing from git command output");
             let author = parts
                 .next()
-                .unwrap_to_error("author is missing from git command output");
+                .unwrap_to_error_sync("author is missing from git command output");
             let email = parts
                 .next()
-                .unwrap_to_error("email is missing from git command output");
+                .unwrap_to_error_sync("email is missing from git command output");
             let message = parts
                 .next()
-                .unwrap_to_error("message is missing from git command output");
+                .unwrap_to_error_sync("message is missing from git command output");
             Ok((id?, date?, author?, email?, message?))
         })
         .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
@@ -215,11 +215,17 @@ pub fn get_function_history(
                     Err(format!("file is not a rust file: {}", path))?;
                 }
             }
+            Language::Ruby => {
+                if !path.ends_with(".rb") {
+                    Err(format!("file is not a ruby file: {}", path))?;
+                }
+            }
             Language::All => {
                 if !path.ends_with(".rs")
                     || !path.ends_with(".py")
                     || !path.ends_with(".c")
                     || !path.ends_with(".h")
+                    || !path.ends_with(".rb")
                 {
                     Err(format!("file is not supported: {}", path))?;
                 }
@@ -236,17 +242,14 @@ pub fn get_function_history(
             | FileFilterType::Relative(_)
             | FileFilterType::None
             | FileFilterType::Directory(_) => {
-                match find_function_in_commit_with_filetype(commit.0, name, file, *langs) {
-                    Ok(contents) => Some(Commit::new(
-                        commit.0.to_string(),
-                        contents,
-                        commit.1,
-                        commit.2.to_string(),
-                        commit.3.to_string(),
-                        commit.4.to_string(),
-                    )),
-                    Err(_) => None,
-                }
+                find_function_in_commit_with_filetype(commit.0, name, file, *langs).map_or(None, |contents| Some(Commit::new(
+                    commit.0.to_string(),
+                    contents,
+                    commit.1,
+                    commit.2.to_string(),
+                    commit.3.to_string(),
+                    commit.4.to_string(),
+                )))
             }
         })
         .collect();
@@ -408,6 +411,11 @@ fn find_function_in_commit_with_filetype(
                             files.push(file);
                         }
                     }
+                    Language::Ruby => {
+                        if file.ends_with(".rb") {
+                            files.push(file);
+                        }
+                    }
                     Language::All => {
                         if file.ends_with(".rs")
                             || file.ends_with(".py")
@@ -416,6 +424,7 @@ fn find_function_in_commit_with_filetype(
                             || file.ends_with(".h")
                             // TODO: use cfg!() macro to check if unstable is enabled
                             || file.ends_with(".go")
+                            || file.ends_with(".rb")
                         {
                             files.push(file);
                         }
@@ -470,6 +479,13 @@ fn find_function_in_file_with_commit(
                 functions,
             )))
         }
+        Language::Ruby => {
+            let functions = languages::ruby::find_function_in_file(&fc, name)?;
+            Ok(FileType::Ruby(RubyFile::new(
+                file_path.to_string(),
+                functions,
+            )))
+        }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
                 let functions = rust::find_function_in_file(&fc, name)?;
@@ -490,21 +506,34 @@ fn find_function_in_file_with_commit(
                     functions,
                 )))
             }
+            #[cfg(feature = "unstable")]
+            Some("go") => {
+                let functions = languages::go::find_function_in_file(&fc, name)?;
+                Ok(FileType::Go(GoFile::new(file_path.to_string(), functions)))
+            }
+            Some("rb") => {
+                let functions = languages::ruby::find_function_in_file(&fc, name)?;
+                Ok(FileType::Ruby(RubyFile::new(
+                    file_path.to_string(),
+                    functions,
+                )))
+            }
             _ => Err("unknown file type")?,
         },
     }
 }
 
 trait UnwrapToError<T> {
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>>;
+    fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>>;
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>>;
 }
 
 impl<T> UnwrapToError<T> for Option<T> {
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-        match self {
-            Some(val) => Ok(val),
-            None => Err(message.to_string().into()),
-        }
+    fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
+        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
+    }
+    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
+        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
     }
 }
 
