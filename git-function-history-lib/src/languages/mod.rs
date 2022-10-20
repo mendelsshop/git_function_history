@@ -275,6 +275,16 @@ macro_rules! make_file_time_test {
             let start = std::time::Instant::now();
             let ok = $function::find_function_in_file(&file, "empty_test");
             let end = std::time::Instant::now();
+            match &ok {
+                Ok(hist) => {
+                    for i in hist {
+                        println!("{}", i);
+                    }
+                }
+                Err(_) => {
+
+                }
+            }
             println!("{} took {:?}", stringify!($name), end - start);
             assert!(ok.is_ok());
         }

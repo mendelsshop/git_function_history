@@ -72,6 +72,7 @@ pub(crate) fn find_function_in_file(
         .map(|(f, c)| {
             let class = c.as_ref().map(|c| RubyClass {
                 name: parser_class_name(c),
+                // TODO: turn the positions into lines
                 line: (f.expression_l.begin, f.expression_l.end),
                 superclass: None,
                 // TODO: get top and bottom
@@ -129,19 +130,31 @@ pub fn get_functions_from_node(
 }
 
 fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
-    // match node {
-    //     lib_ruby_parser::Node::Args(args) => args
-    //         .args
-    //         .iter()
-    //         .map(|arg| arg.name.str_type().to_string())
-    //         .collect(),
-    //     _ => vec![],
-    // }
+    match node {
+        lib_ruby_parser::Node::Args(args) => args
+            .args
+            .iter()
+            .map(|arg| match arg {
+                lib_ruby_parser::Node::Arg(arg) => arg.name.clone(),
+                lib_ruby_parser::Node::Kwarg(arg) => arg.name.clone(),
+                lib_ruby_parser::Node::Kwoptarg(arg) => arg.name.clone(),
+                lib_ruby_parser::Node::Optarg(arg) => arg.name.clone(),
+                lib_ruby_parser::Node::Restarg(arg) => arg.name.as_ref().map_or_else(String::new, |f| f.to_string()).clone(),
+                lib_ruby_parser::Node::Kwrestarg(arg) => arg.name.as_ref().map_or_else(String::new, |f| f.to_string()).clone(),
+                _ => String::new(),
+            })
+            
+            .filter(|f| !f.is_empty()).collect(),
+        _ => vec![],
+    };
     vec![]
 }
 
 fn parser_class_name(class: &Class) -> String {
-    String::new()
+    match class.name.as_ref() {
+        lib_ruby_parser::Node::Const(constant) => constant.name.clone(),
+        _ => String::new(),
+    }
 }
 
 impl FunctionTrait for RubyFunction {
