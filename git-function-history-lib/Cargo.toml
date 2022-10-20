@@ -16,7 +16,7 @@ unstable = ["dep:gosyn", "dep:javaparser"]
 
 [dependencies]
 chrono = "0.4.22"
-ra_ap_syntax = "0.0.133"
+ra_ap_syntax = "0.0.134"
 rayon = { version = "1.5.3", optional = true }
 rustpython-parser = "0.1.2"
 lib-ruby-parser = "3.0.12"

@@ -103,12 +103,17 @@ pub(crate) fn find_function_in_file(
                     let mut top = top.source(&parsed.input).unwrap_to_error("Failed to get source")?;
                     top = top.trim_end().to_string();
                     top.push_str("\n");
-                    // TODO: add line numbers to top amd start at new line
+                    let mut starts = start_line;
                     Some(RubyClass {
                         name: parser_class_name(c),
                         line: (start_line, end_line),
                         superclass: None,
-                        top,
+                        top: top.lines()
+                        .map(|l| {
+                            starts += 1;
+                            format!("{}: {}\n", starts, l,)
+                        })
+                        .collect(),
                         bottom: format!(
                             "{end_line}: {}",
                             loc_end
