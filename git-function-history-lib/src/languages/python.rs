@@ -318,17 +318,20 @@ impl FunctionTrait for PythonFunction {
     }
 
     fn get_total_lines(&self) -> (usize, usize) {
-        self.class.as_ref().map_or_else(|| {
-            let mut start = self.lines.0;
-            let mut end = self.lines.1;
-            for parent in &self.parent {
-                if parent.lines.0 < start {
-                    start = parent.lines.0;
-                    end = parent.lines.1;
+        self.class.as_ref().map_or_else(
+            || {
+                let mut start = self.lines.0;
+                let mut end = self.lines.1;
+                for parent in &self.parent {
+                    if parent.lines.0 < start {
+                        start = parent.lines.0;
+                        end = parent.lines.1;
+                    }
                 }
-            }
-            (start, end)
-        }, |block| block.lines)
+                (start, end)
+            },
+            |block| block.lines,
+        )
     }
 
     fn get_bottoms(&self) -> Vec<String> {

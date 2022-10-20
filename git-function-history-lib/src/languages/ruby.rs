@@ -38,7 +38,6 @@ impl RubyFunction {
 
 impl fmt::Display for RubyFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        println!("{:?}", self.class);
         match &self.class {
             Some(class) => write!(f, "{}", class.top)?,
             None => {}
@@ -72,6 +71,7 @@ pub(crate) fn find_function_in_file(
     fns.iter()
         .map(|(f, c)| {
             let mut start_line = 0;
+            // TODO: get signature and bottom of class
             for i in file_contents.chars().enumerate() {
                 if i.1 == '\n' {
                     if i.0 > f.expression_l.begin {
@@ -97,6 +97,7 @@ pub(crate) fn find_function_in_file(
                 top: String::new(),
                 bottom: String::new(),
             });
+            let mut start = f.expression_l.begin;
             // get the lines from map using f.expression_l.begin and f.expression_l.end
             let mut start_line = 0;
             for i in file_contents.chars().enumerate() {
@@ -104,6 +105,7 @@ pub(crate) fn find_function_in_file(
                     if i.0 > f.expression_l.begin {
                         break;
                     }
+                    start = i.0;
                     start_line += 1;
                 }
             }
@@ -121,11 +123,13 @@ pub(crate) fn find_function_in_file(
                 name: f.name.clone(),
                 lines: (start_line, end_line),
                 class,
-                // TODO: start at the beginning of the line of the func keyword
                 body: f
                     .expression_l
+                    .with_begin(start)
                     .source(&parsed.input)
-                    .expect("Failed to get function body").lines()
+                    .expect("Failed to get function body")
+                    .trim_matches('\n')
+                    .lines()
                     .map(|l| {
                         starts += 1;
                         format!("{}: {}\n", starts, l,)
@@ -181,12 +185,18 @@ fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
                 lib_ruby_parser::Node::Kwarg(arg) => arg.name.clone(),
                 lib_ruby_parser::Node::Kwoptarg(arg) => arg.name.clone(),
                 lib_ruby_parser::Node::Optarg(arg) => arg.name.clone(),
-                lib_ruby_parser::Node::Restarg(arg) => arg.name.as_ref().map_or_else(String::new, |f| f.to_string()).clone(),
-                lib_ruby_parser::Node::Kwrestarg(arg) => arg.name.as_ref().map_or_else(String::new, |f| f.to_string()).clone(),
+                lib_ruby_parser::Node::Restarg(arg) => arg
+                    .name
+                    .as_ref()
+                    .map_or_else(String::new, ToString::to_string),
+                lib_ruby_parser::Node::Kwrestarg(arg) => arg
+                    .name
+                    .as_ref()
+                    .map_or_else(String::new, ToString::to_string),
                 _ => String::new(),
             })
-            
-            .filter(|f| !f.is_empty()).collect(),
+            .filter(|f| !f.is_empty())
+            .collect(),
         _ => vec![],
     };
     vec![]
@@ -203,11 +213,15 @@ impl FunctionTrait for RubyFunction {
     crate::impl_function_trait!(RubyFunction);
 
     fn get_tops(&self) -> Vec<String> {
-        self.class.as_ref().map_or_else(Vec::new, |c| vec![c.top.clone()])
+        self.class
+            .as_ref()
+            .map_or_else(Vec::new, |c| vec![c.top.clone()])
     }
 
     fn get_bottoms(&self) -> Vec<String> {
-        self.class.as_ref().map_or_else(Vec::new, |c| vec![c.bottom.clone()])
+        self.class
+            .as_ref()
+            .map_or_else(Vec::new, |c| vec![c.bottom.clone()])
     }
 
     fn get_total_lines(&self) -> (usize, usize) {

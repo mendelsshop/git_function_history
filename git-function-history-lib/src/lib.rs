@@ -241,16 +241,19 @@ pub fn get_function_history(
             FileFilterType::Absolute(_)
             | FileFilterType::Relative(_)
             | FileFilterType::None
-            | FileFilterType::Directory(_) => {
-                find_function_in_commit_with_filetype(commit.0, name, file, *langs).map_or(None, |contents| Some(Commit::new(
+            | FileFilterType::Directory(_) => find_function_in_commit_with_filetype(
+                commit.0, name, file, *langs,
+            )
+            .map_or(None, |contents| {
+                Some(Commit::new(
                     commit.0.to_string(),
                     contents,
                     commit.1,
                     commit.2.to_string(),
                     commit.3.to_string(),
                     commit.4.to_string(),
-                )))
-            }
+                ))
+            }),
         })
         .collect();
     if file_history.commit_history.is_empty() {

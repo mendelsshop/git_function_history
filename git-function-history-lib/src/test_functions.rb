@@ -8,4 +8,8 @@ end
 class Test
 	def empty_test()
 	end
+
+	def test()
+		puts "Hello World"
+	end
 end
