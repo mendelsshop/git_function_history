@@ -2,7 +2,7 @@ use std::{error::Error, fmt};
 
 use lib_ruby_parser::{
     nodes::{Class, Def},
-    Parser, ParserOptions,
+    Loc, Parser, ParserOptions,
 };
 
 use crate::UnwrapToError;
@@ -70,33 +70,49 @@ pub(crate) fn find_function_in_file(
     let fns = get_functions_from_node(&ast, &None, name);
     fns.iter()
         .map(|(f, c)| {
-            let mut start_line = 0;
-            // TODO: get signature and bottom of class
-            for i in file_contents.chars().enumerate() {
-                if i.1 == '\n' {
-                    if i.0 > f.expression_l.begin {
-                        break;
+            let class = match c {
+                Some(c) => {
+                    let mut start_line = 0;
+                    for i in file_contents.chars().enumerate() {
+                        if i.1 == '\n' {
+                            if i.0 > c.expression_l.begin {
+                                break;
+                            }
+                            start_line += 1;
+                        }
                     }
-                    start_line += 1;
-                }
-            }
-            let mut end_line = 0;
-            for i in file_contents.chars().enumerate() {
-                if i.1 == '\n' {
-                    if i.0 > f.expression_l.end {
-                        break;
+                    let mut end_line = 0;
+                    let mut end_char = 0;
+                    for i in file_contents.chars().enumerate() {
+                        if i.1 == '\n' {
+                            if i.0 > c.expression_l.end {
+                                break;
+                            }
+                            end_char = i.0;
+                            end_line += 1;
+                        }
                     }
-                    end_line += 1;
+                    let loc_end = Loc {
+                        begin: end_char,
+                        end: c.expression_l.end,
+                    };
+                    Some(RubyClass {
+                        name: parser_class_name(c),
+                        line: (start_line, end_line),
+                        superclass: None,
+                        // TODO: get top signature
+                        top: String::new(),
+                        bottom: format!(
+                            "{end_line}: {}",
+                            loc_end
+                                .source(&parsed.input)
+                                .expect("Failed to get source")
+                                .trim_matches('\n')
+                        ),
+                    })
                 }
-            }
-            let class = c.as_ref().map(|c| RubyClass {
-                name: parser_class_name(c),
-                line: (start_line, end_line),
-                superclass: None,
-                // TODO: get top and bottom
-                top: String::new(),
-                bottom: String::new(),
-            });
+                None => None,
+            };
             let mut start = f.expression_l.begin;
             // get the lines from map using f.expression_l.begin and f.expression_l.end
             let mut start_line = 0;
