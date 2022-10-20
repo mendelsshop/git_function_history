@@ -96,12 +96,19 @@ pub(crate) fn find_function_in_file(
                         begin: end_char,
                         end: c.expression_l.end,
                     };
+                    let top = Loc {
+                        begin: c.expression_l.begin,
+                        end: c.body.as_ref().map_or(0, |b| b.expression().begin)
+                    };
+                    let mut top = top.source(&parsed.input).unwrap_to_error("Failed to get source")?;
+                    top = top.trim_end().to_string();
+                    top.push_str("\n");
+                    // TODO: add line numbers to top amd start at new line
                     Some(RubyClass {
                         name: parser_class_name(c),
                         line: (start_line, end_line),
                         superclass: None,
-                        // TODO: get top signature
-                        top: String::new(),
+                        top,
                         bottom: format!(
                             "{end_line}: {}",
                             loc_end
@@ -160,7 +167,9 @@ pub(crate) fn find_function_in_file(
         .collect()
 }
 
-pub fn get_functions_from_node(
+
+
+fn get_functions_from_node(
     node: &lib_ruby_parser::Node,
     class: &Option<Class>,
     name: &str,
@@ -217,6 +226,7 @@ fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
     };
     vec![]
 }
+
 
 fn parser_class_name(class: &Class) -> String {
     match class.name.as_ref() {

@@ -5,7 +5,8 @@ end
 def empty_test()
 end
 
-class Test
+class
+	 Test
 	def empty_test()
 	end
 
