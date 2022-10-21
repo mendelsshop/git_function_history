@@ -47,8 +47,27 @@ pub struct JavaClass {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-    class_name: &str,
 ) -> Result<JavaFunction, String> {
-    let file = javaparser::parse::apply(file_contents);
+    let file = javaparser::parse::apply(file_contents, "<stdin>").map_err(|_| "Parse error")?;
+    let parsed = file.unit.clone();
+    println!("{:#?}", file);
     Err("Not implemented".to_string())
 }
+
+#[cfg(test)]
+mod java_test {
+    use super::*;
+
+    #[test]
+    fn java() {
+        let file_contents = r#"
+            public class Test {
+                public static void main(String[] args) {
+                    System.out.println("Hello, World");
+                }
+            }
+        "#;
+        let function = find_function_in_file(file_contents, "main").unwrap();
+
+        }
+    }
