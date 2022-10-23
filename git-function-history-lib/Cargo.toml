@@ -22,3 +22,4 @@ rustpython-parser = "0.1.2"
 lib-ruby-parser = "3.0.12"
 gosyn = {version = "0.1.1", optional = true}
 javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
+cfg-if = "1.0.0"

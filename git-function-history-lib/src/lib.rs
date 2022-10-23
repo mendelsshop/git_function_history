@@ -14,7 +14,7 @@
     clippy::return_self_not_must_use
 )]
 pub mod languages;
-
+use cfg_if::cfg_if;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
@@ -48,7 +48,6 @@ pub enum FileFilterType {
     None,
 }
 
-// TODO: Add support for filtering by generic parameters, lifetimes, and return types.
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Filter {
@@ -420,16 +419,22 @@ fn find_function_in_commit_with_filetype(
                         }
                     }
                     Language::All => {
-                        if file.ends_with(".rs")
-                            || file.ends_with(".py")
-                            // TODO: use cfg!() macro to check if c_lang is enabled
-                            || file.ends_with(".c")
-                            || file.ends_with(".h")
-                            // TODO: use cfg!() macro to check if unstable is enabled
-                            || file.ends_with(".go")
-                            || file.ends_with(".rb")
-                        {
-                            files.push(file);
+                        cfg_if::cfg_if! {
+                            if #[cfg(feature = "c_lang")] {
+                                if file.ends_with(".c") || file.ends_with(".h") {
+                                    files.push(file);
+                                }
+                            }
+                            else if #[cfg(feature = "unstable")] {
+                                if file.ends_with(".go") {
+                                    files.push(file);
+                                }
+                            }
+                            else {
+                                if file.ends_with(".py") || file.ends_with(".rs") || file.ends_with(".rb") {
+                                    files.push(file);
+                                }
+                            }
                         }
                     }
                 }
