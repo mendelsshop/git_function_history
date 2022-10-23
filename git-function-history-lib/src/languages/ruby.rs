@@ -104,7 +104,7 @@ pub(crate) fn find_function_in_file(
                         .source(&parsed.input)
                         .unwrap_to_error("Failed to get source")?;
                     top = top.trim_end().to_string();
-                    top.push_str("\n");
+                    top.push('\n');
                     let mut starts = start_line;
                     Some(RubyClass {
                         name: parser_class_name(c),
@@ -260,11 +260,11 @@ impl FunctionTrait for RubyFunction {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum RubyFilter {
     FunctionInLines((usize, usize)),
 }
 
-impl Filter {
+impl RubyFilter {
     pub const fn matches(&self, function: &RubyFunction) -> bool {
         match self {
             Self::FunctionInLines((start, end)) => {

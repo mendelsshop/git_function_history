@@ -457,7 +457,7 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
     )
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum RustFilter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
     FunctionInBlock(BlockType),
     /// when you want filter by a function that has a parent function of a specific name
@@ -476,7 +476,7 @@ pub enum Filter {
     FunctionWithAttribute(String),
 }
 
-impl Filter {
+impl RustFilter {
     pub fn matches(&self, function: &RustFunction) -> bool {
         match self {
             Self::FunctionInBlock(block_type) => function

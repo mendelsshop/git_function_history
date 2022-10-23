@@ -31,17 +31,17 @@ pub enum Language {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LanguageFilter {
     /// python filter
-    Python(python::Filter),
+    Python(python::PythonFilter),
     /// rust filter
-    Rust(rust::Filter),
+    Rust(rust::RustFilter),
     #[cfg(feature = "c_lang")]
     /// c filter
-    C(c::Filter),
+    C(c::CFilter),
     #[cfg(feature = "unstable")]
     /// go filter
-    Go(go::Filter),
+    Go(go::GoFilter),
     /// ruby filter
-    Ruby(ruby::Filter),
+    Ruby(ruby::RubyFilter),
 }
 
 impl Language {

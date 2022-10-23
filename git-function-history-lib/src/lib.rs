@@ -546,7 +546,7 @@ impl<T> UnwrapToError<T> for Option<T> {
 mod tests {
     use chrono::Utc;
 
-    use crate::languages::FileTrait;
+    use crate::languages::{rust::BlockType, FileTrait};
 
     use super::*;
     #[test]
@@ -742,5 +742,42 @@ mod tests {
             Err(e) => println!("{}", e),
         }
         assert!(output.is_ok());
+    }
+
+    #[test]
+    fn filter_by_param_rust() {
+        // search for rust functions
+        let mut now = Utc::now();
+        let output = get_function_history!(name = "empty_test", language = Language::Rust);
+        let mut after = Utc::now() - now;
+        println!("time taken to search: {}", after.num_seconds());
+        let output = match output {
+            Ok(result) => result,
+            Err(e) => panic!("{}", e),
+        };
+        now = Utc::now();
+        let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
+            rust::RustFilter::FunctionWithParameterType(String::from("String"))
+        )));
+        after = Utc::now() - now;
+        println!("time taken to filter {}", after.num_seconds());
+        match &new_output {
+            Ok(res) => {
+                println!("{}", res)
+            }
+            Err(e) => println!("{e}"),
+        }
+        let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
+            rust::RustFilter::FunctionInBlock(BlockType::Extern),
+        )));
+        after = Utc::now() - now;
+        println!("time taken to filter {}", after.num_seconds());
+        match &new_output {
+            Ok(res) => {
+                println!("{}", res)
+            }
+            Err(e) => println!("{e}"),
+        }
+        assert!(new_output.is_ok())
     }
 }

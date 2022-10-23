@@ -271,7 +271,7 @@ fn get_functions<'a>(
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
     FunctionInClass(String),
     /// when you want filter by a function that has a parent function of a specific name
@@ -284,7 +284,7 @@ pub enum Filter {
     FunctionWithDecorator(String),
 }
 
-impl Filter {
+impl PythonFilter {
     pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
             Self::FunctionInClass(class) => {

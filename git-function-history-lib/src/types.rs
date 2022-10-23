@@ -211,15 +211,31 @@ impl Commit {
         #[cfg(not(feature = "parallel"))]
         let t = self.files.iter();
         let vec: Vec<_> = t
-            .filter(|f| match filter {
-                Filter::FileAbsolute(file) => f.get_file_name() == *file,
-                Filter::FileRelative(file) => f.get_file_name().ends_with(file),
-                Filter::Directory(dir) => f.get_file_name().contains(dir),
-                Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).is_ok(),
-                Filter::None => true,
-                _ => false,
+            .filter_map(|f| match filter {
+                Filter::FileAbsolute(file) => {
+                    if f.get_file_name() == *file {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::FileRelative(file) => {
+                    if f.get_file_name().ends_with(file) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::Directory(dir) => {
+                    if f.get_file_name().contains(dir) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).ok(),
+                _ => None,
             })
-            .cloned()
             .collect();
 
         if vec.is_empty() {
@@ -355,38 +371,115 @@ impl FunctionHistory {
     ///
     /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
+    // pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    //     #[cfg(feature = "parallel")]
+    //     let t = self.commit_history.par_iter();
+    //     #[cfg(not(feature = "parallel"))]
+    //     let t = self.commit_history.iter();
+    //     let vec: Vec<Commit> = t
+    //         .filter(|f| match filter {
+    //             Filter::FunctionInLines(..)
+    //             | Filter::Directory(_)
+    //             | Filter::FileAbsolute(_)
+    //             | Filter::PLFilter(_)
+    //             | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
+    //             Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
+    //             Filter::Date(date) => &f.date.to_rfc2822() == date,
+    //             Filter::DateRange(start, end) => {
+    //                 let start = match DateTime::parse_from_rfc2822(start) {
+    //                     Ok(date) => date,
+    //                     Err(_) => return false,
+    //                 };
+    //                 let end = match DateTime::parse_from_rfc2822(end) {
+    //                     Ok(date) => date,
+    //                     Err(_) => return false,
+    //                 };
+    //                 f.date >= start || f.date <= end
+    //             }
+    //             Filter::Author(author) => &f.author == author,
+    //             Filter::AuthorEmail(email) => &f.email == email,
+    //             Filter::Message(message) => f.message.contains(message),
+    //             Filter::None => true,
+    //         })
+    //         .cloned()
+    //         .collect();
+
+    //     if vec.is_empty() {
+    //         return Err("No history found for the filter")?;
+    //     }
+    //     Ok(Self {
+    //         commit_history: vec,
+    //         name: self.name.clone(),
+    //         current_pos: 0,
+    //         current_iter_pos: 0,
+    //     })
+    // }
+
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
         #[cfg(not(feature = "parallel"))]
         let t = self.commit_history.iter();
         let vec: Vec<Commit> = t
-            .filter(|f| match filter {
+            .filter_map(|f| match filter {
                 Filter::FunctionInLines(..)
                 | Filter::Directory(_)
                 | Filter::FileAbsolute(_)
                 | Filter::PLFilter(_)
-                | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
-                Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
-                Filter::Date(date) => &f.date.to_rfc2822() == date,
+                | Filter::FileRelative(_) => f.filter_by(filter).ok(),
+                Filter::CommitHash(commit_hash) => {
+                    if &f.commit_hash == commit_hash {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+
+                Filter::Date(date) => {
+                    if &f.date.to_rfc2822() == date {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
                 Filter::DateRange(start, end) => {
                     let start = match DateTime::parse_from_rfc2822(start) {
                         Ok(date) => date,
-                        Err(_) => return false,
+                        Err(_) => return None,
                     };
                     let end = match DateTime::parse_from_rfc2822(end) {
                         Ok(date) => date,
-                        Err(_) => return false,
+                        Err(_) => return None,
                     };
-                    f.date >= start || f.date <= end
+                    if f.date >= start || f.date <= end {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
                 }
-
-                Filter::Author(author) => &f.author == author,
-                Filter::AuthorEmail(email) => &f.email == email,
-                Filter::Message(message) => f.message.contains(message),
-                Filter::None => true,
+                Filter::Author(author) => {
+                    if &f.author == author {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::AuthorEmail(email) => {
+                    if &f.email == email {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::Message(message) => {
+                    if f.message.contains(message) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::None => None,
             })
-            .cloned()
             .collect();
 
         if vec.is_empty() {
