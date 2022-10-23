@@ -36,9 +36,9 @@ impl FileTrait for FileType {
             Self::Rust(file) => file.get_file_name(),
             Self::Python(file) => file.get_file_name(),
             #[cfg(feature = "c_lang")]
-            FileType::C(file) => file.get_file_name(),
+            Self::C(file) => file.get_file_name(),
             #[cfg(feature = "unstable")]
-            FileType::Go(file) => file.get_file_name(),
+            Self::Go(file) => file.get_file_name(),
             Self::Ruby(file) => file.get_file_name(),
         }
     }
@@ -47,9 +47,9 @@ impl FileTrait for FileType {
             Self::Rust(file) => file.get_functions(),
             Self::Python(file) => file.get_functions(),
             #[cfg(feature = "c_lang")]
-            FileType::C(file) => file.get_functions(),
+            Self::C(file) => file.get_functions(),
             #[cfg(feature = "unstable")]
-            FileType::Go(file) => file.get_functions(),
+            Self::Go(file) => file.get_functions(),
             Self::Ruby(file) => file.get_functions(),
         }
     }
@@ -65,14 +65,14 @@ impl FileTrait for FileType {
                 Ok(Self::Python(filtered))
             }
             #[cfg(feature = "c_lang")]
-            FileType::C(file) => {
+            Self::C(file) => {
                 let filtered = file.filter_by(filter)?;
-                Ok(FileType::C(filtered))
+                Ok(Self::C(filtered))
             }
             #[cfg(feature = "unstable")]
-            FileType::Go(file) => {
+            Self::Go(file) => {
                 let filtered = file.filter_by(filter)?;
-                Ok(FileType::Go(filtered))
+                Ok(Self::Go(filtered))
             }
             Self::Ruby(file) => {
                 let filtered = file.filter_by(filter)?;
@@ -86,9 +86,9 @@ impl FileTrait for FileType {
             Self::Rust(file) => file.get_current(),
             Self::Python(file) => file.get_current(),
             #[cfg(feature = "c_lang")]
-            FileType::C(file) => file.get_current(),
+            Self::C(file) => file.get_current(),
             #[cfg(feature = "unstable")]
-            FileType::Go(file) => file.get_current(),
+            Self::Go(file) => file.get_current(),
             Self::Ruby(file) => file.get_current(),
         }
     }
@@ -100,9 +100,9 @@ impl fmt::Display for FileType {
             Self::Rust(file) => write!(f, "{}", file),
             Self::Python(file) => write!(f, "{}", file),
             #[cfg(feature = "c_lang")]
-            FileType::C(file) => write!(f, "{}", file),
+            Self::C(file) => write!(f, "{}", file),
             #[cfg(feature = "unstable")]
-            FileType::Go(file) => write!(f, "{}", file),
+            Self::Go(file) => write!(f, "{}", file),
             Self::Ruby(file) => write!(f, "{}", file),
         }
     }

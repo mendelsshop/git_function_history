@@ -71,11 +71,8 @@ pub(crate) fn find_function_in_file(
                         Some(body) => (func.name.pos, body.pos.1),
                         None => return None,
                     };
-                    match func.recv {
-                        Some(recv) => {
-                            lines.0 = recv.pos();
-                        }
-                        None => {}
+                    if let Some(recv) = func.recv {
+                        lines.0 = recv.pos();
                     }
                     lines.0 = file_contents[..lines.0].rfind("func")?;
 
@@ -84,7 +81,7 @@ pub(crate) fn find_function_in_file(
                             lines.0 = i.pos;
                         }
                     }
-                    let body = file_contents[lines.0..lines.1 + 1].to_string();
+                    let body = file_contents[lines.0..=lines.1].to_string();
                     let mut start_line = 0;
                     for i in file_contents.chars().enumerate() {
                         if i.1 == '\n' {
@@ -114,7 +111,7 @@ pub(crate) fn find_function_in_file(
                         .list
                         .iter()
                         .filter_map(|p| Some(&p.tag.as_ref()?.value))
-                        .map(|x| x.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect();
                     let returns = Some(
                         func.typ
@@ -124,8 +121,8 @@ pub(crate) fn find_function_in_file(
                             .map(|p| {
                                 p.name
                                     .iter()
-                                    .map(|x| &x.clone().name)
-                                    .map(|x| x.to_string())
+                                    .map(|x| &x.name)
+                                    .map(std::string::ToString::to_string)
                                     .collect::<String>()
                             })
                             .collect(),
@@ -152,24 +149,23 @@ pub(crate) fn find_function_in_file(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum GoFilter {
     FunctionWithParameter(String),
     FunctionWithReturnType(String),
     FunctionInLines(usize, usize),
 }
 
-impl Filter {
+impl GoFilter {
     pub fn matches(&self, func: &GoFunction) -> bool {
         match self {
-            Filter::FunctionWithParameter(param) => {
+           Self::FunctionWithParameter(param) => {
                 func.parameters.iter().any(|x| x.contains(param))
             }
-            Filter::FunctionWithReturnType(ret) => func
+            Self::FunctionWithReturnType(ret) => func
                 .returns
                 .as_ref()
-                .map(|x| x.contains(ret))
-                .unwrap_or(false),
-            Filter::FunctionInLines(start, end) => {
+                .map_or(false, |x| x.contains(ret)),
+            Self::FunctionInLines(start, end) => {
                 let (s, e) = func.get_total_lines();
                 s >= *start && e <= *end
             }

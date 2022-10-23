@@ -73,14 +73,14 @@ pub(crate) fn find_function_in_file(
     todo!("find_function_in_commit")
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Filter {
+pub enum CFilter {
     /// when you want filter by a function that has a parent function of a specific name
     FunctionWithParent(String),
     /// when you want to filter by a function that has a has a specific return type
     FunctionWithReturnType(String),
 }
 
-impl Filter {
+impl CFilter {
     pub fn matches(&self, function: &CFunction) -> bool {
         match self {
             Self::FunctionWithParent(parent) => function
