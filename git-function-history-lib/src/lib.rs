@@ -14,7 +14,6 @@
     clippy::return_self_not_must_use
 )]
 pub mod languages;
-use cfg_if::cfg_if;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
@@ -389,56 +388,54 @@ fn find_function_in_commit_with_filetype(
                     files.push(file);
                 }
             }
-            FileFilterType::None => {
-                match langs {
-                    #[cfg(feature = "c_lang")]
-                    Language::C => {
-                        if file.ends_with(".c") || file.ends_with(".h") {
-                            files.push(file);
-                        }
+            FileFilterType::None => match langs {
+                #[cfg(feature = "c_lang")]
+                Language::C => {
+                    if file.ends_with(".c") || file.ends_with(".h") {
+                        files.push(file);
                     }
-                    #[cfg(feature = "unstable")]
-                    Language::Go => {
-                        if file.ends_with(".go") {
-                            files.push(file);
-                        }
+                }
+                #[cfg(feature = "unstable")]
+                Language::Go => {
+                    if file.ends_with(".go") {
+                        files.push(file);
                     }
-                    Language::Python => {
-                        if file.ends_with(".py") {
-                            files.push(file);
-                        }
+                }
+                Language::Python => {
+                    if file.ends_with(".py") {
+                        files.push(file);
                     }
-                    Language::Rust => {
-                        if file.ends_with(".rs") {
-                            files.push(file);
-                        }
+                }
+                Language::Rust => {
+                    if file.ends_with(".rs") {
+                        files.push(file);
                     }
-                    Language::Ruby => {
-                        if file.ends_with(".rb") {
-                            files.push(file);
-                        }
+                }
+                Language::Ruby => {
+                    if file.ends_with(".rb") {
+                        files.push(file);
                     }
-                    Language::All => {
-                        cfg_if::cfg_if! {
-                            if #[cfg(feature = "c_lang")] {
-                                if file.ends_with(".c") || file.ends_with(".h") {
-                                    files.push(file);
-                                }
+                }
+                Language::All => {
+                    cfg_if::cfg_if! {
+                        if #[cfg(feature = "c_lang")] {
+                            if file.ends_with(".c") || file.ends_with(".h") {
+                                files.push(file);
                             }
-                            else if #[cfg(feature = "unstable")] {
-                                if file.ends_with(".go") {
-                                    files.push(file);
-                                }
+                        }
+                        else if #[cfg(feature = "unstable")] {
+                            if file.ends_with(".go") {
+                                files.push(file);
                             }
-                            else {
-                                if file.ends_with(".py") || file.ends_with(".rs") || file.ends_with(".rb") {
-                                    files.push(file);
-                                }
+                        }
+                        else {
+                            if file.ends_with(".py") || file.ends_with(".rs") || file.ends_with(".rb") {
+                                files.push(file);
                             }
                         }
                     }
                 }
-            }
+            },
         }
     }
     let err = "no function found".to_string();

@@ -68,6 +68,5 @@ mod java_test {
             }
         "#;
         let function = find_function_in_file(file_contents, "main").unwrap();
-
-        }
     }
+}
