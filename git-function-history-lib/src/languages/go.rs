@@ -1,6 +1,5 @@
-use std::{collections::HashMap, error::Error, fmt};
-
 use crate::impl_function_trait;
+use std::{error::Error, fmt};
 
 use super::FunctionTrait;
 
@@ -60,32 +59,26 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<GoFunction>, Box<dyn Error>> {
-    // TODO: progate errors back in clusre intead of paicking with excpet
     let parsed_file = gosyn::parse_source(file_contents)
         .map_err(|e| format!("{:?}", e))?
         .decl;
-    Ok(parsed_file
+    let parsed = parsed_file
         .into_iter()
         .filter_map(|decl| match decl {
             gosyn::ast::Declaration::Function(func) => {
                 if func.name.name == name {
-                    let mut lines = (
-                        func.name.pos,
-                        func.body
-                            .as_ref()
-                            .expect("no body found for function")
-                            .pos
-                            .1,
-                    );
+                    let mut lines = match func.body.as_ref() {
+                        Some(body) => (func.name.pos, body.pos.1),
+                        None => return None,
+                    };
                     match func.recv {
                         Some(recv) => {
                             lines.0 = recv.pos();
                         }
                         None => {}
                     }
-                    lines.0 = file_contents[..lines.0]
-                        .rfind("func")
-                        .expect("could not find 'func' keyword before function");
+                    lines.0 = file_contents[..lines.0].rfind("func")?;
+
                     for i in &func.docs {
                         if i.pos < lines.0 {
                             lines.0 = i.pos;
@@ -120,7 +113,7 @@ pub(crate) fn find_function_in_file(
                         .params
                         .list
                         .iter()
-                        .map(|p| &p.tag.as_ref().expect("uknown plz report bug idk").value)
+                        .filter_map(|p| Some(&p.tag.as_ref()?.value))
                         .map(|x| x.to_string())
                         .collect();
                     let returns = Some(
@@ -151,7 +144,11 @@ pub(crate) fn find_function_in_file(
             }
             _ => None,
         })
-        .collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    if parsed.is_empty() {
+        return Err(format!("could not find function {} in file", name).into());
+    }
+    Ok(parsed)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
