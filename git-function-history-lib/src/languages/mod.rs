@@ -3,7 +3,7 @@ use std::{
     error::Error,
     fmt::{self, Display},
 };
-// TODO: lisp/scheme js go(https://docs.rs/gosyn/latest/gosyn/) ruby(https://docs.rs/lib-ruby-parser/latest/lib_ruby_parser/) java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
+// TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
 
 #[cfg(feature = "c_lang")]
@@ -154,7 +154,6 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
     Ok(())
 }
 
-// functiontrait is not object safe, so we can't implement it for a trait object ie box<dyn FunctionTrait>
 pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_file_name(&self) -> String;
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
@@ -164,7 +163,7 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
 }
 
-// make a macro that generates the code for the different languages
+// macro that generates the code for the different languages
 macro_rules! make_file {
     ($name:ident, $function:ident, $filtername:ident) => {
         #[derive(Debug, Clone)]
@@ -262,7 +261,7 @@ make_file!(CFile, CFunction, C);
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
 
-// make macro that auto genertes the test parse_<lang>_file_time
+// macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
     ($name:ident, $extname:ident, $function:ident) => {
         #[test]

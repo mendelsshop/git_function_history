@@ -174,140 +174,6 @@ impl App {
         let mut iter = iter.trim().split(' ');
         match iter.next() {
             Some(cmd) => match cmd {
-                "filter" => {
-                    if let CommandResult::History(_) = &self.cmd_output {
-                        self.status = Status::Loading;
-                        if let Some(filter) = iter.next() {
-                            let filter = match filter {
-                                "date" => {
-                                    if let Some(date) = iter.next() {
-                                        let date = date.replace('_', " ");
-                                        Some(Filter::Date(date))
-                                    } else {
-                                        self.status = Status::Error("No date given".to_string());
-                                        None
-                                    }
-                                }
-                                "commit" => {
-                                    if let Some(commit) = iter.next() {
-                                        Some(Filter::CommitHash(commit.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No commit given".to_string());
-                                        None
-                                    }
-                                }
-                                "parent" => {
-                                    if let Some(_parent) = iter.next() {
-                                        // Some(Filter::FunctionWithParent(parent.to_string()))
-                                        None
-                                    } else {
-                                        self.status =
-                                            Status::Error("No parent function given".to_string());
-                                        None
-                                    }
-                                }
-                                // "block" => {
-                                //     if let Some(block) = iter.next() {
-                                //         Some(Filter::FunctionInBlock(BlockType::from_string(block)))
-                                //     } else {
-                                //         self.status =
-                                //             Status::Error("No block type given".to_string());
-                                //         None
-                                //     }
-                                // }
-                                "date-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            // remove all - from the date
-                                            let start = start.replace('_', " ");
-                                            let end = end.replace('_', " ");
-                                            Some(Filter::DateRange(start, end))
-                                        } else {
-                                            self.status =
-                                                Status::Error("No end date given".to_string());
-                                            None
-                                        }
-                                    } else {
-                                        self.status =
-                                            Status::Error("No start date given".to_string());
-                                        None
-                                    }
-                                }
-                                "line-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            let start = match start.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            let end = match end.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            Some(Filter::FunctionInLines(start, end))
-                                        } else {
-                                            self.status =
-                                                Status::Error("No end line given".to_string());
-                                            None
-                                        }
-                                    } else {
-                                        self.status =
-                                            Status::Error("No start line given".to_string());
-                                        None
-                                    }
-                                }
-                                "file-absolute" => {
-                                    if let Some(file) = iter.next() {
-                                        Some(Filter::FileAbsolute(file.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No file given".to_string());
-                                        None
-                                    }
-                                }
-                                "file-relative" => {
-                                    if let Some(file) = iter.next() {
-                                        Some(Filter::FileRelative(file.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No file given".to_string());
-                                        None
-                                    }
-                                }
-                                "directory" => {
-                                    if let Some(dir) = iter.next() {
-                                        Some(Filter::Directory(dir.to_string()))
-                                    } else {
-                                        self.status =
-                                            Status::Error("No directory given".to_string());
-                                        None
-                                    }
-                                }
-                                _ => {
-                                    self.status = Status::Error("Invalid filter".to_string());
-                                    None
-                                }
-                            };
-                            if let Some(filter) = filter {
-                                self.channels
-                                    .0
-                                    .send(FullCommand::Filter(FilterType {
-                                        thing: self.cmd_output.clone(),
-                                        filter,
-                                    }))
-                                    .unwrap();
-                            }
-                        } else {
-                            self.status = Status::Error("No filter given".to_string());
-                        }
-                    } else if iter.next().is_some() {
-                        self.status = Status::Error("no filters available".to_string());
-                    }
-                }
                 "search" => {
                     // check for a function name
                     if let Some(name) = iter.next() {
@@ -349,7 +215,6 @@ impl App {
                                         }
                                     };
                                 }
-
                                 _ => {
                                     self.status = Status::Error(format!("Invalid search {}", i[0]));
                                     return;
@@ -364,6 +229,60 @@ impl App {
                     } else {
                         self.status = Status::Error("No function name given".to_string());
                     }
+                }
+                "filter" => {
+                    self.status = Status::Loading;
+                    let mut filter = Filter::None;
+                    for i in iter.collect::<Vec<_>>().windows(2) {
+                        match i {
+                            ["date", date] => {
+                                filter = Filter::Date(date.to_string());
+                            }
+                            ["commit", commit] => {
+                                filter = Filter::CommitHash(commit.to_string());
+                            }
+                            ["date range", start, end] => {
+                                filter = Filter::DateRange(start.to_string(), end.to_string());
+                            }
+                            ["line range", start, end] => {
+                                let start = match start.parse::<usize>() {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        self.status = Status::Error(format!("{}", e));
+                                        return;
+                                    }
+                                };
+                                let end = match end.parse::<usize>() {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        self.status = Status::Error(format!("{}", e));
+                                        return;
+                                    }
+                                };
+                                filter = Filter::FunctionInLines(start, end);
+                            }
+                            ["file absolute", file] => {
+                                filter = Filter::FileAbsolute(file.to_string());
+                            }
+                            ["file relative", file] => {
+                                filter = Filter::FileRelative(file.to_string());
+                            }
+                            ["directory", dir] => {
+                                filter = Filter::Directory(dir.to_string());
+                            }
+                            _ => {
+                                self.status = Status::Error(format!("Invalid filter {}", i[0]));
+                                return;
+                            }
+                        }
+                    }
+                    self.channels
+                        .0
+                        .send(FullCommand::Filter(FilterType {
+                            thing: self.cmd_output.clone(),
+                            filter,
+                        }))
+                        .unwrap();
                 }
                 "list" => {
                     self.status = Status::Loading;
