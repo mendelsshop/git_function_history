@@ -174,7 +174,6 @@ impl App {
         let mut iter = iter.trim().split(' ');
         match iter.next() {
             Some(cmd) => match cmd {
-                // TODO: add author, email, message
                 "search" => {
                     // check for a function name
                     if let Some(name) = iter.next() {
@@ -240,6 +239,19 @@ impl App {
                                         }
                                     };
                                 }
+                                ["author", author] => {
+                                    log::trace!("author: {}", author);
+                                    filter = Filter::Author(author.to_string());
+                                }
+                                ["author-email", author_email] => {
+                                    log::trace!("author-email: {}", author_email);
+                                    filter = Filter::AuthorEmail(author_email.to_string());
+                                }
+                                ["message", message] => {
+                                    log::trace!("message: {}", message); 
+                                    filter = Filter::Message(message.to_string());
+                                }
+
                                 _ => {
                                     log::debug!("invalid arg: {:?}", i);
                                     self.status = Status::Error(format!("Invalid search {:?}", i));
@@ -284,6 +296,18 @@ impl App {
                                     }
                                 };
                                 filter = Filter::DateRange(start.to_string(), end.to_string());
+                            }
+                            ["author", author] => {
+                                log::trace!("author: {}", author);
+                                filter = Filter::Author(author.to_string());
+                            }
+                            ["author-email", author_email] => {
+                                log::trace!("author-email: {}", author_email);
+                                filter = Filter::AuthorEmail(author_email.to_string());
+                            }
+                            ["message", message] => {
+                                log::trace!("message: {}", message); 
+                                filter = Filter::Message(message.to_string());
                             }
                             ["line-range", pos] => {
                                 // get the start and end by splitting the pos by: ..
