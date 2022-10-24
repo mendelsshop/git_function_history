@@ -2,12 +2,8 @@ use std::{sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Layout, Sense, SidePanel},
-    epaint::Vec2,
-};
-use eframe::{
-    egui::{Label, TextEdit, TopBottomPanel, Visuals},
-    epaint::Color32,
+    egui::{self, Button, Label, Layout, Sense, SidePanel, TextEdit, TopBottomPanel, Visuals},
+    epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,

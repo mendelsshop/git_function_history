@@ -1,7 +1,6 @@
 use std::{cell::RefCell, io::stdout, path::PathBuf, process::exit, rc::Rc, time::Duration};
 
-use crate::app::ui;
-use app::{state::AppState, App, AppReturn};
+use app::{state::AppState, ui, App, AppReturn};
 use crossterm::event::{self, Event, KeyCode};
 use eyre::Result;
 use keys::Key;

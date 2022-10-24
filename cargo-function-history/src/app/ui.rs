@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, Paragraph};
-use tui::Frame;
 use tui::{
     backend::Backend,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
     text::{Span, Spans},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
 };
 
 use crate::app::App;

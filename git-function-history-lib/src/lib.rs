@@ -11,28 +11,28 @@
     clippy::float_cmp,
     clippy::similar_names,
     clippy::missing_errors_doc,
-    clippy::return_self_not_must_use
+    clippy::return_self_not_must_use,
+    clippy::module_name_repetitions
 )]
 pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
-use languages::{rust, LanguageFilter, RubyFile};
-
-use languages::{PythonFile, RustFile};
+use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-pub use types::FileType;
+
+use std::{error::Error, process::Command};
 
 #[cfg(feature = "c_lang")]
 use languages::CFile;
 #[cfg(feature = "unstable")]
 use languages::GoFile;
 
-use std::{error::Error, process::Command};
-pub use types::{Commit, FunctionHistory};
-
-pub use crate::languages::Language;
+pub use {
+    languages::Language,
+    types::{Commit, FileType, FunctionHistory},
+};
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -185,7 +185,6 @@ pub fn get_function_history(
             Ok((id?, date?, author?, email?, message?))
         })
         .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
-
     let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
     let err = "no history found".to_string();
     // check if file is a rust file
@@ -586,7 +585,7 @@ mod tests {
     fn not_found() {
         let output = get_function_history(
             "Not_a_function",
-            &FileFilterType::Absolute("src/test_functions.rs".to_string()),
+            &FileFilterType::None,
             &Filter::None,
             &languages::Language::Rust,
         );
@@ -700,9 +699,7 @@ mod tests {
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
-            Ok(functions) => {
-                println!("{}", functions);
-            }
+            Ok(functions) => println!("{}", functions),
             Err(e) => println!("{}", e),
         }
         assert!(output.is_ok());
@@ -736,9 +733,7 @@ mod tests {
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
-            Ok(functions) => {
-                println!("{}", functions);
-            }
+            Ok(functions) => println!("{}", functions),
             Err(e) => println!("{}", e),
         }
         assert!(output.is_ok());
@@ -762,9 +757,7 @@ mod tests {
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
         match &new_output {
-            Ok(res) => {
-                println!("{}", res)
-            }
+            Ok(res) => println!("{}", res),
             Err(e) => println!("{e}"),
         }
         let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
@@ -773,11 +766,9 @@ mod tests {
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
         match &new_output {
-            Ok(res) => {
-                println!("{}", res)
-            }
+            Ok(res) => println!("{}", res),
             Err(e) => println!("{e}"),
         }
-        assert!(new_output.is_ok())
+        assert!(new_output.is_ok());
     }
 }

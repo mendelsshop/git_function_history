@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-use std::fmt::{self, Display};
-use std::slice::Iter;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    slice::Iter,
+};
 
 use crate::keys::Key;
 

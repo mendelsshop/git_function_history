@@ -1,16 +1,10 @@
-use self::actions::Actions;
-use self::state::AppState;
+use self::{actions::Actions, state::AppState};
 use crate::{app::actions::Action, keys::Key};
 
 use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, Status,
 };
-use git_function_history::{
-    languages::Language,
-    // BlockType,
-    FileFilterType,
-    Filter,
-};
+use git_function_history::{languages::Language, FileFilterType, Filter};
 use std::{
     fs,
     io::{Read, Write},
@@ -248,7 +242,7 @@ impl App {
                                     filter = Filter::AuthorEmail(author_email.to_string());
                                 }
                                 ["message", message] => {
-                                    log::trace!("message: {}", message); 
+                                    log::trace!("message: {}", message);
                                     filter = Filter::Message(message.to_string());
                                 }
 
@@ -306,7 +300,7 @@ impl App {
                                 filter = Filter::AuthorEmail(author_email.to_string());
                             }
                             ["message", message] => {
-                                log::trace!("message: {}", message); 
+                                log::trace!("message: {}", message);
                                 filter = Filter::Message(message.to_string());
                             }
                             ["line-range", pos] => {
