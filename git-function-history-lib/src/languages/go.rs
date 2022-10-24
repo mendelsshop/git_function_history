@@ -158,13 +158,10 @@ pub enum GoFilter {
 impl GoFilter {
     pub fn matches(&self, func: &GoFunction) -> bool {
         match self {
-           Self::FunctionWithParameter(param) => {
-                func.parameters.iter().any(|x| x.contains(param))
+            Self::FunctionWithParameter(param) => func.parameters.iter().any(|x| x.contains(param)),
+            Self::FunctionWithReturnType(ret) => {
+                func.returns.as_ref().map_or(false, |x| x.contains(ret))
             }
-            Self::FunctionWithReturnType(ret) => func
-                .returns
-                .as_ref()
-                .map_or(false, |x| x.contains(ret)),
             Self::FunctionInLines(start, end) => {
                 let (s, e) = func.get_total_lines();
                 s >= *start && e <= *end

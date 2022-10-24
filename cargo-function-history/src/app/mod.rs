@@ -64,8 +64,8 @@ impl App {
         let mut history = String::new();
         file.read_to_string(&mut history)
             .expect("Failed to read history file");
-        let history = history.split('\n').map(|s| s.to_string()).collect();
-
+        let history: Vec<String> = history.split('\n').map(|s| s.to_string()).collect();
+        // let history_index = history.len();
         let actions = vec![
             Action::Quit,
             Action::TextEdit,
@@ -87,8 +87,8 @@ impl App {
             body_height: 0,
             channels,
             status,
+            history_index: history.len() - 1,
             history,
-            history_index: 0,
         }
     }
 
@@ -174,6 +174,7 @@ impl App {
         let mut iter = iter.trim().split(' ');
         match iter.next() {
             Some(cmd) => match cmd {
+                // TODO: add author, email, message
                 "search" => {
                     // check for a function name
                     if let Some(name) = iter.next() {
@@ -182,24 +183,48 @@ impl App {
                         let mut file = FileFilterType::None;
                         let mut filter = Filter::None;
                         let mut lang = Language::All;
-                        for i in iter.collect::<Vec<_>>().windows(2) {
+                        log::debug!(
+                            "searching for {:?}",
+                            iter.clone().collect::<Vec<_>>().windows(2)
+                        );
+                        for i in &mut iter.clone().collect::<Vec<_>>().windows(2) {
                             match i {
                                 ["relative", filepath] => {
+                                    log::trace!("relative file: {}", filepath);
                                     file = FileFilterType::Relative(filepath.to_string());
                                 }
                                 ["absolute", filepath] => {
+                                    log::trace!("absolute file: {}", filepath);
                                     file = FileFilterType::Absolute(filepath.to_string());
                                 }
                                 ["date", date] => {
+                                    log::trace!("date: {}", date);
                                     filter = Filter::Date(date.to_string());
                                 }
                                 ["commit", commit] => {
+                                    log::trace!("commit: {}", commit);
                                     filter = Filter::CommitHash(commit.to_string());
                                 }
-                                ["date range", start, end] => {
+                                ["directory", dir] => {
+                                    log::trace!("directory: {}", dir);
+                                    file = FileFilterType::Directory(dir.to_string());
+                                }
+                                ["date-range", pos] => {
+                                    log::trace!("date range: {}", pos);
+                                    let (start, end) = match pos.split_once("..") {
+                                        Some((start, end)) => (start, end),
+                                        None => {
+                                            self.status = Status::Error(
+                                                "Invalid date range, expected start..end"
+                                                    .to_string(),
+                                            );
+                                            return;
+                                        }
+                                    };
                                     filter = Filter::DateRange(start.to_string(), end.to_string());
                                 }
                                 ["language", language] => {
+                                    log::trace!("language: {}", language);
                                     lang = match language {
                                         &"rust" => Language::Rust,
                                         &"python" => Language::Python,
@@ -216,12 +241,19 @@ impl App {
                                     };
                                 }
                                 _ => {
-                                    self.status = Status::Error(format!("Invalid search {}", i[0]));
+                                    log::debug!("invalid arg: {:?}", i);
+                                    self.status = Status::Error(format!("Invalid search {:?}", i));
                                     return;
                                 }
                             }
                         }
-
+                        if iter.clone().count() > 0 {
+                            self.status = Status::Error(format!(
+                                "Invalid search, command: {:?} missing args",
+                                iter.collect::<Vec<_>>()
+                            ));
+                            return;
+                        }
                         self.channels
                             .0
                             .send(FullCommand::Search(name.to_string(), file, filter, lang))
@@ -233,7 +265,7 @@ impl App {
                 "filter" => {
                     self.status = Status::Loading;
                     let mut filter = Filter::None;
-                    for i in iter.collect::<Vec<_>>().windows(2) {
+                    for i in &mut iter.clone().collect::<Vec<_>>().windows(2) {
                         match i {
                             ["date", date] => {
                                 filter = Filter::Date(date.to_string());
@@ -241,10 +273,29 @@ impl App {
                             ["commit", commit] => {
                                 filter = Filter::CommitHash(commit.to_string());
                             }
-                            ["date range", start, end] => {
+                            ["date-range", pos] => {
+                                let (start, end) = match pos.split_once("..") {
+                                    Some((start, end)) => (start, end),
+                                    None => {
+                                        self.status = Status::Error(
+                                            "Invalid date range, expected start..end".to_string(),
+                                        );
+                                        return;
+                                    }
+                                };
                                 filter = Filter::DateRange(start.to_string(), end.to_string());
                             }
-                            ["line range", start, end] => {
+                            ["line-range", pos] => {
+                                // get the start and end by splitting the pos by: ..
+                                let (start, end) = match pos.split_once("..") {
+                                    Some((start, end)) => (start, end),
+                                    None => {
+                                        self.status = Status::Error(
+                                            "Invalid line range, expected start..end".to_string(),
+                                        );
+                                        return;
+                                    }
+                                };
                                 let start = match start.parse::<usize>() {
                                     Ok(x) => x,
                                     Err(e) => {
@@ -261,10 +312,10 @@ impl App {
                                 };
                                 filter = Filter::FunctionInLines(start, end);
                             }
-                            ["file absolute", file] => {
+                            ["file-absolute", file] => {
                                 filter = Filter::FileAbsolute(file.to_string());
                             }
-                            ["file relative", file] => {
+                            ["file-relative", file] => {
                                 filter = Filter::FileRelative(file.to_string());
                             }
                             ["directory", dir] => {
@@ -276,6 +327,14 @@ impl App {
                             }
                         }
                     }
+                    if iter.clone().count() > 0 {
+                        self.status = Status::Error(format!(
+                            "Invalid filter, command: {:?} missing args",
+                            iter.collect::<Vec<_>>()
+                        ));
+                        return;
+                    }
+
                     self.channels
                         .0
                         .send(FullCommand::Filter(FilterType {

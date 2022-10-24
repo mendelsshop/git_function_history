@@ -757,7 +757,7 @@ mod tests {
         };
         now = Utc::now();
         let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::FunctionWithParameterType(String::from("String"))
+            rust::RustFilter::FunctionWithParameterType(String::from("String")),
         )));
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
