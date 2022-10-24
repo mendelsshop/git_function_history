@@ -37,6 +37,7 @@ All notable changes to this project will be documented in this file.
 
 - Saving search history to a file now
 - Shortend filter loc
+- Search/filters are fixed was not working b/c of using window(2)
 
 ## [2.1.0] - 2022-09-28
 
