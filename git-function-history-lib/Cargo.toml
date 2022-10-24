@@ -14,5 +14,5 @@ parallel = ["dep:rayon"]
 
 [dependencies]
 chrono = "0.4.22"
-ra_ap_syntax = "0.0.132"
+ra_ap_syntax = "0.0.134"
 rayon = { version = "1.5.1", optional = true }
