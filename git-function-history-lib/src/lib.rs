@@ -88,7 +88,7 @@ pub enum Filter {
 /// <br>
 /// If its a relative it will look for a that ends with the name of the file.
 /// <br>
-/// If its none it will look for all files in the repo that end in .rs.
+/// If its none it will look for all files in the repo that end in supported files (depends on features)
 /// Note: using `FilteType::None` will take a long time to run (especially if you no filters).
 /// <br>
 /// It will then go through the file and find all the functions and blocks in the file.
@@ -97,7 +97,7 @@ pub enum Filter {
 /// <br>
 /// It will then return a `FunctionHistory` struct with all the commits with files that have functions that match the name.
 /// <br>
-/// If no histoy is is available it will error out with `no history found`.
+/// If no histoy is is available it will error out with `no history found`, and possibly a reason why.
 ///
 /// # examples
 ///
