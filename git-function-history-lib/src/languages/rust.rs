@@ -474,6 +474,8 @@ pub enum RustFilter {
     FunctionWithGeneric(String),
     /// when you want to filter by a function that has a specific attribute
     FunctionWithAttribute(String),
+    /// when you want to filter by a function that has or contains a specific doc comment
+    FunctionWithDocComment(String),
 }
 
 impl RustFilter {
@@ -496,6 +498,11 @@ impl RustFilter {
             Self::FunctionWithLifetime(lifetime) => function.lifetime.contains(lifetime),
             Self::FunctionWithGeneric(generic) => function.generics.contains(generic),
             Self::FunctionWithAttribute(attribute) => function.attributes.contains(attribute),
+            Self::FunctionWithDocComment(comment) => function.doc_comments.iter().filter(
+                |doc| {
+                    comment.contains(*doc) 
+                }
+            ).count() > 0
         }
     }
 }
