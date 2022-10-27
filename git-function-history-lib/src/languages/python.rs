@@ -1,12 +1,12 @@
-use std::{collections::HashMap, fmt};
-
 use rustpython_parser::{
     ast::{Located, StatementType},
     location::Location,
     parser,
 };
+use std::collections::VecDeque;
+use std::{collections::HashMap, fmt};
 
-use crate::impl_function_trait;
+use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
 
@@ -75,8 +75,20 @@ pub(crate) fn find_function_in_file(
     let ast = parser::parse_program(file_contents)?;
     let mut functions = vec![];
     let mut last = None;
-    for stmt in ast.statements {
-        get_functions(stmt, &mut functions, name, &mut last, &mut None);
+
+    if ast.statements.is_empty() {
+        return Err("No code found")?;
+    }
+    let mut new_ast = VecDeque::from(ast.statements);
+    loop {
+        if new_ast.is_empty() {
+            break;
+        }
+        let stmt = new_ast
+            .pop_front()
+            .unwrap_to_error("could not get statement")?;
+        let next = new_ast.front();
+        get_functions(stmt, next, &mut functions, name, &mut last, &mut None);
     }
     let mut starts = file_contents
         .match_indices('\n')
@@ -89,7 +101,15 @@ pub(crate) fn find_function_in_file(
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
     let mut new = Vec::new();
-    for func in functions {
+    for mut func in functions {
+        if func.1 .0 == func.1 .1 {
+            // get the last line of the file
+            let last_line = file_contents.lines().last().unwrap_to_error("could not get last line")?;
+            let row = file_contents.lines().count();
+            let column = last_line.len();
+            let end = Location::new(row, column);
+            func.1 .1 = end;
+        }
         // get the function body based on the location
         let start = func.1 .0.row();
         let end = func.1 .1.row();
@@ -145,9 +165,16 @@ fn fun_name1(
     last_found_fn: &mut Option<(StatementType, Location)>,
     other_last_found_fn: &mut Option<(StatementType, Location)>,
 ) {
-    for stmt in body {
+    let mut new_ast = VecDeque::from(body);
+    loop {
+        if new_ast.is_empty() {
+            break;
+        }
+        let stmt = new_ast.pop_front().expect("could not get statement");
+        let next = new_ast.front();
         get_functions(
             stmt,
+            next,
             functions,
             lookup_name,
             last_found_fn,
@@ -172,6 +199,7 @@ fn fun_name(
 
 fn get_functions<'a>(
     stmt: Located<StatementType>,
+    next_stmt: Option<&Located<StatementType>>,
     functions: &mut Vec<(StatementType, (Location, Location))>,
     lookup_name: &str,
     last_found_fn: &'a mut Option<(StatementType, Location)>,
@@ -184,8 +212,11 @@ fn get_functions<'a>(
                 std::mem::swap(last, &mut new);
                 functions.push((new.0, (new.1, stmt.location)));
             } else {
-                // TODO: figure out if its the last node if so then we can push it here otherwise we need to wait for the next node
-                *last_found_fn = Some((stmt.node, stmt.location));
+                if next_stmt.is_none() {
+                    functions.push((stmt.node, (stmt.location, stmt.location)));
+                } else {
+                    *last_found_fn = Some((stmt.node, stmt.location));
+                }
             }
         }
 

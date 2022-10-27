@@ -32,9 +32,24 @@ impl JavaFunction {
 impl fmt::Display for JavaFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO: sort top and bottom by line number
-        write!(f, "{}", self.class.iter().map(|c| format!("{}\n", c.top)).collect::<Vec<String>>().join(""))?;
+        write!(
+            f,
+            "{}",
+            self.class
+                .iter()
+                .map(|c| format!("{}\n", c.top))
+                .collect::<String>()
+        )?;
         write!(f, "{}", self.body)?;
-        write!(f, "{}", self.class.iter().rev().map(|c| format!("\n{}", c.bottom)).collect::<Vec<String>>().join(""))?;
+        write!(
+            f,
+            "{}",
+            self.class
+                .iter()
+                .rev()
+                .map(|c| format!("\n{}", c.bottom))
+                .collect::<String>()
+        )?;
         Ok(())
     }
 }
@@ -76,14 +91,13 @@ fn extract_methods_from_compilation_unit(
 
     let mut methods = Vec::new();
 
-        match unit {
+    match unit {
         javaparser::parse::tree::CompilationUnitItem::Class(class) => {
             let mut class_methods = Vec::new();
             for item in &class.body.items {
                 extract_methods_from_class_item(item, name).map(|f| class_methods.extend(f))?;
             }
             methods.extend(class_methods);
-
         }
         javaparser::parse::tree::CompilationUnitItem::Interface(interface) => {
             let mut interface_methods = Vec::new();
@@ -91,7 +105,7 @@ fn extract_methods_from_compilation_unit(
                 extract_methods_from_class_item(item, name).map(|f| interface_methods.extend(f))?;
             }
             methods.extend(interface_methods);
-        },
+        }
         javaparser::parse::tree::CompilationUnitItem::Enum(enum_) => {
             let mut enum_methods = Vec::new();
             if let Some(enum_body) = &enum_.body_opt {
@@ -100,15 +114,15 @@ fn extract_methods_from_compilation_unit(
                 }
             }
             methods.extend(enum_methods);
-        },
+        }
         javaparser::parse::tree::CompilationUnitItem::Annotation(annotation) => {
             let mut annotation_methods = Vec::new();
             for item in &annotation.body.items {
-                extract_methods_from_annotation_item(item, name).map(|f| annotation_methods.extend(f))?;
+                extract_methods_from_annotation_item(item, name)
+                    .map(|f| annotation_methods.extend(f))?;
             }
             methods.extend(annotation_methods);
-        
-        },
+        }
     }
     Ok(methods)
 }
@@ -124,10 +138,10 @@ fn extract_methods_from_class_item(
             if method.name.fragment == name {
                 let args = vec![];
                 // method
-                    // .parameters
-                    // .iter()
-                    // .map(|p| p.name.to_string())
-                    // .collect::<Vec<String>>();
+                // .parameters
+                // .iter()
+                // .map(|p| p.name.to_string())
+                // .collect::<Vec<String>>();
                 // let body = method.body.to_string();
                 // let lines = (method.line, method.line + body.lines().count());
                 let class = Vec::new();
@@ -166,14 +180,14 @@ fn extract_methods_from_class_item(
         javaparser::parse::tree::ClassBodyItem::Annotation(annotation) => {
             let mut annotation_methods = Vec::new();
             for item in &annotation.body.items {
-                extract_methods_from_annotation_item(item, name).map(|f| annotation_methods.extend(f))?;
+                extract_methods_from_annotation_item(item, name)
+                    .map(|f| annotation_methods.extend(f))?;
             }
             methods.extend(annotation_methods);
         }
         javaparser::parse::tree::ClassBodyItem::Constructor(constructor) => {}
         javaparser::parse::tree::ClassBodyItem::FieldDeclarators(field_declarators) => {}
         javaparser::parse::tree::ClassBodyItem::StaticInitializer(static_initializer) => {}
-
     }
     Ok(methods)
 }
@@ -187,7 +201,8 @@ fn extract_methods_from_annotation_item(
         javaparser::parse::tree::AnnotationBodyItem::Annotation(annotation) => {
             let mut annotation_methods = Vec::new();
             for item in &annotation.body.items {
-                extract_methods_from_annotation_item(item, name).map(|f| annotation_methods.extend(f))?;
+                extract_methods_from_annotation_item(item, name)
+                    .map(|f| annotation_methods.extend(f))?;
             }
             methods.extend(annotation_methods);
         }
@@ -260,7 +275,8 @@ mod java_test {
             vec![],
             "        public static void main(String[] args) {
             System.out.println(\"Hello, World\");
-        }".to_string(),
+        }"
+            .to_string(),
             vec![java_class1, java_class2],
         );
         println!("{}", java_fn);

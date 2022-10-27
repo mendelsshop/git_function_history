@@ -280,7 +280,9 @@ macro_rules! make_file_time_test {
                         println!("{}", i);
                     }
                 }
-                Err(_) => {}
+                Err(e) => {
+                    println!("{}", e);
+                }
             }
             println!("{} took {:?}", stringify!($name), end - start);
             assert!(ok.is_ok());

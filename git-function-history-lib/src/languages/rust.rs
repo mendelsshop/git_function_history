@@ -498,11 +498,14 @@ impl RustFilter {
             Self::FunctionWithLifetime(lifetime) => function.lifetime.contains(lifetime),
             Self::FunctionWithGeneric(generic) => function.generics.contains(generic),
             Self::FunctionWithAttribute(attribute) => function.attributes.contains(attribute),
-            Self::FunctionWithDocComment(comment) => function.doc_comments.iter().filter(
-                |doc| {
-                    comment.contains(*doc) 
-                }
-            ).count() > 0
+            Self::FunctionWithDocComment(comment) => {
+                function
+                    .doc_comments
+                    .iter()
+                    .filter(|doc| comment.contains(*doc))
+                    .count()
+                    > 0
+            }
         }
     }
 }

@@ -13,3 +13,7 @@ Use the latest [crates.io](https://crates.io/crates/git_function_history) by put
 - --no-default-features: disable parallelism
 - c-lang: adds support c (requires you to have a c compiler installed) (see the [c-lib]() docs for more information)
 - unstable: enable some parsers that require nightly rust so run `cargo +nightly` to use them
+
+## known issues
+
+- python: since the parser only finds the beginning of the function we have to use some workarounds to find the end of the function. This means that if you have a function that anything from the end of one function to either the beginning of another function or the end of the file that is not python code for example a comment it will be included in the function.
