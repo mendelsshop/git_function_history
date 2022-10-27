@@ -1,6 +1,6 @@
 use std::fmt;
 
-use javaparser::parse::tree::{CompilationUnit, CompilationUnitItem};
+use javaparser::{analyze::definition::MethodDef, parse::tree::CompilationUnitItem};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JavaFunction {
@@ -75,7 +75,6 @@ pub(crate) fn find_function_in_file(
 ) -> Result<Vec<JavaFunction>, String> {
     let file = javaparser::parse::apply(file_contents, "<stdin>").map_err(|_| "Parse error")?;
     let parsed = file.unit.clone().items;
-    // println!("{:#?}", parsed);
     let mut functions = Vec::new();
     for unit in parsed {
         extract_methods_from_compilation_unit(&unit, name).map(|f| functions.extend(f))?;
@@ -88,7 +87,6 @@ fn extract_methods_from_compilation_unit(
     name: &str,
 ) -> Result<Vec<JavaFunction>, String> {
     // recursively search for items with type Method
-
     let mut methods = Vec::new();
 
     match unit {
@@ -136,6 +134,10 @@ fn extract_methods_from_class_item(
         javaparser::parse::tree::ClassBodyItem::Method(method) => {
             // println!("{:#?}", method);
             if method.name.fragment == name {
+                let methdef = javaparser::analyze::build::method::build(method);
+                // let def = javaparser::extract::Definition::Method(methdef);
+                println!("{:#?}", methdef.span_opt.map(|s| s.fragment));
+                // println!("{:#?}", methdef);
                 let args = vec![];
                 // method
                 // .parameters
@@ -144,6 +146,10 @@ fn extract_methods_from_class_item(
                 // .collect::<Vec<String>>();
                 // let body = method.body.to_string();
                 // let lines = (method.line, method.line + body.lines().count());
+                // println!("{:#?}", method);
+
+                // to find the the bottom of the class see if block_opt is some then find the span of the last block find the first } after that and then find the line number of that
+                // to find the top of the class find the first { before the method and then find the line number of that first check modifiers if not use return type
                 let class = Vec::new();
                 methods.push(JavaFunction::new(
                     "test".to_string(),
@@ -185,9 +191,9 @@ fn extract_methods_from_class_item(
             }
             methods.extend(annotation_methods);
         }
-        javaparser::parse::tree::ClassBodyItem::Constructor(constructor) => {}
-        javaparser::parse::tree::ClassBodyItem::FieldDeclarators(field_declarators) => {}
-        javaparser::parse::tree::ClassBodyItem::StaticInitializer(static_initializer) => {}
+        javaparser::parse::tree::ClassBodyItem::Constructor(_)
+        | javaparser::parse::tree::ClassBodyItem::FieldDeclarators(_)
+        | javaparser::parse::tree::ClassBodyItem::StaticInitializer(_) => {}
     }
     Ok(methods)
 }
@@ -206,7 +212,7 @@ fn extract_methods_from_annotation_item(
             }
             methods.extend(annotation_methods);
         }
-        javaparser::parse::tree::AnnotationBodyItem::FieldDeclarators(field_declarators) => {}
+
         javaparser::parse::tree::AnnotationBodyItem::Class(class) => {
             let mut class_methods = Vec::new();
             for item in &class.body.items {
@@ -230,7 +236,8 @@ fn extract_methods_from_annotation_item(
             }
             methods.extend(enum_methods);
         }
-        javaparser::parse::tree::AnnotationBodyItem::Param(param) => {}
+        javaparser::parse::tree::AnnotationBodyItem::Param(_)
+        | javaparser::parse::tree::AnnotationBodyItem::FieldDeclarators(_) => {}
     }
     Ok(methods)
 }
@@ -244,7 +251,7 @@ mod java_test {
         let file_contents = r#"
         @Company
             public class Test {
-                public static void main(String[] args) {
+                void main(String[] args) {
                     System.out.println("Hello, World");
                 }
             }

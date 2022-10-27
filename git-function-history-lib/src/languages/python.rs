@@ -104,7 +104,10 @@ pub(crate) fn find_function_in_file(
     for mut func in functions {
         if func.1 .0 == func.1 .1 {
             // get the last line of the file
-            let last_line = file_contents.lines().last().unwrap_to_error("could not get last line")?;
+            let last_line = file_contents
+                .lines()
+                .last()
+                .unwrap_to_error("could not get last line")?;
             let row = file_contents.lines().count();
             let column = last_line.len();
             let end = Location::new(row, column);
@@ -211,12 +214,10 @@ fn get_functions<'a>(
                 let mut new = (stmt.node, stmt.location);
                 std::mem::swap(last, &mut new);
                 functions.push((new.0, (new.1, stmt.location)));
+            } else if next_stmt.is_none() {
+                functions.push((stmt.node, (stmt.location, stmt.location)));
             } else {
-                if next_stmt.is_none() {
-                    functions.push((stmt.node, (stmt.location, stmt.location)));
-                } else {
-                    *last_found_fn = Some((stmt.node, stmt.location));
-                }
+                *last_found_fn = Some((stmt.node, stmt.location));
             }
         }
 
