@@ -261,15 +261,18 @@ impl FunctionTrait for RubyFunction {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RubyFilter {
-    FunctionInLines((usize, usize)),
+    FunctionInClass(String),
+    FunctionWithParameter(String),
 }
 
 impl RubyFilter {
-    pub const fn matches(&self, function: &RubyFunction) -> bool {
+    pub fn matches(&self, function: &RubyFunction) -> bool {
         match self {
-            Self::FunctionInLines((start, end)) => {
-                function.lines.0 >= *start && function.lines.1 <= *end
-            }
+            Self::FunctionInClass(name) => match &function.class {
+                Some(class) => *name == class.name,
+                None => false,
+            },
+            Self::FunctionWithParameter(name) => function.args.contains(name),
         }
     }
 }

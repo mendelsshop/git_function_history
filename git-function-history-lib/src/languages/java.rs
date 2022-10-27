@@ -37,7 +37,7 @@ impl fmt::Display for JavaFunction {
             "{}",
             self.class
                 .iter()
-                .map(|c| format!("{}\n", c.top))
+                .map(|c| format!("{}\n...\n", c.top))
                 .collect::<String>()
         )?;
         write!(f, "{}", self.body)?;
@@ -47,7 +47,7 @@ impl fmt::Display for JavaFunction {
             self.class
                 .iter()
                 .rev()
-                .map(|c| format!("\n{}", c.bottom))
+                .map(|c| format!("\n...\n{}", c.bottom))
                 .collect::<String>()
         )?;
         Ok(())
@@ -265,24 +265,24 @@ mod java_test {
         let java_class1 = JavaBlock {
             name: "Test".to_string(),
             line: (1, 1),
-            top: "public class Test {".to_string(),
-            bottom: "}".to_string(),
+            top: "1: public class Test {".to_string(),
+            bottom: "30: }".to_string(),
             type_: JavaBlockType::Class,
         };
         let java_class2 = JavaBlock {
             name: "Test2".to_string(),
             line: (1, 1),
-            top: "    public class Test2 {".to_string(),
-            bottom: "    }".to_string(),
+            top: "3:    public class Test2 {".to_string(),
+            bottom: "28:    }".to_string(),
             type_: JavaBlockType::Class,
         };
         let java_fn = JavaFunction::new(
             "main".to_string(),
             (1, 1),
             vec![],
-            "        public static void main(String[] args) {
-            System.out.println(\"Hello, World\");
-        }"
+            "5:        public static void main(String[] args) {
+7:            System.out.println(\"Hello, World\");
+8:        }"
             .to_string(),
             vec![java_class1, java_class2],
         );

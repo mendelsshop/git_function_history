@@ -152,7 +152,6 @@ pub(crate) fn find_function_in_file(
 pub enum GoFilter {
     FunctionWithParameter(String),
     FunctionWithReturnType(String),
-    FunctionInLines(usize, usize),
 }
 
 impl GoFilter {
@@ -161,10 +160,6 @@ impl GoFilter {
             Self::FunctionWithParameter(param) => func.parameters.iter().any(|x| x.contains(param)),
             Self::FunctionWithReturnType(ret) => {
                 func.returns.as_ref().map_or(false, |x| x.contains(ret))
-            }
-            Self::FunctionInLines(start, end) => {
-                let (s, e) = func.get_total_lines();
-                s >= *start && e <= *end
             }
         }
     }
