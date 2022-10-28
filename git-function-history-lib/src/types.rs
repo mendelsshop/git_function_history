@@ -9,8 +9,8 @@ use std::{
 };
 
 use crate::{
-    languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile, rust::RustFilter},
-    Filter, get_function_history,
+    languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile},
+    Filter,
 };
 
 #[cfg(feature = "c_lang")]
@@ -371,50 +371,6 @@ impl FunctionHistory {
     ///
     /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
-    // pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
-    //     #[cfg(feature = "parallel")]
-    //     let t = self.commit_history.par_iter();
-    //     #[cfg(not(feature = "parallel"))]
-    //     let t = self.commit_history.iter();
-    //     let vec: Vec<Commit> = t
-    //         .filter(|f| match filter {
-    //             Filter::FunctionInLines(..)
-    //             | Filter::Directory(_)
-    //             | Filter::FileAbsolute(_)
-    //             | Filter::PLFilter(_)
-    //             | Filter::FileRelative(_) => f.filter_by(filter).is_ok(),
-    //             Filter::CommitHash(commit_hash) => &f.commit_hash == commit_hash,
-    //             Filter::Date(date) => &f.date.to_rfc2822() == date,
-    //             Filter::DateRange(start, end) => {
-    //                 let start = match DateTime::parse_from_rfc2822(start) {
-    //                     Ok(date) => date,
-    //                     Err(_) => return false,
-    //                 };
-    //                 let end = match DateTime::parse_from_rfc2822(end) {
-    //                     Ok(date) => date,
-    //                     Err(_) => return false,
-    //                 };
-    //                 f.date >= start || f.date <= end
-    //             }
-    //             Filter::Author(author) => &f.author == author,
-    //             Filter::AuthorEmail(email) => &f.email == email,
-    //             Filter::Message(message) => f.message.contains(message),
-    //             Filter::None => true,
-    //         })
-    //         .cloned()
-    //         .collect();
-
-    //     if vec.is_empty() {
-    //         return Err("No history found for the filter")?;
-    //     }
-    //     Ok(Self {
-    //         commit_history: vec,
-    //         name: self.name.clone(),
-    //         current_pos: 0,
-    //         current_iter_pos: 0,
-    //     })
-    // }
-
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
@@ -493,57 +449,22 @@ impl FunctionHistory {
         })
     }
 }
-
+// TODO: add docs
+#[macro_export]
 macro_rules! filter_by {
-// option 1: takes a filter
-($self:ident, $filter:ident) => {
-    // #[cfg(feature = "parallel")]
-    // let t = $self.commit_history.par_iter();
-    // #[cfg(not(feature = "parallel"))]
-    // let t = $self.commit_history.iter();
-    // let vec: Vec<Commit> = t
-    //     .filter(|f| f.filter_by(&$filter).is_ok())
-    //     .cloned()
-    //     .collect();
-
-    // if vec.is_empty() {
-    //     return Err("No history found for the filter")?;
-    // }
-    // Ok(Self {
-    //     commit_history: vec,
-    //     name: $self.name.clone(),
-    //     current_pos: 0,
-    //     current_iter_pos: 0,
-    // })
-    $self.filter_by(&$filter)
-};
-// option 2: takes a PLFilter variant
-($self:ident, $pl_filter:ident) => {
-
-    $self.filter_by(&$pl_filter)
-
-};
-
-// option 3: takes a language specific filter ie RustFilter and a language ie Rust
-($self:ident, $rust_filter:expr, $language:ident) => {
-    $self.filter_by(&Filter::PLFilter(PLFilter::$language($rust_filter)))
-};
-
-
-
-
-
-}
-
-#[test]
-fn test_filter_by() {
-    let repo = get_function_history!(
-        name = "empty_test"
-    ).expect("Failed to get function history");
-    let filter = Filter::CommitHash("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0".to_string());
-    filter_by!(repo, RustFilter::FunctionInBlock(crate::languages::rust::BlockType::Impl), RustFilter)
-    // assert_eq!(filtered_repo.commit_history.len(), 1);
-    // assert_eq!(filtered_repo.commit_history[0].commit_hash, "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0");
+    // option 1: takes a filter
+    ($self:expr, $filter:expr) => {
+        $self.filter_by(&$filter)
+    };
+    // option 2: takes a PLFilter variant
+    ($self:expr, $pl_filter:expr, $cfg:literal) => {
+        $self.filter_by(&Filter::PLFilter($pl_filter))
+    };
+    // option 3: takes a language specific filter ie RustFilter and a language ie Rust
+    ($self:expr, $rust_filter:expr, $language:ident) => {{
+        use crate::languages::LanguageFilter;
+        $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($rust_filter)))
+    }};
 }
 
 impl Display for FunctionHistory {

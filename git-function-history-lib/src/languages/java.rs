@@ -283,7 +283,7 @@ mod java_test {
             "5:        public static void main(String[] args) {
 7:            System.out.println(\"Hello, World\");
 8:        }"
-            .to_string(),
+                .to_string(),
             vec![java_class1, java_class2],
         );
         println!("{}", java_fn);

@@ -418,25 +418,32 @@ fn find_function_in_commit_with_filetype(
                 Language::All => {
                     cfg_if::cfg_if! {
                         if #[cfg(feature = "c_lang")] {
-                            if file.ends_with(".c") || file.ends_with(".h") {
+                            if file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
                                 files.push(file);
                             }
                         }
                         else if #[cfg(feature = "unstable")] {
-                            if file.ends_with(".go") {
+                            if file.ends_with(".go")  || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb"){
+                                files.push(file);
+                            }
+                        }
+                        else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
+                            if file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".go") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
                                 files.push(file);
                             }
                         }
                         else {
-                            if file.ends_with(".py") || file.ends_with(".rs") || file.ends_with(".rb") {
+                            if file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
                                 files.push(file);
                             }
                         }
+
                     }
                 }
             },
         }
     }
+
     let err = "no function found".to_string();
     #[cfg(feature = "parellel")]
     let t = files.par_iter();
@@ -545,7 +552,10 @@ impl<T> UnwrapToError<T> for Option<T> {
 mod tests {
     use chrono::Utc;
 
-    use crate::languages::{rust::BlockType, FileTrait};
+    use crate::languages::{
+        rust::{BlockType, RustFilter},
+        FileTrait,
+    };
 
     use super::*;
     #[test]
@@ -770,5 +780,39 @@ mod tests {
             Err(e) => println!("{e}"),
         }
         assert!(new_output.is_ok());
+    }
+
+    #[test]
+    fn test_filter_by() {
+        let repo =
+            get_function_history!(name = "empty_test").expect("Failed to get function history");
+        let f1 = filter_by!(
+            repo,
+            RustFilter::FunctionInBlock(crate::languages::rust::BlockType::Impl),
+            Rust
+        );
+        match f1 {
+            Ok(_) => println!("filter 1 ok"),
+            Err(e) => println!("error: {}", e),
+        }
+        let f2 = filter_by!(
+            repo,
+            Filter::CommitHash("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0".to_string())
+        );
+        match f2 {
+            Ok(_) => println!("filter 2 ok"),
+            Err(e) => println!("error: {}", e),
+        }
+        let f3 = filter_by!(
+            repo,
+            LanguageFilter::Rust(RustFilter::FunctionInBlock(
+                crate::languages::rust::BlockType::Impl
+            )),
+            1
+        );
+        match f3 {
+            Ok(_) => println!("filter 3 ok"),
+            Err(e) => println!("error: {}", e),
+        }
     }
 }
