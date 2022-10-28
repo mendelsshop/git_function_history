@@ -32,6 +32,7 @@ All notable changes to this project will be documented in this file.
 - Non proggraming languge (pl) filters addded back
 - Added ability to search in all supported languages
 - Pl filters now working very messy and boilerplatety
+- Fixed bug where I didnt understand how cfg-if works, also filter_by macro works just neeeds docs
 
 ### Tui
 
