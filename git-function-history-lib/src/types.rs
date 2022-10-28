@@ -462,7 +462,7 @@ macro_rules! filter_by {
     };
     // option 3: takes a language specific filter ie RustFilter and a language ie Rust
     ($self:expr, $rust_filter:expr, $language:ident) => {{
-        use crate::languages::LanguageFilter;
+        use $crate::languages::LanguageFilter;
         $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($rust_filter)))
     }};
 }

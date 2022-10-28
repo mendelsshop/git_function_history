@@ -268,10 +268,7 @@ pub enum RubyFilter {
 impl RubyFilter {
     pub fn matches(&self, function: &RubyFunction) -> bool {
         match self {
-            Self::FunctionInClass(name) => match &function.class {
-                Some(class) => *name == class.name,
-                None => false,
-            },
+            Self::FunctionInClass(name) => function.class.as_ref().map_or(false, |class| *name == class.name),
             Self::FunctionWithParameter(name) => function.args.contains(name),
         }
     }
