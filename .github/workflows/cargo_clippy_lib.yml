@@ -15,7 +15,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           toolchain: nightly
-          args: --features unstable, c_lang -p git_function_history
+          args: -p git_function_history --features unstable, c_lang 
   nightly-clang-test:
     runs-on: ubuntu-latest
     steps:

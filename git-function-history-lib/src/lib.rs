@@ -370,6 +370,9 @@ fn find_function_in_commit_with_filetype(
         Err(String::from_utf8_lossy(&command.stderr))?;
     }
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
+    if file_list.is_empty() {
+        return Err(format!("no files found for commit {} in git ouput", commit))?;
+    }
     for file in file_list.split('\n') {
         match filetype {
             FileFilterType::Relative(ref path) => {
@@ -443,7 +446,9 @@ fn find_function_in_commit_with_filetype(
             },
         }
     }
-
+    if files.is_empty() {
+        return Err(format!("no files found for commit {} in matching the languages specified", commit))?;
+    }
     let err = "no function found".to_string();
     #[cfg(feature = "parellel")]
     let t = files.par_iter();
