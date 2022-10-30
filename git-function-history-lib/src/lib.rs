@@ -732,6 +732,12 @@ mod tests {
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
+        match &t {
+            Ok(functions) => {
+                println!("{:?}", functions);
+            }
+            Err(e) => println!("{}", e),
+        }
         assert!(t.is_ok());
     }
 
