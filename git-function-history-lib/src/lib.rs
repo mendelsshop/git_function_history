@@ -447,7 +447,10 @@ fn find_function_in_commit_with_filetype(
         }
     }
     if files.is_empty() {
-        return Err(format!("no files found for commit {} in matching the languages specified", commit))?;
+        return Err(format!(
+            "no files found for commit {} in matching the languages specified",
+            commit
+        ))?;
     }
     let err = "no function found".to_string();
     #[cfg(feature = "parellel")]

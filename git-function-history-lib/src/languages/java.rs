@@ -132,11 +132,12 @@ fn extract_methods_from_class_item(
     let mut methods = Vec::new();
     match item {
         javaparser::parse::tree::ClassBodyItem::Method(method) => {
-            // println!("{:#?}", method);
+            println!("{:#?}", method);
+            println!("Found method: {}", method.name.fragment);
             if method.name.fragment == name {
-                let methdef = javaparser::analyze::build::method::build(method);
+                // let methdef = javaparser::analyze::build::method::build(method);
                 // let def = javaparser::extract::Definition::Method(methdef);
-                println!("{:#?}", methdef.span_opt.map(|s| s.fragment));
+                // println!("{:#?}", methdef.span_opt.map(|s| s.fragment));
                 // println!("{:#?}", methdef);
                 let args = vec![];
                 // method
@@ -147,9 +148,48 @@ fn extract_methods_from_class_item(
                 // let body = method.body.to_string();
                 // let lines = (method.line, method.line + body.lines().count());
                 // println!("{:#?}", method);
-
+                // method.
                 // to find the the bottom of the class see if block_opt is some then find the span of the last block find the first } after that and then find the line number of that
+                let mut top = 0;
+                method.modifiers.iter().for_each(|m| {
+                    //match the modifier to extract the line number
+                    match m {
+                        javaparser::parse::tree::Modifier::Keyword(k) => {
+                            top = k.name.line;
+                        }
+                        javaparser::parse::tree::Modifier::Annotated(a) => {
+                            match a {
+                                javaparser::parse::tree::Annotated::Normal(n) => {
+                                    n.params.iter().for_each(|p| {
+                                        if p.name.line > top {
+                                            top = p.name.line;
+                                        }
+                                    });
+                                }
+                                javaparser::parse::tree::Annotated::Marker(m) => {
+                                    // top = m.name.line;
+                                }
+                                javaparser::parse::tree::Annotated::Single(s) => {
+                                    // top = s.name.line;
+                                }
+                            }
+                        }
+                    }
+                });
+                if top == 0 {
+                    top = match method.return_type.span_opt() {
+                        Some(s) => s.line,
+                        None => return Err("could not find top of method")?,
+                    }
+                }
+                let mut bottom = 0;
                 // to find the top of the class find the first { before the method and then find the line number of that first check modifiers if not use return type
+
+                if let Some(b) = &method.block_opt {
+                    // find the last block and then find the line number of the first } after that
+                }
+                // if there is no block then find the line number of
+
                 let class = Vec::new();
                 methods.push(JavaFunction::new(
                     "test".to_string(),
@@ -252,7 +292,7 @@ mod java_test {
         @Company
             public class Test {
                 void main(String[] args) {
-                    System.out.println("Hello, World");
+                    // System.out.println("Hello, World");
                 }
             }
         "#;
