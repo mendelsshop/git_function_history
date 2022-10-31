@@ -4,9 +4,12 @@ end
 
 def empty_test()
 end
-
+class SupderDuper 
+	def boring
+	end
+end
 class
-	 Test
+	 Test < SupderDuper
 	def empty_test()
 	end
 
@@ -14,3 +17,6 @@ class
 		puts "Hello World"
 	end
 end
+
+# def () empty_test
+# end

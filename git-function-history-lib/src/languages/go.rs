@@ -1,5 +1,5 @@
 use crate::impl_function_trait;
-use std::{error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt};
 
 use super::FunctionTrait;
 
@@ -7,16 +7,33 @@ use super::FunctionTrait;
 pub struct GoFunction {
     pub(crate) name: String,
     pub(crate) body: String,
-    pub(crate) parameters: Vec<String>,
+    pub(crate) parameters: GoParameter,
     pub(crate) returns: Option<String>,
     pub(crate) lines: (usize, usize),
 }
+#[derive(Debug, Clone)]
+pub enum GoParameter {
+    /// type
+    Type(Vec<String>),
+    /// (name, type)
+    Named(HashMap<String, String>),
+}
+
+impl GoParameter {
+    pub fn extend(&mut self, other: &Self) {
+        match (self, other) {
+            (Self::Type(a), Self::Type(b)) => a.extend(b.clone()),
+            (Self::Named(a), Self::Named(b)) => a.extend(b.clone()),
+            _ => {}
+        }
+    }
+}
 
 impl GoFunction {
-    pub fn new(
+    pub const fn new(
         name: String,
         body: String,
-        parameters: Vec<String>,
+        parameters: GoParameter,
         returns: Option<String>,
         lines: (usize, usize),
     ) -> Self {
@@ -105,14 +122,63 @@ pub(crate) fn find_function_in_file(
 
                     lines.0 = start_line;
                     lines.1 = end_line;
-                    let parameters = func
-                        .typ
-                        .params
-                        .list
-                        .iter()
-                        .filter_map(|p| Some(&p.tag.as_ref()?.value))
-                        .map(std::string::ToString::to_string)
-                        .collect();
+                    // see if the first parameter has a name:
+                    let mut parameters = func.typ.params.list.get(0).map_or_else(
+                        || GoParameter::Type(vec![]),
+                        |param| {
+                            if param.name.is_empty() {
+                                GoParameter::Type(match &param.typ {
+                                    gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(
+                                        ident,
+                                    )) => {
+                                        vec![ident.name.name.clone()]
+                                    }
+                                    _ => {
+                                        vec![]
+                                    }
+                                })
+                            } else {
+                                let typ = match &param.typ {
+                                    gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(
+                                        ident,
+                                    )) => ident.name.name.clone(),
+
+                                    _ => String::new(),
+                                };
+                                let names = param.name.iter().map(|n| n.name.clone());
+                                GoParameter::Named(
+                                    names.into_iter().map(|name| (name, typ.clone())).collect(),
+                                )
+                            }
+                        },
+                    );
+
+                    func.typ.params.list.iter().skip(1).for_each(|param| {
+                        if param.name.is_empty() {
+                            if let gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(ident)) =
+                                &param.typ
+                            {
+                                if let GoParameter::Type(types) = &mut parameters {
+                                    types.push(ident.name.name.clone());
+                                }
+                            }
+                        } else {
+                            let typ = match &param.typ {
+                                gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(ident)) => {
+                                    ident.name.name.clone()
+                                }
+
+                                _ => String::new(),
+                            };
+                            let names = param.name.iter().map(|n| n.name.clone());
+
+                            if let GoParameter::Named(named) = &mut parameters {
+                                for name in names {
+                                    named.insert(name, typ.clone());
+                                }
+                            }
+                        }
+                    });
                     let returns = Some(
                         func.typ
                             .result
@@ -150,14 +216,27 @@ pub(crate) fn find_function_in_file(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GoFilter {
+    // refers to the type of a parameter
     FunctionWithParameter(String),
+    // refers to the name of a parameter
+    FunctionWithParameterName(String),
     FunctionWithReturnType(String),
 }
 
 impl GoFilter {
     pub fn matches(&self, func: &GoFunction) -> bool {
         match self {
-            Self::FunctionWithParameter(param) => func.parameters.iter().any(|x| x.contains(param)),
+            Self::FunctionWithParameter(param) => match &func.parameters {
+                GoParameter::Type(types) => types.iter().any(|t| t == param),
+                GoParameter::Named(named) => named.values().any(|t| t == param),
+            },
+            Self::FunctionWithParameterName(param) => {
+                if let GoParameter::Named(named) = &func.parameters {
+                    named.iter().any(|(name, _)| name == param)
+                } else {
+                    false
+                }
+            }
             Self::FunctionWithReturnType(ret) => {
                 func.returns.as_ref().map_or(false, |x| x.contains(ret))
             }

@@ -109,7 +109,7 @@ pub(crate) fn find_function_in_file(
                     Some(RubyClass {
                         name: parser_class_name(c),
                         line: (start_line, end_line),
-                        superclass: None,
+                        superclass: parse_superclass(c),
                         top: top
                             .lines()
                             .map(|l| {
@@ -240,6 +240,16 @@ fn parser_class_name(class: &Class) -> String {
     }
 }
 
+fn parse_superclass(class: &Class) -> Option<String> {
+    class
+        .superclass
+        .as_ref()
+        .and_then(|superclass| match superclass.as_ref() {
+            lib_ruby_parser::Node::Const(constant) => Some(constant.name.clone()),
+            _ => None,
+        })
+}
+
 impl FunctionTrait for RubyFunction {
     crate::impl_function_trait!(RubyFunction);
 
@@ -263,6 +273,7 @@ impl FunctionTrait for RubyFunction {
 pub enum RubyFilter {
     FunctionInClass(String),
     FunctionWithParameter(String),
+    FunctionWithSuperClass(String),
 }
 
 impl RubyFilter {
@@ -273,6 +284,12 @@ impl RubyFilter {
                 .as_ref()
                 .map_or(false, |class| *name == class.name),
             Self::FunctionWithParameter(name) => function.args.contains(name),
+            Self::FunctionWithSuperClass(name) => function.class.as_ref().map_or(false, |class| {
+                class
+                    .superclass
+                    .as_ref()
+                    .map_or(false, |superclass| superclass == name)
+            }),
         }
     }
 }
