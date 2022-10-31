@@ -217,27 +217,27 @@ pub(crate) fn find_function_in_file(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GoFilter {
     // refers to the type of a parameter
-    FunctionWithParameter(String),
+    HasParameter(String),
     // refers to the name of a parameter
-    FunctionWithParameterName(String),
-    FunctionWithReturnType(String),
+    HasParameterName(String),
+    HasReturnType(String),
 }
 
 impl GoFilter {
     pub fn matches(&self, func: &GoFunction) -> bool {
         match self {
-            Self::FunctionWithParameter(param) => match &func.parameters {
+            Self::HasParameter(param) => match &func.parameters {
                 GoParameter::Type(types) => types.iter().any(|t| t == param),
                 GoParameter::Named(named) => named.values().any(|t| t == param),
             },
-            Self::FunctionWithParameterName(param) => {
+            Self::HasParameterName(param) => {
                 if let GoParameter::Named(named) = &func.parameters {
                     named.iter().any(|(name, _)| name == param)
                 } else {
                     false
                 }
             }
-            Self::FunctionWithReturnType(ret) => {
+            Self::HasReturnType(ret) => {
                 func.returns.as_ref().map_or(false, |x| x.contains(ret))
             }
         }

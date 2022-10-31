@@ -18,7 +18,7 @@ pub struct RustFunction {
     /// is the function in a block ie `impl` `trait` etc
     pub(crate) block: Option<Block>,
     /// optional parent functions
-    pub(crate) function: Vec<FunctionBlock>,
+    pub(crate) function: Vec<RustParentFunction>,
     /// The line number the function starts and ends on
     pub(crate) lines: (usize, usize),
     /// The lifetime of the function
@@ -37,7 +37,7 @@ pub struct RustFunction {
 
 impl RustFunction {
     /// get the parent functions
-    pub fn get_parent_function(&self) -> Vec<FunctionBlock> {
+    pub fn get_parent_function(&self) -> Vec<RustParentFunction> {
         self.function.clone()
     }
 
@@ -70,7 +70,7 @@ impl fmt::Display for RustFunction {
 
 /// This is used for the functions that are being looked up themeselves but store an outer function that may aontains a function that is being looked up.
 #[derive(Debug, Clone)]
-pub struct FunctionBlock {
+pub struct RustParentFunction {
     /// The name of the function (parent function)
     pub(crate) name: String,
     /// what the signature of the function is
@@ -93,7 +93,7 @@ pub struct FunctionBlock {
     pub(crate) doc_comments: Vec<String>,
 }
 
-impl FunctionBlock {
+impl RustParentFunction {
     /// get the metadata for this block ie the name of the block, the type of block, the line number the block starts and ends
     pub fn get_metadata(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
@@ -221,7 +221,7 @@ pub(crate) fn find_function_in_file(
         let stuff = get_stuff(f, file_contents, &map);
         let generics = get_genrerics_and_lifetime(f);
         let mut parent = f.syntax().parent();
-        let mut parent_fn: Vec<FunctionBlock> = Vec::new();
+        let mut parent_fn: Vec<RustParentFunction> = Vec::new();
         let mut parent_block = None;
         while let Some(p) = parent.into_iter().next() {
             if p.kind() == SyntaxKind::SOURCE_FILE {
@@ -279,7 +279,7 @@ pub(crate) fn find_function_in_file(
                     let stuff = get_stuff(&function, file_contents, &map);
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
-                    parent_fn.push(FunctionBlock {
+                    parent_fn.push(RustParentFunction {
                         name: function.name().unwrap().to_string(),
                         lifetime: generics.1,
                         generics: generics.0,
@@ -459,52 +459,130 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RustFilter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
-    FunctionInBlock(BlockType),
+    InBlock(BlockType),
     /// when you want filter by a function that has a parent function of a specific name
-    FunctionWithParent(String),
+    HasParentFunction(String),
     /// when you want to filter by a function that has a has a specific return type
-    FunctionWithReturnType(String),
+    HasReturnType(String),
     /// when you want to filter by a function that has a specific parameter type
-    FunctionWithParameterType(String),
+    HasParameterType(String),
     /// when you want to filter by a function that has a specific parameter name
-    FunctionWithParameterName(String),
+    HasParameterName(String),
     /// when you want to filter by a function that has a specific lifetime
-    FunctionWithLifetime(String),
+    HasLifetime(String),
     /// when you want to filter by a function that has a specific generic with name
-    FunctionWithGeneric(String),
+    HasGeneric(String),
     /// when you want to filter by a function that has a specific attribute
-    FunctionWithAttribute(String),
+    HasAttribute(String),
     /// when you want to filter by a function that has or contains a specific doc comment
-    FunctionWithDocComment(String),
+    HasDocComment(String),
+    /// when you want to filter by a function that's block has a specific attribute
+    BlockHasAttribute(String),
+    /// when you want to filter by a function that's block has a specific doc comment
+    BlockHasDocComment(String),
+    /// when you want to filter by a function that's block has a specific lifetime
+    BlockHasLifetime(String),
+    /// when you want to filter by a function that's block has a specific generic with name
+    BlockHasGeneric(String),
+    /// when you want to filter by a function that's parent function has a specific attribute
+    ParentFunctionHasAttribute(String),
+    /// when you want to filter by a function that's parent function has a specific doc comment
+    ParentFunctionHasDocComment(String),
+    /// when you want to filter by a function that's parent function has a specific lifetime
+    ParentFunctionHasLifetime(String),
+    /// when you want to filter by a function that's parent function has a specific generic with name
+    ParentFunctionHasGeneric(String),
+    /// when you want to filter by a function that's parent function has a specific return type
+    ParentFunctionHasReturnType(String),
+    /// when you want to filter by a function that's parent function has a specific parameter type
+    ParentFunctionHasParameterType(String),
+    /// when you want to filter by a function that's parent function has a specific parameter name
+    ParentFunctionHasParameterName(String),
 }
 
 impl RustFilter {
     pub fn matches(&self, function: &RustFunction) -> bool {
         match self {
-            Self::FunctionInBlock(block_type) => function
+            Self::InBlock(block_type) => function
                 .block
                 .as_ref()
                 .map_or(false, |block| block.block_type == *block_type),
-            Self::FunctionWithParent(parent) => function.function.iter().any(|f| f.name == *parent),
-            Self::FunctionWithReturnType(return_type) => {
+            Self::HasParentFunction(parent) => function.function.iter().any(|f| f.name == *parent),
+            Self::HasReturnType(return_type) => {
                 function.return_type == Some(return_type.to_string())
             }
-            Self::FunctionWithParameterType(parameter_type) => {
+            Self::HasParameterType(parameter_type) => {
                 function.arguments.values().any(|x| x == parameter_type)
             }
-            Self::FunctionWithParameterName(parameter_name) => {
+            Self::HasParameterName(parameter_name) => {
                 function.arguments.keys().any(|x| x == parameter_name)
             }
-            Self::FunctionWithLifetime(lifetime) => function.lifetime.contains(lifetime),
-            Self::FunctionWithGeneric(generic) => function.generics.contains(generic),
-            Self::FunctionWithAttribute(attribute) => function.attributes.contains(attribute),
-            Self::FunctionWithDocComment(comment) => {
+            Self::HasLifetime(lifetime) => function.lifetime.contains(lifetime),
+            Self::HasGeneric(generic) => function.generics.contains(generic),
+            Self::HasAttribute(attribute) => function.attributes.contains(attribute),
+            Self::HasDocComment(comment) => {
                 function
                     .doc_comments
                     .iter()
                     .filter(|doc| comment.contains(*doc))
                     .count()
                     > 0
+            }
+            Self::BlockHasAttribute(attribute) => {
+                function.block.as_ref().map_or(false, |block| {
+                    block.attributes.contains(attribute)
+                })
+            }
+            Self::BlockHasDocComment(comment) => {
+                function.block.as_ref().map_or(false, |block| {
+                    block
+                        .doc_comments
+                        .iter()
+                        .filter(|doc| comment.contains(*doc))
+                        .count()
+                        > 0
+                })
+            }
+            Self::BlockHasLifetime(lifetime) => {
+                function.block.as_ref().map_or(false, |block| {
+                    block.lifetime.contains(lifetime)
+                })
+            }
+            Self::BlockHasGeneric(generic) => {
+                function.block.as_ref().map_or(false, |block| {
+                    block.generics.contains(generic)
+                })
+            }
+            Self::ParentFunctionHasAttribute(attribute) => {
+                function.function.iter().any(|f| f.attributes.contains(attribute))
+            }
+            Self::ParentFunctionHasDocComment(comment) => {
+                function.function.iter().any(|f| {
+                    f.doc_comments
+                        .iter()
+                        .filter(|doc| comment.contains(*doc))
+                        .count()
+                        > 0
+                })
+            }
+            Self::ParentFunctionHasLifetime(lifetime) => {
+                function.function.iter().any(|f| f.lifetime.contains(lifetime))
+            }
+            Self::ParentFunctionHasGeneric(generic) => {
+                function.function.iter().any(|f| f.generics.contains(generic))
+            }
+            Self::ParentFunctionHasReturnType(return_type) => {
+                function.function.iter().any(|f| f.return_type == Some(return_type.to_string()))
+            }
+            Self::ParentFunctionHasParameterType(parameter_type) => {
+                function.function.iter().any(|f| {
+                    f.arguments.values().any(|x| x == parameter_type)
+                })
+            }
+            Self::ParentFunctionHasParameterName(parameter_name) => {
+                function.function.iter().any(|f| {
+                    f.arguments.keys().any(|x| x == parameter_name)
+                })
             }
         }
     }

@@ -776,7 +776,7 @@ mod tests {
         };
         now = Utc::now();
         let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::FunctionWithParameterType(String::from("String")),
+            rust::RustFilter::HasParameterType(String::from("String")),
         )));
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
@@ -785,7 +785,7 @@ mod tests {
             Err(e) => println!("{e}"),
         }
         let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::FunctionInBlock(BlockType::Extern),
+            rust::RustFilter::InBlock(BlockType::Extern),
         )));
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
@@ -802,7 +802,7 @@ mod tests {
             get_function_history!(name = "empty_test").expect("Failed to get function history");
         let f1 = filter_by!(
             repo,
-            RustFilter::FunctionInBlock(crate::languages::rust::BlockType::Impl),
+            RustFilter::InBlock(crate::languages::rust::BlockType::Impl),
             Rust
         );
         match f1 {
@@ -819,7 +819,7 @@ mod tests {
         }
         let f3 = filter_by!(
             repo,
-            LanguageFilter::Rust(RustFilter::FunctionInBlock(
+            LanguageFilter::Rust(RustFilter::InBlock(
                 crate::languages::rust::BlockType::Impl
             )),
             1

@@ -16,7 +16,7 @@ pub struct PythonFunction {
     pub(crate) body: String,
     // parameters: Params,
     pub(crate) parameters: Vec<String>,
-    pub(crate) parent: Vec<ParentFunction>,
+    pub(crate) parent: Vec<PythonParentFunction>,
     pub(crate) decorators: Vec<String>,
     pub(crate) class: Option<Class>,
     pub(crate) lines: (usize, usize),
@@ -41,13 +41,13 @@ impl fmt::Display for PythonFunction {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Params {
-    args: Vec<String>,
-    kwargs: Vec<String>,
-    varargs: Option<String>,
-    varkwargs: Option<String>,
-}
+// #[derive(Debug, Clone)]
+// pub struct Params {
+//     args: Vec<String>,
+//     kwargs: Vec<String>,
+//     varargs: Option<String>,
+//     varkwargs: Option<String>,
+// }
 #[derive(Debug, Clone)]
 pub struct Class {
     pub(crate) name: String,
@@ -57,14 +57,14 @@ pub struct Class {
     pub(crate) decorators: Vec<String>,
 }
 #[derive(Debug, Clone)]
-pub struct ParentFunction {
+pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,
     pub(crate) bottom: String,
     pub(crate) lines: (usize, usize),
     pub(crate) parameters: Vec<String>,
     pub(crate) decorators: Vec<String>,
-    pub(crate) class: Option<String>,
+    // pub(crate) class: Option<String>,
     pub(crate) returns: Option<String>,
 }
 
@@ -201,6 +201,7 @@ fn fun_name(
 }
 
 fn get_functions<'a>(
+    // TODO: get parent functions and classes
     stmt: Located<StatementType>,
     next_stmt: Option<&Located<StatementType>>,
     functions: &mut Vec<(StatementType, (Location, Location))>,
@@ -305,34 +306,57 @@ fn get_functions<'a>(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
-    FunctionInClass(String),
+    InClass(String),
     /// when you want filter by a function that has a parent function of a specific name
-    FunctionWithParent(String),
+    HasParentFunction(String),
     /// when you want to filter by a function that has a has a specific return type
-    FunctionWithReturnType(String),
+    HasReturnType(String),
     /// when you want to filter by a function that has a specific parameter name
-    FunctionWithParameterName(String),
+    HasParameterName(String),
     /// when you want to filter by a function that has a specific decorator
-    FunctionWithDecorator(String),
+    HasDecorator(String),
+    /// when you want to filter by a function thats class has a specific decorator
+    HasClasswithDecorator(String),
+    /// when you want to filter by a function that's parent function has a specific decorator
+    HasParentFunctionwithDecorator(String),
+    /// when you want to filter by a function that's parent function has a specific parameter name
+    HasParentFunctionwithParameterName(String),
+    /// when you want to filter by a function that's parent function has a specific return type
+    HasParentFunctionwithReturnType(String),
 }
 
 impl PythonFilter {
     pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
-            Self::FunctionInClass(class) => {
+            Self::InClass(class) => {
                 function.class.as_ref().map_or(false, |x| x.name == *class)
             }
-            Self::FunctionWithParent(parent) => function.parent.iter().any(|x| x.name == *parent),
-            Self::FunctionWithReturnType(return_type) => function
+            Self::HasParentFunction(parent) => function.parent.iter().any(|x| x.name == *parent),
+            Self::HasReturnType(return_type) => function
                 .returns
                 .as_ref()
                 .map_or(false, |x| x == return_type),
-            Self::FunctionWithParameterName(parameter_name) => {
+            Self::HasParameterName(parameter_name) => {
                 function.parameters.iter().any(|x| x == parameter_name)
             }
-            Self::FunctionWithDecorator(decorator) => {
+            Self::HasDecorator(decorator) => {
                 function.decorators.iter().any(|x| x == decorator)
             }
+            Self::HasClasswithDecorator(decorator) => {
+                function.class.as_ref().map_or(false, |x| {
+                    x.decorators.iter().any(|x| x == decorator)
+                })
+            }
+            Self::HasParentFunctionwithDecorator(decorator) => function
+                .parent
+                .iter()
+                .any(|x| x.decorators.iter().any(|x| x == decorator)),
+            Self::HasParentFunctionwithParameterName(parameter_name) => function.parent.iter().any(
+                |x| x.parameters.iter().any(|x| x == parameter_name),
+            ),
+            Self::HasParentFunctionwithReturnType(return_type) => function.parent.iter().any(
+                |x| x.returns.as_ref().map_or(false, |x| x == return_type),
+            ),
         }
     }
 }

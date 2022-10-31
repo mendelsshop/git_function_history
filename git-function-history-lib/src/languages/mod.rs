@@ -4,6 +4,7 @@ use std::{
     fmt::{self, Display},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
+// TODO: make a macro for generating filters
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
 
 #[cfg(feature = "c_lang")]
