@@ -12,7 +12,7 @@ use self::c::CFunction;
 
 #[cfg(feature = "unstable")]
 use go::GoFunction;
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Language {
     /// The python language
     Python,

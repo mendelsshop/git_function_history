@@ -18,11 +18,18 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
+// lazy_static::lazy_static! {
+//     /// saves already parsed files
+//     /// key: content of file and language
+//     /// value: parsed file
+//     pub static ref MEMOIZE: Mutex<HashMap<String, FileType>> = Mutex::new(HashMap::new());
+// }
+
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use std::{error::Error, process::Command};
+use std::{error::Error, process::Command, collections::HashMap, sync::Mutex};
 
 #[cfg(feature = "c_lang")]
 use languages::CFile;
@@ -466,6 +473,9 @@ fn find_function_in_commit_with_filetype(
     Ok(returns)
 }
 
+
+// #[cached]
+// #[cached(result = true)]
 fn find_function_in_file_with_commit(
     commit: &str,
     file_path: &str,
@@ -473,73 +483,78 @@ fn find_function_in_file_with_commit(
     langs: Language,
 ) -> Result<FileType, Box<dyn Error>> {
     let fc = find_file_in_commit(commit, file_path)?;
-    match langs {
+    // if let Some(file) = MEMOIZE.lock()?.get(&fc) {
+    //     return Ok(file.clone());
+    // }
+    let file = match langs {
         Language::Rust => {
             let functions = rust::find_function_in_file(&fc, name)?;
-            Ok(FileType::Rust(RustFile::new(
+            FileType::Rust(RustFile::new(
                 file_path.to_string(),
                 functions,
-            )))
+            ))
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
             let functions = languages::c::find_function_in_file(&fc, name)?;
-            Ok(FileType::C(CFile::new(file_path.to_string(), functions)))
+            FileType::C(CFile::new(file_path.to_string(), functions))
         }
         #[cfg(feature = "unstable")]
         Language::Go => {
             let functions = languages::go::find_function_in_file(&fc, name)?;
-            Ok(FileType::Go(GoFile::new(file_path.to_string(), functions)))
+            FileType::Go(GoFile::new(file_path.to_string(), functions))
         }
         Language::Python => {
             let functions = languages::python::find_function_in_file(&fc, name)?;
-            Ok(FileType::Python(PythonFile::new(
+            FileType::Python(PythonFile::new(
                 file_path.to_string(),
                 functions,
-            )))
+            ))
         }
         Language::Ruby => {
             let functions = languages::ruby::find_function_in_file(&fc, name)?;
-            Ok(FileType::Ruby(RubyFile::new(
+            FileType::Ruby(RubyFile::new(
                 file_path.to_string(),
                 functions,
-            )))
+            ))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
                 let functions = rust::find_function_in_file(&fc, name)?;
-                Ok(FileType::Rust(RustFile::new(
+                FileType::Rust(RustFile::new(
                     file_path.to_string(),
                     functions,
-                )))
+                ))
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
                 let functions = languages::c::find_function_in_file(&fc, name)?;
-                Ok(FileType::C(CFile::new(file_path.to_string(), functions)))
+                FileType::C(CFile::new(file_path.to_string(), functions))
             }
             Some("py") => {
                 let functions = languages::python::find_function_in_file(&fc, name)?;
-                Ok(FileType::Python(PythonFile::new(
+                FileType::Python(PythonFile::new(
                     file_path.to_string(),
                     functions,
-                )))
+                ))
             }
             #[cfg(feature = "unstable")]
             Some("go") => {
                 let functions = languages::go::find_function_in_file(&fc, name)?;
-                Ok(FileType::Go(GoFile::new(file_path.to_string(), functions)))
+                FileType::Go(GoFile::new(file_path.to_string(), functions))
             }
             Some("rb") => {
                 let functions = languages::ruby::find_function_in_file(&fc, name)?;
-                Ok(FileType::Ruby(RubyFile::new(
+                FileType::Ruby(RubyFile::new(
                     file_path.to_string(),
                     functions,
-                )))
+                ))
             }
             _ => Err("unknown file type")?,
         },
-    }
+    };
+    // MEMOIZE.lock()?.insert(fc, file.clone());
+    Ok(file)
 }
 
 trait UnwrapToError<T> {

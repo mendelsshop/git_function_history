@@ -67,7 +67,10 @@ pub struct PythonParentFunction {
     // pub(crate) class: Option<String>,
     pub(crate) returns: Option<String>,
 }
-
+/*
+use cached::proc_macro::cached;
+#[cached(result = true)]
+*/
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
