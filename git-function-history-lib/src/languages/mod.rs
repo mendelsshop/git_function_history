@@ -262,7 +262,10 @@ make_file!(RustFile, RustFunction, Rust);
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
 
-// macro that auto genertes the test parse_<lang>_file_time
+
+#[cfg(test)]
+mod lang_tests {
+    // macro that auto genertes the test parse_<lang>_file_time
 macro_rules! make_file_time_test {
     ($name:ident, $extname:ident, $function:ident) => {
         #[test]
@@ -291,8 +294,6 @@ macro_rules! make_file_time_test {
     };
 }
 
-#[cfg(test)]
-mod lang_tests {
     use super::*;
     make_file_time_test!(python_parses, py, python);
     make_file_time_test!(rust_parses, rs, rust);

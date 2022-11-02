@@ -68,10 +68,7 @@ pub enum JavaBlockType {
     Enum,
     Interface,
 }
-/*
-use cached::proc_macro::cached;
-#[cached(result = true)]
-*/
+
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,

@@ -176,11 +176,19 @@ impl App {
                         let mut file = FileFilterType::None;
                         let mut filter = Filter::None;
                         let mut lang = Language::All;
+                        let new_vec = iter.collect::<Vec<_>>();
+                        let mut new_iter = new_vec.windows(2);
                         log::debug!(
                             "searching for {:?}",
-                            iter.clone().collect::<Vec<_>>().windows(2)
+                            new_iter
                         );
-                        for i in &mut iter.clone().collect::<Vec<_>>().windows(2) {
+
+                        if new_vec.len() % 2 != 0 {
+                            self.status = Status::Error(format!("uncomplete search, command: {} doesnt have its parameters",new_vec.last().expect("oops look like theres nothing in this vec don't how this happened").to_string()));
+                            return;
+                        }
+                        for i in &mut new_iter {
+                            log::info!("i: {:?}", i);
                             match i {
                                 ["relative", filepath] => {
                                     log::trace!("relative file: {}", filepath);
@@ -221,8 +229,8 @@ impl App {
                                     lang = match language {
                                         &"rust" => Language::Rust,
                                         &"python" => Language::Python,
-                                        #[cfg(feature = "c_lang")]
-                                        &"c" => Language::C,
+                                        // #[cfg(feature = "c_lang")]
+                                        // &"c" => Language::C,
                                         #[cfg(feature = "unstable")]
                                         &"go" => Language::Go,
                                         &"ruby" => Language::Ruby,
@@ -252,13 +260,6 @@ impl App {
                                     return;
                                 }
                             }
-                        }
-                        if iter.clone().count() > 0 {
-                            self.status = Status::Error(format!(
-                                "Invalid search, command: {:?} missing args",
-                                iter.collect::<Vec<_>>()
-                            ));
-                            return;
                         }
                         self.channels
                             .0

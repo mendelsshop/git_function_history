@@ -26,3 +26,11 @@
   - [/] add support for other languages (currently only supports rust)
   - [x] save search queries and filters to a file
   - [ ] rework the way filters and filefilters are handled ie maybe use a builder pattern
+
+- release 7.0:
+  - python:
+    - [ ] save parent function and classes
+    - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
+  - ruby:
+    - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
+

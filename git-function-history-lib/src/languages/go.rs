@@ -71,10 +71,7 @@ impl FunctionTrait for GoFunction {
         (start, end)
     }
 }
-/*
-use cached::proc_macro::cached;
-#[cached(result = true)]
-*/
+
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,

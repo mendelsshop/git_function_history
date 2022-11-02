@@ -197,10 +197,7 @@ impl fmt::Display for BlockType {
         }
     }
 }
-/*
-use cached::proc_macro::cached;
-#[cached(result = true)]
-*/
+
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub(crate) fn find_function_in_file(
