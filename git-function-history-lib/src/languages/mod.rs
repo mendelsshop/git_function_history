@@ -79,8 +79,8 @@ impl fmt::Display for Language {
 pub mod c;
 #[cfg(feature = "unstable")]
 pub mod go;
-#[cfg(feature = "unstable")]
-pub mod java;
+// #[cfg(feature = "unstable")]
+// pub mod java;
 pub mod python;
 pub mod ruby;
 pub mod rust;

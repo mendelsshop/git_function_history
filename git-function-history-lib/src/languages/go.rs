@@ -240,9 +240,7 @@ impl GoFilter {
                     false
                 }
             }
-            Self::HasReturnType(ret) => {
-                func.returns.as_ref().map_or(false, |x| x.contains(ret))
-            }
+            Self::HasReturnType(ret) => func.returns.as_ref().map_or(false, |x| x.contains(ret)),
         }
     }
 }

@@ -531,62 +531,57 @@ impl RustFilter {
                     .count()
                     > 0
             }
-            Self::BlockHasAttribute(attribute) => {
-                function.block.as_ref().map_or(false, |block| {
-                    block.attributes.contains(attribute)
-                })
-            }
-            Self::BlockHasDocComment(comment) => {
-                function.block.as_ref().map_or(false, |block| {
-                    block
-                        .doc_comments
-                        .iter()
-                        .filter(|doc| comment.contains(*doc))
-                        .count()
-                        > 0
-                })
-            }
-            Self::BlockHasLifetime(lifetime) => {
-                function.block.as_ref().map_or(false, |block| {
-                    block.lifetime.contains(lifetime)
-                })
-            }
-            Self::BlockHasGeneric(generic) => {
-                function.block.as_ref().map_or(false, |block| {
-                    block.generics.contains(generic)
-                })
-            }
-            Self::ParentFunctionHasAttribute(attribute) => {
-                function.function.iter().any(|f| f.attributes.contains(attribute))
-            }
-            Self::ParentFunctionHasDocComment(comment) => {
-                function.function.iter().any(|f| {
-                    f.doc_comments
-                        .iter()
-                        .filter(|doc| comment.contains(*doc))
-                        .count()
-                        > 0
-                })
-            }
-            Self::ParentFunctionHasLifetime(lifetime) => {
-                function.function.iter().any(|f| f.lifetime.contains(lifetime))
-            }
-            Self::ParentFunctionHasGeneric(generic) => {
-                function.function.iter().any(|f| f.generics.contains(generic))
-            }
-            Self::ParentFunctionHasReturnType(return_type) => {
-                function.function.iter().any(|f| f.return_type == Some(return_type.to_string()))
-            }
-            Self::ParentFunctionHasParameterType(parameter_type) => {
-                function.function.iter().any(|f| {
-                    f.arguments.values().any(|x| x == parameter_type)
-                })
-            }
-            Self::ParentFunctionHasParameterName(parameter_name) => {
-                function.function.iter().any(|f| {
-                    f.arguments.keys().any(|x| x == parameter_name)
-                })
-            }
+            Self::BlockHasAttribute(attribute) => function
+                .block
+                .as_ref()
+                .map_or(false, |block| block.attributes.contains(attribute)),
+            Self::BlockHasDocComment(comment) => function.block.as_ref().map_or(false, |block| {
+                block
+                    .doc_comments
+                    .iter()
+                    .filter(|doc| comment.contains(*doc))
+                    .count()
+                    > 0
+            }),
+            Self::BlockHasLifetime(lifetime) => function
+                .block
+                .as_ref()
+                .map_or(false, |block| block.lifetime.contains(lifetime)),
+            Self::BlockHasGeneric(generic) => function
+                .block
+                .as_ref()
+                .map_or(false, |block| block.generics.contains(generic)),
+            Self::ParentFunctionHasAttribute(attribute) => function
+                .function
+                .iter()
+                .any(|f| f.attributes.contains(attribute)),
+            Self::ParentFunctionHasDocComment(comment) => function.function.iter().any(|f| {
+                f.doc_comments
+                    .iter()
+                    .filter(|doc| comment.contains(*doc))
+                    .count()
+                    > 0
+            }),
+            Self::ParentFunctionHasLifetime(lifetime) => function
+                .function
+                .iter()
+                .any(|f| f.lifetime.contains(lifetime)),
+            Self::ParentFunctionHasGeneric(generic) => function
+                .function
+                .iter()
+                .any(|f| f.generics.contains(generic)),
+            Self::ParentFunctionHasReturnType(return_type) => function
+                .function
+                .iter()
+                .any(|f| f.return_type == Some(return_type.to_string())),
+            Self::ParentFunctionHasParameterType(parameter_type) => function
+                .function
+                .iter()
+                .any(|f| f.arguments.values().any(|x| x == parameter_type)),
+            Self::ParentFunctionHasParameterName(parameter_name) => function
+                .function
+                .iter()
+                .any(|f| f.arguments.keys().any(|x| x == parameter_name)),
         }
     }
 }

@@ -18,18 +18,14 @@ pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 
-// lazy_static::lazy_static! {
-//     /// saves already parsed files
-//     /// key: content of file and language
-//     /// value: parsed file
-//     pub static ref MEMOIZE: Mutex<HashMap<String, FileType>> = Mutex::new(HashMap::new());
-// }
-
+// static mut file_count: usize = 0;
+#[cfg(feature = "cache")]
+use cached::proc_macro::cached;
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use std::{error::Error, process::Command, collections::HashMap, sync::Mutex};
+use std::{error::Error, process::Command};
 
 #[cfg(feature = "c_lang")]
 use languages::CFile;
@@ -460,101 +456,131 @@ fn find_function_in_commit_with_filetype(
         ))?;
     }
     let err = "no function found".to_string();
-    #[cfg(feature = "parellel")]
-    let t = files.par_iter();
-    #[cfg(not(feature = "parellel"))]
-    let t = files.iter();
-    let returns: Vec<FileType> = t
-        .filter_map(|file| find_function_in_file_with_commit(commit, file, name, langs).ok())
-        .collect();
-    if returns.is_empty() {
+    // organize the files into hierarchical structure of directories (vector of vectors) by splitting the path
+    let mut file_tree: Vec<(String, Vec<&str>)> = Vec::new();
+    for file in files.clone() {
+        let mut file_path = file.split('/').collect::<Vec<&str>>();
+        let name = match file_path.pop() {
+            Some(name) => name,
+            None => continue,
+        };
+        let file_path = file_path.join("/");
+        let mut file_tree_index_found = false;
+        for (file_tree_index, file_tree_path) in file_tree.iter().enumerate() {
+            if (file_tree_path).0 == file_path {
+                file_tree_index_found = true;
+                file_tree[file_tree_index].1.push(name);
+                break;
+            }
+        }
+        if !file_tree_index_found {
+            file_tree.push((file_path, vec![name]));
+        }
+    }
+
+    #[cfg(feature = "parallel")]
+    let t = file_tree.par_iter();
+    #[cfg(not(feature = "parallel"))]
+    let t = file_tree.iter();
+    let stuffs = t
+        .filter_map(|(path, files)| {
+            let mut file_types = Vec::new();
+            for file in files {
+                let file_path = format!("{}/{}", path, file);
+                let file_contents = find_file_in_commit(commit, &file_path).ok()?;
+
+                file_types.push((file_path, file_contents));
+            }
+
+            match find_function_in_files_with_commit(file_types, name.to_string(), langs) {
+                vec if !vec.is_empty() => Some(vec),
+                _ => None,
+            }
+        })
+        .flat_map(|x| x)
+        .collect::<Vec<_>>();
+    if stuffs.is_empty() {
         Err(err)?;
     }
-    Ok(returns)
+    Ok(stuffs)
 }
 
-
-// #[cached]
-// #[cached(result = true)]
 fn find_function_in_file_with_commit(
-    commit: &str,
     file_path: &str,
+    fc: &str,
     name: &str,
     langs: Language,
 ) -> Result<FileType, Box<dyn Error>> {
-    let fc = find_file_in_commit(commit, file_path)?;
-    // if let Some(file) = MEMOIZE.lock()?.get(&fc) {
-    //     return Ok(file.clone());
+    // unsafe {
+    //     file_count += 1;
     // }
     let file = match langs {
         Language::Rust => {
-            let functions = rust::find_function_in_file(&fc, name)?;
-            FileType::Rust(RustFile::new(
-                file_path.to_string(),
-                functions,
-            ))
+            let functions = rust::find_function_in_file(fc, name)?;
+            FileType::Rust(RustFile::new(file_path.to_string(), functions))
         }
         #[cfg(feature = "c_lang")]
         Language::C => {
-            let functions = languages::c::find_function_in_file(&fc, name)?;
+            let functions = languages::c::find_function_in_file(fc, name)?;
             FileType::C(CFile::new(file_path.to_string(), functions))
         }
         #[cfg(feature = "unstable")]
         Language::Go => {
-            let functions = languages::go::find_function_in_file(&fc, name)?;
+            let functions = languages::go::find_function_in_file(fc, name)?;
             FileType::Go(GoFile::new(file_path.to_string(), functions))
         }
         Language::Python => {
-            let functions = languages::python::find_function_in_file(&fc, name)?;
-            FileType::Python(PythonFile::new(
-                file_path.to_string(),
-                functions,
-            ))
+            let functions = languages::python::find_function_in_file(fc, name)?;
+            FileType::Python(PythonFile::new(file_path.to_string(), functions))
         }
         Language::Ruby => {
-            let functions = languages::ruby::find_function_in_file(&fc, name)?;
-            FileType::Ruby(RubyFile::new(
-                file_path.to_string(),
-                functions,
-            ))
+            let functions = languages::ruby::find_function_in_file(fc, name)?;
+            FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
-                let functions = rust::find_function_in_file(&fc, name)?;
-                FileType::Rust(RustFile::new(
-                    file_path.to_string(),
-                    functions,
-                ))
+                let functions = rust::find_function_in_file(fc, name)?;
+                FileType::Rust(RustFile::new(file_path.to_string(), functions))
             }
             #[cfg(feature = "c_lang")]
             Some("c" | "h") => {
-                let functions = languages::c::find_function_in_file(&fc, name)?;
+                let functions = languages::c::find_function_in_file(fc, name)?;
                 FileType::C(CFile::new(file_path.to_string(), functions))
             }
             Some("py") => {
-                let functions = languages::python::find_function_in_file(&fc, name)?;
-                FileType::Python(PythonFile::new(
-                    file_path.to_string(),
-                    functions,
-                ))
+                let functions = languages::python::find_function_in_file(fc, name)?;
+                FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
             #[cfg(feature = "unstable")]
             Some("go") => {
-                let functions = languages::go::find_function_in_file(&fc, name)?;
+                let functions = languages::go::find_function_in_file(fc, name)?;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
             }
             Some("rb") => {
-                let functions = languages::ruby::find_function_in_file(&fc, name)?;
-                FileType::Ruby(RubyFile::new(
-                    file_path.to_string(),
-                    functions,
-                ))
+                let functions = languages::ruby::find_function_in_file(fc, name)?;
+                FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
             }
             _ => Err("unknown file type")?,
         },
     };
-    // MEMOIZE.lock()?.insert(fc, file.clone());
     Ok(file)
+}
+
+#[cfg_attr(feature = "cache", cached)]
+// function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
+fn find_function_in_files_with_commit(
+    files: Vec<(String, String)>,
+    name: String,
+    langs: Language,
+) -> Vec<FileType> {
+    #[cfg(feature = "parallel")]
+    let t = files.par_iter();
+    #[cfg(not(feature = "parallel"))]
+    let t = files.iter();
+    t.filter_map(|(file_path, fc)| {
+        find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
+    })
+    .collect()
 }
 
 trait UnwrapToError<T> {
@@ -677,6 +703,9 @@ mod tests {
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
+        // unsafe {
+        //     println!("# of files parsed: {}", file_count);
+        // }
         match &output {
             Ok(functions) => {
                 println!("{}", functions);
@@ -834,9 +863,7 @@ mod tests {
         }
         let f3 = filter_by!(
             repo,
-            LanguageFilter::Rust(RustFilter::InBlock(
-                crate::languages::rust::BlockType::Impl
-            )),
+            LanguageFilter::Rust(RustFilter::InBlock(crate::languages::rust::BlockType::Impl)),
             1
         );
         match f3 {

@@ -331,9 +331,7 @@ pub enum PythonFilter {
 impl PythonFilter {
     pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
-            Self::InClass(class) => {
-                function.class.as_ref().map_or(false, |x| x.name == *class)
-            }
+            Self::InClass(class) => function.class.as_ref().map_or(false, |x| x.name == *class),
             Self::HasParentFunction(parent) => function.parent.iter().any(|x| x.name == *parent),
             Self::HasReturnType(return_type) => function
                 .returns
@@ -342,24 +340,23 @@ impl PythonFilter {
             Self::HasParameterName(parameter_name) => {
                 function.parameters.iter().any(|x| x == parameter_name)
             }
-            Self::HasDecorator(decorator) => {
-                function.decorators.iter().any(|x| x == decorator)
-            }
-            Self::HasClasswithDecorator(decorator) => {
-                function.class.as_ref().map_or(false, |x| {
-                    x.decorators.iter().any(|x| x == decorator)
-                })
-            }
+            Self::HasDecorator(decorator) => function.decorators.iter().any(|x| x == decorator),
+            Self::HasClasswithDecorator(decorator) => function
+                .class
+                .as_ref()
+                .map_or(false, |x| x.decorators.iter().any(|x| x == decorator)),
             Self::HasParentFunctionwithDecorator(decorator) => function
                 .parent
                 .iter()
                 .any(|x| x.decorators.iter().any(|x| x == decorator)),
-            Self::HasParentFunctionwithParameterName(parameter_name) => function.parent.iter().any(
-                |x| x.parameters.iter().any(|x| x == parameter_name),
-            ),
-            Self::HasParentFunctionwithReturnType(return_type) => function.parent.iter().any(
-                |x| x.returns.as_ref().map_or(false, |x| x == return_type),
-            ),
+            Self::HasParentFunctionwithParameterName(parameter_name) => function
+                .parent
+                .iter()
+                .any(|x| x.parameters.iter().any(|x| x == parameter_name)),
+            Self::HasParentFunctionwithReturnType(return_type) => function
+                .parent
+                .iter()
+                .any(|x| x.returns.as_ref().map_or(false, |x| x == return_type)),
         }
     }
 }
