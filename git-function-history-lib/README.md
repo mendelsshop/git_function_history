@@ -10,9 +10,14 @@ Use the latest [crates.io](https://crates.io/crates/git_function_history) by put
 ## features
 
 - parallel: use rayon to parallelize the git log search
+
 - --no-default-features: disable parallelism
-- c-lang: adds support c (requires you to have a c compiler installed) (see the [c-lib]() docs for more information)
+
+<!-- - c-lang: adds support c (requires you to have a c compiler installed) (see the [c-lib]() docs for more information) -->
+
 - unstable: enable some parsers that require nightly rust so run `cargo +nightly` to use them
+
+- cache: enables caching when parsing files that don't change
 
 ## known issues
 

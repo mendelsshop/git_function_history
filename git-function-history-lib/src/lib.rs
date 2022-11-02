@@ -27,8 +27,8 @@ use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{error::Error, process::Command};
 
-#[cfg(feature = "c_lang")]
-use languages::CFile;
+// #[cfg(feature = "c_lang")]
+// use languages::CFile;
 #[cfg(feature = "unstable")]
 use languages::GoFile;
 
@@ -193,12 +193,12 @@ pub fn get_function_history(
     // check if file is a rust file
     if let FileFilterType::Absolute(path) | FileFilterType::Relative(path) = &file {
         match langs {
-            #[cfg(feature = "c_lang")]
-            Language::C => {
-                if !path.ends_with(".c") && !path.ends_with(".h") {
-                    Err(format!("file is not a c file: {}", path))?;
-                }
-            }
+            // #[cfg(feature = "c_lang")]
+            // Language::C => {
+            //     if !path.ends_with(".c") && !path.ends_with(".h") {
+            //         Err(format!("file is not a c file: {}", path))?;
+            //     }
+            // }
             #[cfg(feature = "unstable")]
             Language::Go => {
                 if !path.ends_with(".go") {
@@ -394,12 +394,12 @@ fn find_function_in_commit_with_filetype(
                 }
             }
             FileFilterType::None => match langs {
-                #[cfg(feature = "c_lang")]
-                Language::C => {
-                    if file.ends_with(".c") || file.ends_with(".h") {
-                        files.push(file);
-                    }
-                }
+                // #[cfg(feature = "c_lang")]
+                // Language::C => {
+                //     if file.ends_with(".c") || file.ends_with(".h") {
+                //         files.push(file);
+                //     }
+                // }
                 #[cfg(feature = "unstable")]
                 Language::Go => {
                     if file.ends_with(".go") {
@@ -519,11 +519,11 @@ fn find_function_in_file_with_commit(
             let functions = rust::find_function_in_file(fc, name)?;
             FileType::Rust(RustFile::new(file_path.to_string(), functions))
         }
-        #[cfg(feature = "c_lang")]
-        Language::C => {
-            let functions = languages::c::find_function_in_file(fc, name)?;
-            FileType::C(CFile::new(file_path.to_string(), functions))
-        }
+        // #[cfg(feature = "c_lang")]
+        // Language::C => {
+        //     let functions = languages::c::find_function_in_file(fc, name)?;
+        //     FileType::C(CFile::new(file_path.to_string(), functions))
+        // }
         #[cfg(feature = "unstable")]
         Language::Go => {
             let functions = languages::go::find_function_in_file(fc, name)?;
@@ -542,11 +542,11 @@ fn find_function_in_file_with_commit(
                 let functions = rust::find_function_in_file(fc, name)?;
                 FileType::Rust(RustFile::new(file_path.to_string(), functions))
             }
-            #[cfg(feature = "c_lang")]
-            Some("c" | "h") => {
-                let functions = languages::c::find_function_in_file(fc, name)?;
-                FileType::C(CFile::new(file_path.to_string(), functions))
-            }
+            // #[cfg(feature = "c_lang")]
+            // Some("c" | "h") => {
+            //     let functions = languages::c::find_function_in_file(fc, name)?;
+            //     FileType::C(CFile::new(file_path.to_string(), functions))
+            // }
             Some("py") => {
                 let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
@@ -745,27 +745,27 @@ mod tests {
         let _functions = file.get_functions();
     }
 
-    #[test]
-    #[cfg(feature = "c_lang")]
-    fn c_lang() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::Relative("src/test_functions.c".to_string()),
-            &Filter::DateRange(
-                "03 Oct 2022 11:27:23 -0400".to_owned(),
-                "05 Oct 2022 23:45:52 +0000".to_owned(),
-            ),
-            &languages::Language::C,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
-        match &output {
-            Ok(functions) => println!("{}", functions),
-            Err(e) => println!("{}", e),
-        }
-        assert!(output.is_ok());
-    }
+    // #[test]
+    // #[cfg(feature = "c_lang")]
+    // fn c_lang() {
+    //     let now = Utc::now();
+    //     let output = get_function_history(
+    //         "empty_test",
+    //         &FileFilterType::Relative("src/test_functions.c".to_string()),
+    //         &Filter::DateRange(
+    //             "03 Oct 2022 11:27:23 -0400".to_owned(),
+    //             "05 Oct 2022 23:45:52 +0000".to_owned(),
+    //         ),
+    //         &languages::Language::C,
+    //     );
+    //     let after = Utc::now() - now;
+    //     println!("time taken: {}", after.num_seconds());
+    //     match &output {
+    //         Ok(functions) => println!("{}", functions),
+    //         Err(e) => println!("{}", e),
+    //     }
+    //     assert!(output.is_ok());
+    // }
 
     #[test]
     fn parse_commit() {

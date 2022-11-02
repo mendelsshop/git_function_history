@@ -13,8 +13,8 @@ use crate::{
     Filter,
 };
 
-#[cfg(feature = "c_lang")]
-use crate::languages::CFile;
+// #[cfg(feature = "c_lang")]
+// use crate::languages::CFile;
 
 #[cfg(feature = "unstable")]
 use crate::languages::GoFile;
@@ -23,8 +23,8 @@ use crate::languages::GoFile;
 pub enum FileType {
     Rust(RustFile),
     Python(PythonFile),
-    #[cfg(feature = "c_lang")]
-    C(CFile),
+    // #[cfg(feature = "c_lang")]
+    // C(CFile),
     #[cfg(feature = "unstable")]
     Go(GoFile),
     Ruby(RubyFile),
@@ -35,8 +35,8 @@ impl FileTrait for FileType {
         match self {
             Self::Rust(file) => file.get_file_name(),
             Self::Python(file) => file.get_file_name(),
-            #[cfg(feature = "c_lang")]
-            Self::C(file) => file.get_file_name(),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => file.get_file_name(),
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_file_name(),
             Self::Ruby(file) => file.get_file_name(),
@@ -46,8 +46,8 @@ impl FileTrait for FileType {
         match self {
             Self::Rust(file) => file.get_functions(),
             Self::Python(file) => file.get_functions(),
-            #[cfg(feature = "c_lang")]
-            Self::C(file) => file.get_functions(),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => file.get_functions(),
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_functions(),
             Self::Ruby(file) => file.get_functions(),
@@ -64,11 +64,11 @@ impl FileTrait for FileType {
                 let filtered = file.filter_by(filter)?;
                 Ok(Self::Python(filtered))
             }
-            #[cfg(feature = "c_lang")]
-            Self::C(file) => {
-                let filtered = file.filter_by(filter)?;
-                Ok(Self::C(filtered))
-            }
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => {
+            //     let filtered = file.filter_by(filter)?;
+            //     Ok(Self::C(filtered))
+            // }
             #[cfg(feature = "unstable")]
             Self::Go(file) => {
                 let filtered = file.filter_by(filter)?;
@@ -85,8 +85,8 @@ impl FileTrait for FileType {
         match self {
             Self::Rust(file) => file.get_current(),
             Self::Python(file) => file.get_current(),
-            #[cfg(feature = "c_lang")]
-            Self::C(file) => file.get_current(),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => file.get_current(),
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_current(),
             Self::Ruby(file) => file.get_current(),
@@ -99,8 +99,8 @@ impl fmt::Display for FileType {
         match self {
             Self::Rust(file) => write!(f, "{}", file),
             Self::Python(file) => write!(f, "{}", file),
-            #[cfg(feature = "c_lang")]
-            Self::C(file) => write!(f, "{}", file),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => write!(f, "{}", file),
             #[cfg(feature = "unstable")]
             Self::Go(file) => write!(f, "{}", file),
             Self::Ruby(file) => write!(f, "{}", file),

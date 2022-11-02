@@ -7,8 +7,8 @@ use std::{
 // TODO: make a macro for generating filters
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
 
-#[cfg(feature = "c_lang")]
-use self::c::CFunction;
+// #[cfg(feature = "c_lang")]
+// use self::c::CFunction;
 
 #[cfg(feature = "unstable")]
 use go::GoFunction;
@@ -18,9 +18,9 @@ pub enum Language {
     Python,
     /// The rust language
     Rust,
-    #[cfg(feature = "c_lang")]
-    /// c language
-    C,
+    // #[cfg(feature = "c_lang")]
+    // /// c language
+    // C,
     #[cfg(feature = "unstable")]
     /// The go language
     Go,
@@ -35,9 +35,9 @@ pub enum LanguageFilter {
     Python(python::PythonFilter),
     /// rust filter
     Rust(rust::RustFilter),
-    #[cfg(feature = "c_lang")]
-    /// c filter
-    C(c::CFilter),
+    // #[cfg(feature = "c_lang")]
+    // /// c filter
+    // C(c::CFilter),
     #[cfg(feature = "unstable")]
     /// go filter
     Go(go::GoFilter),
@@ -50,8 +50,8 @@ impl Language {
         match s {
             "python" => Ok(Self::Python),
             "rust" => Ok(Self::Rust),
-            #[cfg(feature = "c_lang")]
-            "c" => Ok(Self::C),
+            // #[cfg(feature = "c_lang")]
+            // "c" => Ok(Self::C),
             #[cfg(feature = "unstable")]
             "go" => Ok(Self::Go),
             "all" => Ok(Self::All),
@@ -66,8 +66,8 @@ impl fmt::Display for Language {
         match self {
             Self::Python => write!(f, "python"),
             Self::Rust => write!(f, "rust"),
-            #[cfg(feature = "c_lang")]
-            Self::C => write!(f, "c"),
+            // #[cfg(feature = "c_lang")]
+            // Self::C => write!(f, "c"),
             #[cfg(feature = "unstable")]
             Self::Go => write!(f, "go"),
             Self::Ruby => write!(f, "ruby"),
@@ -75,8 +75,8 @@ impl fmt::Display for Language {
         }
     }
 }
-#[cfg(feature = "c_lang")]
-pub mod c;
+// #[cfg(feature = "c_lang")]
+// pub mod c;
 #[cfg(feature = "unstable")]
 pub mod go;
 // #[cfg(feature = "unstable")]
@@ -256,8 +256,8 @@ macro_rules! make_file {
 
 make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
-#[cfg(feature = "c_lang")]
-make_file!(CFile, CFunction, C);
+// #[cfg(feature = "c_lang")]
+// make_file!(CFile, CFunction, C);
 #[cfg(feature = "unstable")]
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
@@ -296,8 +296,8 @@ mod lang_tests {
     use super::*;
     make_file_time_test!(python_parses, py, python);
     make_file_time_test!(rust_parses, rs, rust);
-    #[cfg(feature = "c_lang")]
-    make_file_time_test!(c_parses, c, c);
+    // #[cfg(feature = "c_lang")]
+    // make_file_time_test!(c_parses, c, c);
     #[cfg(feature = "unstable")]
     make_file_time_test!(go_parses, go, go);
     make_file_time_test!(ruby_parses, rb, ruby);
