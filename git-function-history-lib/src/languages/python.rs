@@ -9,6 +9,22 @@ use std::{collections::HashMap, fmt};
 use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
+// #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+// pub struct Range {
+//     pub location: Location,
+//     pub end_location: Location,
+// }
+
+// impl Range {
+//     pub fn from_located<T>(located: &Located<T>) -> Self {
+//         Range {
+//             location: located.location,
+//             end_location: located
+//                 .end_location
+//                 .expect("AST nodes should have end_location."),
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone)]
 pub struct PythonFunction {
@@ -220,6 +236,8 @@ fn get_functions<'a>(
             } else {
                 *last_found_fn = Some((stmt.node, stmt.location));
             }
+            // let r = Range::from_located(&stmt);
+            // println!("Found function {} at {:?}", name, r);
         }
 
         StatementType::If { body, orelse, .. }

@@ -33,4 +33,10 @@
     - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
   - ruby:
     - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
-
+  - gui:
+    - [ ] make the list of dates clickable so when you click on a date/commit it will automatically run a search for that date/commit
+    - [ ] make list command a table wiht rows and columns for date, commit, author, message, etc
+    - [ ] (possibly) use tree sitter to provide syntax highlighting
+  - tui:
+    - [ ] make list command a table wiht rows and columns for date, commit, author, message, etc
+    - [ ] (possibly) use tree sitter to provide syntax highlighting
