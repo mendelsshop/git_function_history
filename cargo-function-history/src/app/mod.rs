@@ -261,7 +261,7 @@ impl App {
                         self.channels
                             .0
                             .send(FullCommand::Search(name.to_string(), file, filter, lang))
-                            .unwrap();
+                            .expect("could not send message in thread")
                     } else {
                         self.status = Status::Error("No function name given".to_string());
                     }
@@ -357,7 +357,7 @@ impl App {
                             thing: self.cmd_output.clone(),
                             filter,
                         }))
-                        .unwrap();
+                        .expect("could not send message in thread")
                 }
                 "list" => {
                     self.status = Status::Loading;
@@ -376,7 +376,10 @@ impl App {
                         }
                     };
                     if let Some(list) = list {
-                        self.channels.0.send(list).unwrap();
+                        self.channels
+                            .0
+                            .send(list)
+                            .expect("could not send message in thread")
                     }
                 }
                 other => {

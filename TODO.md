@@ -26,6 +26,7 @@
   - [/] add support for other languages (currently only supports rust)
   - [x] save search queries and filters to a file
   - [ ] rework the way filters and filefilters are handled ie maybe use a builder pattern
+  - [ ] remove all potentially panicking code
 
 - release 7.0:
   - python:

@@ -280,7 +280,10 @@ pub(crate) fn find_function_in_file(
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
                     parent_fn.push(RustParentFunction {
-                        name: function.name().unwrap().to_string(),
+                        name: function
+                            .name()
+                            .expect("could not retrieve function name")
+                            .to_string(),
                         lifetime: generics.1,
                         generics: generics.0,
                         top: stuff.1 .0,
@@ -319,7 +322,10 @@ pub(crate) fn find_function_in_file(
             .collect();
         let body = contents.trim_end().to_string();
         let function = RustFunction {
-            name: f.name().unwrap().to_string(),
+            name: f
+                .name()
+                .expect("could not retrieve function name")
+                .to_string(),
             body,
             block: parent_block,
             function: parent_fn,
@@ -353,7 +359,7 @@ fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
         .syntax()
         .descendants()
         .filter_map(ast::Fn::cast)
-        .filter(|function| function.name().unwrap().text() == name)
+        .filter(|function| function.name().map_or(false, |n| n.text() == name))
         .for_each(|function| functions.push(function));
 }
 #[inline]

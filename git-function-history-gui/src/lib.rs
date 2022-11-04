@@ -513,7 +513,7 @@ impl eframe::App for MyEguiApp {
                                                             thing: self.cmd_output.clone(),
                                                             filter,
                                                         }))
-                                                        .unwrap();
+                                                        .expect("could not send message in thread");
                                                 }
                                             }
                                         }
@@ -680,7 +680,7 @@ impl eframe::App for MyEguiApp {
                                                 self.filter.clone(),
                                                 Language::Rust,
                                             ))
-                                            .unwrap();
+                                            .expect("could not send message in thread");
                                     }
                                 }
                                 Command::List => {
@@ -704,7 +704,7 @@ impl eframe::App for MyEguiApp {
                                         self.channels
                                             .0
                                             .send(FullCommand::List(self.list_type))
-                                            .unwrap();
+                                            .expect("could not send message in thread");
                                     }
                                 }
                             }

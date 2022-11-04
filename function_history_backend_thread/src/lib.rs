@@ -161,7 +161,7 @@ pub fn command_thread(
                 if log {
                     log::info!("thread finished in {}s", now.elapsed().as_secs());
                 }
-                tx_t.send(msg).unwrap();
+                tx_t.send(msg).expect("could not send message in thread")
             }
         }
     });

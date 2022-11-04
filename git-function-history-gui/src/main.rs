@@ -1,5 +1,6 @@
 use eframe::{epaint::Vec2, run_native};
 use git_function_history_gui::MyEguiApp;
+use image::ImageFormat::Png;
 use std::sync::mpsc;
 fn main() {
     let (tx_t, rx_m) = mpsc::channel();
@@ -8,10 +9,11 @@ fn main() {
         "git-function-history-gui",
         simple_file_logger::LogLevel::Info,
     )
-    .unwrap();
-    use image::ImageFormat::Png;
+    .expect("could not intialize logger");
+
     const ICON: &[u8] = include_bytes!("../resources/icon1.png");
-    let icon = image::load_from_memory_with_format(ICON, Png).unwrap();
+    let icon =
+        image::load_from_memory_with_format(ICON, Png).expect("could not load image for icon");
     function_history_backend_thread::command_thread(rx_t, tx_t, true);
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(Vec2::new(800.0, 600.0)),
