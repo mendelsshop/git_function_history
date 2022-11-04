@@ -178,13 +178,10 @@ impl App {
                         let mut lang = Language::All;
                         let new_vec = iter.collect::<Vec<_>>();
                         let mut new_iter = new_vec.windows(2);
-                        log::debug!(
-                            "searching for {:?}",
-                            new_iter
-                        );
+                        log::debug!("searching for {:?}", new_iter);
 
                         if new_vec.len() % 2 != 0 {
-                            self.status = Status::Error(format!("uncomplete search, command: {} doesnt have its parameters",new_vec.last().expect("oops look like theres nothing in this vec don't how this happened").to_string()));
+                            self.status = Status::Error(format!("uncomplete search, command: {} doesnt have its parameters",new_vec.last().expect("oops look like theres nothing in this vec don't how this happened")));
                             return;
                         }
                         for i in &mut new_iter {

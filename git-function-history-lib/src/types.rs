@@ -97,13 +97,13 @@ impl FileTrait for FileType {
 impl fmt::Display for FileType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Rust(file) => write!(f, "{}", file),
-            Self::Python(file) => write!(f, "{}", file),
+            Self::Rust(file) => write!(f, "{file}"),
+            Self::Python(file) => write!(f, "{file}"),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => write!(f, "{}", file),
             #[cfg(feature = "unstable")]
-            Self::Go(file) => write!(f, "{}", file),
-            Self::Ruby(file) => write!(f, "{}", file),
+            Self::Go(file) => write!(f, "{file}"),
+            Self::Ruby(file) => write!(f, "{file}"),
         }
     }
 }

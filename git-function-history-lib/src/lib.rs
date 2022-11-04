@@ -202,22 +202,22 @@ pub fn get_function_history(
             #[cfg(feature = "unstable")]
             Language::Go => {
                 if !path.ends_with(".go") {
-                    Err(format!("file is not a go file: {}", path))?;
+                    Err(format!("file is not a go file: {path}"))?;
                 }
             }
             Language::Python => {
                 if !path.ends_with(".py") {
-                    Err(format!("file is not a python file: {}", path))?;
+                    Err(format!("file is not a python file: {path}"))?;
                 }
             }
             Language::Rust => {
                 if !path.ends_with(".rs") {
-                    Err(format!("file is not a rust file: {}", path))?;
+                    Err(format!("file is not a rust file: {path}"))?;
                 }
             }
             Language::Ruby => {
                 if !path.ends_with(".rb") {
-                    Err(format!("file is not a ruby file: {}", path))?;
+                    Err(format!("file is not a ruby file: {path}"))?;
                 }
             }
             Language::All => {
@@ -227,7 +227,7 @@ pub fn get_function_history(
                     || !path.ends_with(".h")
                     || !path.ends_with(".rb")
                 {
-                    Err(format!("file is not supported: {}", path))?;
+                    Err(format!("file is not supported: {path}"))?;
                 }
             }
         }
@@ -350,7 +350,7 @@ pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
 #[inline]
 fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
     let commit_history = Command::new("git")
-        .args(format!("show {}:{}", commit, file_path).split(' '))
+        .args(format!("show {commit}:{file_path}").split(' '))
         .output()?;
     if !commit_history.stderr.is_empty() {
         Err(String::from_utf8_lossy(&commit_history.stderr))?;
@@ -374,7 +374,7 @@ fn find_function_in_commit_with_filetype(
     }
     let file_list = String::from_utf8_lossy(&command.stdout).to_string();
     if file_list.is_empty() {
-        return Err(format!("no files found for commit {} in git ouput", commit))?;
+        return Err(format!("no files found for commit {commit} in git ouput"))?;
     }
     for file in file_list.split('\n') {
         match filetype {
@@ -486,7 +486,7 @@ fn find_function_in_commit_with_filetype(
         .filter_map(|(path, files)| {
             let mut file_types = Vec::new();
             for file in files {
-                let file_path = format!("{}/{}", path, file);
+                let file_path = format!("{path}/{file}");
                 let file_contents = find_file_in_commit(commit, &file_path).ok()?;
 
                 file_types.push((file_path, file_contents));
@@ -620,9 +620,9 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{functions}");
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
     }
@@ -649,8 +649,8 @@ mod tests {
             &languages::Language::Rust,
         );
         match &output {
-            Ok(output) => println!("{}", output),
-            Err(error) => println!("{}", error),
+            Ok(output) => println!("{output}"),
+            Err(error) => println!("{error}"),
         }
         assert!(output.is_err());
     }
@@ -685,9 +685,9 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{functions}");
             }
-            Err(e) => println!("-{}-", e),
+            Err(e) => println!("-{e}-"),
         }
         assert!(output.is_ok());
     }
@@ -708,12 +708,12 @@ mod tests {
         // }
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{functions}");
                 functions.get_commit().files.iter().for_each(|file| {
-                    println!("{}", file);
+                    println!("{file}");
                 });
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
     }
@@ -734,9 +734,9 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &output {
             Ok(functions) => {
-                println!("{}", functions);
+                println!("{functions}");
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
         let output = output.unwrap();
@@ -781,9 +781,9 @@ mod tests {
         println!("time taken: {}", after.num_seconds());
         match &t {
             Ok(functions) => {
-                println!("{:?}", functions);
+                println!("{functions:?}");
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{e}"),
         }
         assert!(t.is_ok());
     }
@@ -801,8 +801,8 @@ mod tests {
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
         match &output {
-            Ok(functions) => println!("{}", functions),
-            Err(e) => println!("{}", e),
+            Ok(functions) => println!("{functions}"),
+            Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
     }
@@ -825,7 +825,7 @@ mod tests {
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
         match &new_output {
-            Ok(res) => println!("{}", res),
+            Ok(res) => println!("{res}"),
             Err(e) => println!("{e}"),
         }
         let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
@@ -834,7 +834,7 @@ mod tests {
         after = Utc::now() - now;
         println!("time taken to filter {}", after.num_seconds());
         match &new_output {
-            Ok(res) => println!("{}", res),
+            Ok(res) => println!("{res}"),
             Err(e) => println!("{e}"),
         }
         assert!(new_output.is_ok());
@@ -851,7 +851,7 @@ mod tests {
         );
         match f1 {
             Ok(_) => println!("filter 1 ok"),
-            Err(e) => println!("error: {}", e),
+            Err(e) => println!("error: {e}"),
         }
         let f2 = filter_by!(
             repo,
@@ -859,7 +859,7 @@ mod tests {
         );
         match f2 {
             Ok(_) => println!("filter 2 ok"),
-            Err(e) => println!("error: {}", e),
+            Err(e) => println!("error: {e}"),
         }
         let f3 = filter_by!(
             repo,
@@ -868,7 +868,7 @@ mod tests {
         );
         match f3 {
             Ok(_) => println!("filter 3 ok"),
-            Err(e) => println!("error: {}", e),
+            Err(e) => println!("error: {e}"),
         }
     }
 }

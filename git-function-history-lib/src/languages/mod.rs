@@ -56,7 +56,7 @@ impl Language {
             "go" => Ok(Self::Go),
             "all" => Ok(Self::All),
             "ruby" => Ok(Self::Ruby),
-            _ => Err(format!("Unknown language: {}", s))?,
+            _ => Err(format!("Unknown language: {s}"))?,
         }
     }
 }
@@ -130,26 +130,26 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
                 write!(f, "{}", current.get_tops().join("\n"))?;
                 write!(f, "{}", current.get_body())?;
             } else {
-                write!(f, "{}", current)?;
+                write!(f, "{current}")?;
             }
         }
         (Some(prev), None) => {
             if prev.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
             } else {
-                write!(f, "{}", current)?;
+                write!(f, "{current}")?;
             }
         }
         (None, Some(next)) => {
             if next.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
             } else {
-                write!(f, "{}", current)?;
+                write!(f, "{current}")?;
             }
         }
         (None, None) => {
             // print the function
-            write!(f, "{}", current)?;
+            write!(f, "{current}")?;
         }
     }
     Ok(())
@@ -262,37 +262,36 @@ make_file!(RustFile, RustFunction, Rust);
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
 
-
 #[cfg(test)]
 mod lang_tests {
     // macro that auto genertes the test parse_<lang>_file_time
-macro_rules! make_file_time_test {
-    ($name:ident, $extname:ident, $function:ident) => {
-        #[test]
-        fn $name() {
-            let mut file = std::env::current_dir().unwrap();
-            file.push("src");
-            file.push("test_functions.".to_string() + stringify!($extname));
-            let file = std::fs::read_to_string(file.clone())
-                .expect(format!("could not read file {:?}", file).as_str());
-            let start = std::time::Instant::now();
-            let ok = $function::find_function_in_file(&file, "empty_test");
-            let end = std::time::Instant::now();
-            match &ok {
-                Ok(hist) => {
-                    for i in hist {
-                        println!("{}", i);
+    macro_rules! make_file_time_test {
+        ($name:ident, $extname:ident, $function:ident) => {
+            #[test]
+            fn $name() {
+                let mut file = std::env::current_dir().unwrap();
+                file.push("src");
+                file.push("test_functions.".to_string() + stringify!($extname));
+                let file = std::fs::read_to_string(file.clone())
+                    .expect(format!("could not read file {:?}", file).as_str());
+                let start = std::time::Instant::now();
+                let ok = $function::find_function_in_file(&file, "empty_test");
+                let end = std::time::Instant::now();
+                match &ok {
+                    Ok(hist) => {
+                        for i in hist {
+                            println!("{}", i);
+                        }
+                    }
+                    Err(e) => {
+                        println!("{}", e);
                     }
                 }
-                Err(e) => {
-                    println!("{}", e);
-                }
+                println!("{} took {:?}", stringify!($name), end - start);
+                assert!(ok.is_ok());
             }
-            println!("{} took {:?}", stringify!($name), end - start);
-            assert!(ok.is_ok());
-        }
-    };
-}
+        };
+    }
 
     use super::*;
     make_file_time_test!(python_parses, py, python);

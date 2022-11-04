@@ -114,7 +114,7 @@ pub(crate) fn find_function_in_file(
                             .lines()
                             .map(|l| {
                                 starts += 1;
-                                format!("{}: {}\n", starts, l,)
+                                format!("{starts}: {l}\n",)
                             })
                             .collect(),
                         bottom: format!(
@@ -163,7 +163,7 @@ pub(crate) fn find_function_in_file(
                     .lines()
                     .map(|l| {
                         starts += 1;
-                        format!("{}: {}\n", starts, l,)
+                        format!("{starts}: {l}\n",)
                     })
                     .collect(),
                 args: f

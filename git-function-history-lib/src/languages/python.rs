@@ -150,7 +150,7 @@ pub(crate) fn find_function_in_file(
                 .to_string()
                 .lines()
                 .map(|l| {
-                    let t = format!("{}: {}\n", start_s, l,);
+                    let t = format!("{start_s}: {l}\n",);
                     start_s += 1;
                     t
                 })

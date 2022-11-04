@@ -106,7 +106,7 @@ impl RustParentFunction {
             "arguments".to_string(),
             self.arguments
                 .iter()
-                .map(|(k, v)| format!("{}: {}", k, v))
+                .map(|(k, v)| format!("{k}: {v}"))
                 .collect::<Vec<String>>()
                 .join(","),
         );
@@ -314,7 +314,7 @@ pub(crate) fn find_function_in_file(
             .lines()
             .map(|l| {
                 start += 1;
-                format!("{}: {}\n", start, l,)
+                format!("{start}: {l}\n",)
             })
             .collect();
         let body = contents.trim_end().to_string();
@@ -406,7 +406,7 @@ fn get_stuff<T: AstNode>(
                 .lines()
                 .map(|l| {
                     start_lines += 1;
-                    format!("{}: {}\n", start_lines, l,)
+                    format!("{start_lines}: {l}\n",)
                 })
                 .collect::<String>()
                 .trim_end()

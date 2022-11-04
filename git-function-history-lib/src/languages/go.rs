@@ -77,7 +77,7 @@ pub(crate) fn find_function_in_file(
     name: &str,
 ) -> Result<Vec<GoFunction>, Box<dyn Error>> {
     let parsed_file = gosyn::parse_source(file_contents)
-        .map_err(|e| format!("{:?}", e))?
+        .map_err(|e| format!("{e:?}"))?
         .decl;
     let parsed = parsed_file
         .into_iter()
@@ -209,7 +209,7 @@ pub(crate) fn find_function_in_file(
         })
         .collect::<Vec<_>>();
     if parsed.is_empty() {
-        return Err(format!("could not find function {} in file", name).into());
+        return Err(format!("could not find function {name} in file"))?;
     }
     Ok(parsed)
 }
