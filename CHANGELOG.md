@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 ### Gui
 
 - Added scrollbar to command builder & now supports other languages
+- Started working on clickable dates/commits using list
 
 ### Lib
 
