@@ -1,7 +1,6 @@
 use chrono::{DateTime, FixedOffset};
-use rayon::prelude::IntoParallelRefIterator;
 #[cfg(feature = "parallel")]
-use rayon::prelude::ParallelIterator;
+use rayon::prelude::{ParallelIterator, IntoParallelRefIterator};
 use std::{
     collections::HashMap,
     error::Error,
