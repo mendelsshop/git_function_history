@@ -24,8 +24,11 @@ rustpython-parser = "0.1.2"
 # for end_lines but can't be publsihed b/c git depenency
 # rustpython-parser = { features = ["lalrpop"], git = "https://github.com/RustPython/RustPython.git", rev = "77b821a1941019fe34f73ce17cea013ae1b98fd0" }
 lib-ruby-parser = "3.0.12"
-gosyn = {version = "0.1.1", optional = true}
+gosyn = {version = "0.2.0", optional = true}
 # can't be published b/c git dependency
 # javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
 cfg-if = "1.0.0"
 cached = {version = "0.40.0", optional = true}
+# both unix only right now
+# rs-git-lib = "0.2.1"
+# git_rs = "0.1.0"
