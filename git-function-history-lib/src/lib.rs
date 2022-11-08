@@ -17,15 +17,45 @@
 pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
+macro_rules! get_item_from {
+    ($oid:expr, $repo:expr, $typs:ident) => {
+        git_repository::hash::ObjectId::from($oid)
+            .attach(&$repo)
+            .object()?
+            .$typs()?
+    };
+}
 
+macro_rules! get_item_from_oid_option {
+    ($oid:expr, $repo:expr, $typs:ident) => {
+        // use git_repository;
+        git_repository::hash::ObjectId::from($oid)
+            .attach(&$repo)
+            // .map(|id| id.attach(&repo))?
+            .object()
+            .ok()?
+            .$typs()
+            .ok()
+    };
+}
 // static mut file_count: usize = 0;
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
+use rayon::prelude::IntoParallelIterator;
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use std::{error::Error, process::Command};
+use crossbeam_channel::{bounded, Receiver, Sender};
+use git_repository::{prelude::ObjectIdExt, ObjectId};
+use std::{
+    error::Error,
+    process::Command,
+    sync::{Arc, Mutex},
+    thread::{sleep, spawn},
+    time::Duration, fmt, path::PathBuf,
+};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
@@ -106,160 +136,115 @@ pub enum Filter {
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
-/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
+/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, language::Rust).unwrapexit();
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub fn get_function_history(
-    name: &str,
+    name: String,
     file: &FileFilterType,
     filter: &Filter,
-    langs: &languages::Language,
+    langs: languages::Language,
 ) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
         Err("function name is empty")?;
     }
-    // check if git is installed
-    Command::new("git").arg("--version").output()?;
-    // get the commit hitory
-    let mut command = Command::new("git");
-    command.arg("log");
-    command.arg("--pretty=%H;%aD;%aN;%aE;%s");
-    command.arg("--date=rfc2822");
-    match filter {
-        Filter::CommitHash(hash) => {
-            command.arg(hash);
-            command.arg("-n");
-            command.arg("1");
-        }
-        Filter::Date(date) => {
-            command.arg("--since");
-            command.arg(date);
-            command.arg("--max-count=1");
-        }
-        Filter::DateRange(start, end) => {
-            command.arg("--since");
-            command.arg(start);
-            command.arg("--until");
-            command.arg(end);
-        }
-        Filter::Author(author) => {
-            command.arg("--author");
-            command.arg(author);
-        }
-        Filter::AuthorEmail(email) => {
-            command.arg("--author");
-            command.arg(email);
-        }
-        Filter::Message(message) => {
-            command.arg("--grep");
-            command.arg(message);
-        }
-        Filter::None => {}
-        _ => {
-            Err("filter not supported")?;
-        }
-    }
-    let output = command.output()?;
-    if !output.stderr.is_empty() {
-        return Err(String::from_utf8(output.stderr)?)?;
-    }
-    let stdout = String::from_utf8(output.stdout)?;
-    let commits = stdout
-        .lines()
-        .map(|line| {
-            let mut parts = line.split(';');
-            let id = parts
-                .next()
-                .unwrap_to_error_sync("no id found in git command output");
-            let date = parts
-                .next()
-                .unwrap_to_error_sync("date is missing from git command output");
-            let author = parts
-                .next()
-                .unwrap_to_error_sync("author is missing from git command output");
-            let email = parts
-                .next()
-                .unwrap_to_error_sync("email is missing from git command output");
-            let message = parts
-                .next()
-                .unwrap_to_error_sync("message is missing from git command output");
-            Ok((id?, date?, author?, email?, message?))
+    let repo = git_repository::discover(".")?;
+    let mut tips = vec![];
+    let head = repo.head_commit().unwrapexit();
+    tips.push(head.id);
+    let commit_iter = repo.rev_walk(tips);
+    let commits = commit_iter
+        .all()
+        .unwrapexit()
+        .filter_map(|i| match i {
+            Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit),
+            Err(_) => None,
         })
-        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
-    let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
-    let err = "no history found".to_string();
-    // check if file is a rust file
-    if let FileFilterType::Absolute(path) | FileFilterType::Relative(path) = &file {
-        match langs {
-            // #[cfg(feature = "c_lang")]
-            // Language::C => {
-            //     if !path.ends_with(".c") && !path.ends_with(".h") {
-            //         Err(format!("file is not a c file: {}", path))?;
-            //     }
-            // }
-            #[cfg(feature = "unstable")]
-            Language::Go => {
-                if !path.ends_with(".go") {
-                    Err(format!("file is not a go file: {path}"))?;
-                }
+        .collect::<Vec<_>>();
+    let closest_date = (0, Utc::now());
+
+    let commits = commits
+        .iter()
+        .map(|i| {
+            let tree = i.tree().unwrapexit().id;
+            let time = i.time().unwrapexit();
+            let time = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(time.seconds_since_unix_epoch.into(), 0), Utc);
+            let authorinfo = i.author().unwrapexit();
+            let author = authorinfo.name.to_string();
+            let email = authorinfo.email.to_string();
+            let messages = i.message().unwrapexit();
+            let mut message = messages.title.to_string();
+            if let Some(i) = messages.body {
+                message.push_str(i.to_string().as_str());
             }
-            Language::Python => {
-                if !path.ends_with(".py") {
-                    Err(format!("file is not a python file: {path}"))?;
+            let commit = i.id().to_hex().to_string();
+            let metadata = (message, commit, author, email, time);
+
+            (tree, metadata)
+        })
+        .filter(|(_, metadata)| {
+            match filter {
+                Filter::CommitHash(hash) => *hash == metadata.1,
+                Filter::Date(date) => {
+                    // if closest_date
+                    // let date = date.parse::<DateTime<Utc>>().unwrapexit();
+                    // let cmp = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(metadata.4.seconds_since_unix_epoch.into(), 0), Utc);
+                    false
                 }
+                Filter::DateRange(start, end) => {
+                    // let date = metadata.4.seconds_since_unix_epoch;
+                    let date = metadata.4;
+                    let start = DateTime::parse_from_rfc2822(start)
+                        .map(|i| i.with_timezone(&Utc))
+                        .unwrapexit();
+                    let end = DateTime::parse_from_rfc2822(end)
+                        .map(|i| i.with_timezone(&Utc))
+                        .unwrapexit();
+                    start <= date && date <= end
+                }
+                Filter::Author(author) => *author == metadata.2,
+                Filter::AuthorEmail(email) => *email == metadata.3,
+                Filter::Message(message) => {
+                    metadata.0.contains(message)
+                        || message.contains(&metadata.0)
+                        || message == &metadata.0
+                }
+                Filter::None => true,
+                _ => false,
             }
-            Language::Rust => {
-                if !path.ends_with(".rs") {
-                    Err(format!("file is not a rust file: {path}"))?;
-                }
+        })
+        .collect::<Vec<_>>();
+    let (tx, rx) = bounded(0);
+    let cloned_name = name.clone();
+    spawn(move || receiver(name.clone(), langs.clone(), rx));
+    let commits = commits.into_par_iter().filter_map(|i| {
+        // let name_c = name.clone();
+        // println!("{}: ",i.1.1);
+        let txt = tx.clone();
+        let tree = spawn(move || sender(i.0,  txt));
+        let tree = tree.join().unwrapexit();
+        // println!("done");
+        match tree {
+            Ok(tree) => {
+                // for item in tree {
+                //     println!("file: {}\n{}", item.0, item.1);
+                // }
+                Some(Commit::new(i.1.1, tree, &i.1.4.to_rfc2822(), i.1.2, i.1.3, i.1.0))
+
             }
-            Language::Ruby => {
-                if !path.ends_with(".rb") {
-                    Err(format!("file is not a ruby file: {path}"))?;
-                }
-            }
-            Language::All => {
-                if !path.ends_with(".rs")
-                    || !path.ends_with(".py")
-                    || !path.ends_with(".c")
-                    || !path.ends_with(".h")
-                    || !path.ends_with(".rb")
-                {
-                    Err(format!("file is not supported: {path}"))?;
-                }
+            Err(_) => {
+                // println!("error");
+                None
             }
         }
+    }).collect::<Vec<_>>();
+    if commits.is_empty() {
+        Err("no history found")?;
     }
-    #[cfg(feature = "parallel")]
-    let t = commits.par_iter();
-    #[cfg(not(feature = "parallel"))]
-    let t = commits.iter();
-    file_history.commit_history = t
-        .filter_map(|commit| match &file {
-            FileFilterType::Absolute(_)
-            | FileFilterType::Relative(_)
-            | FileFilterType::None
-            | FileFilterType::Directory(_) => find_function_in_commit_with_filetype(
-                commit.0, name, file, *langs,
-            )
-            .map_or(None, |contents| {
-                Some(Commit::new(
-                    commit.0.to_string(),
-                    contents,
-                    commit.1,
-                    commit.2.to_string(),
-                    commit.3.to_string(),
-                    commit.4.to_string(),
-                ))
-            }),
-        })
-        .collect();
-    if file_history.commit_history.is_empty() {
-        return Err(err)?;
-    }
-    Ok(file_history)
+    let fh = FunctionHistory::new(cloned_name, commits);
+    Ok(fh)
 }
 
 /// used for the `get_function_history` macro internally (you don't have to touch this)
@@ -281,6 +266,98 @@ impl Default for MacroOpts<'_> {
     }
 }
 
+fn sender(
+    id: ObjectId,
+    c: Sender<Arc<Mutex<(ObjectId, Vec<FileType>, bool)>>>,
+) -> Result<Vec<FileType>, Box<dyn std::error::Error + Send + Sync>> {
+    loop {
+        let id = Arc::new(Mutex::new((id, Vec::new(), false)));
+        c.send(Arc::clone(&id))?;
+        loop {
+            {
+                let id = id.lock().unwrapexit();
+                if id.2 {
+                    return Ok(id.1.clone());
+                }
+            }
+            sleep(Duration::from_millis(1000));
+        }
+    }
+}
+
+fn receiver(
+    name: String,
+    langs: Language,
+    c: Receiver<Arc<Mutex<(ObjectId, Vec<FileType>,  bool)>>>,
+) {
+    let repo = git_repository::discover(".").unwrapexit();
+    for r in c {
+        let mut data = r.lock().unwrapexit();
+        let (objid, _, _ ) = data.clone();
+        let object = repo.find_object(objid).unwrapexit();
+        let tree = object.into_tree();
+        // println!("traverse_tree");
+        let files = traverse_tree(&tree, &repo, &name,"".to_string(), langs).unwrapexit();
+        // println!("tree traverse_tree");
+        data.1 = files;
+        data.2 = true;
+    }
+}
+
+fn traverse_tree(
+    tree: &git_repository::Tree<'_>,
+    repo: &git_repository::Repository,
+    name: &str,
+    path: String,
+    langs: Language,
+) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
+    // println!("traverse_tree in");
+    let treee_iter = tree.iter();
+    let mut files: Vec<(String, String)> = Vec::new();
+    let mut ret = Vec::new();
+    for i in treee_iter {
+        let i = i.unwrapexit();
+        match &i.mode() {
+            git_object::tree::EntryMode::Tree => {
+                let new = get_item_from!(i.oid(), &repo, try_into_tree);
+                let path_new = PathBuf::from(path.clone()).join(i.filename().to_string());
+                // println!("new tree");
+                ret.extend(traverse_tree(&new, repo, name, path_new.to_str().unwrapexit().to_string(), langs)?);
+                // println!("new tree done");
+            }
+            git_object::tree::EntryMode::Blob => {
+                if !i.filename().to_string().ends_with(".rs") {
+                    continue;
+                }
+                // println!("{path}/{}", i.filename().to_string());
+                // unsafe {
+                //     COUNT += 1;
+                // }
+                let obh = repo.find_object(i.oid())?;
+                // i.inner.
+                let objref = git_object::ObjectRef::from_bytes(obh.kind, &obh.data)?;
+                let blob = objref.into_blob();
+                if let Some(blob) = blob {
+                    files.push((
+                        i.filename().to_string(),
+                        String::from_utf8_lossy(blob.data).to_string(),
+                    ));
+                }
+            }
+            _ => {
+                println!("unknown");
+            }
+        }
+    }
+    // println!("parsing");
+    ret.extend(find_function_in_files_with_commit(
+        files,
+        name.to_string(),
+        langs,
+    ));
+    // println!("traverse_tree out");
+    Ok(ret)
+}
 /// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
@@ -316,10 +393,10 @@ macro_rules! get_function_history {
             opts.$variant = $value;
         )*
         get_function_history(
-            &opts.name,
+            opts.name.to_string(),
             &opts.file,
             &opts.filter,
-            &opts.language
+            opts.language
         )
     }};
 }
@@ -511,6 +588,7 @@ fn find_function_in_file_with_commit(
     name: &str,
     langs: Language,
 ) -> Result<FileType, Box<dyn Error>> {
+    // println!("finding function {} in file {}", name, file_path);
     // unsafe {
     //     file_count += 1;
     // }
@@ -573,12 +651,24 @@ fn find_function_in_files_with_commit(
     name: String,
     langs: Language,
 ) -> Vec<FileType> {
+    // println!("files: ",);
     #[cfg(feature = "parallel")]
     let t = files.par_iter();
-    #[cfg(not(feature = "parallel"))]
+    // #[cfg(not(feature = "parallel"))]
     let t = files.iter();
+    // println!("finding function {} in files", name);
     t.filter_map(|(file_path, fc)| {
-        find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
+        // println!("fparsing ile_path: {}", file_path);
+        match find_function_in_file_with_commit(file_path, fc, &name, langs) {
+            Ok(file) => {
+                // println!("file: {:?}", file);
+                Some(file)},
+            Err(e) => {
+                // println!("error: {}", e);
+                None
+            }
+        }
+        // println!("parsed file_path: {}", file_path);
     })
     .collect()
 }
@@ -611,10 +701,10 @@ mod tests {
     fn found_function() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_string(),
             &FileFilterType::Relative("src/test_functions.rs".to_string()),
             &Filter::None,
-            &languages::Language::Rust,
+            languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -629,10 +719,10 @@ mod tests {
     #[test]
     fn git_installed() {
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_owned(),
             &FileFilterType::Absolute("src/test_functions.rs".to_string()),
             &Filter::None,
-            &languages::Language::Rust,
+            languages::Language::Rust,
         );
         // assert that err is "not git is not installed"
         if output.is_err() {
@@ -643,10 +733,10 @@ mod tests {
     #[test]
     fn not_found() {
         let output = get_function_history(
-            "Not_a_function",
+            "Not_a_function".to_string(),
             &FileFilterType::None,
             &Filter::None,
-            &languages::Language::Rust,
+            languages::Language::Rust,
         );
         match &output {
             Ok(output) => println!("{output}"),
@@ -658,10 +748,10 @@ mod tests {
     #[test]
     fn not_rust_file() {
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_string(),
             &FileFilterType::Absolute("src/test_functions.txt".to_string()),
             &Filter::None,
-            &languages::Language::Rust,
+            languages::Language::Rust,
         );
         assert!(output.is_err());
         assert!(output
@@ -673,13 +763,13 @@ mod tests {
     fn test_date() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_string(),
             &FileFilterType::None,
             &Filter::DateRange(
                 "27 Sep 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
-            &languages::Language::Rust,
+            languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -696,10 +786,10 @@ mod tests {
     fn expensive_tes() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_string(),
             &FileFilterType::None,
             &Filter::None,
-            &languages::Language::All,
+            languages::Language::All,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -722,13 +812,13 @@ mod tests {
     fn python() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test",
+            "empty_test".to_string(),
             &FileFilterType::Relative("src/test_functions.py".to_string()),
             &Filter::DateRange(
                 "03 Oct 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
-            &languages::Language::Python,
+            languages::Language::Python,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -739,7 +829,7 @@ mod tests {
             Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
-        let output = output.unwrap();
+        let output = output.unwrapexit();
         let commit = output.get_commit();
         let file = commit.get_file();
         let _functions = file.get_functions();
@@ -756,7 +846,7 @@ mod tests {
     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
     //             "05 Oct 2022 23:45:52 +0000".to_owned(),
     //         ),
-    //         &languages::Language::C,
+    //         languages::Language::C,
     //     );
     //     let after = Utc::now() - now;
     //     println!("time taken: {}", after.num_seconds());
@@ -796,7 +886,7 @@ mod tests {
             "empty_test",
             &FileFilterType::Relative("src/test_functions.go".to_string()),
             &Filter::None,
-            &languages::Language::Go,
+            languages::Language::Go,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -872,3 +962,33 @@ mod tests {
         }
     }
 }
+
+trait unwrapexit<T> {
+    fn unwrapexit(self) -> T;
+}
+
+impl<T, E: fmt::Debug> unwrapexit<T> for Result<T, E> {
+    fn unwrapexit(self) -> T {
+        match self {
+            Ok(t) => t,
+            Err(e) => {
+                println!("{:?}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
+impl<T> unwrapexit<T> for Option<T> {
+    fn unwrapexit(self) -> T {
+        match self {
+            Some(t) => t,
+            None => {
+                println!("None");
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
+
