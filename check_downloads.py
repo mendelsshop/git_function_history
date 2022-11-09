@@ -5,7 +5,7 @@ from github import Github
 import os
 import xml.etree.ElementTree as ET
 
-count = 0
+count = -1
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <github token>")
     sys.exit(1)
@@ -35,23 +35,11 @@ if old == base64_json.encode():
     print("same")
 else: 
     # update the file
+    # get the message from old
+    old = json.loads(old)
+    old = int(old['message'])
+    if old > count:
+        print("old is bigger")
+        exit()
     git.update_file("downloads.json", "update downloads.json", base64_json, commit.sha, branch="stats")
     print("different")
-
-
-
-# # using an access token
-# g = Github(sys.argv[1])
-
-# # get last sha
-# git = g.get_repo("mendelsshop/git_function_history")
-# commit = git.get_contents("downloads.json", ref="stats")
-# old = commit.decoded_content
-# print(old)
-# print(base64_json.encode())
-# if old == base64_json.encode():
-#     print("same")
-# else: 
-#     # update the file
-#     git.update_file("downloads.json", "update downloads.json", base64_json, commit.sha, branch="stats")
-#     print("different")
