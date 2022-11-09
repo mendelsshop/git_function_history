@@ -40,8 +40,8 @@ macro_rules! get_item_from_oid_option {
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
-
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+#[cfg(feature = "parallel")]
+use rayon::prelude::{IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
 
 use git_repository::{prelude::ObjectIdExt, ObjectId};
 use std::{error::Error, process::Command};
@@ -208,9 +208,11 @@ pub fn get_function_history(
             }
         })
         .collect::<Vec<_>>();
-    let commits = commits
-        .into_par_iter()
-        .filter_map(|i| {
+    #[cfg(feature = "parallel")]
+    let commits = commits.into_par_iter();
+    #[cfg(not(feature = "parallel"))]
+    let commits = commits.iter();
+    let commits = commits.filter_map(|i| {
             let tree = sender(i.0, name, *langs, file);
             match tree {
                 Ok(tree) => {
@@ -218,12 +220,12 @@ pub fn get_function_history(
                         None?;
                     }
                     Some(Commit::new(
-                        i.1 .1,
+                        &i.1 .1,
                         tree,
                         &i.1 .4.to_rfc2822(),
-                        i.1 .2,
-                        i.1 .3,
-                        i.1 .0,
+                        &i.1 .2,
+                        &i.1 .3,
+                        &i.1 .0,
                     ))
                 }
                 Err(_) => None,
@@ -517,7 +519,6 @@ fn find_function_in_files_with_commit(
     name: String,
     langs: Language,
 ) -> Vec<FileType> {
-    use rayon::iter::IntoParallelRefIterator;
     #[cfg(feature = "parallel")]
     let t = files.par_iter();
     #[cfg(not(feature = "parallel"))]
