@@ -43,14 +43,10 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
-use crossbeam_channel::{bounded, Receiver, Sender};
 use git_repository::{prelude::ObjectIdExt, ObjectId};
 use std::{
     error::Error,
     process::Command,
-    sync::{Arc, Mutex},
-    thread::{sleep, spawn},
-    time::Duration,
 };
 
 // #[cfg(feature = "c_lang")]
@@ -138,10 +134,10 @@ pub enum Filter {
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub fn get_function_history(
-    name: String,
+    name: &str,
     file: &FileFilterType,
     filter: &Filter,
-    langs: languages::Language,
+    langs: &languages::Language,
 ) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
@@ -215,16 +211,11 @@ pub fn get_function_history(
             }
         })
         .collect::<Vec<_>>();
-    let (tx, rx) = bounded(0);
     let cloned_name = name.clone();
-    let cloned_file = file.clone();
-    spawn(move || receiver(&name, langs, &cloned_file, rx));
     let commits = commits
         .into_par_iter()
         .filter_map(|i| {
-            let txt = tx.clone();
-            let tree = spawn(move || sender(i.0, txt));
-            let tree = tree.join().unwrap();
+            let tree = sender(i.0, &name, langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -246,7 +237,7 @@ pub fn get_function_history(
     if commits.is_empty() {
         Err("no history found")?;
     }
-    let fh = FunctionHistory::new(cloned_name, commits);
+    let fh = FunctionHistory::new(cloned_name.to_string(), commits);
     Ok(fh)
 }
 
@@ -271,39 +262,18 @@ impl Default for MacroOpts<'_> {
 
 fn sender(
     id: ObjectId,
-    c: Sender<Arc<Mutex<(ObjectId, Vec<FileType>, bool)>>>,
-) -> Result<Vec<FileType>, Box<dyn std::error::Error + Send + Sync>> {
-    loop {
-        let id = Arc::new(Mutex::new((id, Vec::new(), false)));
-        c.send(Arc::clone(&id))?;
-        loop {
-            {
-                let id = id.lock().unwrap();
-                if id.2 {
-                    return Ok(id.1.clone());
-                }
-            }
-            sleep(Duration::from_millis(1000));
-        }
-    }
-}
-
-fn receiver(
     name: &str,
-    langs: Language,
-    filetype: &FileFilterType,
-    c: Receiver<Arc<Mutex<(ObjectId, Vec<FileType>, bool)>>>,
-) {
+    langs: &Language,
+    file: &FileFilterType
+
+) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
     let repo = git_repository::discover(".").unwrap();
-    for r in c {
-        let mut data = r.lock().unwrap();
-        let (objid, _, _) = data.clone();
-        let object = repo.find_object(objid).unwrap();
-        let tree = object.into_tree();
-        let files = traverse_tree(&tree, &repo, name, "", langs, filetype).unwrap();
-        data.1 = files;
-        data.2 = true;
-    }
+    let object = repo.find_object(id).unwrap();
+    let tree = object.into_tree();
+    let files = traverse_tree(&tree, &repo, name,"", langs, file);
+
+        files
+
 }
 
 fn traverse_tree(
@@ -311,7 +281,7 @@ fn traverse_tree(
     repo: &git_repository::Repository,
     name: &str,
     path: &str,
-    langs: Language,
+    langs: &Language,
     filetype: &FileFilterType,
 ) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
     let treee_iter = tree.iter();
@@ -415,7 +385,7 @@ fn traverse_tree(
     ret.extend(find_function_in_files_with_commit(
         files,
         name.to_string(),
-        langs,
+        *langs,
     ));
 
     Ok(ret)
@@ -455,10 +425,10 @@ macro_rules! get_function_history {
             opts.$variant = $value;
         )*
         get_function_history(
-            opts.name.to_string(),
+            opts.name,
             &opts.file,
             &opts.filter,
-            opts.language
+            &opts.language
         )
     }};
 }
@@ -491,7 +461,7 @@ fn find_function_in_file_with_commit(
     file_path: &str,
     fc: &str,
     name: &str,
-    langs: Language,
+    langs: &Language,
 ) -> Result<FileType, Box<dyn Error>> {
     let file = match langs {
         Language::Rust => {
@@ -552,12 +522,13 @@ fn find_function_in_files_with_commit(
     name: String,
     langs: Language,
 ) -> Vec<FileType> {
-    // #[cfg(feature = "parallel")]
-    // let t = files.par_iter();
-    // #[cfg(not(feature = "parallel"))]
+    use rayon::iter::IntoParallelRefIterator;
+    #[cfg(feature = "parallel")]
+    let t = files.par_iter();
+    #[cfg(not(feature = "parallel"))]
     let t = files.iter();
     t.filter_map(|(file_path, fc)| {
-        find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
+        find_function_in_file_with_commit(file_path, fc, &name, &langs).ok()
     })
     .collect()
 }
@@ -590,10 +561,10 @@ mod tests {
     fn found_function() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::Relative("src/test_functions.rs".to_string()),
             &Filter::None,
-            languages::Language::Rust,
+            &languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -608,10 +579,10 @@ mod tests {
     #[test]
     fn git_installed() {
         let output = get_function_history(
-            "empty_test".to_owned(),
+            "empty_test",
             &FileFilterType::Absolute("src/test_functions.rs".to_string()),
             &Filter::None,
-            languages::Language::Rust,
+            &languages::Language::Rust,
         );
         // assert that err is "not git is not installed"
         if output.is_err() {
@@ -622,10 +593,10 @@ mod tests {
     #[test]
     fn not_found() {
         let output = get_function_history(
-            "Not_a_function".to_string(),
+            "Not_a_function",
             &FileFilterType::None,
             &Filter::None,
-            languages::Language::Rust,
+            &languages::Language::Rust,
         );
         match &output {
             Ok(output) => println!("{output}"),
@@ -637,10 +608,10 @@ mod tests {
     #[test]
     fn not_rust_file() {
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::Absolute("src/test_functions.txt".to_string()),
             &Filter::None,
-            languages::Language::Rust,
+            &languages::Language::Rust,
         );
         assert!(output.is_err());
         assert!(output
@@ -652,13 +623,13 @@ mod tests {
     fn test_date() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::None,
             &Filter::DateRange(
                 "27 Sep 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
-            languages::Language::Rust,
+            &languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -675,10 +646,10 @@ mod tests {
     fn expensive_tes() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::None,
             &Filter::None,
-            languages::Language::All,
+            &languages::Language::All,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -699,13 +670,13 @@ mod tests {
     fn python() {
         let now = Utc::now();
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::Relative("src/test_functions.py".to_string()),
             &Filter::DateRange(
                 "03 Oct 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
-            languages::Language::Python,
+            &languages::Language::Python,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -733,7 +704,7 @@ mod tests {
     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
     //             "05 Oct 2022 23:45:52 +0000".to_owned(),
     //         ),
-    //         languages::Language::C,
+    //         &languages::Language::C,
     //     );
     //     let after = Utc::now() - now;
     //     println!("time taken: {}", after.num_seconds());
@@ -747,13 +718,13 @@ mod tests {
     #[cfg(feature = "unstable")]
     fn go() {
         let now = Utc::now();
-        sleep(Duration::from_secs(2));
+        // sleep(Duration::from_secs(2));
         println!("go STARTING");
         let output = get_function_history(
-            "empty_test".to_string(),
+            "empty_test",
             &FileFilterType::Relative("src/test_functions.go".to_string()),
             &Filter::None,
-            languages::Language::Go,
+            &languages::Language::Go,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
