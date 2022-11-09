@@ -44,10 +44,7 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use git_repository::{prelude::ObjectIdExt, ObjectId};
-use std::{
-    error::Error,
-    process::Command,
-};
+use std::{error::Error, process::Command};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
@@ -143,14 +140,14 @@ pub fn get_function_history(
     if name.is_empty() {
         Err("function name is empty")?;
     }
+    // TODO: validate filters
     let repo = git_repository::discover(".")?;
     let mut tips = vec![];
-    let head = repo.head_commit().unwrap();
+    let head = repo.head_commit()?;
     tips.push(head.id);
     let commit_iter = repo.rev_walk(tips);
     let commits = commit_iter
-        .all()
-        .unwrap()
+        .all()?
         .filter_map(|i| match i {
             Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit),
             Err(_) => None,
@@ -159,24 +156,24 @@ pub fn get_function_history(
     let _closest_date = (0, Utc::now());
     let commits = commits
         .iter()
-        .map(|i| {
-            let tree = i.tree().unwrap().id;
-            let time = i.time().unwrap();
+        .filter_map(|i| {
+            let tree = i.tree().ok()?.id;
+            let time = i.time().ok()?;
             let time = DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp(time.seconds_since_unix_epoch.into(), 0),
                 Utc,
             );
-            let authorinfo = i.author().unwrap();
+            let authorinfo = i.author().ok()?;
             let author = authorinfo.name.to_string();
             let email = authorinfo.email.to_string();
-            let messages = i.message().unwrap();
+            let messages = i.message().ok()?;
             let mut message = messages.title.to_string();
             if let Some(i) = messages.body {
                 message.push_str(i.to_string().as_str());
             }
             let commit = i.id().to_hex().to_string();
             let metadata = (message, commit, author, email, time);
-            (tree, metadata)
+            Some((tree, metadata))
         })
         .filter(|(_, metadata)| {
             match filter {
@@ -193,10 +190,10 @@ pub fn get_function_history(
                     let date = metadata.4;
                     let start = DateTime::parse_from_rfc2822(start)
                         .map(|i| i.with_timezone(&Utc))
-                        .unwrap();
+                        .expect("failed to parse start date");
                     let end = DateTime::parse_from_rfc2822(end)
                         .map(|i| i.with_timezone(&Utc))
-                        .unwrap();
+                        .expect("failed to parse end date");
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
@@ -211,11 +208,10 @@ pub fn get_function_history(
             }
         })
         .collect::<Vec<_>>();
-    let cloned_name = name.clone();
     let commits = commits
         .into_par_iter()
         .filter_map(|i| {
-            let tree = sender(i.0, &name, langs, file);
+            let tree = sender(i.0, name, *langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -237,7 +233,7 @@ pub fn get_function_history(
     if commits.is_empty() {
         Err("no history found")?;
     }
-    let fh = FunctionHistory::new(cloned_name.to_string(), commits);
+    let fh = FunctionHistory::new(name.to_string(), commits);
     Ok(fh)
 }
 
@@ -263,17 +259,13 @@ impl Default for MacroOpts<'_> {
 fn sender(
     id: ObjectId,
     name: &str,
-    langs: &Language,
-    file: &FileFilterType
-
+    langs: Language,
+    file: &FileFilterType,
 ) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
-    let repo = git_repository::discover(".").unwrap();
-    let object = repo.find_object(id).unwrap();
-    let tree = object.into_tree();
-    let files = traverse_tree(&tree, &repo, name,"", langs, file);
-
-        files
-
+    let repo = git_repository::discover(".")?;
+    let object = repo.find_object(id)?;
+    let tree = object.try_into_tree()?;
+    traverse_tree(&tree, &repo, name, "", langs, file)
 }
 
 fn traverse_tree(
@@ -281,14 +273,14 @@ fn traverse_tree(
     repo: &git_repository::Repository,
     name: &str,
     path: &str,
-    langs: &Language,
+    langs: Language,
     filetype: &FileFilterType,
 ) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
     let treee_iter = tree.iter();
     let mut files: Vec<(String, String)> = Vec::new();
     let mut ret = Vec::new();
     for i in treee_iter {
-        let i = i.unwrap();
+        let i = i?;
         match &i.mode() {
             git_object::tree::EntryMode::Tree => {
                 let new = get_item_from!(i.oid(), &repo, try_into_tree);
@@ -385,7 +377,7 @@ fn traverse_tree(
     ret.extend(find_function_in_files_with_commit(
         files,
         name.to_string(),
-        *langs,
+        langs,
     ));
 
     Ok(ret)
@@ -432,8 +424,10 @@ macro_rules! get_function_history {
         )
     }};
 }
+// TODO: make get_git_dates & get_git_commits use gitoxide or make seperate functions for them
 #[inline]
 /// List all the commits date in the git history (in rfc2822 format).
+/// requires git to be installed
 pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git")
         .args(["log", "--pretty=%aD", "--date", "rfc2822"])
@@ -447,6 +441,7 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
 }
 #[inline]
 /// List all the commit hashes in the git history.
+/// requires git to be installed
 pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
     let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
     let output = String::from_utf8(output.stdout)?;
@@ -461,7 +456,7 @@ fn find_function_in_file_with_commit(
     file_path: &str,
     fc: &str,
     name: &str,
-    langs: &Language,
+    langs: Language,
 ) -> Result<FileType, Box<dyn Error>> {
     let file = match langs {
         Language::Rust => {
@@ -528,7 +523,7 @@ fn find_function_in_files_with_commit(
     #[cfg(not(feature = "parallel"))]
     let t = files.iter();
     t.filter_map(|(file_path, fc)| {
-        find_function_in_file_with_commit(file_path, fc, &name, &langs).ok()
+        find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
     })
     .collect()
 }
@@ -540,10 +535,10 @@ trait UnwrapToError<T> {
 
 impl<T> UnwrapToError<T> for Option<T> {
     fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
+        self.map_or_else(|| Err(message)?, |val| Ok(val))
     }
     fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
-        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
+        self.map_or_else(|| Err(message)?, |val| Ok(val))
     }
 }
 
