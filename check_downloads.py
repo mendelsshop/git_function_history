@@ -5,7 +5,7 @@ from github import Github
 import os
 import xml.etree.ElementTree as ET
 
-count = -1
+count = 0
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <github token>")
     sys.exit(1)
