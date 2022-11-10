@@ -633,17 +633,7 @@ impl eframe::App for MyEguiApp {
                                         }
                                         _ => {}
                                     }
-                                    let text = match self.language {
-                                        Language::Rust => "Rust",
-                                        #[cfg(feature = "c_lang")]
-                                        Language::C => "C",
-
-                                        Language::Python => "Python",
-                                        Language::All => "Language",
-                                        #[cfg(feature = "unstable")]
-                                        Language::Go => "Go",
-                                        Language::Ruby => "Ruby",
-                                    };
+                                    let text = self.language.to_string();
                                     egui::ComboBox::from_id_source("search_language_combo_box")
                                         .selected_text(text)
                                         .show_ui(ui, |ui| {
@@ -678,7 +668,7 @@ impl eframe::App for MyEguiApp {
                                                 self.input_buffer.clone(),
                                                 self.file_type.clone(),
                                                 self.filter.clone(),
-                                                Language::Rust,
+                                                self.language.clone(),
                                             ))
                                             .expect("could not send message in thread");
                                     }

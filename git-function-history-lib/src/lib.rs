@@ -14,6 +14,7 @@
     clippy::return_self_not_must_use,
     clippy::module_name_repetitions
 )]
+/// code and function related language
 pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
