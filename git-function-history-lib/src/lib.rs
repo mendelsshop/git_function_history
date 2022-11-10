@@ -41,9 +41,9 @@ use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use git_repository::{prelude::ObjectIdExt, ObjectId, objs};
+use git_repository::{objs, prelude::ObjectIdExt, ObjectId};
 use std::{error::Error, process::Command};
 
 // #[cfg(feature = "c_lang")]
@@ -212,7 +212,8 @@ pub fn get_function_history(
     let commits = commits.into_par_iter();
     #[cfg(not(feature = "parallel"))]
     let commits = commits.iter();
-    let commits = commits.filter_map(|i| {
+    let commits = commits
+        .filter_map(|i| {
             let tree = sender(i.0, name, *langs, file);
             match tree {
                 Ok(tree) => {

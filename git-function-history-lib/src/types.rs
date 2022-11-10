@@ -126,7 +126,7 @@ impl Commit {
         files: Vec<FileType>,
         date: &str,
         author: &str,
-        email:  &str,
+        email: &str,
         message: &str,
     ) -> Self {
         Self {
@@ -137,7 +137,7 @@ impl Commit {
             current_iter_pos: 0,
             author: author.to_string(),
             email: email.to_string(),
-            message : message.to_string(),
+            message: message.to_string(),
         }
     }
 
