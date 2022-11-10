@@ -142,6 +142,7 @@ pub fn get_function_history(
         Err("function name is empty")?;
     }
     // TODO: validate filters
+    // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
     let repo = git_repository::discover(".")?;
     let mut tips = vec![];
     let head = repo.head_commit()?;
@@ -154,7 +155,7 @@ pub fn get_function_history(
             Err(_) => None,
         })
         .collect::<Vec<_>>();
-    let _closest_date = (0, Utc::now());
+    let closest_date = Utc::now();
     let commits = commits
         .iter()
         .filter_map(|i| {
@@ -179,12 +180,13 @@ pub fn get_function_history(
         .filter(|(_, metadata)| {
             match filter {
                 Filter::CommitHash(hash) => *hash == metadata.1,
-                Filter::Date(_date) => {
+                Filter::Date(date) => {
                     // TODO: fix this
-                    // if closest_date
-                    // let date = date.parse::<DateTime<Utc>>().unwrap();
-                    // let cmp = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(metadata.4.seconds_since_unix_epoch.into(), 0), Utc);
-                    false
+                    closest_date == match date.parse::<DateTime<Utc>>() {
+                        Ok(i) => i,
+                        Err(_) => return false,
+                    }
+
                 }
                 Filter::DateRange(start, end) => {
                     // let date = metadata.4.seconds_since_unix_epoch;
