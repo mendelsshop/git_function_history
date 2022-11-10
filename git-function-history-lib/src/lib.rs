@@ -43,7 +43,7 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
 
-use git_repository::{prelude::ObjectIdExt, ObjectId};
+use git_repository::{prelude::ObjectIdExt, ObjectId, objs};
 use std::{error::Error, process::Command};
 
 // #[cfg(feature = "c_lang")]
@@ -284,12 +284,12 @@ fn traverse_tree(
     for i in treee_iter {
         let i = i?;
         match &i.mode() {
-            git_object::tree::EntryMode::Tree => {
+            objs::tree::EntryMode::Tree => {
                 let new = get_item_from!(i.oid(), &repo, try_into_tree);
                 let path_new = format!("{path}/{}", i.filename());
                 ret.extend(traverse_tree(&new, repo, name, &path_new, langs, filetype)?);
             }
-            git_object::tree::EntryMode::Blob => {
+            objs::tree::EntryMode::Blob => {
                 let file = format!("{path}/{}", i.filename());
                 match &filetype {
                     FileFilterType::Relative(ref path) => {
@@ -363,7 +363,7 @@ fn traverse_tree(
                     },
                 }
                 let obh = repo.find_object(i.oid())?;
-                let objref = git_object::ObjectRef::from_bytes(obh.kind, &obh.data)?;
+                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)?;
                 let blob = objref.into_blob();
                 if let Some(blob) = blob {
                     files.push((

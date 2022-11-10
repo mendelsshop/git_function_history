@@ -10,7 +10,7 @@ description = "show function history from git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["parallel", "cache"]
-parallel = ["dep:rayon"]
+parallel = ["dep:rayon", "git-features/parallel"]
 # c_lang = []
 # unstable = ["dep:gosyn", "dep:javaparser"]
 unstable = ["dep:gosyn"]
@@ -30,5 +30,5 @@ gosyn = {version = "0.2.0", optional = true}
 cfg-if = "1.0.0"
 cached = {version = "0.40.0", optional = true}
 gitoxide-core = "0.19.0"
-git-repository = { version = "0.27.0", default-features = false }
-git-object = "0.22.1"
+git-repository = { version = "0.27.0", default-features = false, features = ["max-performance-safe"] }
+git-features = { version = "0.23.1", features = ["zlib", "once_cell"] }
