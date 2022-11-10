@@ -12,7 +12,8 @@
     clippy::similar_names,
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::multiple_crate_versions
 )]
 /// code and function related language
 pub mod languages;
@@ -45,7 +46,7 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use git_repository::{objs, prelude::ObjectIdExt, ObjectId};
-use std::{error::Error, process::Command};
+use std::{error::Error, ops::Sub, process::Command};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
@@ -155,7 +156,21 @@ pub fn get_function_history(
             Err(_) => None,
         })
         .collect::<Vec<_>>();
-    let closest_date = Utc::now();
+    // find the closest date by using get_git_dates_commits_oxide
+    let closest_date = if let Filter::Date(date) = filter {
+        let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
+        let date_list = get_git_dates_commits_oxide()?;
+        date_list
+            .iter()
+            .min_by_key(|elem| {
+                elem.0.sub(date).num_seconds().abs()
+                // elem.0.signed_duration_since(date)
+            })
+            .map(|elem| elem.1.clone())
+            .unwrap_to_error_sync("no commits found")?
+    } else {
+        String::new()
+    };
     let commits = commits
         .iter()
         .filter_map(|i| {
@@ -180,14 +195,7 @@ pub fn get_function_history(
         .filter(|(_, metadata)| {
             match filter {
                 Filter::CommitHash(hash) => *hash == metadata.1,
-                Filter::Date(date) => {
-                    // TODO: fix this
-                    closest_date == match date.parse::<DateTime<Utc>>() {
-                        Ok(i) => i,
-                        Err(_) => return false,
-                    }
-
-                }
+                Filter::Date(_) => metadata.1 == closest_date,
                 Filter::DateRange(start, end) => {
                     // let date = metadata.4.seconds_since_unix_epoch;
                     let date = metadata.4;
@@ -445,6 +453,42 @@ pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
         .collect::<Vec<String>>();
     Ok(output)
 }
+
+pub fn get_git_dates_commits_oxide(
+) -> Result<Vec<(DateTime<Utc>, String)>, Box<dyn Error + Send + Sync>> {
+    let repo = git_repository::discover(".")?;
+    // let mut dates = Vec::new();
+    let mut tips = vec![];
+    let head = repo.head_commit()?;
+    tips.push(head.id);
+    let commit_iter = repo.rev_walk(tips);
+    let commits = commit_iter
+        .all()?
+        .filter_map(|i| match i {
+            Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
+                (
+                    i.time()
+                        .map(|x| {
+                            // println!("{:?}", x);
+                            DateTime::<Utc>::from_utc(
+                                NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
+                                Utc,
+                            )
+                            // NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0)
+                        })
+                        .ok(),
+                    i.id.to_string(),
+                )
+            }),
+            Err(_) => None,
+        })
+        .filter_map(|i| match i {
+            (Some(i), j) => Some((i, j)),
+            _ => None,
+        });
+    Ok(commits.collect())
+}
+
 #[inline]
 /// List all the commit hashes in the git history.
 /// requires git to be installed
@@ -620,7 +664,7 @@ mod tests {
             .contains("file is not a rust file"));
     }
     #[test]
-    fn test_date() {
+    fn test_date_range() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
@@ -629,6 +673,26 @@ mod tests {
                 "27 Sep 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
+            &languages::Language::Rust,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{functions}");
+            }
+            Err(e) => println!("-{e}-"),
+        }
+        assert!(output.is_ok());
+    }
+
+    #[test]
+    fn tet_date() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileFilterType::None,
+            &Filter::Date("27 Sep 2022 00:27:23 -0400".to_owned()),
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
