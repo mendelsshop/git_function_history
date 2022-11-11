@@ -206,6 +206,7 @@ pub fn get_function_history(
                         .map(|i| i.with_timezone(&Utc))
                         .expect("failed to parse end date");
                         println!("start: {:?}, end: {:?}, date: {:?}", start, end, date);
+                        println!("IS BETWEEN: {}", start <= date && date <= end);
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
