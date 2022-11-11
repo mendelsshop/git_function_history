@@ -47,7 +47,7 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use git_repository::{objs, prelude::ObjectIdExt, ObjectId};
-use std::{error::Error, ops::Sub, process::Command};
+use std::{error::Error, ops::Sub};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
@@ -159,14 +159,14 @@ pub fn get_function_history(
     let closest_date = match filter {
         Filter::Date(date) => {
             let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
-            let date_list = get_git_dates_commits_oxide()?;
+            let date_list = get_git_info()?;
             date_list
                 .iter()
                 .min_by_key(|elem| {
-                    elem.0.sub(date).num_seconds().abs()
+                    elem.date.sub(date).num_seconds().abs()
                     // elem.0.signed_duration_since(date)
                 })
-                .map(|elem| elem.1.clone())
+                .map(|elem| elem.hash.clone())
                 .unwrap_to_error_sync("no commits found")?
         }
         Filter::Author(_)
@@ -450,68 +450,56 @@ macro_rules! get_function_history {
         )
     }};
 }
-// TODO: make get_git_dates & get_git_commits use gitoxide or make seperate functions for them
-#[inline]
-/// List all the commits date in the git history (in rfc2822 format).
-/// requires git to be installed
-pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git")
-        .args(["log", "--pretty=%aD", "--date", "rfc2822"])
-        .output()?;
-    let output = String::from_utf8(output.stdout)?;
-    let output = output
-        .split('\n')
-        .map(std::string::ToString::to_string)
-        .collect::<Vec<String>>();
-    Ok(output)
-}
 
-pub fn get_git_dates_commits_oxide(
-) -> Result<Vec<(DateTime<Utc>, String)>, Box<dyn Error + Send + Sync>> {
+pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let repo = git_repository::discover(".")?;
-    // let mut dates = Vec::new();
     let mut tips = vec![];
     let head = repo.head_commit()?;
     tips.push(head.id);
     let commit_iter = repo.rev_walk(tips);
-    let commits = commit_iter
-        .all()?
-        .filter_map(|i| match i {
-            Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
-                (
-                    i.time()
-                        .map(|x| {
-                            // println!("{:?}", x);
-                            DateTime::<Utc>::from_utc(
-                                NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
-                                Utc,
-                            )
-                            // NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0)
-                        })
-                        .ok(),
-                    i.id.to_string(),
-                )
-            }),
-            Err(_) => None,
-        })
-        .filter_map(|i| match i {
-            (Some(i), j) => Some((i, j)),
-            _ => None,
-        });
+    let commits = commit_iter.all()?.filter_map(|i| match i {
+        Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
+            let author = match i.author() {
+                Ok(author) => author,
+                Err(_) => return None,
+            };
+            let message = match i.message() {
+                Ok(message) => message,
+                Err(_) => return None,
+            };
+            let mut msg = message.title.to_string();
+            if let Some(msg_body) = message.body {
+                msg.push_str(&msg_body.to_string());
+            }
+
+            Some(CommitInfo {
+                date: match i.time().map(|x| {
+                    DateTime::<Utc>::from_utc(
+                        NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
+                        Utc,
+                    )
+                }) {
+                    Ok(i) => i,
+                    Err(_) => return None,
+                },
+                hash: i.id.to_string(),
+                author_email: author.email.to_string(),
+                author: author.name.to_string(),
+                message: msg,
+            })
+        }),
+        Err(_) => None,
+    });
+    let commits = commits.flatten();
     Ok(commits.collect())
 }
 
-#[inline]
-/// List all the commit hashes in the git history.
-/// requires git to be installed
-pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
-    let output = String::from_utf8(output.stdout)?;
-    let output = output
-        .split('\n')
-        .map(std::string::ToString::to_string)
-        .collect::<Vec<String>>();
-    Ok(output)
+pub struct CommitInfo {
+    pub date: DateTime<Utc>,
+    pub hash: String,
+    pub message: String,
+    pub author: String,
+    pub author_email: String,
 }
 
 fn find_function_in_file_with_commit(
