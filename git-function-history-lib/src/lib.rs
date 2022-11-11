@@ -13,7 +13,8 @@
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use,
     clippy::module_name_repetitions,
-    clippy::multiple_crate_versions
+    clippy::multiple_crate_versions,
+    clippy::too_many_lines
 )]
 /// code and function related language
 pub mod languages;
@@ -130,7 +131,6 @@ pub enum Filter {
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
 /// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
-#[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
@@ -142,7 +142,6 @@ pub fn get_function_history(
     if name.is_empty() {
         Err("function name is empty")?;
     }
-    // TODO: validate filters
     // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
     let repo = git_repository::discover(".")?;
     let mut tips = vec![];
@@ -554,7 +553,7 @@ fn find_function_in_file_with_commit(
             //     let functions = languages::c::find_function_in_file(fc, name)?;
             //     FileType::C(CFile::new(file_path.to_string(), functions))
             // }
-            Some("py") => {
+            Some("py" | "pyw") => {
                 let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
@@ -671,7 +670,7 @@ mod tests {
             &languages::Language::Rust,
         );
         assert!(output.is_err());
-        println!("{}", (&output).as_ref().unwrap_err());
+        println!("{}", output.as_ref().unwrap_err());
         assert!(output
             .unwrap_err()
             .to_string()

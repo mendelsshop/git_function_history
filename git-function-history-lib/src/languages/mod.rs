@@ -60,7 +60,7 @@ impl Language {
         }
     }
 
-    pub fn get_names(&self) -> &str {
+    pub const fn get_names(&self) -> &str {
         match self {
             Self::Python => "python",
             Self::Rust => "rust",
@@ -76,9 +76,9 @@ impl Language {
         }
     }
 
-    pub fn get_file_endings(&self) -> &[&str] {
+    pub const fn get_file_endings(&self) -> &[&str] {
         match self {
-            Self::Python => &["py"],
+            Self::Python => &["py", "pyw"],
             Self::Rust => &["rs"],
             // #[cfg(feature = "c_lang")]
             // Language::C => &["c", "h"],
@@ -86,9 +86,9 @@ impl Language {
             Self::Go => &["go"],
             Self::Ruby => &["rb"],
             #[cfg(feature = "unstable")]
-            Self::All => &["py", "rs", "go", "rb"],
+            Self::All => &["py", "pyw", "rs", "go", "rb"],
             #[cfg(not(feature = "unstable"))]
-            Language::All => &["py", "rs", "rb"],
+            Language::All => &["py", "pyw", "rs", "rb"],
         }
     }
 }
