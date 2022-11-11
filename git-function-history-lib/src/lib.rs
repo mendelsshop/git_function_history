@@ -205,6 +205,7 @@ pub fn get_function_history(
                     let end = DateTime::parse_from_rfc2822(end)
                         .map(|i| i.with_timezone(&Utc))
                         .expect("failed to parse end date");
+                        println!("start: {:?}, end: {:?}, date: {:?}", start, end, date);
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
