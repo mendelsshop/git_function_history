@@ -671,10 +671,11 @@ mod tests {
             &languages::Language::Rust,
         );
         assert!(output.is_err());
+        println!("{}", (&output).as_ref().unwrap_err());
         assert!(output
             .unwrap_err()
             .to_string()
-            .contains("file is not a rust file"));
+            .contains("is not a rust file"));
     }
     #[test]
     fn test_date_range() {
