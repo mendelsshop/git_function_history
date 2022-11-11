@@ -59,6 +59,38 @@ impl Language {
             _ => Err(format!("Unknown language: {s}"))?,
         }
     }
+
+    pub fn get_names(&self) -> &str {
+        match self {
+            Self::Python => "python",
+            Self::Rust => "rust",
+            // #[cfg(feature = "c_lang")]
+            // Language::C => "c",
+            #[cfg(feature = "unstable")]
+            Self::Go => "go",
+            Self::Ruby => "ruby",
+            #[cfg(feature = "unstable")]
+            Self::All => "python, rust, go, or ruby",
+            #[cfg(not(feature = "unstable"))]
+            Language::All => "python, rust, or ruby",
+        }
+    }
+
+    pub fn get_file_endings(&self) -> &[&str] {
+        match self {
+            Self::Python => &["py"],
+            Self::Rust => &["rs"],
+            // #[cfg(feature = "c_lang")]
+            // Language::C => &["c", "h"],
+            #[cfg(feature = "unstable")]
+            Self::Go => &["go"],
+            Self::Ruby => &["rb"],
+            #[cfg(feature = "unstable")]
+            Self::All => &["py", "rs", "go", "rb"],
+            #[cfg(not(feature = "unstable"))]
+            Language::All => &["py", "rs", "rb"],
+        }
+    }
 }
 
 impl fmt::Display for Language {

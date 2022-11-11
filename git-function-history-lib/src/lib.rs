@@ -64,7 +64,7 @@ pub use {
 pub enum FileFilterType {
     /// When you have a absolute path to a file.
     Absolute(String),
-    /// When you have a relative path to a file and or want to find look in all files match a name.
+    /// When you have a relative path to a file and or want to find look in all files match a name (aka ends_with).
     Relative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
@@ -128,7 +128,7 @@ pub enum Filter {
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
-/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, language::Rust).unwrap();
+/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
 #[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
@@ -157,20 +157,37 @@ pub fn get_function_history(
         })
         .collect::<Vec<_>>();
     // find the closest date by using get_git_dates_commits_oxide
-    let closest_date = if let Filter::Date(date) = filter {
-        let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
-        let date_list = get_git_dates_commits_oxide()?;
-        date_list
-            .iter()
-            .min_by_key(|elem| {
-                elem.0.sub(date).num_seconds().abs()
-                // elem.0.signed_duration_since(date)
-            })
-            .map(|elem| elem.1.clone())
-            .unwrap_to_error_sync("no commits found")?
-    } else {
-        String::new()
+    let closest_date = match filter {
+        Filter::Date(date) => {
+            let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
+            let date_list = get_git_dates_commits_oxide()?;
+            date_list
+                .iter()
+                .min_by_key(|elem| {
+                    elem.0.sub(date).num_seconds().abs()
+                    // elem.0.signed_duration_since(date)
+                })
+                .map(|elem| elem.1.clone())
+                .unwrap_to_error_sync("no commits found")?
+        }
+        Filter::Author(_)
+        | Filter::AuthorEmail(_)
+        | Filter::Message(_)
+        | Filter::DateRange(..)
+        | Filter::None
+        | Filter::CommitHash(_) => String::new(),
+        _ => Err("invalid filter")?,
     };
+    match file {
+        FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
+            // vaildate that the file makes sense with language
+            let is_supported = langs.get_file_endings().iter().any(|i| file.ends_with(i));
+            if !is_supported {
+                Err(format!("file {file} is not a {} file", langs.get_names()))?;
+            }
+        }
+        FileFilterType::Directory(_) | FileFilterType::None => {}
+    }
     let commits = commits
         .iter()
         .filter_map(|i| {
@@ -205,8 +222,6 @@ pub fn get_function_history(
                     let end = DateTime::parse_from_rfc2822(end)
                         .map(|i| i.with_timezone(&Utc))
                         .expect("failed to parse end date");
-                        println!("start: {:?}, end: {:?}, date: {:?}", start, end, date);
-                        println!("IS BETWEEN: {}", start <= date && date <= end);
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
@@ -380,16 +395,12 @@ fn traverse_tree(
                 let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)?;
                 let blob = objref.into_blob();
                 if let Some(blob) = blob {
-                    files.push((
-                        i.filename().to_string(),
-                        String::from_utf8_lossy(blob.data).to_string(),
-                    ));
+                    files.push((file, String::from_utf8_lossy(blob.data).to_string()));
                 }
             }
             _ => {}
         }
     }
-
     ret.extend(find_function_in_files_with_commit(
         files,
         name.to_string(),
