@@ -12,20 +12,42 @@
     clippy::similar_names,
     clippy::missing_errors_doc,
     clippy::return_self_not_must_use,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::multiple_crate_versions,
+    clippy::too_many_lines
 )]
+/// code and function related language
 pub mod languages;
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
+macro_rules! get_item_from {
+    ($oid:expr, $repo:expr, $typs:ident) => {
+        git_repository::hash::ObjectId::from($oid)
+            .attach(&$repo)
+            .object()?
+            .$typs()?
+    };
+}
 
-// static mut file_count: usize = 0;
+macro_rules! get_item_from_oid_option {
+    ($oid:expr, $repo:expr, $typs:ident) => {
+        git_repository::hash::ObjectId::from($oid)
+            .attach(&$repo)
+            .object()
+            .ok()?
+            .$typs()
+            .ok()
+    };
+}
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use std::{error::Error, process::Command};
+use git_repository::{objs, prelude::ObjectIdExt, ObjectId};
+use std::{error::Error, ops::Sub};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
@@ -38,11 +60,12 @@ pub use {
 };
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
+/// path separator is `/`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileFilterType {
     /// When you have a absolute path to a file.
     Absolute(String),
-    /// When you have a relative path to a file and or want to find look in all files match a name.
+    /// When you have a relative path to a file and or want to find look in all files match a name (aka ends_with).
     Relative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
@@ -108,7 +131,6 @@ pub enum Filter {
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
 /// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
-#[allow(clippy::too_many_lines)]
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
@@ -120,146 +142,129 @@ pub fn get_function_history(
     if name.is_empty() {
         Err("function name is empty")?;
     }
-    // check if git is installed
-    Command::new("git").arg("--version").output()?;
-    // get the commit hitory
-    let mut command = Command::new("git");
-    command.arg("log");
-    command.arg("--pretty=%H;%aD;%aN;%aE;%s");
-    command.arg("--date=rfc2822");
-    match filter {
-        Filter::CommitHash(hash) => {
-            command.arg(hash);
-            command.arg("-n");
-            command.arg("1");
-        }
+    // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
+    let repo = git_repository::discover(".")?;
+    let mut tips = vec![];
+    let head = repo.head_commit()?;
+    tips.push(head.id);
+    let commit_iter = repo.rev_walk(tips);
+    let commits = commit_iter
+        .all()?
+        .filter_map(|i| match i {
+            Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit),
+            Err(_) => None,
+        })
+        .collect::<Vec<_>>();
+    // find the closest date by using get_git_dates_commits_oxide
+    let closest_date = match filter {
         Filter::Date(date) => {
-            command.arg("--since");
-            command.arg(date);
-            command.arg("--max-count=1");
+            let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
+            let date_list = get_git_info()?;
+            date_list
+                .iter()
+                .min_by_key(|elem| {
+                    elem.date.sub(date).num_seconds().abs()
+                    // elem.0.signed_duration_since(date)
+                })
+                .map(|elem| elem.hash.clone())
+                .unwrap_to_error_sync("no commits found")?
         }
-        Filter::DateRange(start, end) => {
-            command.arg("--since");
-            command.arg(start);
-            command.arg("--until");
-            command.arg(end);
+        Filter::Author(_)
+        | Filter::AuthorEmail(_)
+        | Filter::Message(_)
+        | Filter::DateRange(..)
+        | Filter::None
+        | Filter::CommitHash(_) => String::new(),
+        _ => Err("invalid filter")?,
+    };
+    match file {
+        FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
+            // vaildate that the file makes sense with language
+            let is_supported = langs.get_file_endings().iter().any(|i| file.ends_with(i));
+            if !is_supported {
+                Err(format!("file {file} is not a {} file", langs.get_names()))?;
+            }
         }
-        Filter::Author(author) => {
-            command.arg("--author");
-            command.arg(author);
-        }
-        Filter::AuthorEmail(email) => {
-            command.arg("--author");
-            command.arg(email);
-        }
-        Filter::Message(message) => {
-            command.arg("--grep");
-            command.arg(message);
-        }
-        Filter::None => {}
-        _ => {
-            Err("filter not supported")?;
-        }
+        FileFilterType::Directory(_) | FileFilterType::None => {}
     }
-    let output = command.output()?;
-    if !output.stderr.is_empty() {
-        return Err(String::from_utf8(output.stderr)?)?;
-    }
-    let stdout = String::from_utf8(output.stdout)?;
-    let commits = stdout
-        .lines()
-        .map(|line| {
-            let mut parts = line.split(';');
-            let id = parts
-                .next()
-                .unwrap_to_error_sync("no id found in git command output");
-            let date = parts
-                .next()
-                .unwrap_to_error_sync("date is missing from git command output");
-            let author = parts
-                .next()
-                .unwrap_to_error_sync("author is missing from git command output");
-            let email = parts
-                .next()
-                .unwrap_to_error_sync("email is missing from git command output");
-            let message = parts
-                .next()
-                .unwrap_to_error_sync("message is missing from git command output");
-            Ok((id?, date?, author?, email?, message?))
+    let commits = commits
+        .iter()
+        .filter_map(|i| {
+            let tree = i.tree().ok()?.id;
+            let time = i.time().ok()?;
+            let time = DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(time.seconds_since_unix_epoch.into(), 0),
+                Utc,
+            );
+            let authorinfo = i.author().ok()?;
+            let author = authorinfo.name.to_string();
+            let email = authorinfo.email.to_string();
+            let messages = i.message().ok()?;
+            let mut message = messages.title.to_string();
+            if let Some(i) = messages.body {
+                message.push_str(i.to_string().as_str());
+            }
+            let commit = i.id().to_hex().to_string();
+            let metadata = (message, commit, author, email, time);
+            Some((tree, metadata))
         })
-        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
-    let mut file_history = FunctionHistory::new(String::from(name), Vec::new());
-    let err = "no history found".to_string();
-    // check if file is a rust file
-    if let FileFilterType::Absolute(path) | FileFilterType::Relative(path) = &file {
-        match langs {
-            // #[cfg(feature = "c_lang")]
-            // Language::C => {
-            //     if !path.ends_with(".c") && !path.ends_with(".h") {
-            //         Err(format!("file is not a c file: {}", path))?;
-            //     }
-            // }
-            #[cfg(feature = "unstable")]
-            Language::Go => {
-                if !path.ends_with(".go") {
-                    Err(format!("file is not a go file: {path}"))?;
+        .filter(|(_, metadata)| {
+            match filter {
+                Filter::CommitHash(hash) => *hash == metadata.1,
+                Filter::Date(_) => metadata.1 == closest_date,
+                Filter::DateRange(start, end) => {
+                    // let date = metadata.4.seconds_since_unix_epoch;
+                    let date = metadata.4;
+                    let start = DateTime::parse_from_rfc2822(start)
+                        .map(|i| i.with_timezone(&Utc))
+                        .expect("failed to parse start date");
+                    let end = DateTime::parse_from_rfc2822(end)
+                        .map(|i| i.with_timezone(&Utc))
+                        .expect("failed to parse end date");
+                    start <= date && date <= end
                 }
-            }
-            Language::Python => {
-                if !path.ends_with(".py") {
-                    Err(format!("file is not a python file: {path}"))?;
+                Filter::Author(author) => *author == metadata.2,
+                Filter::AuthorEmail(email) => *email == metadata.3,
+                Filter::Message(message) => {
+                    metadata.0.contains(message)
+                        || message.contains(&metadata.0)
+                        || message == &metadata.0
                 }
+                Filter::None => true,
+                _ => false,
             }
-            Language::Rust => {
-                if !path.ends_with(".rs") {
-                    Err(format!("file is not a rust file: {path}"))?;
-                }
-            }
-            Language::Ruby => {
-                if !path.ends_with(".rb") {
-                    Err(format!("file is not a ruby file: {path}"))?;
-                }
-            }
-            Language::All => {
-                if !path.ends_with(".rs")
-                    || !path.ends_with(".py")
-                    || !path.ends_with(".c")
-                    || !path.ends_with(".h")
-                    || !path.ends_with(".rb")
-                {
-                    Err(format!("file is not supported: {path}"))?;
-                }
-            }
-        }
-    }
+        })
+        .collect::<Vec<_>>();
     #[cfg(feature = "parallel")]
-    let t = commits.par_iter();
+    let commits = commits.into_par_iter();
     #[cfg(not(feature = "parallel"))]
-    let t = commits.iter();
-    file_history.commit_history = t
-        .filter_map(|commit| match &file {
-            FileFilterType::Absolute(_)
-            | FileFilterType::Relative(_)
-            | FileFilterType::None
-            | FileFilterType::Directory(_) => find_function_in_commit_with_filetype(
-                commit.0, name, file, *langs,
-            )
-            .map_or(None, |contents| {
-                Some(Commit::new(
-                    commit.0.to_string(),
-                    contents,
-                    commit.1,
-                    commit.2.to_string(),
-                    commit.3.to_string(),
-                    commit.4.to_string(),
-                ))
-            }),
+    let commits = commits.iter();
+    let commits = commits
+        .filter_map(|i| {
+            let tree = sender(i.0, name, *langs, file);
+            match tree {
+                Ok(tree) => {
+                    if tree.is_empty() {
+                        None?;
+                    }
+                    Some(Commit::new(
+                        &i.1 .1,
+                        tree,
+                        &i.1 .4.to_rfc2822(),
+                        &i.1 .2,
+                        &i.1 .3,
+                        &i.1 .0,
+                    ))
+                }
+                Err(_) => None,
+            }
         })
-        .collect();
-    if file_history.commit_history.is_empty() {
-        return Err(err)?;
+        .collect::<Vec<_>>();
+    if commits.is_empty() {
+        Err("no history found")?;
     }
-    Ok(file_history)
+    let fh = FunctionHistory::new(name.to_string(), commits);
+    Ok(fh)
 }
 
 /// used for the `get_function_history` macro internally (you don't have to touch this)
@@ -281,6 +286,128 @@ impl Default for MacroOpts<'_> {
     }
 }
 
+fn sender(
+    id: ObjectId,
+    name: &str,
+    langs: Language,
+    file: &FileFilterType,
+) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
+    let repo = git_repository::discover(".")?;
+    let object = repo.find_object(id)?;
+    let tree = object.try_into_tree()?;
+    traverse_tree(&tree, &repo, name, "", langs, file)
+}
+
+fn traverse_tree(
+    tree: &git_repository::Tree<'_>,
+    repo: &git_repository::Repository,
+    name: &str,
+    path: &str,
+    langs: Language,
+    filetype: &FileFilterType,
+) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
+    let treee_iter = tree.iter();
+    let mut files: Vec<(String, String)> = Vec::new();
+    let mut ret = Vec::new();
+    for i in treee_iter {
+        let i = i?;
+        match &i.mode() {
+            objs::tree::EntryMode::Tree => {
+                let new = get_item_from!(i.oid(), &repo, try_into_tree);
+                let path_new = format!("{path}/{}", i.filename());
+                ret.extend(traverse_tree(&new, repo, name, &path_new, langs, filetype)?);
+            }
+            objs::tree::EntryMode::Blob => {
+                let file = format!("{path}/{}", i.filename());
+                match &filetype {
+                    FileFilterType::Relative(ref path) => {
+                        if !file.ends_with(path) {
+                            continue;
+                        }
+                    }
+                    FileFilterType::Absolute(ref path) => {
+                        if &file == path {
+                            continue;
+                        }
+                    }
+                    FileFilterType::Directory(ref path) => {
+                        if !file.contains(path) {
+                            continue;
+                        }
+                    }
+                    FileFilterType::None => match langs {
+                        // #[cfg(feature = "c_lang")]
+                        // Language::C => {
+                        //     if file.ends_with(".c") || file.ends_with(".h") {
+                        //         files.push(file);
+                        //     }
+                        // }
+                        #[cfg(feature = "unstable")]
+                        Language::Go => {
+                            if !file.ends_with(".go") {
+                                continue;
+                            }
+                        }
+                        Language::Python => {
+                            if !file.ends_with(".py") {
+                                continue;
+                            }
+                        }
+                        Language::Rust => {
+                            if !file.ends_with(".rs") {
+                                continue;
+                            }
+                        }
+                        Language::Ruby => {
+                            if !file.ends_with(".rb") {
+                                continue;
+                            }
+                        }
+                        Language::All => {
+                            cfg_if::cfg_if! {
+                                if #[cfg(feature = "c_lang")] {
+                                    if !(file.ends_with(".c") || file.ends_with(".h") || !file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
+                                        continue;
+                                    }
+                                }
+                                else if #[cfg(feature = "unstable")] {
+                                    if !(file.ends_with(".go")  || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")){
+                                        continue
+                                    }
+                                }
+                                else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
+                                    if !(file.ends_with(".go") || file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
+                                        continue;
+                                    }
+                                }
+                                else {
+                                    if !(file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
+                                        continue;
+                                    }
+                                }
+
+                            }
+                        }
+                    },
+                }
+                let obh = repo.find_object(i.oid())?;
+                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)?;
+                let blob = objref.into_blob();
+                if let Some(blob) = blob {
+                    files.push((file, String::from_utf8_lossy(blob.data).to_string()));
+                }
+            }
+            _ => {}
+        }
+    }
+    ret.extend(find_function_in_files_with_commit(
+        files,
+        name.to_string(),
+        langs,
+    ));
+
+    Ok(ret)
+}
 /// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
@@ -316,193 +443,63 @@ macro_rules! get_function_history {
             opts.$variant = $value;
         )*
         get_function_history(
-            &opts.name,
+            opts.name,
             &opts.file,
             &opts.filter,
             &opts.language
         )
     }};
 }
-#[inline]
-/// List all the commits date in the git history (in rfc2822 format).
-pub fn get_git_dates() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git")
-        .args(["log", "--pretty=%aD", "--date", "rfc2822"])
-        .output()?;
-    let output = String::from_utf8(output.stdout)?;
-    let output = output
-        .split('\n')
-        .map(std::string::ToString::to_string)
-        .collect::<Vec<String>>();
-    Ok(output)
+
+pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
+    let repo = git_repository::discover(".")?;
+    let mut tips = vec![];
+    let head = repo.head_commit()?;
+    tips.push(head.id);
+    let commit_iter = repo.rev_walk(tips);
+    let commits = commit_iter.all()?.filter_map(|i| match i {
+        Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
+            let author = match i.author() {
+                Ok(author) => author,
+                Err(_) => return None,
+            };
+            let message = match i.message() {
+                Ok(message) => message,
+                Err(_) => return None,
+            };
+            let mut msg = message.title.to_string();
+            if let Some(msg_body) = message.body {
+                msg.push_str(&msg_body.to_string());
+            }
+
+            Some(CommitInfo {
+                date: match i.time().map(|x| {
+                    DateTime::<Utc>::from_utc(
+                        NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
+                        Utc,
+                    )
+                }) {
+                    Ok(i) => i,
+                    Err(_) => return None,
+                },
+                hash: i.id.to_string(),
+                author_email: author.email.to_string(),
+                author: author.name.to_string(),
+                message: msg,
+            })
+        }),
+        Err(_) => None,
+    });
+    let commits = commits.flatten();
+    Ok(commits.collect())
 }
-#[inline]
-/// List all the commit hashes in the git history.
-pub fn get_git_commit_hashes() -> Result<Vec<String>, Box<dyn Error>> {
-    let output = Command::new("git").args(["log", "--pretty=%H"]).output()?;
-    let output = String::from_utf8(output.stdout)?;
-    let output = output
-        .split('\n')
-        .map(std::string::ToString::to_string)
-        .collect::<Vec<String>>();
-    Ok(output)
-}
-#[inline]
-fn find_file_in_commit(commit: &str, file_path: &str) -> Result<String, Box<dyn Error>> {
-    let commit_history = Command::new("git")
-        .args(format!("show {commit}:{file_path}").split(' '))
-        .output()?;
-    if !commit_history.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&commit_history.stderr))?;
-    }
-    Ok(String::from_utf8_lossy(&commit_history.stdout).to_string())
-}
 
-fn find_function_in_commit_with_filetype(
-    commit: &str,
-    name: &str,
-    filetype: &FileFilterType,
-    langs: Language,
-) -> Result<Vec<FileType>, Box<dyn Error>> {
-    // get a list of all the files in the repository
-    let mut files = Vec::new();
-    let command = Command::new("git")
-        .args(["ls-tree", "-r", "--name-only", "--full-tree", commit])
-        .output()?;
-    if !command.stderr.is_empty() {
-        Err(String::from_utf8_lossy(&command.stderr))?;
-    }
-    let file_list = String::from_utf8_lossy(&command.stdout).to_string();
-    if file_list.is_empty() {
-        return Err(format!("no files found for commit {commit} in git ouput"))?;
-    }
-    for file in file_list.split('\n') {
-        match filetype {
-            FileFilterType::Relative(ref path) => {
-                if file.ends_with(path) {
-                    files.push(file);
-                }
-            }
-            FileFilterType::Absolute(ref path) => {
-                if file == path {
-                    files.push(file);
-                }
-            }
-            FileFilterType::Directory(ref path) => {
-                if path.contains(path) {
-                    files.push(file);
-                }
-            }
-            FileFilterType::None => match langs {
-                // #[cfg(feature = "c_lang")]
-                // Language::C => {
-                //     if file.ends_with(".c") || file.ends_with(".h") {
-                //         files.push(file);
-                //     }
-                // }
-                #[cfg(feature = "unstable")]
-                Language::Go => {
-                    if file.ends_with(".go") {
-                        files.push(file);
-                    }
-                }
-                Language::Python => {
-                    if file.ends_with(".py") {
-                        files.push(file);
-                    }
-                }
-                Language::Rust => {
-                    if file.ends_with(".rs") {
-                        files.push(file);
-                    }
-                }
-                Language::Ruby => {
-                    if file.ends_with(".rb") {
-                        files.push(file);
-                    }
-                }
-                Language::All => {
-                    cfg_if::cfg_if! {
-                        if #[cfg(feature = "c_lang")] {
-                            if file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
-                                files.push(file);
-                            }
-                        }
-                        else if #[cfg(feature = "unstable")] {
-                            if file.ends_with(".go")  || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb"){
-                                files.push(file);
-                            }
-                        }
-                        else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
-                            if file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".go") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
-                                files.push(file);
-                            }
-                        }
-                        else {
-                            if file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb") {
-                                files.push(file);
-                            }
-                        }
-
-                    }
-                }
-            },
-        }
-    }
-    if files.is_empty() {
-        return Err(format!(
-            "no files found for commit {} in matching the languages specified",
-            commit
-        ))?;
-    }
-    let err = "no function found".to_string();
-    // organize the files into hierarchical structure of directories (vector of vectors) by splitting the path
-    let mut file_tree: Vec<(String, Vec<&str>)> = Vec::new();
-    for file in files.clone() {
-        let mut file_path = file.split('/').collect::<Vec<&str>>();
-        let name = match file_path.pop() {
-            Some(name) => name,
-            None => continue,
-        };
-        let file_path = file_path.join("/");
-        let mut file_tree_index_found = false;
-        for (file_tree_index, file_tree_path) in file_tree.iter().enumerate() {
-            if (file_tree_path).0 == file_path {
-                file_tree_index_found = true;
-                file_tree[file_tree_index].1.push(name);
-                break;
-            }
-        }
-        if !file_tree_index_found {
-            file_tree.push((file_path, vec![name]));
-        }
-    }
-
-    #[cfg(feature = "parallel")]
-    let t = file_tree.par_iter();
-    #[cfg(not(feature = "parallel"))]
-    let t = file_tree.iter();
-    let stuffs = t
-        .filter_map(|(path, files)| {
-            let mut file_types = Vec::new();
-            for file in files {
-                let file_path = format!("{path}/{file}");
-                let file_contents = find_file_in_commit(commit, &file_path).ok()?;
-
-                file_types.push((file_path, file_contents));
-            }
-
-            match find_function_in_files_with_commit(file_types, name.to_string(), langs) {
-                vec if !vec.is_empty() => Some(vec),
-                _ => None,
-            }
-        })
-        .flat_map(|x| x)
-        .collect::<Vec<_>>();
-    if stuffs.is_empty() {
-        Err(err)?;
-    }
-    Ok(stuffs)
+pub struct CommitInfo {
+    pub date: DateTime<Utc>,
+    pub hash: String,
+    pub message: String,
+    pub author: String,
+    pub author_email: String,
 }
 
 fn find_function_in_file_with_commit(
@@ -511,9 +508,6 @@ fn find_function_in_file_with_commit(
     name: &str,
     langs: Language,
 ) -> Result<FileType, Box<dyn Error>> {
-    // unsafe {
-    //     file_count += 1;
-    // }
     let file = match langs {
         Language::Rust => {
             let functions = rust::find_function_in_file(fc, name)?;
@@ -547,7 +541,7 @@ fn find_function_in_file_with_commit(
             //     let functions = languages::c::find_function_in_file(fc, name)?;
             //     FileType::C(CFile::new(file_path.to_string(), functions))
             // }
-            Some("py") => {
+            Some("py" | "pyw") => {
                 let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
@@ -590,10 +584,10 @@ trait UnwrapToError<T> {
 
 impl<T> UnwrapToError<T> for Option<T> {
     fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
+        self.map_or_else(|| Err(message)?, |val| Ok(val))
     }
     fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
-        self.map_or_else(|| Err(message.to_string().into()), |val| Ok(val))
+        self.map_or_else(|| Err(message)?, |val| Ok(val))
     }
 }
 
@@ -664,13 +658,14 @@ mod tests {
             &languages::Language::Rust,
         );
         assert!(output.is_err());
+        println!("{}", output.as_ref().unwrap_err());
         assert!(output
             .unwrap_err()
             .to_string()
-            .contains("file is not a rust file"));
+            .contains("is not a rust file"));
     }
     #[test]
-    fn test_date() {
+    fn test_date_range() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
@@ -679,6 +674,26 @@ mod tests {
                 "27 Sep 2022 11:27:23 -0400".to_owned(),
                 "04 Oct 2022 23:45:52 +0000".to_owned(),
             ),
+            &languages::Language::Rust,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{functions}");
+            }
+            Err(e) => println!("-{e}-"),
+        }
+        assert!(output.is_ok());
+    }
+
+    #[test]
+    fn tet_date() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileFilterType::None,
+            &Filter::Date("27 Sep 2022 00:27:23 -0400".to_owned()),
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
@@ -703,13 +718,11 @@ mod tests {
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
-        // unsafe {
-        //     println!("# of files parsed: {}", file_count);
-        // }
         match &output {
             Ok(functions) => {
                 println!("{functions}");
                 functions.get_commit().files.iter().for_each(|file| {
+                    println!("file: {}", file.get_file_name());
                     println!("{file}");
                 });
             }
@@ -766,32 +779,12 @@ mod tests {
     //     }
     //     assert!(output.is_ok());
     // }
-
-    #[test]
-    fn parse_commit() {
-        let commit_hash = "d098bba8be70106060f7250b80add703b7673d0e";
-        let now = Utc::now();
-        let t = find_function_in_commit_with_filetype(
-            commit_hash,
-            "empty_test",
-            &FileFilterType::None,
-            languages::Language::All,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
-        match &t {
-            Ok(functions) => {
-                println!("{functions:?}");
-            }
-            Err(e) => println!("{e}"),
-        }
-        assert!(t.is_ok());
-    }
-
     #[test]
     #[cfg(feature = "unstable")]
     fn go() {
         let now = Utc::now();
+        // sleep(Duration::from_secs(2));
+        println!("go STARTING");
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Relative("src/test_functions.go".to_string()),

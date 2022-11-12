@@ -122,16 +122,15 @@ pub(crate) fn find_function_in_file(
 
                     lines.0 = start_line;
                     lines.1 = end_line;
+
                     // see if the first parameter has a name:
                     let mut parameters = func.typ.params.list.get(0).map_or_else(
                         || GoParameter::Type(vec![]),
                         |param| {
                             if param.name.is_empty() {
                                 GoParameter::Type(match &param.typ {
-                                    gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(
-                                        ident,
-                                    )) => {
-                                        vec![ident.name.name.clone()]
+                                    gosyn::ast::Expression::Ident(ident) => {
+                                        vec![ident.name.clone()]
                                     }
                                     _ => {
                                         vec![]
@@ -139,9 +138,7 @@ pub(crate) fn find_function_in_file(
                                 })
                             } else {
                                 let typ = match &param.typ {
-                                    gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(
-                                        ident,
-                                    )) => ident.name.name.clone(),
+                                    gosyn::ast::Expression::Ident(ident) => ident.name.clone(),
 
                                     _ => String::new(),
                                 };
@@ -155,18 +152,14 @@ pub(crate) fn find_function_in_file(
 
                     func.typ.params.list.iter().skip(1).for_each(|param| {
                         if param.name.is_empty() {
-                            if let gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(ident)) =
-                                &param.typ
-                            {
+                            if let gosyn::ast::Expression::Ident(ident) = &param.typ {
                                 if let GoParameter::Type(types) = &mut parameters {
-                                    types.push(ident.name.name.clone());
+                                    types.push(ident.name.clone());
                                 }
                             }
                         } else {
                             let typ = match &param.typ {
-                                gosyn::ast::Expression::Type(gosyn::ast::Type::Ident(ident)) => {
-                                    ident.name.name.clone()
-                                }
+                                gosyn::ast::Expression::Ident(ident) => ident.name.clone(),
 
                                 _ => String::new(),
                             };
@@ -211,6 +204,7 @@ pub(crate) fn find_function_in_file(
     if parsed.is_empty() {
         return Err(format!("could not find function {name} in file"))?;
     }
+
     Ok(parsed)
 }
 

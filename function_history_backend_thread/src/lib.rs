@@ -39,35 +39,36 @@ pub fn command_thread(
                             log::info!("list");
                         }
                         match list_type {
-                            ListType::Commits => {
-                                match git_function_history::get_git_commit_hashes() {
-                                    Ok(commits) => {
-                                        if log {
-                                            log::info!("found {} commits", commits.len());
-                                        }
-                                        (
-                                            CommandResult::String(commits),
-                                            Status::Ok(Some(format!(
-                                                "Found commits dates took {}s",
-                                                now.elapsed().as_secs()
-                                            ))),
-                                        )
+                            ListType::Commits => match git_function_history::get_git_info() {
+                                Ok(commits) => {
+                                    if log {
+                                        log::info!("found {} commits", commits.len());
                                     }
-                                    Err(err) => (
-                                        CommandResult::None,
-                                        Status::Error(format!(
-                                            "Error getting commits: {} took {}s",
-                                            err,
+                                    let commits =
+                                        commits.iter().map(|c| c.hash.to_string()).collect();
+                                    (
+                                        CommandResult::String(commits),
+                                        Status::Ok(Some(format!(
+                                            "Found commits dates took {}s",
                                             now.elapsed().as_secs()
-                                        )),
-                                    ),
+                                        ))),
+                                    )
                                 }
-                            }
-                            ListType::Dates => match git_function_history::get_git_dates() {
+                                Err(err) => (
+                                    CommandResult::None,
+                                    Status::Error(format!(
+                                        "Error getting commits: {} took {}s",
+                                        err,
+                                        now.elapsed().as_secs()
+                                    )),
+                                ),
+                            },
+                            ListType::Dates => match git_function_history::get_git_info() {
                                 Ok(dates) => {
                                     if log {
                                         log::info!("found {} dates", dates.len());
                                     }
+                                    let dates = dates.iter().map(|d| d.date.to_rfc2822()).collect();
                                     (
                                         CommandResult::String(dates),
                                         Status::Ok(Some(format!(

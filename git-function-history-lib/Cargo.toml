@@ -9,8 +9,8 @@ categories = ["tools", "git"]
 description = "show function history from git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["parallel"]
-parallel = ["dep:rayon"]
+default = ["parallel", "cache"]
+parallel = ["dep:rayon", "git-features/parallel"]
 # c_lang = []
 # unstable = ["dep:gosyn", "dep:javaparser"]
 unstable = ["dep:gosyn"]
@@ -18,7 +18,7 @@ cache = ["dep:cached"]
 
 [dependencies]
 chrono = "0.4.22"
-ra_ap_syntax = "0.0.137"
+ra_ap_syntax = "0.0.138"
 rayon = { version = "1.5.3", optional = true }
 rustpython-parser = "0.1.2"
 # for end_lines but can't be publsihed b/c git depenency
@@ -29,6 +29,6 @@ gosyn = {version = "0.2.0", optional = true}
 # javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
 cfg-if = "1.0.0"
 cached = {version = "0.40.0", optional = true}
-# both unix only right now
-# rs-git-lib = "0.2.1"
-# git_rs = "0.1.0"
+gitoxide-core = "0.19.0"
+git-repository = { version = "0.27.0", default-features = false, features = ["max-performance-safe"] }
+git-features = { version = "0.23.1", features = ["zlib", "once_cell"] }

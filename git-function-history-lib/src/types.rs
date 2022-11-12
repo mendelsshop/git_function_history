@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 #[cfg(feature = "parallel")]
-use rayon::prelude::{ParallelIterator, IntoParallelRefIterator};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     collections::HashMap,
     error::Error,
@@ -122,22 +122,22 @@ pub struct Commit {
 impl Commit {
     /// Create a new `Commit` with the given `commit_hash`, functions, and date.
     pub fn new(
-        commit_hash: String,
+        commit_hash: &str,
         files: Vec<FileType>,
         date: &str,
-        author: String,
-        email: String,
-        message: String,
+        author: &str,
+        email: &str,
+        message: &str,
     ) -> Self {
         Self {
-            commit_hash,
+            commit_hash: commit_hash.to_string(),
             files,
             date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
             current_pos: 0,
             current_iter_pos: 0,
-            author,
-            email,
-            message,
+            author: author.to_string(),
+            email: email.to_string(),
+            message: message.to_string(),
         }
     }
 
