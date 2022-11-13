@@ -42,4 +42,4 @@
     - [ ] make list command a table wiht rows and columns for date, commit, author, message, etc
     - [ ] (possibly) use tree sitter to provide syntax highlighting
   - lib:
-    - [ ] possibly stop using Commmad::new("git") and use https://crates.io/crates/git_rs OR https://crates.io/crates/rs-git-lib OR  https://crates.io/crates/gitoxide, to imporve performance with program compibilty assistant sevice on windows
+    - [x] possibly stop using Commmad::new("git") and use https://crates.io/crates/git_rs OR https://crates.io/crates/rs-git-lib OR  https://crates.io/crates/gitoxide, to imporve performance with program compibilty assistant sevice on windows

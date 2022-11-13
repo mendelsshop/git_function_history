@@ -1,6 +1,5 @@
 use rustpython_parser::{
-    ast::{Located, StatementType},
-    location::Location,
+    ast::{Located, Location, StmtKind},
     parser,
 };
 use std::collections::VecDeque;
@@ -30,7 +29,7 @@ use super::FunctionTrait;
 pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
-    // parameters: Params,
+    /// parameters: Params,
     pub(crate) parameters: Vec<String>,
     pub(crate) parent: Vec<PythonParentFunction>,
     pub(crate) decorators: Vec<String>,
@@ -57,13 +56,13 @@ impl fmt::Display for PythonFunction {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct Params {
-//     args: Vec<String>,
-//     kwargs: Vec<String>,
-//     varargs: Option<String>,
-//     varkwargs: Option<String>,
-// }
+/// #[derive(Debug, Clone)]
+/// pub struct Params {
+///     args: Vec<String>,
+///     kwargs: Vec<String>,
+///     varargs: Option<String>,
+///     varkwargs: Option<String>,
+/// }
 #[derive(Debug, Clone)]
 pub struct Class {
     pub(crate) name: String,
@@ -80,7 +79,7 @@ pub struct PythonParentFunction {
     pub(crate) lines: (usize, usize),
     pub(crate) parameters: Vec<String>,
     pub(crate) decorators: Vec<String>,
-    // pub(crate) class: Option<String>,
+    /// pub(crate) class: Option<String>,
     pub(crate) returns: Option<String>,
 }
 
@@ -88,14 +87,13 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
-    let ast = parser::parse_program(file_contents)?;
+    let ast = parser::parse_program(file_contents, "<stdin>")?;
     let mut functions = vec![];
-    let mut last = None;
 
-    if ast.statements.is_empty() {
+    if ast.is_empty() {
         return Err("No code found")?;
     }
-    let mut new_ast = VecDeque::from(ast.statements);
+    let mut new_ast = VecDeque::from(ast);
     loop {
         if new_ast.is_empty() {
             break;
@@ -103,8 +101,7 @@ pub(crate) fn find_function_in_file(
         let stmt = new_ast
             .pop_front()
             .unwrap_to_error("could not get statement")?;
-        let next = new_ast.front();
-        get_functions(stmt, next, &mut functions, name, &mut last, &mut None);
+        get_functions(stmt, &mut functions, name);
     }
     let mut starts = file_contents
         .match_indices('\n')
@@ -117,30 +114,17 @@ pub(crate) fn find_function_in_file(
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
     let mut new = Vec::new();
-    for mut func in functions {
-        if func.1 .0 == func.1 .1 {
-            // get the last line of the file
-            let last_line = file_contents
-                .lines()
-                .last()
-                .unwrap_to_error("could not get last line")?;
-            let row = file_contents.lines().count();
-            let column = last_line.len();
-            let end = Location::new(row, column);
-            func.1 .1 = end;
-        }
-        // get the function body based on the location
+    for func in functions {
         let start = func.1 .0.row();
         let end = func.1 .1.row();
         let start = map[&(start - 1)];
 
         let end = map[&(end - 1)];
-        if let StatementType::FunctionDef {
+        if let StmtKind::FunctionDef {
             name,
             args,
             decorator_list,
             returns,
-            is_async: _,
             ..
         } = func.0
         {
@@ -157,12 +141,12 @@ pub(crate) fn find_function_in_file(
                 .collect::<String>();
             let new_func = PythonFunction {
                 name: name.to_string(),
-                returns: returns.as_ref().map(|x| x.name().to_string()),
-                parameters: args.args.iter().map(|x| x.arg.to_string()).collect(),
+                returns: returns.as_ref().map(|x| x.node.name().to_string()),
+                parameters: args.args.iter().map(|x| x.node.arg.to_string()).collect(),
                 parent: vec![],
                 decorators: decorator_list
                     .iter()
-                    .map(|x| x.name().to_string())
+                    .map(|x| x.node.name().to_string())
                     .collect(),
                 class: None,
                 body,
@@ -178,11 +162,9 @@ pub(crate) fn find_function_in_file(
 }
 #[inline]
 fn fun_name1(
-    body: Vec<Located<StatementType>>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
+    body: Vec<Located<StmtKind>>,
+    functions: &mut Vec<(StmtKind, (Location, Location))>,
     lookup_name: &str,
-    last_found_fn: &mut Option<(StatementType, Location)>,
-    other_last_found_fn: &mut Option<(StatementType, Location)>,
 ) {
     let mut new_ast = VecDeque::from(body);
     loop {
@@ -190,135 +172,46 @@ fn fun_name1(
             break;
         }
         let stmt = new_ast.pop_front().expect("could not get statement");
-        let next = new_ast.front();
-        get_functions(
-            stmt,
-            next,
-            functions,
-            lookup_name,
-            last_found_fn,
-            other_last_found_fn,
-        );
-    }
-}
-#[inline]
-fn fun_name(
-    other_last_found_fn: &mut Option<(StatementType, Location)>,
-    last_found_fn: &mut Option<(StatementType, Location)>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
-    stmt: Location,
-) {
-    std::mem::swap(other_last_found_fn, last_found_fn);
-    let mut other = None;
-    std::mem::swap(&mut other, other_last_found_fn);
-    if let Some(body) = other {
-        functions.push((body.0, (body.1, stmt)));
+        get_functions(stmt, functions, lookup_name);
     }
 }
 
-fn get_functions<'a>(
-    // TODO: get parent functions and classes
-    stmt: Located<StatementType>,
-    next_stmt: Option<&Located<StatementType>>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
+fn get_functions(
+    stmt: Located<StmtKind>,
+
+    functions: &mut Vec<(StmtKind, (Location, Location))>,
     lookup_name: &str,
-    last_found_fn: &'a mut Option<(StatementType, Location)>,
-    other_last_found_fn: &'a mut Option<(StatementType, Location)>,
 ) {
     match stmt.node {
-        StatementType::FunctionDef { ref name, .. } if name == lookup_name => {
-            if let Some(ref mut last) = last_found_fn {
-                let mut new = (stmt.node, stmt.location);
-                std::mem::swap(last, &mut new);
-                functions.push((new.0, (new.1, stmt.location)));
-            } else if next_stmt.is_none() {
-                functions.push((stmt.node, (stmt.location, stmt.location)));
-            } else {
-                *last_found_fn = Some((stmt.node, stmt.location));
-            }
-            // let r = Range::from_located(&stmt);
-            // println!("Found function {} at {:?}", name, r);
-        }
+        StmtKind::FunctionDef { ref name, .. } if name == lookup_name => if let Some(end) = stmt.end_location {
+            functions.push((stmt.node, (stmt.location, end)));
+        },
 
-        StatementType::If { body, orelse, .. }
-        | StatementType::While { body, orelse, .. }
-        | StatementType::For { body, orelse, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
+        StmtKind::If { body, orelse, .. }
+        | StmtKind::While { body, orelse, .. }
+        | StmtKind::For { body, orelse, .. } => {
+            fun_name1(body, functions, lookup_name);
+
+            fun_name1(orelse, functions, lookup_name);
         }
-        StatementType::FunctionDef { body, .. }
-        | StatementType::ClassDef { body, .. }
-        | StatementType::With { body, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
+        StmtKind::FunctionDef { body, .. }
+        | StmtKind::ClassDef { body, .. }
+        | StmtKind::With { body, .. } => {
+            fun_name1(body, functions, lookup_name);
         }
-        StatementType::Try {
+        StmtKind::Try {
             body,
-            handlers,
             orelse,
             finalbody,
+            ..
         } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
-            for handler in handlers {
-                fun_name1(
-                    handler.body,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
+            fun_name1(body, functions, lookup_name);
 
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
-            if let Some(stmts) = finalbody {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
+            fun_name1(orelse, functions, lookup_name);
+
+            fun_name1(finalbody, functions, lookup_name);
         }
-        _ => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-        }
+        _ => {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
