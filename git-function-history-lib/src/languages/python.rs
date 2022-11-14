@@ -33,7 +33,7 @@ pub struct PythonFunction {
     pub(crate) parameters: Vec<String>,
     pub(crate) parent: Vec<PythonParentFunction>,
     pub(crate) decorators: Vec<String>,
-    pub(crate) class: Option<Class>,
+    pub(crate) class: Option<PythonClass>,
     pub(crate) lines: (usize, usize),
     pub(crate) returns: Option<String>,
 }
@@ -64,7 +64,7 @@ impl fmt::Display for PythonFunction {
 ///     varkwargs: Option<String>,
 /// }
 #[derive(Debug, Clone)]
-pub struct Class {
+pub struct PythonClass {
     pub(crate) name: String,
     pub(crate) top: String,
     pub(crate) bottom: String,
@@ -93,16 +93,7 @@ pub(crate) fn find_function_in_file(
     if ast.is_empty() {
         return Err("No code found")?;
     }
-    let mut new_ast = VecDeque::from(ast);
-    loop {
-        if new_ast.is_empty() {
-            break;
-        }
-        let stmt = new_ast
-            .pop_front()
-            .unwrap_to_error("could not get statement")?;
-        get_functions(stmt, &mut functions, name);
-    }
+    get_functions_recurisve(ast, &mut functions, &mut Vec::new(), &mut Vec::new(), name)?;
     let mut starts = file_contents
         .match_indices('\n')
         .map(|x| x.0)
@@ -118,7 +109,6 @@ pub(crate) fn find_function_in_file(
         let start = func.1 .0.row();
         let end = func.1 .1.row();
         let start = map[&(start - 1)];
-
         let end = map[&(end - 1)];
         if let StmtKind::FunctionDef {
             name,
@@ -161,56 +151,103 @@ pub(crate) fn find_function_in_file(
     Ok(new)
 }
 #[inline]
-fn fun_name1(
+fn get_functions_recurisve(
     body: Vec<Located<StmtKind>>,
     functions: &mut Vec<(StmtKind, (Location, Location))>,
+    current_parent: &mut Vec<PythonParentFunction>,
+    current_class: &mut Vec<PythonClass>,
     lookup_name: &str,
-) {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut new_ast = VecDeque::from(body);
     loop {
         if new_ast.is_empty() {
             break;
         }
-        let stmt = new_ast.pop_front().expect("could not get statement");
-        get_functions(stmt, functions, lookup_name);
+        let stmt = new_ast.pop_front().unwrap_to_error("No stmt")?;
+        get_functions(stmt, functions, current_parent, current_class, lookup_name);
     }
+    Ok(())
 }
 
 fn get_functions(
     stmt: Located<StmtKind>,
-
     functions: &mut Vec<(StmtKind, (Location, Location))>,
+    current_parent: &mut Vec<PythonParentFunction>,
+    current_class: &mut Vec<PythonClass>,
     lookup_name: &str,
 ) {
     match stmt.node {
-        StmtKind::FunctionDef { ref name, .. } if name == lookup_name => if let Some(end) = stmt.end_location {
-            functions.push((stmt.node, (stmt.location, end)));
-        },
-
+        StmtKind::FunctionDef { ref name, .. } | StmtKind::AsyncFunctionDef { ref name, .. }
+            if name == lookup_name =>
+        {
+            if let Some(end) = stmt.end_location {
+                functions.push((stmt.node, (stmt.location, end)));
+            }
+        }
         StmtKind::If { body, orelse, .. }
         | StmtKind::While { body, orelse, .. }
-        | StmtKind::For { body, orelse, .. } => {
-            fun_name1(body, functions, lookup_name);
+        | StmtKind::For { body, orelse, .. }
+        | StmtKind::AsyncFor { body, orelse, .. } => {
+            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
+                .unwrap();
+            get_functions_recurisve(
+                orelse,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
+        }
+        StmtKind::FunctionDef {
+            name: _, body: _, ..
+        }
+        | StmtKind::AsyncFunctionDef {
+            name: _, body: _, ..
+        } => {
+            // turn the function into a parent function
+            // and add it to the current parent
+            // and then recurse with the get_functions_recurisve
+        }
+        StmtKind::ClassDef {
+            name: _, body: _, ..
+        } => {
+            // turn the class into a python class
 
-            fun_name1(orelse, functions, lookup_name);
+            // and add it to the current class
+            // and then recurse with the get_functions_recurisve
         }
-        StmtKind::FunctionDef { body, .. }
-        | StmtKind::ClassDef { body, .. }
-        | StmtKind::With { body, .. } => {
-            fun_name1(body, functions, lookup_name);
+        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => {
+            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
+                .unwrap();
         }
+        // TODO: add handles.body
         StmtKind::Try {
             body,
             orelse,
             finalbody,
             ..
         } => {
-            fun_name1(body, functions, lookup_name);
-
-            fun_name1(orelse, functions, lookup_name);
-
-            fun_name1(finalbody, functions, lookup_name);
+            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
+                .unwrap();
+            get_functions_recurisve(
+                orelse,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
+            get_functions_recurisve(
+                finalbody,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
         }
+        // TODO: add match.body
         _ => {}
     }
 }
