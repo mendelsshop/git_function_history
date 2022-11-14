@@ -16,3 +16,13 @@ passing_test = test_with_assert
 def empty_test(n: int) -> list:
     """This is an empty test with a docstring"""
     pass
+
+class TestClass:
+    def test_method(self):
+        pass
+
+    def test_with_assert(n):
+        @assert_that("This is a test with an assert")
+        def empty_test(t):
+            return t == n
+    assert True

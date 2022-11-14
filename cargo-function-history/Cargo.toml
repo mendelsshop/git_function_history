@@ -27,4 +27,4 @@ dirs = "4.0.0"
 simple_file_logger = "0.2.0"
 log = "0.4"
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.2.2", default-features = false}
-tui-input = "0.6.0"
+tui-input = "0.6.1"
