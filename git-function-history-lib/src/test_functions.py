@@ -9,6 +9,8 @@ def test_with_assert(n):
     @assert_that("This is a test with an assert")
     def empty_test(t):
         return t == n
+
+        
     assert True
 
 passing_test = test_with_assert

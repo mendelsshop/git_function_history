@@ -1,5 +1,5 @@
 use rustpython_parser::{
-    ast::{Located, Location, StmtKind},
+    ast::{Arguments, ExprKind, Located, StmtKind},
     parser,
 };
 use std::collections::VecDeque;
@@ -8,22 +8,6 @@ use std::{collections::HashMap, fmt};
 use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
-// #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-// pub struct Range {
-//     pub location: Location,
-//     pub end_location: Location,
-// }
-
-// impl Range {
-//     pub fn from_located<T>(located: &Located<T>) -> Self {
-//         Range {
-//             location: located.location,
-//             end_location: located
-//                 .end_location
-//                 .expect("AST nodes should have end_location."),
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone)]
 pub struct PythonFunction {
@@ -47,12 +31,6 @@ impl fmt::Display for PythonFunction {
             write!(f, "{}", parent.top)?;
         }
         write!(f, "{}", self.body)?;
-        for parent in &self.parent {
-            write!(f, "{}", parent.bottom)?;
-        }
-        for class in &self.class {
-            write!(f, "{}", class.bottom)?;
-        }
         Ok(())
     }
 }
@@ -68,7 +46,6 @@ impl fmt::Display for PythonFunction {
 pub struct PythonClass {
     pub(crate) name: String,
     pub(crate) top: String,
-    pub(crate) bottom: String,
     pub(crate) lines: (usize, usize),
     pub(crate) decorators: Vec<String>,
 }
@@ -76,7 +53,6 @@ pub struct PythonClass {
 pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,
-    pub(crate) bottom: String,
     pub(crate) lines: (usize, usize),
     pub(crate) parameters: Vec<String>,
     pub(crate) decorators: Vec<String>,
@@ -90,11 +66,9 @@ pub(crate) fn find_function_in_file(
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
     let ast = parser::parse_program(file_contents, "<stdin>")?;
     let mut functions = vec![];
-
     if ast.is_empty() {
         return Err("No code found")?;
     }
-    get_functions_recurisve(ast, &mut functions, &mut Vec::new(), &mut Vec::new(), name)?;
     let mut starts = file_contents
         .match_indices('\n')
         .map(|x| x.0)
@@ -105,22 +79,37 @@ pub(crate) fn find_function_in_file(
         .iter()
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
+    get_functions_recurisve(
+        ast,
+        &map,
+        &mut functions,
+        &mut Vec::new(),
+        &mut Vec::new(),
+        name,
+    )?;
     let mut new = Vec::new();
     for func in functions {
-        let start = func.1 .0.row();
-        let end = func.1 .1.row();
-        let start = map[&(start - 1)];
-        let end = map[&(end - 1)];
+        let start = func.0.location.row();
+        let end = func.0.end_location.unwrap().row();
+        let starts = map[&(start - 1)];
+        let ends = map[&(end - 1)];
         if let StmtKind::FunctionDef {
             name,
             args,
             decorator_list,
             returns,
             ..
-        } = func.0
+        }
+        | StmtKind::AsyncFunctionDef {
+            name,
+            args,
+            decorator_list,
+            returns,
+            ..
+        } = func.0.node
         {
-            let mut start_s = func.1 .0.row();
-            let body = file_contents[*start..*end]
+            let mut start_s = func.0.location.row();
+            let body = file_contents[*starts..*ends]
                 .trim_start_matches('\n')
                 .to_string()
                 .lines()
@@ -130,18 +119,83 @@ pub(crate) fn find_function_in_file(
                     t
                 })
                 .collect::<String>();
+            let class = func
+                .1
+                .iter()
+                .filter_map(|class| {
+                    if let StmtKind::ClassDef {
+                        ref name,
+                        ref decorator_list,
+                        ..
+                    } = class.node
+                    {
+                        let start = class.location.row();
+                        if let Some(end) = class.end_location {
+                            let end = end.row();
+                            let top = file_contents.lines().nth(start - 1).unwrap();
+                            let top = format!("{start}: {top}\n");
+                            let decorators = get_decorator_list(decorator_list.clone());
+                            return Some(PythonClass {
+                                name: name.to_string(),
+                                top,
+                                lines: (start, end),
+                                decorators,
+                            });
+                        }
+                    }
+                    None
+                })
+                .collect::<Vec<PythonClass>>();
+            let parent = func
+                .2
+                .iter()
+                .filter_map(|parent| {
+                    if let StmtKind::FunctionDef {
+                        ref name,
+                        ref args,
+                        ref decorator_list,
+                        ref returns,
+                        ..
+                    }
+                    | StmtKind::AsyncFunctionDef {
+                        ref name,
+                        ref args,
+                        ref decorator_list,
+                        ref returns,
+                        ..
+                    } = parent.node
+                    {
+                        let start = parent.location.row();
+                        if let Some(end) = parent.end_location {
+                            let end = end.row();
+                            let top = file_contents.lines().nth(start - 1).unwrap();
+                            let top = format!("{start}: {top}\n");
+                            let decorators = get_decorator_list(decorator_list.clone());
+                            let parameters = get_args(*args.clone());
+                            let returns = get_return_type(returns.clone());
+                            return Some(PythonParentFunction {
+                                name: name.to_string(),
+                                top,
+                                lines: (start, end),
+                                parameters,
+                                decorators,
+                                returns,
+                            });
+                        }
+                    }
+                    None
+                })
+                .collect::<Vec<PythonParentFunction>>();
+
             let new_func = PythonFunction {
                 name: name.to_string(),
-                returns: returns.as_ref().map(|x| x.node.name().to_string()),
-                parameters: args.args.iter().map(|x| x.node.arg.to_string()).collect(),
-                parent: func.3,
-                decorators: decorator_list
-                    .iter()
-                    .map(|x| x.node.name().to_string())
-                    .collect(),
-                class: func.2,
+                parameters: get_args(*args),
+                parent,
+                decorators: get_decorator_list(decorator_list),
+                returns: get_return_type(returns),
+                class,
                 body,
-                lines: (*start, *end),
+                lines: (start, end),
             };
             new.push(new_func);
         }
@@ -154,14 +208,14 @@ pub(crate) fn find_function_in_file(
 #[inline]
 fn get_functions_recurisve(
     body: Vec<Located<StmtKind>>,
+    map: &HashMap<usize, &usize>,
     functions: &mut Vec<(
-        StmtKind,
-        (Location, Location),
-        Vec<PythonClass>,
-        Vec<PythonParentFunction>,
+        Located<StmtKind>,
+        Vec<Located<StmtKind>>,
+        Vec<Located<StmtKind>>,
     )>,
-    current_parent: &mut Vec<PythonParentFunction>,
-    current_class: &mut Vec<PythonClass>,
+    current_parent: &mut Vec<Located<StmtKind>>,
+    current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut new_ast = VecDeque::from(body);
@@ -170,44 +224,55 @@ fn get_functions_recurisve(
             break;
         }
         let stmt = new_ast.pop_front().unwrap_to_error("No stmt")?;
-        get_functions(stmt, functions, current_parent, current_class, lookup_name);
+        get_functions(
+            stmt,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        );
     }
     Ok(())
 }
 
 fn get_functions(
     stmt: Located<StmtKind>,
+    map: &HashMap<usize, &usize>,
     functions: &mut Vec<(
-        StmtKind,
-        (Location, Location),
-        Vec<PythonClass>,
-        Vec<PythonParentFunction>,
+        Located<StmtKind>,
+        Vec<Located<StmtKind>>,
+        Vec<Located<StmtKind>>,
     )>,
-    current_parent: &mut Vec<PythonParentFunction>,
-    current_class: &mut Vec<PythonClass>,
+    current_parent: &mut Vec<Located<StmtKind>>,
+    current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
 ) {
+    let stmt_clone = stmt.clone();
     match stmt.node {
         StmtKind::FunctionDef { ref name, .. } | StmtKind::AsyncFunctionDef { ref name, .. }
             if name == lookup_name =>
         {
-            if let Some(end) = stmt.end_location {
-                functions.push((
-                    stmt.node,
-                    (stmt.location, end),
-                    current_class.clone(),
-                    current_parent.clone(),
-                ));
+            if stmt.end_location.is_some() {
+                functions.push((stmt, current_class.clone(), current_parent.clone()));
             }
         }
         StmtKind::If { body, orelse, .. }
         | StmtKind::While { body, orelse, .. }
         | StmtKind::For { body, orelse, .. }
         | StmtKind::AsyncFor { body, orelse, .. } => {
-            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
-                .unwrap();
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
             get_functions_recurisve(
                 orelse,
+                map,
                 functions,
                 current_parent,
                 current_class,
@@ -215,59 +280,61 @@ fn get_functions(
             )
             .unwrap();
         }
-        StmtKind::FunctionDef { name, body, .. }
-        | StmtKind::AsyncFunctionDef { name, body, .. } => {
-            // turn the function into a parent function
-            let parent = PythonParentFunction {
-                name,
-                top: String::new(),
-                bottom: String::new(),
-                lines: (0, 0),
-                parameters: vec![],
-                decorators: vec![],
-                returns: None,
-            };
-            // and add it to the current parent
-            current_parent.push(parent);
-            // and then recurse with the get_functions_recurisve
-            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
-                .unwrap();
-            // and then remove the parent function
+        StmtKind::FunctionDef { body, .. } | StmtKind::AsyncFunctionDef { body, .. } => {
+            current_parent.push(stmt_clone);
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
             current_parent.pop();
         }
-        StmtKind::ClassDef { name, body, .. } => {
-            // turn the class into a python class
-            let class = PythonClass {
-                name,
-                top: String::new(),
-                bottom: String::new(),
-                lines: (0, 0),
-                decorators: vec![],
-            };
-
-            // and add it to the current class
-            current_class.push(class);
-            // and then recurse with the get_functions_recurisve
-            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
-                .unwrap();
-            // and then remove the class
+        StmtKind::ClassDef { body, .. } => {
+            current_class.push(stmt_clone);
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
             current_class.pop();
         }
         StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => {
-            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
-                .unwrap();
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
         }
-        // TODO: add handles.body
         StmtKind::Try {
             body,
             orelse,
             finalbody,
             ..
         } => {
-            get_functions_recurisve(body, functions, current_parent, current_class, lookup_name)
-                .unwrap();
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            )
+            .unwrap();
             get_functions_recurisve(
                 orelse,
+                map,
                 functions,
                 current_parent,
                 current_class,
@@ -276,6 +343,7 @@ fn get_functions(
             .unwrap();
             get_functions_recurisve(
                 finalbody,
+                map,
                 functions,
                 current_parent,
                 current_class,
@@ -283,10 +351,52 @@ fn get_functions(
             )
             .unwrap();
         }
-        // TODO: add match.body
         _ => {}
     }
 }
+
+fn get_args(args: Arguments) -> Vec<String> {
+    let mut new_args = Vec::new();
+    for arg in args.args {
+        new_args.push(arg.node.arg.to_string());
+    }
+    for arg in args.kwonlyargs {
+        new_args.push(arg.node.arg.to_string());
+    }
+    for arg in args.kw_defaults {
+        new_args.push(arg.node.name().to_string());
+    }
+    for arg in args.defaults {
+        new_args.push(arg.node.name().to_string());
+    }
+    if let Some(arg) = args.vararg {
+        new_args.push(arg.node.arg.to_string());
+    }
+    if let Some(arg) = args.kwarg {
+        new_args.push(arg.node.arg.to_string());
+    }
+    for arg in args.posonlyargs {
+        new_args.push(arg.node.arg.to_string());
+    }
+    new_args
+}
+
+fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
+    if let Some(retr) = retr {
+        if let ExprKind::Name { ref id, .. } = retr.node {
+            return Some(id.to_string());
+        }
+    }
+    None
+}
+
+fn get_decorator_list(decorator_list: Vec<Located<ExprKind>>) -> Vec<String> {
+    decorator_list
+        .iter()
+        .map(|x| x.node.name().to_string())
+        .collect::<Vec<String>>()
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
@@ -374,14 +484,8 @@ impl FunctionTrait for PythonFunction {
     }
 
     fn get_bottoms(&self) -> Vec<String> {
-        let mut bottoms = Vec::new();
-        for class in &self.class {
-            bottoms.push(class.bottom.clone());
-        }
-        for parent in &self.parent {
-            bottoms.push(parent.bottom.clone());
-        }
-        bottoms
+        // in python there is no bottom
+        Vec::new()
     }
     impl_function_trait!(PythonFunction);
 }
