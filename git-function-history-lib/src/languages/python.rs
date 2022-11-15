@@ -86,11 +86,15 @@ pub(crate) fn find_function_in_file(
         &mut Vec::new(),
         &mut Vec::new(),
         name,
-    )?;
+    );
     let mut new = Vec::new();
     for func in functions {
         let start = func.0.location.row();
-        let end = func.0.end_location.unwrap().row();
+        let end = func
+            .0
+            .end_location
+            .unwrap_to_error("no end location for this function")?
+            .row();
         let starts = map[&(start - 1)];
         let ends = map[&(end - 1)];
         if let StmtKind::FunctionDef {
@@ -132,7 +136,10 @@ pub(crate) fn find_function_in_file(
                         let start = class.location.row();
                         if let Some(end) = class.end_location {
                             let end = end.row();
-                            let top = file_contents.lines().nth(start - 1).unwrap();
+                            let top = match file_contents.lines().nth(start - 1) {
+                                Some(l) => l.to_string(),
+                                None => return None,
+                            };
                             let top = format!("{start}: {top}\n");
                             let decorators = get_decorator_list(decorator_list.clone());
                             return Some(PythonClass {
@@ -168,7 +175,10 @@ pub(crate) fn find_function_in_file(
                         let start = parent.location.row();
                         if let Some(end) = parent.end_location {
                             let end = end.row();
-                            let top = file_contents.lines().nth(start - 1).unwrap();
+                            let top = match file_contents.lines().nth(start - 1) {
+                                Some(l) => l.to_string(),
+                                None => return None,
+                            };
                             let top = format!("{start}: {top}\n");
                             let decorators = get_decorator_list(decorator_list.clone());
                             let parameters = get_args(*args.clone());
@@ -217,13 +227,13 @@ fn get_functions_recurisve(
     current_parent: &mut Vec<Located<StmtKind>>,
     current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) {
     let mut new_ast = VecDeque::from(body);
     loop {
         if new_ast.is_empty() {
             break;
         }
-        let stmt = new_ast.pop_front().unwrap_to_error("No stmt")?;
+        let stmt = new_ast.pop_front().expect("No stmt found edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
         get_functions(
             stmt,
             map,
@@ -233,7 +243,6 @@ fn get_functions_recurisve(
             lookup_name,
         );
     }
-    Ok(())
 }
 
 fn get_functions(
@@ -268,8 +277,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
             get_functions_recurisve(
                 orelse,
                 map,
@@ -277,8 +285,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
         }
         StmtKind::FunctionDef { body, .. } | StmtKind::AsyncFunctionDef { body, .. } => {
             current_parent.push(stmt_clone);
@@ -289,8 +296,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
             current_parent.pop();
         }
         StmtKind::ClassDef { body, .. } => {
@@ -302,21 +308,17 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
             current_class.pop();
         }
-        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => {
-            get_functions_recurisve(
-                body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            )
-            .unwrap();
-        }
+        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => get_functions_recurisve(
+            body,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        ),
         StmtKind::Try {
             body,
             orelse,
@@ -330,8 +332,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
             get_functions_recurisve(
                 orelse,
                 map,
@@ -339,8 +340,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
             get_functions_recurisve(
                 finalbody,
                 map,
@@ -348,8 +348,7 @@ fn get_functions(
                 current_parent,
                 current_class,
                 lookup_name,
-            )
-            .unwrap();
+            );
         }
         _ => {}
     }
