@@ -82,23 +82,19 @@ pub(crate) fn find_function_in_file(
                         }
                     }
                     let mut end_line = 0;
-                    let mut end_char = 0;
                     for i in file_contents.chars().enumerate() {
                         if i.1 == '\n' {
                             if i.0 > c.expression_l.end {
                                 break;
                             }
-                            end_char = i.0;
                             end_line += 1;
                         }
                     }
-                    let loc_end = Loc {
-                        begin: end_char,
-                        end: c.expression_l.end,
-                    };
+                    let loc_end = c.end_l;
                     let top = Loc {
                         begin: c.expression_l.begin,
-                        end: c.body.as_ref().map_or(0, |b| b.expression().begin),
+                        // TODO: check if there is a super class map_or to that
+                        end: c.body.as_ref().map_or(c.keyword_l.end, |b| b.expression().begin),
                     };
                     let mut top = top
                         .source(&parsed.input)
@@ -110,21 +106,13 @@ pub(crate) fn find_function_in_file(
                         line: (start_line, end_line),
                         superclass: parse_superclass(c),
                         top: top,
-                        bottom: 
-                        // format!(
-                        //     "{end_line}: {}",
-                        //     loc_end
-                        //         .source(&parsed.input)
-                        //         .expect("Failed to get source")
-                        //         .trim_matches('\n')
-                        // ),
-                        super::make_lined(
+                        bottom: super::make_lined(
                             loc_end
                                 .source(&parsed.input)
                                 .unwrap_to_error("Failed to get source")?
                                 .trim_matches('\n')
                                 .to_string(),
-                            end_line + 1,
+                            end_line,
                         ),
                     })
                 }
