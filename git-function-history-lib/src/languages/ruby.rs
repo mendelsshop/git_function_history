@@ -39,12 +39,12 @@ impl RubyFunction {
 impl fmt::Display for RubyFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.class {
-            Some(class) => write!(f, "{}", class.top)?,
+            Some(class) => write!(f, "{}\n...\n", class.top)?,
             None => {}
         }
         write!(f, "{}", self.body)?;
         match &self.class {
-            Some(class) => write!(f, "{}", class.bottom)?,
+            Some(class) => write!(f, "\n...\n{}", class.bottom)?,
             None => {}
         }
         Ok(())
@@ -104,25 +104,27 @@ pub(crate) fn find_function_in_file(
                         .source(&parsed.input)
                         .unwrap_to_error("Failed to get source")?;
                     top = top.trim_end().to_string();
-                    top.push('\n');
-                    let mut starts = start_line;
+                    top = super::make_lined(top, start_line+1);
                     Some(RubyClass {
                         name: parser_class_name(c),
                         line: (start_line, end_line),
                         superclass: parse_superclass(c),
-                        top: top
-                            .lines()
-                            .map(|l| {
-                                starts += 1;
-                                format!("{starts}: {l}\n",)
-                            })
-                            .collect(),
-                        bottom: format!(
-                            "{end_line}: {}",
+                        top: top,
+                        bottom: 
+                        // format!(
+                        //     "{end_line}: {}",
+                        //     loc_end
+                        //         .source(&parsed.input)
+                        //         .expect("Failed to get source")
+                        //         .trim_matches('\n')
+                        // ),
+                        super::make_lined(
                             loc_end
                                 .source(&parsed.input)
-                                .expect("Failed to get source")
+                                .unwrap_to_error("Failed to get source")?
                                 .trim_matches('\n')
+                                .to_string(),
+                            end_line + 1,
                         ),
                     })
                 }
@@ -149,23 +151,33 @@ pub(crate) fn find_function_in_file(
                     end_line += 1;
                 }
             }
-            let mut starts = start_line;
+            let starts = start_line + 1;
             Ok(RubyFunction {
                 name: f.name.clone(),
-                lines: (start_line, end_line),
+                lines: (start_line + 1, end_line + 1),
                 class,
-                body: f
-                    .expression_l
-                    .with_begin(start)
-                    .source(&parsed.input)
-                    .expect("Failed to get function body")
-                    .trim_matches('\n')
-                    .lines()
-                    .map(|l| {
-                        starts += 1;
-                        format!("{starts}: {l}\n",)
-                    })
-                    .collect(),
+                body: 
+                // f
+                //     .expression_l
+                //     .with_begin(start)
+                //     .source(&parsed.input)
+                //     .expect("Failed to get function body")
+                //     .trim_matches('\n')
+                //     .lines()
+                //     .map(|l| {
+                //         starts += 1;
+                //         format!("{starts}: {l}\n",)
+                //     })
+                //     .collect::<String>().trim_end().to_string(),
+                super::make_lined(
+                    f.expression_l
+                        .with_begin(start)
+                        .source(&parsed.input)
+                        .expect("Failed to get function body")
+                        .trim_matches('\n')
+                        .to_string(),
+                    starts,
+                ),
                 args: f
                     .args
                     .clone()

@@ -62,7 +62,7 @@ impl fmt::Display for RustFunction {
         }
         match &self.block {
             None => {}
-            Some(block) => write!(f, "\n...{}", block.bottom)?,
+            Some(block) => write!(f, "\n...\n{}", block.bottom)?,
         };
         Ok(())
     }
@@ -306,20 +306,14 @@ pub(crate) fn find_function_in_file(
             parent = p.parent();
         }
         let attr = get_doc_comments_and_attrs(f);
-        let mut start = stuff.0 .0;
+        let start = stuff.0 .0;
         let bb = match map[&start] {
             0 => 0,
             x => x + 1,
         };
         let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
-            .to_string()
-            .lines()
-            .map(|l| {
-                start += 1;
-                format!("{start}: {l}\n",)
-            })
-            .collect();
-        let body = contents.trim_end().to_string();
+            .to_string();
+        let body = super::make_lined(contents, start + 1);
         let function = RustFunction {
             name: f
                 .name()
@@ -399,7 +393,7 @@ fn get_stuff<T: AstNode>(
         found_start_brace = usize::from(start);
     }
     let start = map[&start_line];
-    let mut start_lines = start_line;
+    let start_lines = start_line;
     let mut content: String = file[(*start)..=found_start_brace].to_string();
     if &content[..1] == "\n" {
         content = content[1..].to_string();
@@ -407,25 +401,16 @@ fn get_stuff<T: AstNode>(
     (
         (start_line, end_line),
         (
-            content
-                .lines()
-                .map(|l| {
-                    start_lines += 1;
-                    format!("{start_lines}: {l}\n",)
-                })
-                .collect::<String>()
-                .trim_end()
-                .to_string(),
-            format!(
-                "\n{}: {}",
-                end_line,
+            super::make_lined(content, start_lines + 1),
+            super::make_lined(
                 file.lines()
                     .nth(if end_line == file.lines().count() - 1 {
                         end_line
                     } else {
                         end_line - 1
                     })
-                    .unwrap_or("")
+                    .unwrap_or("").to_string(),
+                end_line,
             ),
         ),
         (starts, end_line),
@@ -619,12 +604,13 @@ impl FunctionTrait for RustFunction {
 
     fn get_bottoms(&self) -> Vec<String> {
         let mut bottoms = Vec::new();
-        self.block.as_ref().map_or((), |block| {
-            bottoms.push(block.bottom.clone());
-        });
+
         for parent in &self.function {
             bottoms.push(parent.bottom.clone());
         }
+        self.block.as_ref().map_or((), |block| {
+            bottoms.push(block.bottom.clone());
+        });
         bottoms
     }
 

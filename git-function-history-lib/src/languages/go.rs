@@ -91,14 +91,14 @@ pub(crate) fn find_function_in_file(
                     if let Some(recv) = func.recv {
                         lines.0 = recv.pos();
                     }
+                    // TODO: make sure that func is not commented out
                     lines.0 = file_contents[..lines.0].rfind("func")?;
-
                     for i in &func.docs {
                         if i.pos < lines.0 {
                             lines.0 = i.pos;
                         }
                     }
-                    let body = file_contents[lines.0..=lines.1].to_string();
+                    let mut body = file_contents[lines.0..=lines.1].to_string().trim_end().to_string();
                     let mut start_line = 0;
                     for i in file_contents.chars().enumerate() {
                         if i.1 == '\n' {
@@ -119,10 +119,10 @@ pub(crate) fn find_function_in_file(
                             end_line += 1;
                         }
                     }
-
-                    lines.0 = start_line;
-                    lines.1 = end_line;
-
+                    lines.0 = start_line + 1;
+                    lines.1 = end_line  + 1;
+                    let start = start_line + 1;
+                    body = super::make_lined(body, start);
                     // see if the first parameter has a name:
                     let mut parameters = func.typ.params.list.get(0).map_or_else(
                         || GoParameter::Type(vec![]),

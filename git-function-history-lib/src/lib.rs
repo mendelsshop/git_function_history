@@ -732,16 +732,37 @@ mod tests {
     }
 
     #[test]
-    fn python() {
+    fn python_whole() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Relative("src/test_functions.py".to_string()),
-            &Filter::DateRange(
-                "03 Oct 2022 11:27:23 -0400".to_owned(),
-                "04 Oct 2022 23:45:52 +0000".to_owned(),
-            ),
+            &Filter::None,
             &languages::Language::Python,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{functions}");
+            }
+            Err(e) => println!("{e}"),
+        }
+        assert!(output.is_ok());
+        let output = output.unwrap();
+        let commit = output.get_commit();
+        let file = commit.get_file();
+        let _functions = file.get_functions();
+    }
+
+    #[test]
+    fn ruby_whole() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileFilterType::Relative("src/test_functions.rb".to_string()),
+            &Filter::None,
+            &languages::Language::Ruby,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after.num_seconds());
@@ -781,10 +802,8 @@ mod tests {
     // }
     #[test]
     #[cfg(feature = "unstable")]
-    fn go() {
+    fn go_whole() {
         let now = Utc::now();
-        // sleep(Duration::from_secs(2));
-        println!("go STARTING");
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Relative("src/test_functions.go".to_string()),

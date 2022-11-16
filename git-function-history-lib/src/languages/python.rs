@@ -24,13 +24,12 @@ pub struct PythonFunction {
 impl fmt::Display for PythonFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for class in &self.class {
-            write!(f, "{}", class.top)?;
+            write!(f, "{}\n...\n", class.top)?;
         }
         for parent in &self.parent {
-            write!(f, "{}", parent.top)?;
+            write!(f, "{}\n...\n", parent.top)?;
         }
-        write!(f, "{}", self.body)?;
-        Ok(())
+        write!(f, "{}", self.body)
     }
 }
 
@@ -131,17 +130,11 @@ pub(crate) fn find_function_in_file(
             ..
         } = func.0.node
         {
-            let mut start_s = func.0.location.row();
-            let body = file_contents[*starts..*ends]
+            let start_s = func.0.location.row();
+            let mut body = file_contents[*starts..*ends]
                 .trim_start_matches('\n')
-                .to_string()
-                .lines()
-                .map(|l| {
-                    let t = format!("{start_s}: {l}\n",);
-                    start_s += 1;
-                    t
-                })
-                .collect::<String>();
+                .to_string();
+                body = super::make_lined(body, start_s);
             let class = func
                 .1
                 .iter()
@@ -156,10 +149,10 @@ pub(crate) fn find_function_in_file(
                         if let Some(end) = class.end_location {
                             let end = end.row();
                             let top = match file_contents.lines().nth(start - 1) {
-                                Some(l) => l.to_string(),
+                                Some(l) => l.trim_end().to_string(),
                                 None => return None,
                             };
-                            let top = format!("{start}: {top}\n");
+                            let top = format!("{start}: {top}");
                             let decorators = get_decorator_list(decorator_list.clone());
                             return Some(PythonClass {
                                 name: name.to_string(),
@@ -195,10 +188,10 @@ pub(crate) fn find_function_in_file(
                         if let Some(end) = parent.end_location {
                             let end = end.row();
                             let top = match file_contents.lines().nth(start - 1) {
-                                Some(l) => l.to_string(),
+                                Some(l) => l.trim_end().to_string(),
                                 None => return None,
                             };
-                            let top = format!("{start}: {top}\n");
+                            let top = format!("{start}: {top}");
                             let decorators = get_decorator_list(decorator_list.clone());
                             let parameters = get_args(*args.clone());
                             let returns = get_return_type(returns.clone());
@@ -528,21 +521,14 @@ impl FunctionTrait for PythonFunction {
     }
 
     fn get_total_lines(&self) -> (usize, usize) {
-        let mut lines = (0, 0);
-        for class in &self.class {
-            if class.lines.0 < lines.0 {
-                lines = class.lines;
-            }
-        }
-        for parent in &self.parent {
-            if parent.lines.0 < lines.0 {
-                lines = parent.lines;
-            }
-        }
-        if self.lines.0 < lines.0 {
-            lines = self.lines;
-        }
-        lines
+        // find the first line of the function (could be the parent or the class)
+        self
+            .class
+            .iter()
+            .map(|x| x.lines)
+            .chain(self.parent.iter().map(|x| x.lines))
+            .min()
+            .unwrap_or(self.lines)
     }
 
     fn get_bottoms(&self) -> Vec<String> {

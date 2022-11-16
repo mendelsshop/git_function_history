@@ -137,7 +137,7 @@ macro_rules! impl_function_trait {
             self.name.clone()
         }
         fn get_body(&self) -> String {
-            self.body.clone()
+            self.body.to_string()
         }
     };
 }
@@ -156,9 +156,9 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
                 write!(f, "{}", current.get_body())?;
             } else if prev.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
-                write!(f, "{}", current.get_bottoms().join("\n"))?;
+                write!(f, "{}", current.get_bottoms().join("\n...\n"))?;
             } else if next.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_tops().join("\n"))?;
+                write!(f, "{}", current.get_tops().join("\n...\n"))?;
                 write!(f, "{}", current.get_body())?;
             } else {
                 write!(f, "{current}")?;
@@ -185,6 +185,12 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
     }
     Ok(())
 }
+
+fn make_lined(snippet: String, mut start:  usize) -> String {
+    snippet.lines().map(|line| {let new = format!("{}: {}\n", start, line);
+    start += 1;
+    new
+}).collect::<String>().trim_end().to_string()}
 
 pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_file_name(&self) -> String;
