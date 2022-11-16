@@ -13,8 +13,7 @@ use super::FunctionTrait;
 pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
-    /// parameters: Params,
-    pub(crate) parameters: Vec<String>,
+    pub(crate) parameters: Params,
     pub(crate) parent: Vec<PythonParentFunction>,
     pub(crate) decorators: Vec<String>,
     pub(crate) class: Vec<PythonClass>,
@@ -35,13 +34,34 @@ impl fmt::Display for PythonFunction {
     }
 }
 
-/// #[derive(Debug, Clone)]
-/// pub struct Params {
-///     args: Vec<String>,
-///     kwargs: Vec<String>,
-///     varargs: Option<String>,
-///     varkwargs: Option<String>,
-/// }
+#[derive(Debug, Clone)]
+pub struct Param {
+    pub name: String,
+    pub r#type: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Params {
+    pub args: Vec<Param>,
+    pub kwargs: Vec<Param>,
+    pub posonlyargs: Vec<Param>,
+    pub varargs: Option<Param>,
+    pub varkwargs: Option<Param>,
+}
+
+impl Params {
+    pub fn arg_has_name(&self, name: &str) -> bool {
+        self.args.iter().any(|arg| arg.name == name)
+            || self.kwargs.iter().any(|arg| arg.name == name)
+            || self.posonlyargs.iter().any(|arg| arg.name == name)
+            || self.varargs.as_ref().map_or(false, |arg| arg.name == name)
+            || self
+                .varkwargs
+                .as_ref()
+                .map_or(false, |arg| arg.name == name)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PythonClass {
     pub(crate) name: String,
@@ -54,9 +74,8 @@ pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,
     pub(crate) lines: (usize, usize),
-    pub(crate) parameters: Vec<String>,
+    pub(crate) parameters: Params,
     pub(crate) decorators: Vec<String>,
-    /// pub(crate) class: Option<String>,
     pub(crate) returns: Option<String>,
 }
 
@@ -354,30 +373,75 @@ fn get_functions(
     }
 }
 
-fn get_args(args: Arguments) -> Vec<String> {
-    let mut new_args = Vec::new();
+fn get_args(args: Arguments) -> Params {
+    let mut parameters = Params {
+        args: Vec::new(),
+        varargs: None,
+        posonlyargs: Vec::new(),
+        kwargs: Vec::new(),
+        varkwargs: None,
+    };
     for arg in args.args {
-        new_args.push(arg.node.arg.to_string());
+        parameters.args.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
     }
     for arg in args.kwonlyargs {
-        new_args.push(arg.node.arg.to_string());
-    }
-    for arg in args.kw_defaults {
-        new_args.push(arg.node.name().to_string());
-    }
-    for arg in args.defaults {
-        new_args.push(arg.node.name().to_string());
+        parameters.kwargs.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
     }
     if let Some(arg) = args.vararg {
-        new_args.push(arg.node.arg.to_string());
+        parameters.varargs = Some(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
     }
     if let Some(arg) = args.kwarg {
-        new_args.push(arg.node.arg.to_string());
+        parameters.varkwargs = Some(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
     }
     for arg in args.posonlyargs {
-        new_args.push(arg.node.arg.to_string());
+        parameters.posonlyargs.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
     }
-    new_args
+    parameters
 }
 
 fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
@@ -428,14 +492,13 @@ impl PythonFilter {
                 .as_ref()
                 .map_or(false, |x| x == return_type),
             Self::HasParameterName(parameter_name) => {
-                function.parameters.iter().any(|x| x == parameter_name)
+                function.parameters.arg_has_name(parameter_name)
             }
             Self::HasDecorator(decorator) => function.decorators.iter().any(|x| x == decorator),
             Self::HasClasswithDecorator(decorator) => function
                 .class
                 .iter()
                 .any(|x| x.decorators.iter().any(|y| y == decorator)),
-
             Self::HasParentFunctionwithDecorator(decorator) => function
                 .parent
                 .iter()
@@ -443,7 +506,7 @@ impl PythonFilter {
             Self::HasParentFunctionwithParameterName(parameter_name) => function
                 .parent
                 .iter()
-                .any(|x| x.parameters.iter().any(|x| x == parameter_name)),
+                .any(|x| x.parameters.arg_has_name(parameter_name)),
             Self::HasParentFunctionwithReturnType(return_type) => function
                 .parent
                 .iter()
