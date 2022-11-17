@@ -98,31 +98,16 @@ pub(crate) fn find_function_in_file(
                             lines.0 = i.pos;
                         }
                     }
-                    let mut body = file_contents[lines.0..=lines.1].to_string().trim_end().to_string();
-                    let mut start_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > lines.0 {
-                                lines.0 = i.0;
-                                break;
-                            }
-                            start_line += 1;
-                        }
-                    }
-                    let mut end_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > lines.1 {
-                                lines.1 = i.0;
-                                break;
-                            }
-                            end_line += 1;
-                        }
-                    }
-                    lines.0 = start_line + 1;
-                    lines.1 = end_line  + 1;
-                    let start = start_line + 1;
-                    body = super::make_lined(body, start);
+                    let mut body = file_contents[lines.0..=lines.1]
+                        .to_string()
+                        .trim_end()
+                        .to_string();
+                    let index = super::turn_into_index(file_contents);
+                    lines.1 = super::get_from_index(&index, lines.1);
+                    lines.0 = super::get_from_index(&index, lines.0);
+                    // lines.0 = start_line + 1;
+                    let start = lines.0;
+                    body = super::make_lined(&body, start);
                     // see if the first parameter has a name:
                     let mut parameters = func.typ.params.list.get(0).map_or_else(
                         || GoParameter::Type(vec![]),

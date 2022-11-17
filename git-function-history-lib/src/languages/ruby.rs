@@ -68,102 +68,58 @@ pub(crate) fn find_function_in_file(
     let parsed = parser.do_parse();
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
     let fns = get_functions_from_node(&ast, &None, name);
+    let index = super::turn_into_index(file_contents);
     fns.iter()
         .map(|(f, c)| {
             let class = match c {
                 Some(c) => {
-                    let mut start_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > c.expression_l.begin {
-                                break;
-                            }
-                            start_line += 1;
-                        }
-                    }
-                    let mut end_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > c.expression_l.end {
-                                break;
-                            }
-                            end_line += 1;
-                        }
-                    }
+                    let start_line = super::get_from_index(&index, c.expression_l.begin);
+                    let end_line = super::get_from_index(&index, c.expression_l.end);
                     let loc_end = c.end_l;
                     let top = Loc {
                         begin: c.expression_l.begin,
                         // TODO: check if there is a super class map_or to that
-                        end: c.body.as_ref().map_or(c.keyword_l.end, |b| b.expression().begin),
+                        end: c
+                            .body
+                            .as_ref()
+                            .map_or(c.keyword_l.end, |b| b.expression().begin),
                     };
                     let mut top = top
                         .source(&parsed.input)
                         .unwrap_to_error("Failed to get source")?;
                     top = top.trim_end().to_string();
-                    top = super::make_lined(top, start_line+1);
+                    top = super::make_lined(&top, start_line);
                     Some(RubyClass {
                         name: parser_class_name(c),
                         line: (start_line, end_line),
                         superclass: parse_superclass(c),
-                        top: top,
+                        top,
                         bottom: super::make_lined(
                             loc_end
                                 .source(&parsed.input)
                                 .unwrap_to_error("Failed to get source")?
-                                .trim_matches('\n')
-                                .to_string(),
+                                .trim_matches('\n'),
                             end_line,
                         ),
                     })
                 }
                 None => None,
             };
-            let mut start = f.expression_l.begin;
+            let start = f.expression_l.begin;
             // get the lines from map using f.expression_l.begin and f.expression_l.end
-            let mut start_line = 0;
-            for i in file_contents.chars().enumerate() {
-                if i.1 == '\n' {
-                    if i.0 > f.expression_l.begin {
-                        break;
-                    }
-                    start = i.0;
-                    start_line += 1;
-                }
-            }
-            let mut end_line = 0;
-            for i in file_contents.chars().enumerate() {
-                if i.1 == '\n' {
-                    if i.0 > f.expression_l.end {
-                        break;
-                    }
-                    end_line += 1;
-                }
-            }
+            let start_line = super::get_from_index(&index, start);
+            let end_line = super::get_from_index(&index, f.expression_l.end);
             let starts = start_line + 1;
             Ok(RubyFunction {
                 name: f.name.clone(),
                 lines: (start_line + 1, end_line + 1),
                 class,
-                body: 
-                // f
-                //     .expression_l
-                //     .with_begin(start)
-                //     .source(&parsed.input)
-                //     .expect("Failed to get function body")
-                //     .trim_matches('\n')
-                //     .lines()
-                //     .map(|l| {
-                //         starts += 1;
-                //         format!("{starts}: {l}\n",)
-                //     })
-                //     .collect::<String>().trim_end().to_string(),
-                super::make_lined(
+                body: super::make_lined(
                     f.expression_l
                         .with_begin(start)
                         .source(&parsed.input)
                         .expect("Failed to get function body")
-                        .trim_matches('\n')
-                        .to_string(),
+                        .trim_matches('\n'),
                     starts,
                 ),
                 args: f

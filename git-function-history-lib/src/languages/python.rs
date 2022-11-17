@@ -134,7 +134,7 @@ pub(crate) fn find_function_in_file(
             let mut body = file_contents[*starts..*ends]
                 .trim_start_matches('\n')
                 .to_string();
-                body = super::make_lined(body, start_s);
+            body = super::make_lined(&body, start_s);
             let class = func
                 .1
                 .iter()
@@ -153,7 +153,7 @@ pub(crate) fn find_function_in_file(
                                 None => return None,
                             };
                             let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list(decorator_list.clone());
+                            let decorators = get_decorator_list(decorator_list);
                             return Some(PythonClass {
                                 name: name.to_string(),
                                 top,
@@ -192,7 +192,7 @@ pub(crate) fn find_function_in_file(
                                 None => return None,
                             };
                             let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list(decorator_list.clone());
+                            let decorators = get_decorator_list(decorator_list);
                             let parameters = get_args(*args.clone());
                             let returns = get_return_type(returns.clone());
                             return Some(PythonParentFunction {
@@ -213,7 +213,7 @@ pub(crate) fn find_function_in_file(
                 name: name.to_string(),
                 parameters: get_args(*args),
                 parent,
-                decorators: get_decorator_list(decorator_list),
+                decorators: get_decorator_list(&decorator_list),
                 returns: get_return_type(returns),
                 class,
                 body,
@@ -446,7 +446,7 @@ fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
     None
 }
 
-fn get_decorator_list(decorator_list: Vec<Located<ExprKind>>) -> Vec<String> {
+fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<String> {
     decorator_list
         .iter()
         .map(|x| x.node.name().to_string())
@@ -522,8 +522,7 @@ impl FunctionTrait for PythonFunction {
 
     fn get_total_lines(&self) -> (usize, usize) {
         // find the first line of the function (could be the parent or the class)
-        self
-            .class
+        self.class
             .iter()
             .map(|x| x.lines)
             .chain(self.parent.iter().map(|x| x.lines))

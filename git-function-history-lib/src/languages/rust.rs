@@ -285,9 +285,9 @@ pub(crate) fn find_function_in_file(
                             .to_string(),
                         lifetime: generics.1,
                         generics: generics.0,
-                        top: stuff.1.0,
-                        bottom: stuff.1.1,
-                        lines: (stuff.0.0, stuff.0.1),
+                        top: stuff.1 .0,
+                        bottom: stuff.1 .1,
+                        lines: (stuff.0 .0, stuff.0 .1),
                         return_type: function.ret_type().map(|ty| ty.to_string()),
                         arguments: f.param_list().map_or_else(HashMap::new, |args| {
                             args.params()
@@ -307,13 +307,12 @@ pub(crate) fn find_function_in_file(
         }
         let attr = get_doc_comments_and_attrs(f);
         let start = stuff.0 .0;
-        let bb = match map[&(start-1)] {
+        let bb = match map[&(start - 1)] {
             0 => 0,
             x => x + 1,
         };
-        let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
-            .to_string();
-        let body = super::make_lined(contents, start);
+        let contents: String = file_contents[bb..f.syntax().text_range().end().into()].to_string();
+        let body = super::make_lined(&contents, start);
         let function = RustFunction {
             name: f
                 .name()
@@ -365,8 +364,9 @@ fn get_stuff<T: AstNode>(
     let end = block.syntax().text_range().end();
     // get the start and end lines
     let mut found_start_brace = 0;
-    let mut end_line = 0;
     let mut start_line = 0;
+    let index = super::turn_into_index(file);
+    let end_line = super::get_from_index(&index, end.into());
     // TODO: combine these loops
     for (i, line) in file.chars().enumerate() {
         if line == '\n' {
@@ -377,14 +377,9 @@ fn get_stuff<T: AstNode>(
         }
     }
     for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(end) < i {
-                break;
-            }
-            end_line += 1;
-        }
         if line == '{' && found_start_brace == 0 && usize::from(start) < i {
             found_start_brace = i;
+            break;
         }
     }
     if found_start_brace == 0 {
@@ -399,17 +394,8 @@ fn get_stuff<T: AstNode>(
     (
         (start_line + 1, end_line),
         (
-            super::make_lined(content, start_lines + 1),
-            super::make_lined(
-                file.lines()
-                    .nth(if end_line == file.lines().count() - 1 {
-                        end_line 
-                    } else {
-                        end_line 
-                    })
-                    .unwrap_or("").to_string(),
-                end_line+1,
-            ),
+            super::make_lined(&content, start_lines + 1),
+            super::make_lined(file.lines().nth(end_line - 1).unwrap_or(""), end_line),
         ),
         // (starts, end_line),
     )
