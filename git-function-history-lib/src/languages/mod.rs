@@ -1,7 +1,7 @@
 use crate::Filter;
 use std::{
     error::Error,
-    fmt::{self, Display},
+    fmt::{self, Display}, collections::HashMap,
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
@@ -141,7 +141,7 @@ macro_rules! impl_function_trait {
         }
     };
 }
-
+// TODO: rewrite/fix this 
 pub fn fmt_with_context<T: FunctionTrait + Display>(
     current: &T,
     prev: Option<&T>,
@@ -150,21 +150,23 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
 ) -> fmt::Result {
     match (prev, next) {
         (Some(prev), Some(next)) => {
+            // println!("prev: {:?}, current {:?}. next: {:?}", prev.get_total_lines(), current.get_total_lines(), next.get_total_lines());
             if prev.get_total_lines() == current.get_total_lines()
                 && next.get_total_lines() == current.get_total_lines()
             {
                 write!(f, "{}", current.get_body())?;
             } else if prev.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
-                write!(f, "{}", current.get_bottoms().join("\n...\n"))?;
+                write!(f, "{}", current.get_bottoms().into_iter().map(|x|format!("\n...\n{x}")).collect::<String>())?;
             } else if next.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_tops().join("\n...\n"))?;
+                write!(f, "{}", current.get_tops().into_iter().map(|x|format!("{x}\n...\n")).collect::<String>())?;
                 write!(f, "{}", current.get_body())?;
             } else {
                 write!(f, "{current}")?;
             }
         }
         (Some(prev), None) => {
+            // println!("prev: {:?}, current {:?}", prev.get_total_lines(), current.get_total_lines());
             if prev.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
             } else {
@@ -172,6 +174,7 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
             }
         }
         (None, Some(next)) => {
+            // println!("current {:?}. next: {:?}", current.get_total_lines(), next.get_total_lines());
             if next.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
             } else {
@@ -179,6 +182,7 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
             }
         }
         (None, None) => {
+            // println!("current {:?}", current.get_total_lines());
             // print the function
             write!(f, "{current}")?;
         }
@@ -201,6 +205,51 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
 }
 
+fn turn_into_index(snippet: &str) -> HashMap<usize, Vec<usize>> {
+    // turn snippet into a hashmap of line number to char index
+    // so line 1 is 0 to 10, line 2 is 11 to 20, etc
+    let mut index = HashMap::new();
+    index.insert(1, vec![0]);
+    let mut line: usize = 1;
+    let mut char_index: usize = 0;
+    for c in snippet.chars() {
+        println!("{}: {}", line, char_index);
+        println!("index: {:?}", index);
+        if c == '\n' {
+            line += 1;
+            index.insert(line, vec![char_index + 1]);
+        } else {
+            index.get_mut(&line).unwrap().push(char_index);
+        }
+        char_index += c.len_utf8();
+
+    }
+
+    index
+}
+
+fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> usize {
+    // gets the line number from the index
+    *index.iter().find(|(_, v)| v.contains(&char)).unwrap().0
+}
+
+#[test]
+fn test_turn_into_index() {
+    let snippet = "hello world
+Python is cool
+Rust is cool
+Go is cool
+Ruby😂 is cool";
+    let index = turn_into_index(snippet);
+    // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    println!("done {:?}", index);
+
+    // assert_eq!(get_from_index(&index, 0), 0);
+    let emoji_index = snippet.find("😂").unwrap();
+    println!("{:?}", get_from_index(&index, emoji_index));
+}
+
 // macro that generates the code for the different languages
 macro_rules! make_file {
     ($name:ident, $function:ident, $filtername:ident) => {
@@ -212,9 +261,9 @@ macro_rules! make_file {
         }
 
         impl fmt::Display for $name {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 for (index, func) in self.functions.iter().enumerate() {
-                    write!(
+                        write!(
                         f,
                         "{}",
                         match index {
