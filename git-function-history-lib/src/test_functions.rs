@@ -27,6 +27,9 @@ impl<a>Test<a>  {
     }
 
     pub fn test_2() {
+        pub fn empty_test() {
+            println!("empty test");
+        }
         println!("empty test");
         // }
     }

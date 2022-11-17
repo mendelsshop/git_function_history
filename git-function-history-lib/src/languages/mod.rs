@@ -142,6 +142,8 @@ macro_rules! impl_function_trait {
     };
 }
 // TODO: rewrite/fix this 
+// TODO: add a way for to compare the previous & next function tops & bottoms with the current functions individual tops & bottoms 
+// because two function in the same class or trait can have different parent functions etc, see output of the rust_parses test in the nested function part around line 18 - 53
 pub fn fmt_with_context<T: FunctionTrait + Display>(
     current: &T,
     prev: Option<&T>,
@@ -169,6 +171,7 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
             // println!("prev: {:?}, current {:?}", prev.get_total_lines(), current.get_total_lines());
             if prev.get_total_lines() == current.get_total_lines() {
                 write!(f, "{}", current.get_body())?;
+                write!(f, "{}", current.get_bottoms().into_iter().map(|x|format!("\n...\n{x}")).collect::<String>())?;
             } else {
                 write!(f, "{current}")?;
             }
@@ -176,6 +179,7 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
         (None, Some(next)) => {
             // println!("current {:?}. next: {:?}", current.get_total_lines(), next.get_total_lines());
             if next.get_total_lines() == current.get_total_lines() {
+                write!(f, "{}", current.get_tops().into_iter().map(|x|format!("{x}\n...\n")).collect::<String>())?;
                 write!(f, "{}", current.get_body())?;
             } else {
                 write!(f, "{current}")?;
@@ -352,19 +356,23 @@ make_file!(RubyFile, RubyFunction, Ruby);
 mod lang_tests {
     // macro that auto genertes the test parse_<lang>_file_time
     macro_rules! make_file_time_test {
-        ($name:ident, $extname:ident, $function:ident) => {
+        ($name:ident, $extname:ident, $function:ident, $filetype:ident) => {
             #[test]
             fn $name() {
                 let mut file = std::env::current_dir().unwrap();
                 file.push("src");
                 file.push("test_functions.".to_string() + stringify!($extname));
-                let file = std::fs::read_to_string(file.clone())
+                let files = std::fs::read_to_string(file.clone())
                     .expect(format!("could not read file {:?}", file).as_str());
                 let start = std::time::Instant::now();
-                let ok = $function::find_function_in_file(&file, "empty_test");
+                let ok = $function::find_function_in_file(&files, "empty_test");
                 let end = std::time::Instant::now();
                 match &ok {
                     Ok(hist) => {
+                        // turn the hist into a file
+                        let file = $filetype::new(file.display().to_string(), hist.clone());
+                        println!("{}", file);
+                        println!("-------------------");
                         for i in hist {
                             println!("{}", i);
                             println!("{:?}", i);
@@ -381,11 +389,11 @@ mod lang_tests {
     }
 
     use super::*;
-    make_file_time_test!(python_parses, py, python);
-    make_file_time_test!(rust_parses, rs, rust);
+    make_file_time_test!(python_parses, py, python, PythonFile);
+    make_file_time_test!(rust_parses, rs, rust, RustFile);
     // #[cfg(feature = "c_lang")]
-    // make_file_time_test!(c_parses, c, c);
+    // make_file_time_test!(c_parses, c, c, CFile);
     #[cfg(feature = "unstable")]
-    make_file_time_test!(go_parses, go, go);
-    make_file_time_test!(ruby_parses, rb, ruby);
+    make_file_time_test!(go_parses, go, go, GoFile);
+    make_file_time_test!(ruby_parses, rb, ruby, RubyFile);
 }
