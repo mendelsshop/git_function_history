@@ -5,6 +5,14 @@ PINT = 1
 # def empty_test():
 #     print("This is an empty test")
 
+def assert_that(message):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            print(message)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 def test_with_assert(y, n,/,c=7, *, a , args, **kwargs):
     @assert_that("This is a test with an assert")
     def empty_test(t):
@@ -15,7 +23,7 @@ def test_with_assert(y, n,/,c=7, *, a , args, **kwargs):
 class Test:
     pass
 passing_test = test_with_assert
-@def_test
+@assert_that("This is a test with an assert")
 def empty_test(n: int) -> list:
     """This is an empty test with a docstring"""
     pass

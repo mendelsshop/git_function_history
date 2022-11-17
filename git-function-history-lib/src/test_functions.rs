@@ -1,5 +1,5 @@
 use std::error::Error;
-
+use std::fmt::Debug;
 pub fn empty_test() {
 
 }
@@ -52,7 +52,7 @@ impl<a>Test<a>  {
     }
 }
 
-#[derive(Debug)]
+
 pub trait super_trait {
     fn super_trait_method(&self);
 
@@ -124,7 +124,7 @@ super_trait {
 impl<A> Test2<A,> 
 where A:
 super_trait  + Clone,
-T: super
+A: Debug + Clone
 
 {
     pub fn empty_test<'a>() {
@@ -133,7 +133,13 @@ T: super
 
 }
 
+mod c {
+    extern "C" {
+        pub fn empty_test(t: String);
+    }
+}
 
-extern "C" {
-    pub fn empty_test(t: String);
+
+fn main() {
+    println!("Hello, world!");
 }
