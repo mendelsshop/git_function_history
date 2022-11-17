@@ -124,6 +124,8 @@ pub trait FunctionTrait: fmt::Debug + fmt::Display {
     fn get_name(&self) -> String;
     fn get_bottoms(&self) -> Vec<String>;
     fn get_body(&self) -> String;
+    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)>;
+    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)>;
 }
 
 // mace macro that generates get_lines, get_body,get_name
@@ -145,6 +147,8 @@ macro_rules! impl_function_trait {
 // TODO: rewrite/fix this
 // TODO: add a way for to compare the previous & next function tops & bottoms with the current functions individual tops & bottoms
 // because two function in the same class or trait can have different parent functions etc, see output of the rust_parses test in the nested function part around line 18 - 53
+// proably either impl fmt::Display each file type outside the make_file macro and discard this function entirely
+// where we save what tops & bottoms we have seen and compare them with the current functions tops & bottoms
 pub fn fmt_with_context<T: FunctionTrait + Display>(
     current: &T,
     prev: Option<&T>,
@@ -225,6 +229,45 @@ pub fn fmt_with_context<T: FunctionTrait + Display>(
         }
     }
     Ok(())
+}
+// TODO: puts this in make_file macro for fmt::Display
+impl RustFile {
+    pub fn test_display(&self) -> String {
+        let mut str = String::new();
+        // index of thef ile with no duplicates
+        let mut file: Vec<(String, usize)> = Vec::new();
+
+        for function in &self.functions {
+            // get the tops and their starting line number ie: parentfn.lines.0
+            file.extend(function.get_tops_with_line_numbers());
+            file.push((function.body.to_string(), function.get_lines().0));
+            // get the bottoms and their end line number ie: parentfn.lines.1
+            file.extend(function.get_bottoms_with_line_numbers());
+        }
+
+        file.sort_by(|a, b| a.1.cmp(&b.1));
+        file.dedup();
+
+        // order the file by line number
+        file.sort_by(|a, b| a.1.cmp(&b.1));
+        // print the file each element sperated by a \n...\n
+        for (i, (body, _)) in file.iter().enumerate() {
+            str.push_str(body);
+            if i != file.len() - 1 {
+                str.push_str("\n...\n");
+            }
+        }
+        str
+    }
+}
+
+#[test]
+fn test_rust_file_display() {
+    let file = std::fs::read_to_string(r#"src\test_functions.rs"#).unwrap();
+    let file = rust::find_function_in_file(&file, "empty_test").unwrap();
+    let file = RustFile::new("<stdin>".to_string(), file);
+    let file = file.test_display();
+    println!("{file}");
 }
 
 fn make_lined(snippet: &str, mut start: usize) -> String {

@@ -65,6 +65,14 @@ impl FunctionTrait for GoFunction {
         vec![]
     }
 
+    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+        vec![]
+    }
+
+    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+        vec![]
+    }
+
     fn get_total_lines(&self) -> (usize, usize) {
         let start = self.lines.0;
         let end = self.lines.1;

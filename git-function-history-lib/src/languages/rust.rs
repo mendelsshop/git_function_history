@@ -569,6 +569,28 @@ impl FunctionTrait for RustFunction {
         tops
     }
 
+    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+        let mut tops = Vec::new();
+        self.block.as_ref().map_or((), |block| {
+            tops.push((block.top.clone(), block.lines.0));
+        });
+        for parent in &self.function {
+            tops.push((parent.top.clone(), parent.lines.0));
+        }
+        tops
+    }
+
+    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+        let mut bottoms = Vec::new();
+        self.block.as_ref().map_or((), |block| {
+            bottoms.push((block.bottom.clone(), block.lines.1));
+        });
+        for parent in &self.function {
+            bottoms.push((parent.bottom.clone(), parent.lines.1));
+        }
+        bottoms
+    }
+
     fn get_total_lines(&self) -> (usize, usize) {
         self.block.as_ref().map_or_else(
             || {

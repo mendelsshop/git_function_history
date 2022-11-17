@@ -520,6 +520,21 @@ impl FunctionTrait for PythonFunction {
         tops
     }
 
+    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+        let mut tops = Vec::new();
+        for class in &self.class {
+            tops.push((class.top.clone(), class.lines.0));
+        }
+        for parent in &self.parent {
+            tops.push((parent.top.clone(), parent.lines.0));
+        }
+        tops
+    }
+
+    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+        Vec::new()
+    }
+
     fn get_total_lines(&self) -> (usize, usize) {
         // find the first line of the function (could be the parent or the class)
         self.class
