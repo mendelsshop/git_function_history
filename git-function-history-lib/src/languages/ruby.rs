@@ -73,8 +73,10 @@ pub(crate) fn find_function_in_file(
         .map(|(f, c)| {
             let class = match c {
                 Some(c) => {
-                    let start_line = super::get_from_index(&index, c.expression_l.begin);
-                    let end_line = super::get_from_index(&index, c.expression_l.end);
+                    let start_line = super::get_from_index(&index, c.expression_l.begin)
+                        .unwrap_to_error("Failed to get start line")?;
+                    let end_line = super::get_from_index(&index, c.expression_l.end)
+                        .unwrap_to_error("Failed to get end line")?;
                     let loc_end = c.end_l;
                     let top = Loc {
                         begin: c.expression_l.begin,
@@ -107,8 +109,10 @@ pub(crate) fn find_function_in_file(
             };
             let start = f.expression_l.begin;
             // get the lines from map using f.expression_l.begin and f.expression_l.end
-            let start_line = super::get_from_index(&index, start);
-            let end_line = super::get_from_index(&index, f.expression_l.end);
+            let start_line =
+                super::get_from_index(&index, start).unwrap_to_error("Failed to get start line")?;
+            let end_line = super::get_from_index(&index, f.expression_l.end)
+                .unwrap_to_error("Failed to get end line")?;
             let starts = start_line + 1;
             Ok(RubyFunction {
                 name: f.name.clone(),

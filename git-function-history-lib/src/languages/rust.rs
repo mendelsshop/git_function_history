@@ -5,7 +5,7 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
-use crate::impl_function_trait;
+use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
 
@@ -217,7 +217,7 @@ pub(crate) fn find_function_in_file(
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
     for f in &functions {
-        let stuff = get_stuff(f, file_contents, &map);
+        let stuff = get_stuff(f, file_contents, &map).unwrap_to_error("could not get endline")?;
         let generics = get_genrerics_and_lifetime(f);
         let mut parent = f.syntax().parent();
         let mut parent_fn: Vec<RustParentFunction> = Vec::new();
@@ -230,7 +230,12 @@ pub(crate) fn find_function_in_file(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, file_contents, &map);
+                        let stuff = match get_stuff(&block, file_contents, &map) {
+                            Some(s) => s,
+                            None => {
+                                return;
+                            }
+                        };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.self_ty().map(|ty| ty.to_string()),
@@ -245,7 +250,12 @@ pub(crate) fn find_function_in_file(
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, file_contents, &map);
+                        let stuff = match get_stuff(&block, file_contents, &map) {
+                            Some(s) => s,
+                            None => {
+                                return;
+                            }
+                        };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.name().map(|ty| ty.to_string()),
@@ -261,21 +271,29 @@ pub(crate) fn find_function_in_file(
                     } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
                         let stuff = get_stuff(&block, file_contents, &map);
-                        parent_block = Some(Block {
-                            name: block.abi().map(|ty| ty.to_string()),
-                            lifetime: Vec::new(),
-                            generics: Vec::new(),
-                            top: stuff.1 .0,
-                            bottom: stuff.1 .1,
-                            block_type: BlockType::Extern,
-                            lines: (stuff.0 .0, stuff.0 .1),
-                            attributes: attr.1,
-                            doc_comments: attr.0,
-                        });
+                        if let Some(stuff) = stuff {
+                            parent_block = Some(Block {
+                                name: None,
+                                lifetime: Vec::new(),
+                                generics: Vec::new(),
+                                top: stuff.1 .0,
+                                bottom: stuff.1 .1,
+                                block_type: BlockType::Extern,
+                                lines: (stuff.0 .0, stuff.0 .1),
+                                attributes: attr.1,
+                                doc_comments: attr.0,
+                            });
+                        }
                     }
                 },
-                |function| {
-                    let stuff = get_stuff(&function, file_contents, &map);
+                |function: ast::Fn| {
+                    let stuff = match get_stuff(&function, file_contents, &map) {
+                        Some(value) => value,
+                        None => {
+                            return;
+                        }
+                    };
+
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
                     parent_fn.push(RustParentFunction {
@@ -359,23 +377,14 @@ fn get_stuff<T: AstNode>(
     block: &T,
     file: &str,
     map: &HashMap<usize, &usize>,
-) -> ((usize, usize), (String, String)) {
+) -> Option<((usize, usize), (String, String))> {
     let start = block.syntax().text_range().start();
-    let end = block.syntax().text_range().end();
+    let end: usize = block.syntax().text_range().end().into();
     // get the start and end lines
     let mut found_start_brace = 0;
-    let mut start_line = 0;
     let index = super::turn_into_index(file);
-    let end_line = super::get_from_index(&index, end.into());
-    // TODO: combine these loops
-    for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(start) < i {
-                break;
-            }
-            start_line += 1;
-        }
-    }
+    let end_line = super::get_from_index(&index, end - 1)?;
+    let start_line = super::get_from_index(&index, start.into())?;
     for (i, line) in file.chars().enumerate() {
         if line == '{' && found_start_brace == 0 && usize::from(start) < i {
             found_start_brace = i;
@@ -385,20 +394,19 @@ fn get_stuff<T: AstNode>(
     if found_start_brace == 0 {
         found_start_brace = usize::from(start);
     }
-    let start = map[&start_line];
+    let start = map[&(start_line - 1)];
     let start_lines = start_line;
     let mut content: String = file[(*start)..=found_start_brace].to_string();
     if &content[..1] == "\n" {
         content = content[1..].to_string();
     }
-    (
-        (start_line + 1, end_line),
+    Some((
+        (start_line, end_line),
         (
-            super::make_lined(&content, start_lines + 1),
-            super::make_lined(file.lines().nth(end_line - 1).unwrap_or(""), end_line),
+            super::make_lined(&content, start_lines),
+            super::make_lined(file.lines().nth(end_line - 1).unwrap_or("}"), end_line),
         ),
-        // (starts, end_line),
-    )
+    ))
 }
 #[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {

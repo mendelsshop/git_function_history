@@ -111,8 +111,14 @@ pub(crate) fn find_function_in_file(
                         .trim_end()
                         .to_string();
                     let index = super::turn_into_index(file_contents);
-                    lines.1 = super::get_from_index(&index, lines.1);
-                    lines.0 = super::get_from_index(&index, lines.0);
+                    lines.1 = match super::get_from_index(&index, lines.1) {
+                        Some(i) => i,
+                        None => return None,
+                    };
+                    lines.0 = match super::get_from_index(&index, lines.0) {
+                        Some(i) => i,
+                        None => return None,
+                    };
                     // lines.0 = start_line + 1;
                     let start = lines.0;
                     body = super::make_lined(&body, start);

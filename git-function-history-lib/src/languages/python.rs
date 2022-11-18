@@ -509,6 +509,7 @@ impl PythonFilter {
 }
 
 impl FunctionTrait for PythonFunction {
+    // TODO: return decorator list too
     fn get_tops(&self) -> Vec<String> {
         let mut tops = Vec::new();
         for class in &self.class {
