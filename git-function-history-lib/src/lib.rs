@@ -193,7 +193,7 @@ pub fn get_function_history(
             let tree = i.tree().ok()?.id;
             let time = i.time().ok()?;
             let time = DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(time.seconds_since_unix_epoch.into(), 0),
+                NaiveDateTime::from_timestamp_opt(time.seconds_since_unix_epoch.into(), 0)?,
                 Utc,
             );
             let authorinfo = i.author().ok()?;
@@ -474,13 +474,13 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
 
             Some(CommitInfo {
                 date: match i.time().map(|x| {
-                    DateTime::<Utc>::from_utc(
-                        NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
+                    Some(DateTime::<Utc>::from_utc(
+                        NaiveDateTime::from_timestamp_opt(x.seconds_since_unix_epoch.into(), 0)?,
                         Utc,
-                    )
+                    ))
                 }) {
-                    Ok(i) => i,
-                    Err(_) => return None,
+                    Ok(Some(i)) => i,
+                    _ => return None,
                 },
                 hash: i.id.to_string(),
                 author_email: author.email.to_string(),
