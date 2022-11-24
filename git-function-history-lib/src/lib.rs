@@ -459,14 +459,8 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let commit_iter = repo.rev_walk(tips);
     let commits = commit_iter.all()?.filter_map(|i| match i {
         Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
-            let author = match i.author() {
-                Ok(author) => author,
-                Err(_) => return None,
-            };
-            let message = match i.message() {
-                Ok(message) => message,
-                Err(_) => return None,
-            };
+            let Ok(author) = i.author() else { return None };
+            let Ok(message) = i.message() else { return None };
             let mut msg = message.title.to_string();
             if let Some(msg_body) = message.body {
                 msg.push_str(&msg_body.to_string());

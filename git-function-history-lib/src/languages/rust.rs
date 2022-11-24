@@ -230,11 +230,8 @@ pub(crate) fn find_function_in_file(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = match get_stuff(&block, file_contents, &map) {
-                            Some(s) => s,
-                            None => {
-                                return;
-                            }
+                        let Some(stuff) = get_stuff(&block, file_contents, &map) else {
+                            return;
                         };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
@@ -250,11 +247,8 @@ pub(crate) fn find_function_in_file(
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = match get_stuff(&block, file_contents, &map) {
-                            Some(s) => s,
-                            None => {
-                                return;
-                            }
+                        let Some(stuff) = get_stuff(&block, file_contents, &map) else {
+                            return;
                         };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
@@ -287,13 +281,9 @@ pub(crate) fn find_function_in_file(
                     }
                 },
                 |function: ast::Fn| {
-                    let stuff = match get_stuff(&function, file_contents, &map) {
-                        Some(value) => value,
-                        None => {
-                            return;
-                        }
+                    let Some(stuff) = get_stuff(&function, file_contents, &map) else {
+                        return;
                     };
-
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
                     parent_fn.push(RustParentFunction {
@@ -566,18 +556,7 @@ impl RustFilter {
 }
 
 impl FunctionTrait for RustFunction {
-    fn get_tops(&self) -> Vec<String> {
-        let mut tops = Vec::new();
-        self.block.as_ref().map_or((), |block| {
-            tops.push(block.top.clone());
-        });
-        for parent in &self.function {
-            tops.push(parent.top.clone());
-        }
-        tops
-    }
-
-    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         let mut tops = Vec::new();
         self.block.as_ref().map_or((), |block| {
             tops.push((block.top.clone(), block.lines.0));
@@ -588,7 +567,7 @@ impl FunctionTrait for RustFunction {
         tops
     }
 
-    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
         let mut bottoms = Vec::new();
         self.block.as_ref().map_or((), |block| {
             bottoms.push((block.bottom.clone(), block.lines.1));
@@ -614,18 +593,6 @@ impl FunctionTrait for RustFunction {
             },
             |block| (block.lines.0, block.lines.1),
         )
-    }
-
-    fn get_bottoms(&self) -> Vec<String> {
-        let mut bottoms = Vec::new();
-
-        for parent in &self.function {
-            bottoms.push(parent.bottom.clone());
-        }
-        self.block.as_ref().map_or((), |block| {
-            bottoms.push(block.bottom.clone());
-        });
-        bottoms
     }
 
     impl_function_trait!(RustFunction);

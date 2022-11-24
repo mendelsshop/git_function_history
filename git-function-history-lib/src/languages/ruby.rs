@@ -213,29 +213,17 @@ fn parse_superclass(class: &Class) -> Option<String> {
 impl FunctionTrait for RubyFunction {
     crate::impl_function_trait!(RubyFunction);
 
-    fn get_tops(&self) -> Vec<String> {
-        self.class
-            .as_ref()
-            .map_or_else(Vec::new, |c| vec![c.top.clone()])
-    }
-
-    fn get_bottoms(&self) -> Vec<String> {
-        self.class
-            .as_ref()
-            .map_or_else(Vec::new, |c| vec![c.bottom.clone()])
-    }
-
     fn get_total_lines(&self) -> (usize, usize) {
         self.class.as_ref().map_or(self.lines, |c| c.line)
     }
 
-    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         self.class
             .as_ref()
             .map_or_else(Vec::new, |c| vec![(c.top.clone(), c.line.0)])
     }
 
-    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
         self.class
             .as_ref()
             .map_or_else(Vec::new, |c| vec![(c.bottom.clone(), c.line.1)])

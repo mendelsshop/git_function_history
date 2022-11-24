@@ -447,6 +447,7 @@ fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
 }
 
 fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<String> {
+    // todo add full test version ie not just name and also add line numbers so it can be displayed/retrieved with get_tops
     decorator_list
         .iter()
         .map(|x| x.node.name().to_string())
@@ -510,18 +511,7 @@ impl PythonFilter {
 
 impl FunctionTrait for PythonFunction {
     // TODO: return decorator list too
-    fn get_tops(&self) -> Vec<String> {
-        let mut tops = Vec::new();
-        for class in &self.class {
-            tops.push(class.top.clone());
-        }
-        for parent in &self.parent {
-            tops.push(parent.top.clone());
-        }
-        tops
-    }
-
-    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         let mut tops = Vec::new();
         for class in &self.class {
             tops.push((class.top.clone(), class.lines.0));
@@ -532,7 +522,7 @@ impl FunctionTrait for PythonFunction {
         tops
     }
 
-    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
         Vec::new()
     }
 
@@ -544,11 +534,6 @@ impl FunctionTrait for PythonFunction {
             .chain(self.parent.iter().map(|x| x.lines))
             .min()
             .unwrap_or(self.lines)
-    }
-
-    fn get_bottoms(&self) -> Vec<String> {
-        // in python there is no bottom
-        Vec::new()
     }
     impl_function_trait!(PythonFunction);
 }

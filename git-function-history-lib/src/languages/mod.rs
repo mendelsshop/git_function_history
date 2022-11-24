@@ -2,7 +2,7 @@ use crate::Filter;
 use std::{
     collections::HashMap,
     error::Error,
-    fmt::{self, Display},
+    fmt::{self},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
@@ -118,14 +118,16 @@ pub mod ruby;
 pub mod rust;
 
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
-    fn get_tops(&self) -> Vec<String>;
     fn get_lines(&self) -> (usize, usize);
     fn get_total_lines(&self) -> (usize, usize);
     fn get_name(&self) -> String;
-    fn get_bottoms(&self) -> Vec<String>;
     fn get_body(&self) -> String;
-    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)>;
-    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)>;
+    /// returns the tops like any the heading of classes/impls (among others) the function is part of along with the starting line of each heading
+    /// for example it could return `[("impl Test {", 3)]`
+    /// to get just for example the headings use the map method `function.get_tops().map(|top| top.0)`
+    fn get_tops(&self) -> Vec<(String, usize)>;
+    /// same as `get_tops` just retrieves the bottoms like so `[("}", 22)]`
+    fn get_bottoms(&self) -> Vec<(String, usize)>;
 }
 
 // mace macro that generates get_lines, get_body,get_name
@@ -143,87 +145,6 @@ macro_rules! impl_function_trait {
             self.body.to_string()
         }
     };
-}
-pub fn fmt_with_context<T: FunctionTrait + Display>(
-    current: &T,
-    prev: Option<&T>,
-    next: Option<&T>,
-    f: &mut fmt::Formatter<'_>,
-) -> fmt::Result {
-    match (prev, next) {
-        (Some(prev), Some(next)) => {
-            // println!("prev: {:?}, current {:?}. next: {:?}", prev.get_total_lines(), current.get_total_lines(), next.get_total_lines());
-            if prev.get_total_lines() == current.get_total_lines()
-                && next.get_total_lines() == current.get_total_lines()
-            {
-                write!(f, "{}", current.get_body())?;
-            } else if prev.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_body())?;
-                write!(
-                    f,
-                    "{}",
-                    current
-                        .get_bottoms()
-                        .into_iter()
-                        .map(|x| format!("\n...\n{x}"))
-                        .collect::<String>()
-                )?;
-            } else if next.get_total_lines() == current.get_total_lines() {
-                write!(
-                    f,
-                    "{}",
-                    current
-                        .get_tops()
-                        .into_iter()
-                        .map(|x| format!("{x}\n...\n"))
-                        .collect::<String>()
-                )?;
-                write!(f, "{}", current.get_body())?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (Some(prev), None) => {
-            // println!("prev: {:?}, current {:?}", prev.get_total_lines(), current.get_total_lines());
-            if prev.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_body())?;
-                write!(
-                    f,
-                    "{}",
-                    current
-                        .get_bottoms()
-                        .into_iter()
-                        .map(|x| format!("\n...\n{x}"))
-                        .collect::<String>()
-                )?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (None, Some(next)) => {
-            // println!("current {:?}. next: {:?}", current.get_total_lines(), next.get_total_lines());
-            if next.get_total_lines() == current.get_total_lines() {
-                write!(
-                    f,
-                    "{}",
-                    current
-                        .get_tops()
-                        .into_iter()
-                        .map(|x| format!("{x}\n...\n"))
-                        .collect::<String>()
-                )?;
-                write!(f, "{}", current.get_body())?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (None, None) => {
-            // println!("current {:?}", current.get_total_lines());
-            // print the function
-            write!(f, "{current}")?;
-        }
-    }
-    Ok(())
 }
 
 fn make_lined(snippet: &str, mut start: usize) -> String {
@@ -305,23 +226,19 @@ macro_rules! make_file {
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let mut file: Vec<(String, usize)> = Vec::new();
-
                 for function in &self.functions {
                     // get the tops and their starting line number ie: parentfn.lines.0
-                    file.extend(function.get_tops_with_line_numbers());
+                    file.extend(function.get_tops());
                     file.push((function.body.to_string(), function.get_lines().0));
                     // get the bottoms and their end line number ie: parentfn.lines.1
-                    file.extend(function.get_bottoms_with_line_numbers());
+                    file.extend(function.get_bottoms());
                 }
-
                 file.sort_by(|a, b| a.1.cmp(&b.1));
                 file.dedup();
-
                 // order the file by line number
                 file.sort_by(|a, b| a.1.cmp(&b.1));
                 // print the file each element sperated by a \n...\n
                 for (i, (body, _)) in file.iter().enumerate() {
-                    // str.push_str(body);
                     write!(f, "{}", body)?;
                     if i != file.len() - 1 {
                         write!(f, "\n...\n")?;
@@ -348,7 +265,7 @@ macro_rules! make_file {
                 if let Filter::PLFilter(LanguageFilter::$filtername(_))
                 | Filter::FunctionInLines(..) = filter
                 {
-                } else if let Filter::None = filter {
+                } else if matches!(filter, Filter::None) {
                     return Ok(self.clone());
                 } else {
                     return Err("filter not supported for this type")?;

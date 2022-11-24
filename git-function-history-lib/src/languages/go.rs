@@ -57,19 +57,11 @@ impl fmt::Display for GoFunction {
 impl FunctionTrait for GoFunction {
     impl_function_trait!(GoFunction);
 
-    fn get_bottoms(&self) -> Vec<String> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         vec![]
     }
 
-    fn get_tops(&self) -> Vec<String> {
-        vec![]
-    }
-
-    fn get_tops_with_line_numbers(&self) -> Vec<(String, usize)> {
-        vec![]
-    }
-
-    fn get_bottoms_with_line_numbers(&self) -> Vec<(String, usize)> {
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
         vec![]
     }
 
