@@ -28,7 +28,10 @@ All notable changes to this project will be documented in this file.
 
 ### Lib
 
+- Moved away from using mostly enerics to using enums
 - Python works besides for one edge case when the function is the last node
+- Non proggraming languge (pl) filters addded back
+- Added ability to search in all supported languages
 - Pl filters now working very messy and boilerplatety
 - Fixed bug where I didnt understand how cfg-if works, also filter_by macro works just neeeds docs
 
@@ -36,12 +39,14 @@ All notable changes to this project will be documented in this file.
 
 - Saving search history to a file now
 - Shortend filter loc
+- Search/filters are fixed was not working b/c of using window(2)
 - Added more filters
 
 ## [2.1.0] - 2022-09-28
 
 ### Library
 
+- Added git filters for commit, aothor and emai, messagel
 - More parllesim
 - Trying to optimize threading realizng the problem is not with the trreading but with something else
 - Added parelel as optinal (but default feature
