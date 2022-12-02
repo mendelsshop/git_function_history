@@ -286,11 +286,12 @@ pub(crate) fn find_function_in_file(
                     };
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
+                    let name = match function.name() {
+                        Some(name) => name.to_string(),
+                        None => return,
+                    };
                     parent_fn.push(RustParentFunction {
-                        name: function
-                            .name()
-                            .expect("could not retrieve function name")
-                            .to_string(),
+                        name,
                         lifetime: generics.1,
                         generics: generics.0,
                         top: stuff.1 .0,
@@ -322,10 +323,10 @@ pub(crate) fn find_function_in_file(
         let contents: String = file_contents[bb..f.syntax().text_range().end().into()].to_string();
         let body = super::make_lined(&contents, start);
         let function = RustFunction {
-            name: f
-                .name()
-                .expect("could not retrieve function name")
-                .to_string(),
+            name: match f.name() {
+                Some(name) => name.to_string(),
+                None => continue,
+            },
             body,
             block: parent_block,
             function: parent_fn,
@@ -372,7 +373,7 @@ fn get_stuff<T: AstNode>(
     let end: usize = block.syntax().text_range().end().into();
     // get the start and end lines
     let mut found_start_brace = 0;
-    let index = super::turn_into_index(file);
+    let index = super::turn_into_index(file).ok()?;
     let end_line = super::get_from_index(&index, end - 1)?;
     let start_line = super::get_from_index(&index, start.into())?;
     for (i, line) in file.chars().enumerate() {

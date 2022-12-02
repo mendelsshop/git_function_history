@@ -128,17 +128,17 @@ impl Commit {
         author: &str,
         email: &str,
         message: &str,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
             commit_hash: commit_hash.to_string(),
             files,
-            date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
+            date: DateTime::parse_from_rfc2822(date)?,
             current_pos: 0,
             current_iter_pos: 0,
             author: author.to_string(),
             email: email.to_string(),
             message: message.to_string(),
-        }
+        })
     }
 
     /// sets the current file to the next file if possible
@@ -165,19 +165,19 @@ impl Commit {
         map.insert("date".to_string(), self.date.to_rfc2822());
         map.insert(
             "file".to_string(),
-            self.files[self.current_pos].get_file_name(),
+            self.files.get(self.current_pos).map_or("error occured, could not get filename, no file found\nfile a bug to https://github.com/mendelsshop/git_function_history/issues".to_string(), FileTrait::get_file_name),
         );
         map
     }
 
     /// returns the current file
-    pub fn get_file(&self) -> &FileType {
-        &self.files[self.current_pos]
+    pub fn get_file(&self) -> Option<&FileType> {
+        self.files.get(self.current_pos)
     }
 
     /// returns the current file (mutable)
-    pub fn get_file_mut(&mut self) -> &mut FileType {
-        &mut self.files[self.current_pos]
+    pub fn get_file_mut(&mut self) -> Option<&mut FileType> {
+        self.files.get_mut(self.current_pos)
     }
 
     /// tells you in which directions you can move through the files in the commit
@@ -265,7 +265,14 @@ impl Iterator for Commit {
 
 impl Display for Commit {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.files[self.current_pos])?;
+        writeln!(
+            f,
+            "{}",
+            match self.files.get(self.current_pos) {
+                Some(file) => file,
+                None => return Err(fmt::Error),
+            }
+        )?;
         Ok(())
     }
 }
@@ -320,12 +327,16 @@ impl FunctionHistory {
 
     /// this will move to the next file in the current commit if possible
     pub fn move_forward_file(&mut self) {
-        self.commit_history[self.current_pos].move_forward();
+        self.commit_history
+            .get_mut(self.current_pos)
+            .map(Commit::move_forward);
     }
 
     /// this will move to the previous file in the current commit if possible
     pub fn move_back_file(&mut self) {
-        self.commit_history[self.current_pos].move_back();
+        self.commit_history
+            .get_mut(self.current_pos)
+            .map(Commit::move_back);
     }
 
     /// this returns some metadata about the current commit
@@ -335,13 +346,13 @@ impl FunctionHistory {
     }
 
     /// returns a mutable reference to the current commit
-    pub fn get_mut_commit(&mut self) -> &mut Commit {
-        &mut self.commit_history[self.current_pos]
+    pub fn get_mut_commit(&mut self) -> Option<&mut Commit> {
+        self.commit_history.get_mut(self.current_pos)
     }
 
     /// returns a reference to the current commit
-    pub fn get_commit(&self) -> &Commit {
-        &self.commit_history[self.current_pos]
+    pub fn get_commit(&self) -> Option<&Commit> {
+        self.commit_history.get(self.current_pos)
     }
 
     /// returns the directions in which ways you can move through the commit history

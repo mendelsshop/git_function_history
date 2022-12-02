@@ -1,4 +1,4 @@
-use crate::Filter;
+use crate::{Filter, UnwrapToError};
 use std::{
     collections::HashMap,
     error::Error,
@@ -169,7 +169,7 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
 }
 
-fn turn_into_index(snippet: &str) -> HashMap<usize, Vec<usize>> {
+fn turn_into_index(snippet: &str) -> Result<HashMap<usize, Vec<usize>>, Box<dyn Error>> {
     // turn snippet into a hashmap of line number to char index
     // so line 1 is 0 to 10, line 2 is 11 to 20, etc
     let mut index = HashMap::new();
@@ -181,11 +181,14 @@ fn turn_into_index(snippet: &str) -> HashMap<usize, Vec<usize>> {
             line += 1;
             index.insert(line, vec![char_index]);
         } else {
-            index.get_mut(&line).unwrap().push(char_index);
+            index
+                .get_mut(&line)
+                .unwrap_to_error("line not found")?
+                .push(char_index);
         }
         char_index += c.len_utf8();
     }
-    index
+    Ok(index)
 }
 
 fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> Option<usize> {
@@ -203,7 +206,7 @@ Python is cool
 Rust is cool
 Go is cool
 Ruby😂 is cool";
-    let index = turn_into_index(snippet);
+    let index = turn_into_index(snippet).unwrap();
     // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     println!("done {index:?}");

@@ -172,9 +172,18 @@ pub fn get_function_history(
         Filter::Author(_)
         | Filter::AuthorEmail(_)
         | Filter::Message(_)
-        | Filter::DateRange(..)
         | Filter::None
         | Filter::CommitHash(_) => String::new(),
+        Filter::DateRange(start, end) => {
+            // check if start is before end
+            // vaildate that the dates are valid
+            let start = DateTime::parse_from_rfc2822(start)?.with_timezone(&Utc);
+            let end = DateTime::parse_from_rfc2822(end)?.with_timezone(&Utc);
+            if start > end {
+                Err("start date is after end date")?;
+            }
+            String::new()
+        }
         _ => Err("invalid filter")?,
     };
     match file {
@@ -217,10 +226,10 @@ pub fn get_function_history(
                     let date = metadata.4;
                     let start = DateTime::parse_from_rfc2822(start)
                         .map(|i| i.with_timezone(&Utc))
-                        .expect("failed to parse start date");
+                        .expect("failed to parse start date, edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
                     let end = DateTime::parse_from_rfc2822(end)
                         .map(|i| i.with_timezone(&Utc))
-                        .expect("failed to parse end date");
+                        .expect("failed to parse end date, edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
@@ -247,14 +256,17 @@ pub fn get_function_history(
                     if tree.is_empty() {
                         None?;
                     }
-                    Some(Commit::new(
-                        &i.1 .1,
-                        tree,
-                        &i.1 .4.to_rfc2822(),
-                        &i.1 .2,
-                        &i.1 .3,
-                        &i.1 .0,
-                    ))
+                    Some(
+                        Commit::new(
+                            &i.1 .1,
+                            tree,
+                            &i.1 .4.to_rfc2822(),
+                            &i.1 .2,
+                            &i.1 .3,
+                            &i.1 .0,
+                        )
+                        .ok()?,
+                    )
                 }
                 Err(_) => None,
             }
@@ -715,10 +727,15 @@ mod tests {
         match &output {
             Ok(functions) => {
                 println!("{functions}");
-                functions.get_commit().files.iter().for_each(|file| {
-                    println!("file: {}", file.get_file_name());
-                    println!("{file}");
-                });
+                functions
+                    .get_commit()
+                    .unwrap()
+                    .files
+                    .iter()
+                    .for_each(|file| {
+                        println!("file: {}", file.get_file_name());
+                        println!("{file}");
+                    });
             }
             Err(e) => println!("{e}"),
         }
@@ -744,8 +761,8 @@ mod tests {
         }
         assert!(output.is_ok());
         let output = output.unwrap();
-        let commit = output.get_commit();
-        let file = commit.get_file();
+        let commit = output.get_commit().unwrap();
+        let file = commit.get_file().unwrap();
         let _functions = file.get_functions();
     }
 
@@ -768,8 +785,8 @@ mod tests {
         }
         assert!(output.is_ok());
         let output = output.unwrap();
-        let commit = output.get_commit();
-        let file = commit.get_file();
+        let commit = output.get_commit().unwrap();
+        let file = commit.get_file().unwrap();
         let _functions = file.get_functions();
     }
 

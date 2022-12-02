@@ -68,7 +68,7 @@ pub(crate) fn find_function_in_file(
     let parsed = parser.do_parse();
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
     let fns = get_functions_from_node(&ast, &None, name);
-    let index = super::turn_into_index(file_contents);
+    let index = super::turn_into_index(file_contents)?;
     fns.iter()
         .map(|(f, c)| {
             let class = match c {
@@ -122,7 +122,7 @@ pub(crate) fn find_function_in_file(
                     f.expression_l
                         .with_begin(start)
                         .source(&parsed.input)
-                        .expect("Failed to get function body")
+                        .unwrap_to_error("Failed to get source")?
                         .trim_matches('\n'),
                     starts,
                 ),

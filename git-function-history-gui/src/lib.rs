@@ -86,6 +86,7 @@ impl MyEguiApp {
                 commit.get_metadata()["file"]
             )));
         });
+        let file = commit.get_file().map(|x| x.to_string()).unwrap_or_else(|| "error occured could not retrieve file please file a bug report  to https://github.com/mendelsshop/git_function_history/issues".to_string());
         match commit.get_move_direction() {
             Directions::None => {
                 egui::CentralPanel::default().show(ctx, |ui| {
@@ -94,7 +95,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
             }
@@ -115,7 +116,7 @@ impl MyEguiApp {
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
-                        .show(ui, |ui| ui.add(Label::new(commit.get_file().to_string())));
+                        .show(ui, |ui| ui.add(Label::new(file)));
                 });
                 if resp.clicked() {
                     commit.move_forward();
@@ -139,7 +140,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
                 if resp.clicked() {
@@ -173,7 +174,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
                 if l_resp.clicked() {
@@ -235,7 +236,10 @@ impl MyEguiApp {
                 }
             });
         });
-        Self::draw_commit(history.get_mut_commit(), ctx, false);
+        // TODO: if no commit is found, show a message
+        if let Some(x) = history.get_mut_commit() {
+            Self::draw_commit(x, ctx, false)
+        }
     }
 }
 
