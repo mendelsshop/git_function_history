@@ -24,7 +24,7 @@ crossterm = "0.25.0"
 tokio = { version = "1.22.0", features = ["full"] }
 eyre = "0.6.8"
 dirs = "4.0.0"
-simple_file_logger = "0.2.0"
+simple_file_logger = "0.3.1"
 log = "0.4.17"
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.2.2", default-features = false}
 tui-input = "0.6.1"

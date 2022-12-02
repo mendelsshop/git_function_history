@@ -682,7 +682,7 @@ mod tests {
     }
 
     #[test]
-    fn tet_date() {
+    fn test_date() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
@@ -702,7 +702,7 @@ mod tests {
     }
 
     #[test]
-    fn expensive_tes() {
+    fn expensive_test() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",

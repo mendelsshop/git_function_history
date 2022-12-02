@@ -5,12 +5,8 @@ use std::sync::mpsc;
 fn main() {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
-    simple_file_logger::init_logger(
-        "git-function-history-gui",
-        simple_file_logger::LogLevel::Info,
-    )
-    .expect("could not intialize logger");
-
+    simple_file_logger::init_logger!("git-function-history-gui")
+        .expect("could not intialize logger");
     const ICON: &[u8] = include_bytes!("../resources/icon1.png");
     let icon =
         image::load_from_memory_with_format(ICON, Png).expect("could not load image for icon");

@@ -6,7 +6,7 @@ use git_function_history::{FileFilterType, Filter};
 use log::info;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    simple_file_logger::init_logger("cargo_function_history", simple_file_logger::LogLevel::Info)?;
+    simple_file_logger::init_logger!("cargo_function_history")?;
     info!("Starting cargo function history");
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();
