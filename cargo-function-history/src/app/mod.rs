@@ -252,8 +252,8 @@ impl App {
                                 }
 
                                 _ => {
-                                    log::debug!("invalid arg: {:?}", i);
-                                    self.status = Status::Error(format!("Invalid search {:?}", i));
+                                    log::debug!("invalid arg: {i:?}");
+                                    self.status = Status::Error(format!("Invalid search {i:?}"));
                                     return;
                                 }
                             }
@@ -315,14 +315,14 @@ impl App {
                                 let start = match start.parse::<usize>() {
                                     Ok(x) => x,
                                     Err(e) => {
-                                        self.status = Status::Error(format!("{}", e));
+                                        self.status = Status::Error(format!("{e}"));
                                         return;
                                     }
                                 };
                                 let end = match end.parse::<usize>() {
                                     Ok(x) => x,
                                     Err(e) => {
-                                        self.status = Status::Error(format!("{}", e));
+                                        self.status = Status::Error(format!("{e}"));
                                         return;
                                     }
                                 };
@@ -383,7 +383,7 @@ impl App {
                     }
                 }
                 other => {
-                    self.status = Status::Error(format!("Invalid command: {}", other));
+                    self.status = Status::Error(format!("Invalid command: {other}"));
                 }
             },
             None => {

@@ -72,7 +72,7 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => "python, rust, go, or ruby",
             #[cfg(not(feature = "unstable"))]
-            Language::All => "python, rust, or ruby",
+            Self::All => "python, rust, or ruby",
         }
     }
 
@@ -88,7 +88,7 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => &["py", "pyw", "rs", "go", "rb"],
             #[cfg(not(feature = "unstable"))]
-            Language::All => &["py", "pyw", "rs", "rb"],
+            Self::All => &["py", "pyw", "rs", "rb"],
         }
     }
 }

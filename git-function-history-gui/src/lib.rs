@@ -267,17 +267,17 @@ impl eframe::App for MyEguiApp {
                             }
                             Status::Ok(a) => match a {
                                 Some(a) => {
-                                    ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+                                    ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {a}"));
                                 }
                                 None => {
                                     ui.colored_label(Color32::GREEN, "Ready");
                                 }
                             },
                             Status::Warning(a) => {
-                                ui.colored_label(Color32::LIGHT_RED, format!("Warn: {}", a));
+                                ui.colored_label(Color32::LIGHT_RED, format!("Warn: {a}"));
                             }
                             Status::Error(a) => {
-                                ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
+                                ui.colored_label(Color32::LIGHT_RED, format!("Error: {a}"));
                             }
                         }
                     });
@@ -470,7 +470,7 @@ impl eframe::App for MyEguiApp {
                                                                 Ok(x) => x,
                                                                 Err(e) => {
                                                                     self.status = Status::Error(
-                                                                        format!("{}", e),
+                                                                        format!("{e}"),
                                                                     );
                                                                     return;
                                                                 }
@@ -479,7 +479,7 @@ impl eframe::App for MyEguiApp {
                                                                 Ok(x) => x,
                                                                 Err(e) => {
                                                                     self.status = Status::Error(
-                                                                        format!("{}", e),
+                                                                        format!("{e}"),
                                                                     );
                                                                     return;
                                                                 }

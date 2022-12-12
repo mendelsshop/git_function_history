@@ -118,7 +118,7 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
         a => a
             .to_string()
             .split('\n')
-            .map(|s| Spans::from(format!("{}\n", s)))
+            .map(|s| Spans::from(format!("{s}\n")))
             .collect(),
     };
     let body = Paragraph::new(tick_text)
