@@ -306,23 +306,29 @@ impl FunctionHistory {
     }
 
     /// this will move to the next commit if possible
-    pub fn move_forward(&mut self) {
+    pub fn move_forward(&mut self) -> Option<()> {
         if self.current_pos >= self.commit_history.len() - 1 {
-            return;
+            return None;
         }
         self.current_pos += 1;
-        self.commit_history[self.current_pos].current_iter_pos = 0;
-        self.commit_history[self.current_pos].current_pos = 0;
+        self.commit_history
+            .get_mut(self.current_pos)?
+            .current_iter_pos = 0;
+        self.commit_history.get_mut(self.current_pos)?.current_pos = 0;
+        Some(())
     }
 
     /// this will move to the previous commit if possible
-    pub fn move_back(&mut self) {
+    pub fn move_back(&mut self) -> Option<()> {
         if self.current_pos == 0 {
-            return;
+            return None;
         }
         self.current_pos -= 1;
-        self.commit_history[self.current_pos].current_iter_pos = 0;
-        self.commit_history[self.current_pos].current_pos = 0;
+        self.commit_history
+            .get_mut(self.current_pos)?
+            .current_iter_pos = 0;
+        self.commit_history.get_mut(self.current_pos)?.current_pos = 0;
+        Some(())
     }
 
     /// this will move to the next file in the current commit if possible
@@ -342,7 +348,9 @@ impl FunctionHistory {
     /// this returns some metadata about the current commit
     /// including the `commit hash`, `date`, and `file`
     pub fn get_metadata(&self) -> HashMap<String, String> {
-        self.commit_history[self.current_pos].get_metadata()
+        self.commit_history
+            .get(self.current_pos)
+            .map_or_else(HashMap::new, Commit::get_metadata)
     }
 
     /// returns a mutable reference to the current commit
@@ -367,7 +375,9 @@ impl FunctionHistory {
 
     /// tells you in which directions you can move through the files in the current commit
     pub fn get_commit_move_direction(&self) -> Directions {
-        self.commit_history[self.current_pos].get_move_direction()
+        self.commit_history
+            .get(self.current_pos)
+            .map_or(Directions::None, Commit::get_move_direction)
     }
 
     /// returns a new `FunctionHistory` by filtering the current one by the filter specified (does not modify the current one).
@@ -473,7 +483,14 @@ macro_rules! filter_by {
 
 impl Display for FunctionHistory {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.commit_history[self.current_pos])?;
+        writeln!(
+            f,
+            "{}",
+            self.commit_history.get(self.current_pos).map_or(
+                "could not retrieve commit please file a bug".to_string(),
+                ToString::to_string
+            )
+        )?;
         Ok(())
     }
 }

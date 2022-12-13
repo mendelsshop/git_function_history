@@ -338,7 +338,10 @@ impl App {
                                 filter = Filter::Directory(dir.to_string());
                             }
                             _ => {
-                                self.status = Status::Error(format!("Invalid filter {}", i[0]));
+                                self.status = Status::Error(format!(
+                                    "Invalid filter {}",
+                                    i.first().unwrap_or(&"")
+                                ));
                                 return;
                             }
                         }

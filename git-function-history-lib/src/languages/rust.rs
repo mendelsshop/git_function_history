@@ -315,13 +315,19 @@ pub(crate) fn find_function_in_file(
             parent = p.parent();
         }
         let attr = get_doc_comments_and_attrs(f);
-        let start = stuff.0 .0;
-        let bb = match map[&(start - 1)] {
+        let start_line = stuff.0 .0;
+        let start_idx = match map
+            .get(&(start_line - 1))
+            .unwrap_to_error("could not get start index for function based off line number")?
+        {
             0 => 0,
-            x => x + 1,
+            x => *x + 1,
         };
-        let contents: String = file_contents[bb..f.syntax().text_range().end().into()].to_string();
-        let body = super::make_lined(&contents, start);
+        let contents: String = file_contents
+            .get(start_idx..f.syntax().text_range().end().into())
+            .unwrap_to_error("could not function text based off of start and stop indexes")?
+            .to_string();
+        let body = super::make_lined(&contents, start_line);
         let function = RustFunction {
             name: match f.name() {
                 Some(name) => name.to_string(),
@@ -385,11 +391,11 @@ fn get_stuff<T: AstNode>(
     if found_start_brace == 0 {
         found_start_brace = usize::from(start);
     }
-    let start = map[&(start_line - 1)];
+    let start_idx = map.get(&(start_line - 1))?;
     let start_lines = start_line;
-    let mut content: String = file[(*start)..=found_start_brace].to_string();
-    if &content[..1] == "\n" {
-        content = content[1..].to_string();
+    let mut content: String = file.get((**start_idx)..=found_start_brace)?.to_string();
+    if content.get(..1)? == "\n" {
+        content = content.get(1..)?.to_string();
     }
     Some((
         (start_line, end_line),
