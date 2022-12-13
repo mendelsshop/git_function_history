@@ -7,6 +7,7 @@ repository = "https://github.com/mendelsshop/git_function_history/tree/main/git-
 keywords = ["git_function_history", "git", "function", ]
 categories = ["tools", "git"]
 description = "show function history from git"
+rust-version = "1.62"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["parallel", "cache"]
@@ -18,7 +19,7 @@ cache = ["dep:cached"]
 
 [dependencies]
 chrono = "0.4.23"
-ra_ap_syntax = "0.0.142"
+ra_ap_syntax = "0.0.143"
 rayon = { version = "1.6.0", optional = true }
 # rustpython-parser = "0.1.2"
 # for end_lines but can't be publsihed b/c git depenency
