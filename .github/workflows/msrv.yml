@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: spenserblack/actions-msrv@master
+      - uses: spenserblack/actions-msrv@v0.4.1
         id: get-msrv
         with:
           path: ./test/
