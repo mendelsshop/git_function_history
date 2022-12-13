@@ -1,7 +1,9 @@
 name: Examples
 
 on:
-  [pull_request, push]
+  pull_request:
+  push:
+  workflow_dispatch:
 
 jobs:
   create-msrv-badge:
