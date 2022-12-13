@@ -20,7 +20,7 @@ jobs:
         # isn't a problem if there were no changes, so errors are allowed.
         continue-on-error: true
         run: |
-          git add msrv.svg
+          git add resources/msrv.svg
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "Update MSRV badge [Skip CI]"
