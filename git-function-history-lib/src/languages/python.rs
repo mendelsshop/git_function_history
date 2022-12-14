@@ -130,11 +130,11 @@ pub(crate) fn find_function_in_file(
             ..
         } = func.0.node
         {
-            let start_s = func.0.location.row();
+            let start_line = func.0.location.row();
             let mut body = file_contents[*starts..*ends]
                 .trim_start_matches('\n')
                 .to_string();
-            body = super::make_lined(&body, start_s);
+            body = super::make_lined(&body, start_line);
             let class = func
                 .1
                 .iter()

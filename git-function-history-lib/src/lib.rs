@@ -1,16 +1,12 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
-    clippy::missing_panics_doc,
     clippy::must_use_candidate,
-    clippy::case_sensitive_file_extension_comparisons,
-    clippy::match_wildcard_for_single_variants,
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
     clippy::cognitive_complexity,
     clippy::float_cmp,
-    clippy::similar_names,
-    clippy::missing_errors_doc,
+    // clippy::similar_names,
     clippy::return_self_not_must_use,
     clippy::module_name_repetitions,
     clippy::multiple_crate_versions,
@@ -131,6 +127,12 @@ pub enum Filter {
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
 /// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
+///
+/// # Errors
+///
+/// If no files were found that match the criteria given, this will return an 'Err'
+/// Or if it cannot find or read from a git repository
+///
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
@@ -189,7 +191,10 @@ pub fn get_function_history(
     match file {
         FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
             // vaildate that the file makes sense with language
-            let is_supported = langs.get_file_endings().iter().any(|i| file.ends_with(i));
+            let is_supported = langs
+                .get_file_endings()
+                .iter()
+                .any(|i| ends_with_cmp_no_case(file, i));
             if !is_supported {
                 Err(format!("file {file} is not a {} file", langs.get_names()))?;
             }
@@ -350,50 +355,51 @@ fn traverse_tree(
                     FileFilterType::None => match langs {
                         // #[cfg(feature = "c_lang")]
                         // Language::C => {
-                        //     if file.ends_with(".c") || file.ends_with(".h") {
+                        //     if ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") {
                         //         files.push(file);
                         //     }
                         // }
                         #[cfg(feature = "unstable")]
                         Language::Go => {
-                            if !file.ends_with(".go") {
+                            if !ends_with_cmp_no_case(&file, "go") {
                                 continue;
                             }
                         }
                         Language::Python => {
-                            if !file.ends_with(".py") {
+                            if !ends_with_cmp_no_case(&file, "py") {
                                 continue;
                             }
                         }
                         Language::Rust => {
-                            if !file.ends_with(".rs") {
+                            if !ends_with_cmp_no_case(&file, "rs") {
                                 continue;
                             }
                         }
                         Language::Ruby => {
-                            if !file.ends_with(".rb") {
+                            if !ends_with_cmp_no_case(&file, "rb") {
                                 continue;
                             }
                         }
                         Language::All => {
                             cfg_if::cfg_if! {
-                                if #[cfg(feature = "c_lang")] {
-                                    if !(file.ends_with(".c") || file.ends_with(".h") || !file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
-                                        continue;
-                                    }
-                                }
-                                else if #[cfg(feature = "unstable")] {
-                                    if !(file.ends_with(".go")  || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")){
+                                // if #[cfg(feature = "c_lang")] {
+                                //     if !(ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || !ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
+                                //         continue;
+                                //     }
+                                // }
+                                // else 
+                                if #[cfg(feature = "unstable")] {
+                                    if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")){
                                         continue
                                     }
                                 }
-                                else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
-                                    if !(file.ends_with(".go") || file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
-                                        continue;
-                                    }
-                                }
+                                // else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
+                                //     if !(ends_with_cmp_no_case(&file, "go") || ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
+                                //         continue;
+                                //     }
+                                // }
                                 else {
-                                    if !(file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
+                                    if !(ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
                                         continue;
                                     }
                                 }
@@ -462,6 +468,11 @@ macro_rules! get_function_history {
         )
     }};
 }
+
+/// Returns a vec of information such as author, date, email, and message for each commit
+///
+/// # Errors
+/// wiil return `Err`if it cannot find or read from a git repository
 
 pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let repo = git_repository::discover(".")?;
@@ -581,6 +592,13 @@ fn find_function_in_files_with_commit(
         find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
     })
     .collect()
+}
+
+fn ends_with_cmp_no_case(filename: &str, file_ext: &str) -> bool {
+    let filename = std::path::Path::new(filename);
+    filename
+        .extension()
+        .map_or(false, |ext| ext.eq_ignore_ascii_case(file_ext))
 }
 
 trait UnwrapToError<T> {
@@ -796,7 +814,7 @@ mod tests {
     //     let now = Utc::now();
     //     let output = get_function_history(
     //         "empty_test",
-    //         &FileFilterType::Relative("src/test_functions.c".to_string()),
+    //         &FileFilterType::Relative("src/test_functionsc".to_string()),
     //         &Filter::DateRange(
     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
     //             "05 Oct 2022 23:45:52 +0000".to_owned(),

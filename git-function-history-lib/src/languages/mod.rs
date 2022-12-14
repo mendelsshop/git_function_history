@@ -46,6 +46,11 @@ pub enum LanguageFilter {
 }
 
 impl Language {
+    /// takes string and returns the corresponding language
+    ///
+    /// # Errors
+    ///
+    /// `Err` will be returned if the string is not a valid language
     pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
         match s {
             "python" => Ok(Self::Python),
@@ -163,6 +168,11 @@ fn make_lined(snippet: &str, mut start: usize) -> String {
 pub trait FileTrait: fmt::Debug + fmt::Display {
     fn get_file_name(&self) -> String;
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
+
+    /// # Errors
+    ///
+    /// returns `Err` if the wrong filter is given, only `PLFilter` and `FunctionInLines` variants of `Filter` are valid.
+    /// with `PLFilter` it will return `Err` if you mismatch the file type with the filter Ie: using `RustFile` and `PythonFilter` will return `Err`.
     fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>>
     where
         Self: Sized;

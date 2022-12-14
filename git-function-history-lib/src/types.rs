@@ -121,6 +121,10 @@ pub struct Commit {
 
 impl Commit {
     /// Create a new `Commit` with the given `commit_hash`, functions, and date.
+    ///
+    /// # Errors
+    ///
+    /// will return `Err` if it cannot parse the date provided.
     pub fn new(
         commit_hash: &str,
         files: Vec<FileType>,
@@ -193,6 +197,10 @@ impl Commit {
     /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
+    ///
+    /// # Errors
+    ///
+    /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         match filter {
             Filter::FileAbsolute(_)
@@ -391,6 +399,10 @@ impl FunctionHistory {
     ///
     /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// returns `Err` if no files or commits are match the filter specified
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
