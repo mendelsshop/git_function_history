@@ -387,7 +387,7 @@ fn traverse_tree(
                                 //         continue;
                                 //     }
                                 // }
-                                // else 
+                                // else
                                 if #[cfg(feature = "unstable")] {
                                     if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")){
                                         continue

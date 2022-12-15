@@ -91,7 +91,7 @@ pub(crate) fn find_function_in_file(
                     if let Some(recv) = func.recv {
                         lines.0 = recv.pos();
                     }
-                    // TODO: make sure that func is not commented out
+                    // FIXME: make sure that func is not commented out
                     lines.0 = file_contents
                         .get(..lines.0)
                         .map_or(lines.0, |c| c.rfind("func").unwrap_or(lines.0));

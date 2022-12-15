@@ -80,7 +80,6 @@ pub(crate) fn find_function_in_file(
                     let loc_end = c.end_l;
                     let top = Loc {
                         begin: c.expression_l.begin,
-                        // TODO: check if there is a super class map_or to that
                         end: c
                             .body
                             .as_ref()
@@ -88,7 +87,7 @@ pub(crate) fn find_function_in_file(
                     };
                     let mut top = top
                         .source(&parsed.input)
-                        .unwrap_to_error("Failed to get source")?;
+                        .unwrap_to_error("Failed to get top of class from source")?;
                     top = top.trim_end().to_string();
                     top = super::make_lined(&top, start_line);
                     Some(RubyClass {
@@ -99,7 +98,7 @@ pub(crate) fn find_function_in_file(
                         bottom: super::make_lined(
                             loc_end
                                 .source(&parsed.input)
-                                .unwrap_to_error("Failed to get source")?
+                                .unwrap_to_error("Failed to get last line of class source")?
                                 .trim_matches('\n'),
                             end_line,
                         ),
@@ -122,7 +121,7 @@ pub(crate) fn find_function_in_file(
                     f.expression_l
                         .with_begin(start)
                         .source(&parsed.input)
-                        .unwrap_to_error("Failed to get source")?
+                        .unwrap_to_error("Failed to get function body from source")?
                         .trim_matches('\n'),
                     starts,
                 ),

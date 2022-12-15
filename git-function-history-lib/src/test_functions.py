@@ -15,6 +15,9 @@ def assert_that(message):
 
 def test_with_assert(y, n,/,c=7, *, a , args, **kwargs):
     @assert_that("This is a test with an assert")
+
+
+    
     def empty_test(t):
         return t == n
 
@@ -24,6 +27,7 @@ class Test:
     pass
 passing_test = test_with_assert
 @assert_that("This is a test with an assert")
+
 def empty_test(n: int) -> list:
     """This is an empty test with a docstring"""
     pass

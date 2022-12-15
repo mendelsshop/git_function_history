@@ -24,6 +24,7 @@ pub struct RustFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -82,6 +83,7 @@ pub struct RustParentFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -136,6 +138,7 @@ pub struct Block {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The blocks atrributes
     pub(crate) attributes: Vec<String>,
@@ -407,11 +410,14 @@ fn get_stuff<T: AstNode>(
 }
 #[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
-    // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
+    // TODO: map trait bounds from where clauses to the generics so it will return a (HashMap<String, Vec<String>>, HashMap<String, Vec<String>>)
+    // the key of each hashmap will be the name of the generic/lifetime and the values will be the trait bounds
+    // and also use type_or_const_params
     block.generic_param_list().map_or_else(
         || (vec![], vec![]),
         |gt| {
             (
+                // gt.
                 gt.generic_params()
                     .map(|gt| gt.to_string())
                     .collect::<Vec<String>>(),

@@ -475,7 +475,18 @@ impl FunctionHistory {
         })
     }
 }
-// TODO: add docs
+
+/// Macro to filter a the whole git history, a singe commit, or a file.
+///
+/// All variants take the thing to be filtered as the first argument.
+///
+/// If you just want to pass in a filter of type `Filter` pass in as the second argument the filter.
+///
+/// if you just want to pass in a `LanguageFilter` pass in as the second argument the filter and the final argument literal such as 5 or 'a' or "a".
+/// This is just to differentiate between the first two variants of the macro.
+///
+/// Finally, if you just want to pass in a specific `LanguageFilter` like `RustFilter` pass in as the second argument the filter
+/// and the 3rd argument should the variant of `LanguageFilter` such as `Rust`
 #[macro_export]
 macro_rules! filter_by {
     // option 1: takes a filter
@@ -487,9 +498,9 @@ macro_rules! filter_by {
         $self.filter_by(&Filter::PLFilter($pl_filter))
     };
     // option 3: takes a language specific filter ie RustFilter and a language ie Rust
-    ($self:expr, $rust_filter:expr, $language:ident) => {{
+    ($self:expr, $lang_filter:expr, $language:ident) => {{
         use $crate::languages::LanguageFilter;
-        $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($rust_filter)))
+        $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($lang_filter)))
     }};
 }
 

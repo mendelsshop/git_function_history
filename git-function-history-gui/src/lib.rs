@@ -208,8 +208,14 @@ impl MyEguiApp {
                     Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.get_metadata()["commit hash"],
-                        history.get_metadata()["date"]
+                        history
+                            .get_metadata()
+                            .get("commit hash")
+                            .map_or("could not retrieve commit hash", |x| x.as_str()),
+                        history
+                            .get_metadata()
+                            .get("date")
+                            .map_or("could not retieve date", |x| x.as_str()),
                     )),
                 );
 
@@ -239,6 +245,10 @@ impl MyEguiApp {
         // TODO: if no commit is found, show a message
         if let Some(x) = history.get_mut_commit() {
             Self::draw_commit(x, ctx, false)
+        } else {
+            TopBottomPanel::top("no_commit_found").show(ctx, |ui| {
+                ui.add(Label::new("no commit found"));
+            });
         }
     }
 }

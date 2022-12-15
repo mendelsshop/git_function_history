@@ -15,7 +15,7 @@ pub struct PythonFunction {
     pub(crate) body: String,
     pub(crate) parameters: Params,
     pub(crate) parent: Vec<PythonParentFunction>,
-    pub(crate) decorators: Vec<String>,
+    pub(crate) decorators: Vec<(usize, String)>,
     pub(crate) class: Vec<PythonClass>,
     pub(crate) lines: (usize, usize),
     pub(crate) returns: Option<String>,
@@ -66,7 +66,7 @@ pub struct PythonClass {
     pub(crate) name: String,
     pub(crate) top: String,
     pub(crate) lines: (usize, usize),
-    pub(crate) decorators: Vec<String>,
+    pub(crate) decorators: Vec<(usize, String)>,
 }
 #[derive(Debug, Clone)]
 pub struct PythonParentFunction {
@@ -74,7 +74,7 @@ pub struct PythonParentFunction {
     pub(crate) top: String,
     pub(crate) lines: (usize, usize),
     pub(crate) parameters: Params,
-    pub(crate) decorators: Vec<String>,
+    pub(crate) decorators: Vec<(usize, String)>,
     pub(crate) returns: Option<String>,
 }
 
@@ -113,8 +113,7 @@ pub(crate) fn find_function_in_file(
             .end_location
             .unwrap_to_error("no end location for this function")?
             .row();
-        let starts = map[&(start - 1)];
-        let ends = map[&(end - 1)];
+        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end - 1))) else { continue };
         if let StmtKind::FunctionDef {
             name,
             args,
@@ -131,10 +130,12 @@ pub(crate) fn find_function_in_file(
         } = func.0.node
         {
             let start_line = func.0.location.row();
-            let mut body = file_contents[*starts..*ends]
-                .trim_start_matches('\n')
-                .to_string();
-            body = super::make_lined(&body, start_line);
+            let body = match file_contents.get(**starts..**ends) {
+                Some(str) => str,
+                None => continue,
+            }
+            .trim_start_matches('\n');
+            let body = super::make_lined(body, start_line);
             let class = func
                 .1
                 .iter()
@@ -153,7 +154,7 @@ pub(crate) fn find_function_in_file(
                                 None => return None,
                             };
                             let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list(decorator_list);
+                            let decorators = get_decorator_list_new(decorator_list, file_contents);
                             return Some(PythonClass {
                                 name: name.to_string(),
                                 top,
@@ -192,7 +193,7 @@ pub(crate) fn find_function_in_file(
                                 None => return None,
                             };
                             let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list(decorator_list);
+                            let decorators = get_decorator_list_new(decorator_list, file_contents);
                             let parameters = get_args(*args.clone());
                             let returns = get_return_type(returns.clone());
                             return Some(PythonParentFunction {
@@ -213,7 +214,7 @@ pub(crate) fn find_function_in_file(
                 name: name.to_string(),
                 parameters: get_args(*args),
                 parent,
-                decorators: get_decorator_list(&decorator_list),
+                decorators: get_decorator_list_new(&decorator_list, file_contents),
                 returns: get_return_type(returns),
                 class,
                 body,
@@ -445,13 +446,48 @@ fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
     }
     None
 }
-
-fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<String> {
-    // todo add full test version ie not just name and also add line numbers so it can be displayed/retrieved with get_tops
+#[allow(dead_code)]
+// keeping this here just in case
+fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<(usize, String)> {
     decorator_list
         .iter()
-        .map(|x| x.node.name().to_string())
-        .collect::<Vec<String>>()
+        .map(located_expr_to_decorator)
+        .collect::<Vec<(usize, String)>>()
+}
+
+fn located_expr_to_decorator(expr: &Located<ExprKind>) -> (usize, String) {
+    (
+        expr.location.row(),
+        format!(
+            "{}:{}decorator with {}",
+            expr.location.row(),
+            vec![" "; expr.location.column()].join(""),
+            expr.node.name()
+        ),
+    )
+}
+
+fn get_located_expr_line(expr: &Located<ExprKind>, file_contents: &str) -> Option<String> {
+    // does not add line numbers to string
+    file_contents
+        .lines()
+        .nth(expr.location.row() - 1)
+        .map(ToString::to_string)
+}
+
+fn get_decorator_list_new(
+    decorator_list: &[Located<ExprKind>],
+    file_contents: &str,
+) -> Vec<(usize, String)> {
+    decorator_list
+        .iter()
+        .map(|x| {
+            get_located_expr_line(x, file_contents).map_or_else(
+                || located_expr_to_decorator(x),
+                |dec| (x.location.row(), super::make_lined(&dec, x.location.row())),
+            )
+        })
+        .collect::<Vec<(usize, String)>>()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -488,15 +524,17 @@ impl PythonFilter {
             Self::HasParameterName(parameter_name) => {
                 function.parameters.arg_has_name(parameter_name)
             }
-            Self::HasDecorator(decorator) => function.decorators.iter().any(|x| x == decorator),
+            Self::HasDecorator(decorator) => {
+                function.decorators.iter().any(|x| x.1.contains(decorator))
+            }
             Self::HasClasswithDecorator(decorator) => function
                 .class
                 .iter()
-                .any(|x| x.decorators.iter().any(|y| y == decorator)),
+                .any(|x| x.decorators.iter().any(|y| y.1.contains(decorator))),
             Self::HasParentFunctionwithDecorator(decorator) => function
                 .parent
                 .iter()
-                .any(|x| x.decorators.iter().any(|x| x == decorator)),
+                .any(|x| x.decorators.iter().any(|x| x.1.contains(decorator))),
             Self::HasParentFunctionwithParameterName(parameter_name) => function
                 .parent
                 .iter()
@@ -510,15 +548,24 @@ impl PythonFilter {
 }
 
 impl FunctionTrait for PythonFunction {
-    // TODO: return decorator list too
     fn get_tops(&self) -> Vec<(String, usize)> {
         let mut tops = Vec::new();
         for class in &self.class {
             tops.push((class.top.clone(), class.lines.0));
+            for decorator in &class.decorators {
+                tops.push((decorator.1.clone(), decorator.0));
+            }
+        }
+        for decorator in &self.decorators {
+            tops.push((decorator.1.clone(), decorator.0));
         }
         for parent in &self.parent {
             tops.push((parent.top.clone(), parent.lines.0));
+            for decorator in &parent.decorators {
+                tops.push((decorator.1.clone(), decorator.0));
+            }
         }
+        tops.sort_by(|top1, top2| top1.1.cmp(&top2.1));
         tops
     }
 

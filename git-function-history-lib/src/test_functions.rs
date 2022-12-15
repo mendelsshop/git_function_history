@@ -15,7 +15,7 @@ pub struct Test<a> {
     pub history: Vec<a>,
 }
 
-impl<a>Test<a>  {
+impl<a>Test<a: Debug>  {
     /// empty test
     pub fn empty_test<'a>() {
         println!("empty test");
@@ -127,7 +127,7 @@ super_trait  + Clone,
 A: Debug + Clone
 
 {
-    pub fn empty_test<'a>() {
+    pub fn empty_test<'a>() where 'a: Debug {
         println!("empty test");
     }
 
