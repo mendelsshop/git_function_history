@@ -45,3 +45,5 @@
     - [x] possibly stop using Commmad::new("git") and use https://crates.io/crates/git_rs OR https://crates.io/crates/rs-git-lib OR  https://crates.io/crates/gitoxide, to imporve performance with program compibilty assistant sevice on windows
 
     - [] move language module into its own crate
+  - general:
+    - [ ] update readmes with feautes and benchamrks specifically the repo & git-function-history-lib readmes 
