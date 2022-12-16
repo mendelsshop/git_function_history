@@ -209,23 +209,6 @@ fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> Option<usi
         .map(|(k, _)| *k)
 }
 
-#[test]
-fn test_turn_into_index() {
-    let snippet = "hello world
-Python is cool
-Rust is cool
-Go is cool
-Ruby😂 is cool";
-    let index = turn_into_index(snippet).unwrap();
-    // assert_eq!(index.get(&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
-    // assert_eq!(index.get(&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
-    println!("done {index:?}");
-
-    // assert_eq!(get_from_index(&index, 0), 0);
-    let emoji_index = snippet.find('😂').unwrap();
-    println!("{:?}", get_from_index(&index, emoji_index));
-}
-
 // macro that generates the code for the different languages
 macro_rules! make_file {
     ($name:ident, $function:ident, $filtername:ident) => {

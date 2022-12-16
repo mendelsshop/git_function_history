@@ -31,7 +31,7 @@
 - release 7.0:
   - python:
     - [x] save parent function and classes
-    - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
+    - [x] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
   - ruby:
     - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
   - gui:
@@ -44,6 +44,6 @@
   - lib:
     - [x] possibly stop using Commmad::new("git") and use https://crates.io/crates/git_rs OR https://crates.io/crates/rs-git-lib OR  https://crates.io/crates/gitoxide, to imporve performance with program compibilty assistant sevice on windows
 
-    - [] move language module into its own crate
+    - [ ] move language module into its own crate
   - general:
     - [ ] update readmes with feautes and benchamrks specifically the repo & git-function-history-lib readmes 

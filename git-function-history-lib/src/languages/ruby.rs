@@ -166,14 +166,19 @@ fn get_functions_from_node(
 }
 
 fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
+    // TODO: make a Args struct has fields {args: Vec<String>, kwargs, kwoptargs, optargs, kwrestargs, block_args, kwnilarg: bool, fowardarg: bool}
+    // where I didnt annotate a type its needs to be figured out the args purpose and anoatate the type based on that
     match node {
         lib_ruby_parser::Node::Args(args) => args
             .args
             .iter()
             .map(|arg| match arg {
+                // basic arg
                 lib_ruby_parser::Node::Arg(arg) => arg.name.clone(),
+
                 lib_ruby_parser::Node::Kwarg(arg) => arg.name.clone(),
                 lib_ruby_parser::Node::Kwoptarg(arg) => arg.name.clone(),
+                // arg that has a default value
                 lib_ruby_parser::Node::Optarg(arg) => arg.name.clone(),
                 lib_ruby_parser::Node::Restarg(arg) => arg
                     .name
@@ -183,6 +188,10 @@ fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
                     .name
                     .as_ref()
                     .map_or_else(String::new, ToString::to_string),
+                lib_ruby_parser::Node::ForwardArg(arg) => String::new(),
+                lib_ruby_parser::Node::Blockarg(arg) => String::new(),
+                lib_ruby_parser::Node::Kwnilarg(arg) => String::new(),
+                // Node::ForwardedArgs and Node::Kwargs are for method calls and not definitions thus we are not matching on them
                 _ => String::new(),
             })
             .filter(|f| !f.is_empty())
