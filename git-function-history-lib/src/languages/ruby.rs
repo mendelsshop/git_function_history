@@ -14,16 +14,16 @@ pub struct RubyFunction {
     pub name: String,
     pub lines: (usize, usize),
     pub class: Option<RubyClass>,
-    pub args: Vec<String>,
+    pub args: RubyParams,
     pub body: String,
 }
 
 impl RubyFunction {
-    pub fn new(
+    pub const fn new(
         name: String,
         lines: (usize, usize),
         class: Option<RubyClass>,
-        args: Vec<String>,
+        args: RubyParams,
         body: String,
     ) -> Self {
         Self {
@@ -58,6 +58,54 @@ pub struct RubyClass {
     pub superclass: Option<String>,
     pub top: String,
     pub bottom: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RubyParams {
+    args: Vec<String>,
+    kwargs: Vec<String>,
+    kwnilarg: bool,
+    forwarded_args: bool,
+    /// arg name, default value
+    optargs: Vec<(String, String)>,
+    kwoptargs: Vec<(String, String)>,
+    kwrestarg: Option<String>,
+    restarg: Option<String>,
+}
+
+impl RubyParams {
+    pub const fn new() -> Self {
+        Self {
+            args: Vec::new(),
+            kwnilarg: false,
+            forwarded_args: false,
+            optargs: Vec::new(),
+            kwrestarg: None,
+            restarg: None,
+            kwargs: Vec::new(),
+            kwoptargs: Vec::new(),
+        }
+    }
+
+    fn contains(&self, name: &String) -> bool {
+        self.args.contains(name)
+            || self.kwargs.contains(name)
+            || self
+                .optargs
+                .iter()
+                .any(|(arg, default)| arg == name || default == name)
+            || self
+                .kwoptargs
+                .iter()
+                .any(|(arg, default)| arg == name || default == name)
+            || Some(name.clone()) == self.kwrestarg
+            || Some(name.clone()) == self.restarg
+    }
+}
+impl Default for RubyParams {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub(crate) fn find_function_in_file(
@@ -128,7 +176,7 @@ pub(crate) fn find_function_in_file(
                 args: f
                     .args
                     .clone()
-                    .map_or_else(Vec::new, |a| parse_args_from_node(&a)),
+                    .map_or_else(RubyParams::new, |a| parse_args_from_node(&a)),
             })
         })
         .collect()
@@ -165,40 +213,46 @@ fn get_functions_from_node(
     }
 }
 
-fn parse_args_from_node(node: &lib_ruby_parser::Node) -> Vec<String> {
+fn parse_args_from_node(node: &lib_ruby_parser::Node) -> RubyParams {
     // TODO: make a Args struct has fields {args: Vec<String>, kwargs, kwoptargs, optargs, kwrestargs, block_args, kwnilarg: bool, fowardarg: bool}
     // where I didnt annotate a type its needs to be figured out the args purpose and anoatate the type based on that
-    match node {
-        lib_ruby_parser::Node::Args(args) => args
-            .args
-            .iter()
-            .map(|arg| match arg {
-                // basic arg
-                lib_ruby_parser::Node::Arg(arg) => arg.name.clone(),
+    let mut ret_args = RubyParams::new();
+    if let lib_ruby_parser::Node::Args(args) = node {
+        args.args.iter().for_each(|arg| match arg {
+            // basic arg
+            //python/ruby
+            lib_ruby_parser::Node::Arg(arg) => ret_args.args.push(arg.name.clone()),
+            lib_ruby_parser::Node::Kwarg(arg) => ret_args.kwargs.push(arg.name.clone()),
 
-                lib_ruby_parser::Node::Kwarg(arg) => arg.name.clone(),
-                lib_ruby_parser::Node::Kwoptarg(arg) => arg.name.clone(),
-                // arg that has a default value
-                lib_ruby_parser::Node::Optarg(arg) => arg.name.clone(),
-                lib_ruby_parser::Node::Restarg(arg) => arg
-                    .name
-                    .as_ref()
-                    .map_or_else(String::new, ToString::to_string),
-                lib_ruby_parser::Node::Kwrestarg(arg) => arg
-                    .name
-                    .as_ref()
-                    .map_or_else(String::new, ToString::to_string),
-                lib_ruby_parser::Node::ForwardArg(arg) => String::new(),
-                lib_ruby_parser::Node::Blockarg(arg) => String::new(),
-                lib_ruby_parser::Node::Kwnilarg(arg) => String::new(),
-                // Node::ForwardedArgs and Node::Kwargs are for method calls and not definitions thus we are not matching on them
-                _ => String::new(),
-            })
-            .filter(|f| !f.is_empty())
-            .collect(),
-        _ => vec![],
+            // args that has a default value
+            // TODO: get the default value
+            lib_ruby_parser::Node::Kwoptarg(arg) => {
+                ret_args.kwoptargs.push((arg.name.clone(), String::new()));
+            }
+            lib_ruby_parser::Node::Optarg(arg) => {
+                ret_args.optargs.push((arg.name.clone(), String::new()));
+            }
+
+            lib_ruby_parser::Node::Restarg(arg) => {
+                if let Some(name) = &arg.name {
+                    ret_args.restarg = Some(name.clone());
+                }
+            }
+            lib_ruby_parser::Node::Kwrestarg(arg) => {
+                if let Some(name) = &arg.name {
+                    ret_args.kwrestarg = Some(name.clone());
+                }
+            }
+
+            // ruby specific
+            lib_ruby_parser::Node::ForwardArg(_) => ret_args.forwarded_args = true,
+            lib_ruby_parser::Node::Kwnilarg(_) => ret_args.kwnilarg = true,
+            // Node::ForwardedArgs and Node::Kwargs are for method calls and not definitions thus we are not matching on them
+            // Node::Blockarg is for block methods similar to labmdas whic we do not currently support
+            _ => {}
+        });
     };
-    vec![]
+    ret_args
 }
 
 fn parser_class_name(class: &Class) -> String {

@@ -13,7 +13,7 @@ use super::FunctionTrait;
 pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
-    pub(crate) parameters: Params,
+    pub(crate) parameters: PythonParams,
     pub(crate) parent: Vec<PythonParentFunction>,
     pub(crate) decorators: Vec<(usize, String)>,
     pub(crate) class: Vec<PythonClass>,
@@ -40,7 +40,7 @@ pub struct Param {
 }
 
 #[derive(Debug, Clone)]
-pub struct Params {
+pub struct PythonParams {
     pub args: Vec<Param>,
     pub kwargs: Vec<Param>,
     pub posonlyargs: Vec<Param>,
@@ -48,7 +48,7 @@ pub struct Params {
     pub varkwargs: Option<Param>,
 }
 
-impl Params {
+impl PythonParams {
     pub fn arg_has_name(&self, name: &str) -> bool {
         self.args.iter().any(|arg| arg.name == name)
             || self.kwargs.iter().any(|arg| arg.name == name)
@@ -73,7 +73,7 @@ pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,
     pub(crate) lines: (usize, usize),
-    pub(crate) parameters: Params,
+    pub(crate) parameters: PythonParams,
     pub(crate) decorators: Vec<(usize, String)>,
     pub(crate) returns: Option<String>,
 }
@@ -366,15 +366,17 @@ fn get_functions(
         _ => {}
     }
 }
-
-fn get_args(args: Arguments) -> Params {
-    let mut parameters = Params {
+// TODO save arg.defaults & arg.kwdefaults and attempt to map them to the write parameters
+fn get_args(args: Arguments) -> PythonParams {
+    let mut parameters = PythonParams {
         args: Vec::new(),
         varargs: None,
         posonlyargs: Vec::new(),
         kwargs: Vec::new(),
         varkwargs: None,
     };
+    println!("arg defaultes {:?}", args.defaults);
+    println!("kwarg defaultes {:?}", args.kw_defaults);
     for arg in args.args {
         parameters.args.push(Param {
             name: arg.node.arg,
@@ -435,6 +437,7 @@ fn get_args(args: Arguments) -> Params {
             }),
         });
     }
+
     parameters
 }
 
