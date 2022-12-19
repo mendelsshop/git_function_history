@@ -2,6 +2,7 @@ use std::{error::Error, fmt};
 
 use lib_ruby_parser::{
     nodes::{Class, Def},
+    source::DecodedInput,
     Loc, Parser, ParserOptions,
 };
 
@@ -13,7 +14,7 @@ use super::FunctionTrait;
 pub struct RubyFunction {
     pub name: String,
     pub lines: (usize, usize),
-    pub class: Option<RubyClass>,
+    pub class: Vec<RubyClass>,
     pub args: RubyParams,
     pub body: String,
 }
@@ -22,7 +23,7 @@ impl RubyFunction {
     pub const fn new(
         name: String,
         lines: (usize, usize),
-        class: Option<RubyClass>,
+        class: Vec<RubyClass>,
         args: RubyParams,
         body: String,
     ) -> Self {
@@ -38,14 +39,12 @@ impl RubyFunction {
 
 impl fmt::Display for RubyFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.class {
-            Some(class) => write!(f, "{}\n...\n", class.top)?,
-            None => {}
+        for class in &self.class {
+            write!(f, "{}", class.top)?;
         }
         write!(f, "{}", self.body)?;
-        match &self.class {
-            Some(class) => write!(f, "\n...\n{}", class.bottom)?,
-            None => {}
+        for class in &self.class {
+            write!(f, "{}", class.bottom)?;
         }
         Ok(())
     }
@@ -54,7 +53,7 @@ impl fmt::Display for RubyFunction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RubyClass {
     pub name: String,
-    pub line: (usize, usize),
+    pub lines: (usize, usize),
     pub superclass: Option<String>,
     pub top: String,
     pub bottom: String,
@@ -67,7 +66,6 @@ pub struct RubyParams {
     kwnilarg: bool,
     forwarded_args: bool,
     /// arg name, default value
-    optargs: Vec<(String, String)>,
     kwoptargs: Vec<(String, String)>,
     kwrestarg: Option<String>,
     restarg: Option<String>,
@@ -79,7 +77,6 @@ impl RubyParams {
             args: Vec::new(),
             kwnilarg: false,
             forwarded_args: false,
-            optargs: Vec::new(),
             kwrestarg: None,
             restarg: None,
             kwargs: Vec::new(),
@@ -90,10 +87,6 @@ impl RubyParams {
     fn contains(&self, name: &String) -> bool {
         self.args.contains(name)
             || self.kwargs.contains(name)
-            || self
-                .optargs
-                .iter()
-                .any(|(arg, default)| arg == name || default == name)
             || self
                 .kwoptargs
                 .iter()
@@ -112,56 +105,54 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<RubyFunction>, Box<dyn Error>> {
+    // TODO: make starts and top of function & classes start from beginning of line so indentation will be correct
     let parser = Parser::new(file_contents, ParserOptions::default());
     let parsed = parser.do_parse();
+    // POSSBLE TODO check if there is any error dianostics parsed.dadnostices and return error is so
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
-    let fns = get_functions_from_node(&ast, &None, name);
+    let fns = get_functions_from_node(&ast, &vec![], name);
     let index = super::turn_into_index(file_contents)?;
-    fns.iter()
+    let fns = fns
+        .iter()
         .map(|(f, c)| {
-            let class = match c {
-                Some(c) => {
-                    let start_line = super::get_from_index(&index, c.expression_l.begin)
-                        .unwrap_to_error("Failed to get start line")?;
-                    let end_line = super::get_from_index(&index, c.expression_l.end)
-                        .unwrap_to_error("Failed to get end line")?;
+            let class = c
+                .iter()
+                .filter_map(|c| {
+                    let start_line = super::get_from_index(&index, c.expression_l.begin)?;
+                    let end_line = super::get_from_index(&index, c.expression_l.end)?;
                     let loc_end = c.end_l;
                     let top = Loc {
                         begin: c.expression_l.begin,
-                        end: c
-                            .body
-                            .as_ref()
-                            .map_or(c.keyword_l.end, |b| b.expression().begin),
+                        end: c.body.as_ref().map_or(
+                            c.superclass
+                                .as_ref()
+                                .map_or(c.name.expression().end, |c| c.expression().end),
+                            |b| b.expression().begin,
+                        ),
                     };
-                    let mut top = top
-                        .source(&parsed.input)
-                        .unwrap_to_error("Failed to get top of class from source")?;
-                    top = top.trim_end().to_string();
+                    let mut top = top.source(&parsed.input)?;
+                    top = top.trim_matches('\n').to_string();
                     top = super::make_lined(&top, start_line);
                     Some(RubyClass {
                         name: parser_class_name(c),
-                        line: (start_line, end_line),
+                        lines: (start_line, end_line),
                         superclass: parse_superclass(c),
                         top,
                         bottom: super::make_lined(
-                            loc_end
-                                .source(&parsed.input)
-                                .unwrap_to_error("Failed to get last line of class source")?
-                                .trim_matches('\n'),
+                            loc_end.source(&parsed.input)?.trim_matches('\n'),
                             end_line,
                         ),
                     })
-                }
-                None => None,
-            };
+                })
+                .collect();
             let start = f.expression_l.begin;
             // get the lines from map using f.expression_l.begin and f.expression_l.end
-            let start_line =
-                super::get_from_index(&index, start).unwrap_to_error("Failed to get start line")?;
+            let start_line = super::get_from_index(&index, start)
+                .unwrap_to_error("Failed to get start lines")?;
             let end_line = super::get_from_index(&index, f.expression_l.end)
                 .unwrap_to_error("Failed to get end line")?;
             let starts = start_line + 1;
-            Ok(RubyFunction {
+            Ok::<RubyFunction, Box<dyn Error>>(RubyFunction {
                 name: f.name.clone(),
                 lines: (start_line + 1, end_line + 1),
                 class,
@@ -176,17 +167,22 @@ pub(crate) fn find_function_in_file(
                 args: f
                     .args
                     .clone()
-                    .map_or_else(RubyParams::new, |a| parse_args_from_node(&a)),
+                    .map_or_else(RubyParams::new, |a| parse_args_from_node(&a, &parsed.input)),
             })
         })
-        .collect()
+        .filter_map(Result::ok)
+        .collect::<Vec<RubyFunction>>();
+    if fns.is_empty() {
+        Err("No functions with this name was found in the this file")?;
+    }
+    Ok(fns)
 }
 
 fn get_functions_from_node(
     node: &lib_ruby_parser::Node,
-    class: &Option<Class>,
+    class: &Vec<Class>,
     name: &str,
-) -> Vec<(Def, Option<Class>)> {
+) -> Vec<(Def, Vec<Class>)> {
     match node {
         lib_ruby_parser::Node::Def(def) => {
             if def.name == name {
@@ -195,10 +191,12 @@ fn get_functions_from_node(
                 vec![]
             }
         }
-        lib_ruby_parser::Node::Class(class) => {
+        lib_ruby_parser::Node::Class(new_class) => {
             let mut functions = vec![];
-            for child in &class.body {
-                functions.extend(get_functions_from_node(child, &Some(class.clone()), name));
+            let mut new_list = class.clone();
+            new_list.push(new_class.clone());
+            for child in &new_class.body {
+                functions.extend(get_functions_from_node(child, &new_list, name));
             }
             functions
         }
@@ -213,26 +211,23 @@ fn get_functions_from_node(
     }
 }
 
-fn parse_args_from_node(node: &lib_ruby_parser::Node) -> RubyParams {
-    // TODO: make a Args struct has fields {args: Vec<String>, kwargs, kwoptargs, optargs, kwrestargs, block_args, kwnilarg: bool, fowardarg: bool}
-    // where I didnt annotate a type its needs to be figured out the args purpose and anoatate the type based on that
+fn parse_args_from_node(node: &lib_ruby_parser::Node, parsed_file: &DecodedInput) -> RubyParams {
     let mut ret_args = RubyParams::new();
     if let lib_ruby_parser::Node::Args(args) = node {
         args.args.iter().for_each(|arg| match arg {
             // basic arg
-            //python/ruby
             lib_ruby_parser::Node::Arg(arg) => ret_args.args.push(arg.name.clone()),
             lib_ruby_parser::Node::Kwarg(arg) => ret_args.kwargs.push(arg.name.clone()),
-
             // args that has a default value
-            // TODO: get the default value
             lib_ruby_parser::Node::Kwoptarg(arg) => {
-                ret_args.kwoptargs.push((arg.name.clone(), String::new()));
+                ret_args.kwoptargs.push((
+                    arg.name.clone(),
+                    arg.default
+                        .expression()
+                        .source(parsed_file)
+                        .unwrap_or_else(|| "could not retrieve default value".to_string()),
+                ));
             }
-            lib_ruby_parser::Node::Optarg(arg) => {
-                ret_args.optargs.push((arg.name.clone(), String::new()));
-            }
-
             lib_ruby_parser::Node::Restarg(arg) => {
                 if let Some(name) = &arg.name {
                     ret_args.restarg = Some(name.clone());
@@ -247,7 +242,7 @@ fn parse_args_from_node(node: &lib_ruby_parser::Node) -> RubyParams {
             // ruby specific
             lib_ruby_parser::Node::ForwardArg(_) => ret_args.forwarded_args = true,
             lib_ruby_parser::Node::Kwnilarg(_) => ret_args.kwnilarg = true,
-            // Node::ForwardedArgs and Node::Kwargs are for method calls and not definitions thus we are not matching on them
+            // Node::ForwardedArgs and Node::Kwargs, node::Optarg are for method calls and not definitions thus we are not matching on them
             // Node::Blockarg is for block methods similar to labmdas whic we do not currently support
             _ => {}
         });
@@ -276,19 +271,25 @@ impl FunctionTrait for RubyFunction {
     crate::impl_function_trait!(RubyFunction);
 
     fn get_total_lines(&self) -> (usize, usize) {
-        self.class.as_ref().map_or(self.lines, |c| c.line)
+        self.class
+            .iter()
+            .map(|class| class.lines)
+            .min_by(Ord::cmp)
+            .unwrap_or(self.lines)
     }
 
     fn get_tops(&self) -> Vec<(String, usize)> {
         self.class
-            .as_ref()
-            .map_or_else(Vec::new, |c| vec![(c.top.clone(), c.line.0)])
+            .iter()
+            .map(|class| (class.top.clone(), class.lines.0))
+            .collect()
     }
 
     fn get_bottoms(&self) -> Vec<(String, usize)> {
         self.class
-            .as_ref()
-            .map_or_else(Vec::new, |c| vec![(c.bottom.clone(), c.line.1)])
+            .iter()
+            .map(|class| (class.bottom.clone(), class.lines.1))
+            .collect()
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -301,12 +302,9 @@ pub enum RubyFilter {
 impl RubyFilter {
     pub fn matches(&self, function: &RubyFunction) -> bool {
         match self {
-            Self::FunctionInClass(name) => function
-                .class
-                .as_ref()
-                .map_or(false, |class| *name == class.name),
+            Self::FunctionInClass(name) => function.class.iter().any(|class| &class.name == name),
             Self::FunctionWithParameter(name) => function.args.contains(name),
-            Self::FunctionWithSuperClass(name) => function.class.as_ref().map_or(false, |class| {
+            Self::FunctionWithSuperClass(name) => function.class.iter().any(|class| {
                 class
                     .superclass
                     .as_ref()

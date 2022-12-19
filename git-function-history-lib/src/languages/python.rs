@@ -375,8 +375,6 @@ fn get_args(args: Arguments) -> PythonParams {
         kwargs: Vec::new(),
         varkwargs: None,
     };
-    println!("arg defaultes {:?}", args.defaults);
-    println!("kwarg defaultes {:?}", args.kw_defaults);
     for arg in args.args {
         parameters.args.push(Param {
             name: arg.node.arg,
