@@ -242,7 +242,6 @@ impl MyEguiApp {
                 }
             });
         });
-        // TODO: if no commit is found, show a message
         if let Some(x) = history.get_mut_commit() {
             Self::draw_commit(x, ctx, false)
         } else {

@@ -113,7 +113,7 @@ pub(crate) fn find_function_in_file(
             .end_location
             .unwrap_to_error("no end location for this function")?
             .row();
-        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end - 1))) else { continue };
+        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end))) else { continue };
         if let StmtKind::FunctionDef {
             name,
             args,

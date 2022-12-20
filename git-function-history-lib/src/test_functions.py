@@ -32,6 +32,8 @@ def empty_test(n: int) -> list:
     """This is an empty test with a docstring"""
     pass
 
+# def empty_test(n: int) -> list:
+
 class TestClass:
     def test_method(self):
         pass

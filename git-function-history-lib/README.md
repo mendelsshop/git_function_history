@@ -19,6 +19,9 @@ Use the latest [crates.io](https://crates.io/crates/git_function_history) by put
 
 - cache: enables caching when parsing files that don't change
 
-## known issues
+## parsing library dependencies
 
-- python: since the parser only finds the beginning of the function we have to use some workarounds to find the end of the function. This means that if you have a function that anything from the end of one function to either the beginning of another function or the end of the file that is not python code for example a comment it will be included in the function.
+| Language | Rust | Ruby | Python | Go |
+|  ---  |  ---  |  ---  |  ---  |  ---  |
+|Source| [ra_ap_syntax](https://crates.io/crates/ra_ap_syntax)([Rust Analyzer](https://rust-analyzer.github.io/)) | [lib-ruby-parser](https://crates.io/crates/lib-ruby-parser) | [rustpython-parser](https://crates.io/crates/rustpython-parser/)([RustPython](https://rustpython.github.io/)) | [gosyn](https://crates.io/crates/gosyn) |
+| Requirements | | | | rust nightly and unstable feature |
