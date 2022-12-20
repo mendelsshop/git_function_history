@@ -146,6 +146,7 @@ pub fn get_function_history(
     }
     // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
     let repo = git_repository::discover(".")?;
+    let th_repo = repo.clone().into_sync();
     let mut tips = vec![];
     let head = repo.head_commit()?;
     tips.push(head.id);
@@ -255,7 +256,7 @@ pub fn get_function_history(
     let commits = commits.iter();
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, name, *langs, file);
+            let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -305,14 +306,14 @@ impl Default for MacroOpts<'_> {
 
 fn sender(
     id: ObjectId,
+    repo: &git_repository::Repository,
     name: &str,
     langs: Language,
     file: &FileFilterType,
 ) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
-    let repo = git_repository::discover(".")?;
     let object = repo.find_object(id)?;
     let tree = object.try_into_tree()?;
-    traverse_tree(&tree, &repo, name, "", langs, file)
+    traverse_tree(&tree, repo, name, "", langs, file)
 }
 
 fn traverse_tree(
@@ -426,6 +427,7 @@ fn traverse_tree(
 
     Ok(ret)
 }
+
 /// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
