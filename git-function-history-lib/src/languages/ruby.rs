@@ -1,4 +1,4 @@
-use std::{error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt};
 
 use lib_ruby_parser::{
     nodes::{Class, Def},
@@ -105,7 +105,16 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<RubyFunction>, Box<dyn Error>> {
-    // TODO: make starts and top of function & classes start from beginning of line so indentation will be correct
+    let mut starts = file_contents
+        .match_indices('\n')
+        .map(|x| x.0)
+        .collect::<Vec<_>>();
+    starts.push(0);
+    starts.sort_unstable();
+    let map = starts
+        .iter()
+        .enumerate()
+        .collect::<HashMap<usize, &usize>>();
     let parser = Parser::new(file_contents, ParserOptions::default());
     let parsed = parser.do_parse();
     // POSSBLE TODO check if there is any error dianostics parsed.dadnostices and return error is so
@@ -122,13 +131,13 @@ pub(crate) fn find_function_in_file(
                     let end_line = super::get_from_index(&index, c.expression_l.end)?;
                     let loc_end = c.end_l;
                     let top = Loc {
-                        begin: c.expression_l.begin,
+                        begin: **map.get(&(start_line - 1))?,
                         end: c.body.as_ref().map_or(
                             c.superclass
                                 .as_ref()
                                 .map_or(c.name.expression().end, |c| c.expression().end),
                             |b| b.expression().begin,
-                        ),
+                        ) - 1,
                     };
                     let mut top = top.source(&parsed.input)?;
                     top = top.trim_matches('\n').to_string();
@@ -139,7 +148,10 @@ pub(crate) fn find_function_in_file(
                         superclass: parse_superclass(c),
                         top,
                         bottom: super::make_lined(
-                            loc_end.source(&parsed.input)?.trim_matches('\n'),
+                            loc_end
+                                .with_begin(**map.get(&(end_line - 1))?)
+                                .source(&parsed.input)?
+                                .trim_matches('\n'),
                             end_line,
                         ),
                     })
@@ -154,15 +166,15 @@ pub(crate) fn find_function_in_file(
             let starts = start_line + 1;
             Ok::<RubyFunction, Box<dyn Error>>(RubyFunction {
                 name: f.name.clone(),
-                lines: (start_line + 1, end_line + 1),
+                lines: (start_line, end_line),
                 class,
                 body: super::make_lined(
                     f.expression_l
-                        .with_begin(start)
+                        .with_begin(**map.get(&(start_line - 1)).unwrap_or(&&0))
                         .source(&parsed.input)
                         .unwrap_to_error("Failed to get function body from source")?
                         .trim_matches('\n'),
-                    starts,
+                    starts - 1,
                 ),
                 args: f
                     .args
