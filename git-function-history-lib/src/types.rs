@@ -91,6 +91,18 @@ impl FileTrait for FileType {
             Self::Ruby(file) => file.get_current(),
         }
     }
+
+    fn get_language(&self) -> crate::Language {
+        match self {
+            Self::Rust(file) => file.get_language(),
+            Self::Python(file) => file.get_language(),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => file.get_language(),
+            #[cfg(feature = "unstable")]
+            Self::Go(file) => file.get_language(),
+            Self::Ruby(file) => file.get_language(),
+        }
+    }
 }
 
 impl fmt::Display for FileType {

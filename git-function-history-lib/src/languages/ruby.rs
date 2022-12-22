@@ -11,6 +11,7 @@ use crate::UnwrapToError;
 use super::FunctionTrait;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+// repersentation of a ruby function
 pub struct RubyFunction {
     pub name: String,
     pub lines: (usize, usize),
@@ -51,6 +52,7 @@ impl fmt::Display for RubyFunction {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// represents a Ruby class
 pub struct RubyClass {
     pub name: String,
     pub lines: (usize, usize),
@@ -60,14 +62,21 @@ pub struct RubyClass {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// repersents parameters of a ruby function
 pub struct RubyParams {
+    /// required parameters
     args: Vec<String>,
+    /// keyword parameters
     kwargs: Vec<String>,
+    /// keyword parameter is nil ie `**nil` in `def foo(a, **nil)`
     kwnilarg: bool,
+    /// parameters are forwarded ie `...` in `def foo(...)`
     forwarded_args: bool,
-    /// arg name, default value
+    /// parameters that have optional default values ie `a: 1` in `def foo(a: 1)`
     kwoptargs: Vec<(String, String)>,
+    /// keyword rest parameter ie `**a` in `def foo(**a)`
     kwrestarg: Option<String>,
+    /// rest parameter ie `*a` in `def foo(*a)`
     restarg: Option<String>,
 }
 
@@ -306,8 +315,11 @@ impl FunctionTrait for RubyFunction {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RubyFilter {
+    /// find a Ruby functions in a specific class
     FunctionInClass(String),
+    /// find a Ruby function with a specific parameter
     FunctionWithParameter(String),
+    /// find a Ruby function in a class that inherits from a specific class
     FunctionWithSuperClass(String),
 }
 

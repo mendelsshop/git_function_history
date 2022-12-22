@@ -10,6 +10,7 @@ use crate::{impl_function_trait, UnwrapToError};
 use super::FunctionTrait;
 
 #[derive(Debug, Clone)]
+/// A python function
 pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
@@ -34,12 +35,18 @@ impl fmt::Display for PythonFunction {
 }
 
 #[derive(Debug, Clone)]
+/// A single parameter of a python function
 pub struct Param {
+    /// The name of the parameter
     pub name: String,
+    /// The optional type of the parameter
     pub r#type: Option<String>,
 }
 
 #[derive(Debug, Clone)]
+/// The parameters of a python function
+/// refer to python docs for more info
+/// note: currently we don't save default values
 pub struct PythonParams {
     pub args: Vec<Param>,
     pub kwargs: Vec<Param>,
@@ -62,6 +69,7 @@ impl PythonParams {
 }
 
 #[derive(Debug, Clone)]
+/// A python class
 pub struct PythonClass {
     pub(crate) name: String,
     pub(crate) top: String,
@@ -69,6 +77,7 @@ pub struct PythonClass {
     pub(crate) decorators: Vec<(usize, String)>,
 }
 #[derive(Debug, Clone)]
+/// A python function that is a parent of another python function, we don't keep the body of the function
 pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,

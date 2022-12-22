@@ -65,6 +65,7 @@ impl Language {
         }
     }
 
+    /// returns the name of the language(s)
     pub const fn get_names(&self) -> &str {
         match self {
             Self::Python => "python",
@@ -81,6 +82,7 @@ impl Language {
         }
     }
 
+    /// returns the file extensions of the language(s)
     pub const fn get_file_endings(&self) -> &[&str] {
         match self {
             Self::Python => &["py", "pyw"],
@@ -122,10 +124,15 @@ pub mod python;
 pub mod ruby;
 pub mod rust;
 
+/// trait that all languages functions must implement
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
+    /// returns the starting and ending line of the function
     fn get_lines(&self) -> (usize, usize);
+    /// returns the starting and ending line of the the function including any class/impls (among others) the function is part of
     fn get_total_lines(&self) -> (usize, usize);
+    /// returns the name of the function
     fn get_name(&self) -> String;
+    /// returns the body of the function (the whole function including its signature and end)
     fn get_body(&self) -> String;
     /// returns the tops like any the heading of classes/impls (among others) the function is part of along with the starting line of each heading
     /// for example it could return `[("impl Test {", 3)]`
@@ -165,8 +172,13 @@ fn make_lined(snippet: &str, mut start: usize) -> String {
         .to_string()
 }
 
+/// trait that all languages files must implement
 pub trait FileTrait: fmt::Debug + fmt::Display {
+    /// returns the language of the file
+    fn get_language(&self) -> Language;
+    /// returns the name of the file
     fn get_file_name(&self) -> String;
+    /// returns the found functions in the file
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
 
     /// # Errors
@@ -245,6 +257,9 @@ macro_rules! make_file {
         }
 
         impl FileTrait for $name {
+            fn get_language(&self) -> Language {
+                Language::$filtername
+            }
             fn get_file_name(&self) -> String {
                 self.file_name.clone()
             }

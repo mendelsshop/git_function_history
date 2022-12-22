@@ -4,6 +4,7 @@ use std::{collections::HashMap, error::Error, fmt};
 use super::FunctionTrait;
 
 #[derive(Debug, Clone)]
+/// A Go function
 pub struct GoFunction {
     pub(crate) name: String,
     pub(crate) body: String,
@@ -12,10 +13,11 @@ pub struct GoFunction {
     pub(crate) lines: (usize, usize),
 }
 #[derive(Debug, Clone)]
+/// The parameters of a Go function
 pub enum GoParameter {
-    /// type
+    /// type parameter
     Type(Vec<String>),
-    /// (name, type)
+    /// named parameter, still has a type (name, type)
     Named(HashMap<String, String>),
 }
 
@@ -198,10 +200,11 @@ pub(crate) fn find_function_in_file(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GoFilter {
-    // refers to the type of a parameter
+    // refers to the type of a parameter of a function
     HasParameter(String),
-    // refers to the name of a parameter
+    // refers to the name of a parameter of a function
     HasParameterName(String),
+    // refers to the type of the return value of a function
     HasReturnType(String),
 }
 
