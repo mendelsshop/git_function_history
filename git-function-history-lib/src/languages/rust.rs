@@ -49,6 +49,8 @@ impl RustFunction {
 }
 
 impl fmt::Display for RustFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Display` for `RustFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.block {
             None => {}

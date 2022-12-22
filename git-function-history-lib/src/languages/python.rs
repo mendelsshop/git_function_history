@@ -23,12 +23,23 @@ pub struct PythonFunction {
 }
 
 impl fmt::Display for PythonFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Displa`y for `PythonFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for class in &self.class {
+            for decorator in &class.decorators {
+                write!(f, "{}\n...\n", decorator.1)?;
+            }
             write!(f, "{}\n...\n", class.top)?;
         }
         for parent in &self.parent {
+            for decorator in &parent.decorators {
+                write!(f, "{}\n...\n", decorator.1)?;
+            }
             write!(f, "{}\n...\n", parent.top)?;
+        }
+        for decorator in &self.decorators {
+            write!(f, "{}\n...\n", decorator.1)?;
         }
         write!(f, "{}", self.body)
     }

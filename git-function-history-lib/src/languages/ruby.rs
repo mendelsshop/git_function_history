@@ -39,6 +39,8 @@ impl RubyFunction {
 }
 
 impl fmt::Display for RubyFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Display` for `RubyFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for class in &self.class {
             write!(f, "{}", class.top)?;
