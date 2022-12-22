@@ -46,4 +46,4 @@
 
     - [ ] move language module into its own crate
   - general:
-    - [ ] update readmes with feautes and benchamrks specifically the repo & git-function-history-lib readmes 
+    - [/] update readmes with feautes and benchamrks specifically the repo & git-function-history-lib readmes 

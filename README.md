@@ -2,16 +2,6 @@
 
 # git function history
 
-## benchmarks
-
-Parser (main) vs Regex approach benchmarks:
-| approach| expensive| relative| date-range |
-| --- | --- | --- | --- |
-|regex| 313 second(s) | 22 second(s) | 8 second(s) |
-|parser| 22 second(s) | 21 second(s)| 1 second(s) |
-
-* These benchmarks were done in debug mode on a Ryzen 7 5700u with 16Gb of ram.
-
 ## crates in this project
 
 * [git-function-history-lib](https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-lib) - the library itself
