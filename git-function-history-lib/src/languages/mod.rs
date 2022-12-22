@@ -1,10 +1,10 @@
-use crate::Filter;
+use crate::{Filter, UnwrapToError};
 use std::{
+    collections::HashMap,
     error::Error,
-    fmt::{self, Display},
+    fmt::{self},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
-// TODO: make a macro for generating filters
 use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
 
 // #[cfg(feature = "c_lang")]
@@ -46,6 +46,11 @@ pub enum LanguageFilter {
 }
 
 impl Language {
+    /// takes string and returns the corresponding language
+    ///
+    /// # Errors
+    ///
+    /// `Err` will be returned if the string is not a valid language
     pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
         match s {
             "python" => Ok(Self::Python),
@@ -60,6 +65,7 @@ impl Language {
         }
     }
 
+    /// returns the name of the language(s)
     pub const fn get_names(&self) -> &str {
         match self {
             Self::Python => "python",
@@ -72,10 +78,11 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => "python, rust, go, or ruby",
             #[cfg(not(feature = "unstable"))]
-            Language::All => "python, rust, or ruby",
+            Self::All => "python, rust, or ruby",
         }
     }
 
+    /// returns the file extensions of the language(s)
     pub const fn get_file_endings(&self) -> &[&str] {
         match self {
             Self::Python => &["py", "pyw"],
@@ -88,7 +95,7 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => &["py", "pyw", "rs", "go", "rb"],
             #[cfg(not(feature = "unstable"))]
-            Language::All => &["py", "pyw", "rs", "rb"],
+            Self::All => &["py", "pyw", "rs", "rb"],
         }
     }
 }
@@ -117,13 +124,22 @@ pub mod python;
 pub mod ruby;
 pub mod rust;
 
+/// trait that all languages functions must implement
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
-    fn get_tops(&self) -> Vec<String>;
+    /// returns the starting and ending line of the function
     fn get_lines(&self) -> (usize, usize);
+    /// returns the starting and ending line of the the function including any class/impls (among others) the function is part of
     fn get_total_lines(&self) -> (usize, usize);
+    /// returns the name of the function
     fn get_name(&self) -> String;
-    fn get_bottoms(&self) -> Vec<String>;
+    /// returns the body of the function (the whole function including its signature and end)
     fn get_body(&self) -> String;
+    /// returns the tops like any the heading of classes/impls (among others) the function is part of along with the starting line of each heading
+    /// for example it could return `[("impl Test {", 3)]`
+    /// to get just for example the headings use the map method `function.get_tops().map(|top| top.0)`
+    fn get_tops(&self) -> Vec<(String, usize)>;
+    /// same as `get_tops` just retrieves the bottoms like so `[("}", 22)]`
+    fn get_bottoms(&self) -> Vec<(String, usize)>;
 }
 
 // mace macro that generates get_lines, get_body,get_name
@@ -138,62 +154,71 @@ macro_rules! impl_function_trait {
             self.name.clone()
         }
         fn get_body(&self) -> String {
-            self.body.clone()
+            self.body.to_string()
         }
     };
 }
 
-pub fn fmt_with_context<T: FunctionTrait + Display>(
-    current: &T,
-    prev: Option<&T>,
-    next: Option<&T>,
-    f: &mut fmt::Formatter<'_>,
-) -> fmt::Result {
-    match (prev, next) {
-        (Some(prev), Some(next)) => {
-            if prev.get_total_lines() == current.get_total_lines()
-                && next.get_total_lines() == current.get_total_lines()
-            {
-                write!(f, "{}", current.get_body())?;
-            } else if prev.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_body())?;
-                write!(f, "{}", current.get_bottoms().join("\n"))?;
-            } else if next.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_tops().join("\n"))?;
-                write!(f, "{}", current.get_body())?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (Some(prev), None) => {
-            if prev.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_body())?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (None, Some(next)) => {
-            if next.get_total_lines() == current.get_total_lines() {
-                write!(f, "{}", current.get_body())?;
-            } else {
-                write!(f, "{current}")?;
-            }
-        }
-        (None, None) => {
-            // print the function
-            write!(f, "{current}")?;
-        }
-    }
-    Ok(())
+fn make_lined(snippet: &str, mut start: usize) -> String {
+    snippet
+        .lines()
+        .map(|line| {
+            let new = format!("{start}: {line}\n");
+            start += 1;
+            new
+        })
+        .collect::<String>()
+        .trim_end()
+        .to_string()
 }
 
+/// trait that all languages files must implement
 pub trait FileTrait: fmt::Debug + fmt::Display {
+    /// returns the language of the file
+    fn get_language(&self) -> Language;
+    /// returns the name of the file
     fn get_file_name(&self) -> String;
+    /// returns the found functions in the file
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
+
+    /// # Errors
+    ///
+    /// returns `Err` if the wrong filter is given, only `PLFilter` and `FunctionInLines` variants of `Filter` are valid.
+    /// with `PLFilter` it will return `Err` if you mismatch the file type with the filter Ie: using `RustFile` and `PythonFilter` will return `Err`.
     fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>>
     where
         Self: Sized;
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
+}
+
+fn turn_into_index(snippet: &str) -> Result<HashMap<usize, Vec<usize>>, Box<dyn Error>> {
+    // turn snippet into a hashmap of line number to char index
+    // so line 1 is 0 to 10, line 2 is 11 to 20, etc
+    let mut index = HashMap::new();
+    index.insert(1, vec![]);
+    let mut line: usize = 1;
+    let mut char_index: usize = 0;
+    for c in snippet.chars() {
+        if c == '\n' {
+            line += 1;
+            index.insert(line, vec![char_index]);
+        } else {
+            index
+                .get_mut(&line)
+                .unwrap_to_error("line not found")?
+                .push(char_index);
+        }
+        char_index += c.len_utf8();
+    }
+    Ok(index)
+}
+
+fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> Option<usize> {
+    // gets the line number from the index
+    index
+        .iter()
+        .find(|(_, v)| v.contains(&char))
+        .map(|(k, _)| *k)
 }
 
 // macro that generates the code for the different languages
@@ -208,27 +233,33 @@ macro_rules! make_file {
 
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                for (index, func) in self.functions.iter().enumerate() {
-                    write!(
-                        f,
-                        "{}",
-                        match index {
-                            0 => "",
-                            _ => "\n...\n",
-                        },
-                    )?;
-                    let previous = match index {
-                        0 => None,
-                        _ => Some(&self.functions[index - 1]),
-                    };
-                    let next = self.functions.get(index + 1);
-                    crate::languages::fmt_with_context(func, previous, next, f)?;
+                let mut file: Vec<(String, usize)> = Vec::new();
+                for function in &self.functions {
+                    // get the tops and their starting line number ie: parentfn.lines.0
+                    file.extend(function.get_tops());
+                    file.push((function.body.to_string(), function.get_lines().0));
+                    // get the bottoms and their end line number ie: parentfn.lines.1
+                    file.extend(function.get_bottoms());
+                }
+                file.sort_by(|a, b| a.1.cmp(&b.1));
+                file.dedup();
+                // order the file by line number
+                file.sort_by(|a, b| a.1.cmp(&b.1));
+                // print the file each element sperated by a \n...\n
+                for (i, (body, _)) in file.iter().enumerate() {
+                    write!(f, "{}", body)?;
+                    if i != file.len() - 1 {
+                        write!(f, "\n...\n")?;
+                    }
                 }
                 Ok(())
             }
         }
 
         impl FileTrait for $name {
+            fn get_language(&self) -> Language {
+                Language::$filtername
+            }
             fn get_file_name(&self) -> String {
                 self.file_name.clone()
             }
@@ -245,7 +276,7 @@ macro_rules! make_file {
                 if let Filter::PLFilter(LanguageFilter::$filtername(_))
                 | Filter::FunctionInLines(..) = filter
                 {
-                } else if let Filter::None = filter {
+                } else if matches!(filter, Filter::None) {
                     return Ok(self.clone());
                 } else {
                     return Err("filter not supported for this type")?;
@@ -298,21 +329,26 @@ make_file!(RubyFile, RubyFunction, Ruby);
 mod lang_tests {
     // macro that auto genertes the test parse_<lang>_file_time
     macro_rules! make_file_time_test {
-        ($name:ident, $extname:ident, $function:ident) => {
+        ($name:ident, $extname:ident, $function:ident, $filetype:ident) => {
             #[test]
             fn $name() {
                 let mut file = std::env::current_dir().unwrap();
                 file.push("src");
                 file.push("test_functions.".to_string() + stringify!($extname));
-                let file = std::fs::read_to_string(file.clone())
+                let files = std::fs::read_to_string(file.clone())
                     .expect(format!("could not read file {:?}", file).as_str());
                 let start = std::time::Instant::now();
-                let ok = $function::find_function_in_file(&file, "empty_test");
+                let ok = $function::find_function_in_file(&files, "empty_test");
                 let end = std::time::Instant::now();
                 match &ok {
                     Ok(hist) => {
+                        // turn the hist into a file
+                        let file = $filetype::new(file.display().to_string(), hist.clone());
+                        println!("{}", file);
+                        println!("-------------------");
                         for i in hist {
                             println!("{}", i);
+                            println!("{:?}", i);
                         }
                     }
                     Err(e) => {
@@ -326,11 +362,11 @@ mod lang_tests {
     }
 
     use super::*;
-    make_file_time_test!(python_parses, py, python);
-    make_file_time_test!(rust_parses, rs, rust);
+    make_file_time_test!(python_parses, py, python, PythonFile);
+    make_file_time_test!(rust_parses, rs, rust, RustFile);
     // #[cfg(feature = "c_lang")]
-    // make_file_time_test!(c_parses, c, c);
+    // make_file_time_test!(c_parses, c, c, CFile);
     #[cfg(feature = "unstable")]
-    make_file_time_test!(go_parses, go, go);
-    make_file_time_test!(ruby_parses, rb, ruby);
+    make_file_time_test!(go_parses, go, go, GoFile);
+    make_file_time_test!(ruby_parses, rb, ruby, RubyFile);
 }

@@ -252,8 +252,8 @@ impl App {
                                 }
 
                                 _ => {
-                                    log::debug!("invalid arg: {:?}", i);
-                                    self.status = Status::Error(format!("Invalid search {:?}", i));
+                                    log::debug!("invalid arg: {i:?}");
+                                    self.status = Status::Error(format!("Invalid search {i:?}"));
                                     return;
                                 }
                             }
@@ -315,14 +315,14 @@ impl App {
                                 let start = match start.parse::<usize>() {
                                     Ok(x) => x,
                                     Err(e) => {
-                                        self.status = Status::Error(format!("{}", e));
+                                        self.status = Status::Error(format!("{e}"));
                                         return;
                                     }
                                 };
                                 let end = match end.parse::<usize>() {
                                     Ok(x) => x,
                                     Err(e) => {
-                                        self.status = Status::Error(format!("{}", e));
+                                        self.status = Status::Error(format!("{e}"));
                                         return;
                                     }
                                 };
@@ -338,7 +338,10 @@ impl App {
                                 filter = Filter::Directory(dir.to_string());
                             }
                             _ => {
-                                self.status = Status::Error(format!("Invalid filter {}", i[0]));
+                                self.status = Status::Error(format!(
+                                    "Invalid filter {}",
+                                    i.first().unwrap_or(&"")
+                                ));
                                 return;
                             }
                         }
@@ -383,7 +386,7 @@ impl App {
                     }
                 }
                 other => {
-                    self.status = Status::Error(format!("Invalid command: {}", other));
+                    self.status = Status::Error(format!("Invalid command: {other}"));
                 }
             },
             None => {

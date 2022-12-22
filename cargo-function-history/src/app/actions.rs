@@ -53,17 +53,20 @@ impl Action {
 /// Could display a user friendly short description of action
 impl Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let str = match self {
-            Action::Quit => "Quit",
-            Action::TextEdit => "TextEdit",
-            Action::ScrollUp => "ScrollUp",
-            Action::ScrollDown => "ScrollDown",
-            Action::BackCommit => "BackCommit",
-            Action::ForwardCommit => "ForwardCommit",
-            Action::BackFile => "BackFile",
-            Action::ForwardFile => "ForwardFile",
-        };
-        write!(f, "{}", str)
+        write!(
+            f,
+            "{}",
+            match self {
+                Action::Quit => "Quit",
+                Action::TextEdit => "TextEdit",
+                Action::ScrollUp => "ScrollUp",
+                Action::ScrollDown => "ScrollDown",
+                Action::BackCommit => "BackCommit",
+                Action::ForwardCommit => "ForwardCommit",
+                Action::BackFile => "BackFile",
+                Action::ForwardFile => "ForwardFile",
+            }
+        )
     }
 }
 
@@ -115,7 +118,7 @@ impl From<Vec<Action>> for Actions {
                     .map(Action::to_string)
                     .collect::<Vec<_>>()
                     .join(", ");
-                format!("Conflict key {} with actions {}", key, actions)
+                format!("Conflict key {key} with actions {actions}")
             })
             .collect::<Vec<_>>();
         if !errors.is_empty() {

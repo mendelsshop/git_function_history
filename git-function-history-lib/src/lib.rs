@@ -1,16 +1,12 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
-    clippy::missing_panics_doc,
     clippy::must_use_candidate,
-    clippy::case_sensitive_file_extension_comparisons,
-    clippy::match_wildcard_for_single_variants,
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
     clippy::cognitive_complexity,
     clippy::float_cmp,
-    clippy::similar_names,
-    clippy::missing_errors_doc,
+    // clippy::similar_names,
     clippy::return_self_not_must_use,
     clippy::module_name_repetitions,
     clippy::multiple_crate_versions,
@@ -131,6 +127,12 @@ pub enum Filter {
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
 /// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
 /// ```
+///
+/// # Errors
+///
+/// If no files were found that match the criteria given, this will return an 'Err'
+/// Or if it cannot find or read from a git repository
+///
 // TODO: split this function into smaller functions
 pub fn get_function_history(
     name: &str,
@@ -144,6 +146,7 @@ pub fn get_function_history(
     }
     // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
     let repo = git_repository::discover(".")?;
+    let th_repo = repo.clone().into_sync();
     let mut tips = vec![];
     let head = repo.head_commit()?;
     tips.push(head.id);
@@ -172,15 +175,27 @@ pub fn get_function_history(
         Filter::Author(_)
         | Filter::AuthorEmail(_)
         | Filter::Message(_)
-        | Filter::DateRange(..)
         | Filter::None
         | Filter::CommitHash(_) => String::new(),
+        Filter::DateRange(start, end) => {
+            // check if start is before end
+            // vaildate that the dates are valid
+            let start = DateTime::parse_from_rfc2822(start)?.with_timezone(&Utc);
+            let end = DateTime::parse_from_rfc2822(end)?.with_timezone(&Utc);
+            if start > end {
+                Err("start date is after end date")?;
+            }
+            String::new()
+        }
         _ => Err("invalid filter")?,
     };
     match file {
         FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
             // vaildate that the file makes sense with language
-            let is_supported = langs.get_file_endings().iter().any(|i| file.ends_with(i));
+            let is_supported = langs
+                .get_file_endings()
+                .iter()
+                .any(|i| ends_with_cmp_no_case(file, i));
             if !is_supported {
                 Err(format!("file {file} is not a {} file", langs.get_names()))?;
             }
@@ -193,7 +208,7 @@ pub fn get_function_history(
             let tree = i.tree().ok()?.id;
             let time = i.time().ok()?;
             let time = DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(time.seconds_since_unix_epoch.into(), 0),
+                NaiveDateTime::from_timestamp_opt(time.seconds_since_unix_epoch.into(), 0)?,
                 Utc,
             );
             let authorinfo = i.author().ok()?;
@@ -217,10 +232,10 @@ pub fn get_function_history(
                     let date = metadata.4;
                     let start = DateTime::parse_from_rfc2822(start)
                         .map(|i| i.with_timezone(&Utc))
-                        .expect("failed to parse start date");
+                        .expect("failed to parse start date, edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
                     let end = DateTime::parse_from_rfc2822(end)
                         .map(|i| i.with_timezone(&Utc))
-                        .expect("failed to parse end date");
+                        .expect("failed to parse end date, edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
                     start <= date && date <= end
                 }
                 Filter::Author(author) => *author == metadata.2,
@@ -241,20 +256,23 @@ pub fn get_function_history(
     let commits = commits.iter();
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, name, *langs, file);
+            let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
                         None?;
                     }
-                    Some(Commit::new(
-                        &i.1 .1,
-                        tree,
-                        &i.1 .4.to_rfc2822(),
-                        &i.1 .2,
-                        &i.1 .3,
-                        &i.1 .0,
-                    ))
+                    Some(
+                        Commit::new(
+                            &i.1 .1,
+                            tree,
+                            &i.1 .4.to_rfc2822(),
+                            &i.1 .2,
+                            &i.1 .3,
+                            &i.1 .0,
+                        )
+                        .ok()?,
+                    )
                 }
                 Err(_) => None,
             }
@@ -288,14 +306,14 @@ impl Default for MacroOpts<'_> {
 
 fn sender(
     id: ObjectId,
+    repo: &git_repository::Repository,
     name: &str,
     langs: Language,
     file: &FileFilterType,
 ) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
-    let repo = git_repository::discover(".")?;
     let object = repo.find_object(id)?;
     let tree = object.try_into_tree()?;
-    traverse_tree(&tree, &repo, name, "", langs, file)
+    traverse_tree(&tree, repo, name, "", langs, file)
 }
 
 fn traverse_tree(
@@ -338,50 +356,51 @@ fn traverse_tree(
                     FileFilterType::None => match langs {
                         // #[cfg(feature = "c_lang")]
                         // Language::C => {
-                        //     if file.ends_with(".c") || file.ends_with(".h") {
+                        //     if ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") {
                         //         files.push(file);
                         //     }
                         // }
                         #[cfg(feature = "unstable")]
                         Language::Go => {
-                            if !file.ends_with(".go") {
+                            if !ends_with_cmp_no_case(&file, "go") {
                                 continue;
                             }
                         }
                         Language::Python => {
-                            if !file.ends_with(".py") {
+                            if !ends_with_cmp_no_case(&file, "py") {
                                 continue;
                             }
                         }
                         Language::Rust => {
-                            if !file.ends_with(".rs") {
+                            if !ends_with_cmp_no_case(&file, "rs") {
                                 continue;
                             }
                         }
                         Language::Ruby => {
-                            if !file.ends_with(".rb") {
+                            if !ends_with_cmp_no_case(&file, "rb") {
                                 continue;
                             }
                         }
                         Language::All => {
                             cfg_if::cfg_if! {
-                                if #[cfg(feature = "c_lang")] {
-                                    if !(file.ends_with(".c") || file.ends_with(".h") || !file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
-                                        continue;
-                                    }
-                                }
-                                else if #[cfg(feature = "unstable")] {
-                                    if !(file.ends_with(".go")  || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")){
+                                // if #[cfg(feature = "c_lang")] {
+                                //     if !(ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || !ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
+                                //         continue;
+                                //     }
+                                // }
+                                // else
+                                if #[cfg(feature = "unstable")] {
+                                    if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")){
                                         continue
                                     }
                                 }
-                                else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
-                                    if !(file.ends_with(".go") || file.ends_with(".c") || file.ends_with(".h") || file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
-                                        continue;
-                                    }
-                                }
+                                // else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
+                                //     if !(ends_with_cmp_no_case(&file, "go") || ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
+                                //         continue;
+                                //     }
+                                // }
                                 else {
-                                    if !(file.ends_with(".rs") || file.ends_with(".py") || file.ends_with(".rb")) {
+                                    if !(ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
                                         continue;
                                     }
                                 }
@@ -408,6 +427,7 @@ fn traverse_tree(
 
     Ok(ret)
 }
+
 /// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
@@ -451,6 +471,11 @@ macro_rules! get_function_history {
     }};
 }
 
+/// Returns a vec of information such as author, date, email, and message for each commit
+///
+/// # Errors
+/// wiil return `Err`if it cannot find or read from a git repository
+
 pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let repo = git_repository::discover(".")?;
     let mut tips = vec![];
@@ -459,14 +484,8 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let commit_iter = repo.rev_walk(tips);
     let commits = commit_iter.all()?.filter_map(|i| match i {
         Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
-            let author = match i.author() {
-                Ok(author) => author,
-                Err(_) => return None,
-            };
-            let message = match i.message() {
-                Ok(message) => message,
-                Err(_) => return None,
-            };
+            let Ok(author) = i.author() else { return None };
+            let Ok(message) = i.message() else { return None };
             let mut msg = message.title.to_string();
             if let Some(msg_body) = message.body {
                 msg.push_str(&msg_body.to_string());
@@ -474,13 +493,13 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
 
             Some(CommitInfo {
                 date: match i.time().map(|x| {
-                    DateTime::<Utc>::from_utc(
-                        NaiveDateTime::from_timestamp(x.seconds_since_unix_epoch.into(), 0),
+                    Some(DateTime::<Utc>::from_utc(
+                        NaiveDateTime::from_timestamp_opt(x.seconds_since_unix_epoch.into(), 0)?,
                         Utc,
-                    )
+                    ))
                 }) {
-                    Ok(i) => i,
-                    Err(_) => return None,
+                    Ok(Some(i)) => i,
+                    _ => return None,
                 },
                 hash: i.id.to_string(),
                 author_email: author.email.to_string(),
@@ -575,6 +594,13 @@ fn find_function_in_files_with_commit(
         find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
     })
     .collect()
+}
+
+fn ends_with_cmp_no_case(filename: &str, file_ext: &str) -> bool {
+    let filename = std::path::Path::new(filename);
+    filename
+        .extension()
+        .map_or(false, |ext| ext.eq_ignore_ascii_case(file_ext))
 }
 
 trait UnwrapToError<T> {
@@ -688,7 +714,7 @@ mod tests {
     }
 
     #[test]
-    fn tet_date() {
+    fn test_date() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
@@ -708,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    fn expensive_tes() {
+    fn expensive_test() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
@@ -721,10 +747,15 @@ mod tests {
         match &output {
             Ok(functions) => {
                 println!("{functions}");
-                functions.get_commit().files.iter().for_each(|file| {
-                    println!("file: {}", file.get_file_name());
-                    println!("{file}");
-                });
+                functions
+                    .get_commit()
+                    .unwrap()
+                    .files
+                    .iter()
+                    .for_each(|file| {
+                        println!("file: {}", file.get_file_name());
+                        println!("{file}");
+                    });
             }
             Err(e) => println!("{e}"),
         }
@@ -732,15 +763,12 @@ mod tests {
     }
 
     #[test]
-    fn python() {
+    fn python_whole() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Relative("src/test_functions.py".to_string()),
-            &Filter::DateRange(
-                "03 Oct 2022 11:27:23 -0400".to_owned(),
-                "04 Oct 2022 23:45:52 +0000".to_owned(),
-            ),
+            &Filter::None,
             &languages::Language::Python,
         );
         let after = Utc::now() - now;
@@ -753,8 +781,32 @@ mod tests {
         }
         assert!(output.is_ok());
         let output = output.unwrap();
-        let commit = output.get_commit();
-        let file = commit.get_file();
+        let commit = output.get_commit().unwrap();
+        let file = commit.get_file().unwrap();
+        let _functions = file.get_functions();
+    }
+
+    #[test]
+    fn ruby_whole() {
+        let now = Utc::now();
+        let output = get_function_history(
+            "empty_test",
+            &FileFilterType::Relative("src/test_functions.rb".to_string()),
+            &Filter::None,
+            &languages::Language::Ruby,
+        );
+        let after = Utc::now() - now;
+        println!("time taken: {}", after.num_seconds());
+        match &output {
+            Ok(functions) => {
+                println!("{functions}");
+            }
+            Err(e) => println!("{e}"),
+        }
+        assert!(output.is_ok());
+        let output = output.unwrap();
+        let commit = output.get_commit().unwrap();
+        let file = commit.get_file().unwrap();
         let _functions = file.get_functions();
     }
 
@@ -764,7 +816,7 @@ mod tests {
     //     let now = Utc::now();
     //     let output = get_function_history(
     //         "empty_test",
-    //         &FileFilterType::Relative("src/test_functions.c".to_string()),
+    //         &FileFilterType::Relative("src/test_functionsc".to_string()),
     //         &Filter::DateRange(
     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
     //             "05 Oct 2022 23:45:52 +0000".to_owned(),
@@ -781,10 +833,8 @@ mod tests {
     // }
     #[test]
     #[cfg(feature = "unstable")]
-    fn go() {
+    fn go_whole() {
         let now = Utc::now();
-        // sleep(Duration::from_secs(2));
-        println!("go STARTING");
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Relative("src/test_functions.go".to_string()),

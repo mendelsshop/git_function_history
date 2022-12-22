@@ -86,6 +86,7 @@ impl MyEguiApp {
                 commit.get_metadata()["file"]
             )));
         });
+        let file = commit.get_file().map(|x| x.to_string()).unwrap_or_else(|| "error occured could not retrieve file please file a bug report  to https://github.com/mendelsshop/git_function_history/issues".to_string());
         match commit.get_move_direction() {
             Directions::None => {
                 egui::CentralPanel::default().show(ctx, |ui| {
@@ -94,7 +95,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
             }
@@ -115,7 +116,7 @@ impl MyEguiApp {
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
-                        .show(ui, |ui| ui.add(Label::new(commit.get_file().to_string())));
+                        .show(ui, |ui| ui.add(Label::new(file)));
                 });
                 if resp.clicked() {
                     commit.move_forward();
@@ -139,7 +140,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
                 if resp.clicked() {
@@ -173,7 +174,7 @@ impl MyEguiApp {
                         .max_width(f32::INFINITY)
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            ui.add(Label::new(commit.get_file().to_string()));
+                            ui.add(Label::new(file));
                         });
                 });
                 if l_resp.clicked() {
@@ -207,8 +208,14 @@ impl MyEguiApp {
                     Vec2::new(ui.available_width() - max, 2.0),
                     Label::new(format!(
                         "{}\n{}",
-                        history.get_metadata()["commit hash"],
-                        history.get_metadata()["date"]
+                        history
+                            .get_metadata()
+                            .get("commit hash")
+                            .map_or("could not retrieve commit hash", |x| x.as_str()),
+                        history
+                            .get_metadata()
+                            .get("date")
+                            .map_or("could not retieve date", |x| x.as_str()),
                     )),
                 );
 
@@ -235,7 +242,13 @@ impl MyEguiApp {
                 }
             });
         });
-        Self::draw_commit(history.get_mut_commit(), ctx, false);
+        if let Some(x) = history.get_mut_commit() {
+            Self::draw_commit(x, ctx, false)
+        } else {
+            TopBottomPanel::top("no_commit_found").show(ctx, |ui| {
+                ui.add(Label::new("no commit found"));
+            });
+        }
     }
 }
 
@@ -263,17 +276,17 @@ impl eframe::App for MyEguiApp {
                             }
                             Status::Ok(a) => match a {
                                 Some(a) => {
-                                    ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {}", a));
+                                    ui.colored_label(Color32::LIGHT_GREEN, format!("Ok: {a}"));
                                 }
                                 None => {
                                     ui.colored_label(Color32::GREEN, "Ready");
                                 }
                             },
                             Status::Warning(a) => {
-                                ui.colored_label(Color32::LIGHT_RED, format!("Warn: {}", a));
+                                ui.colored_label(Color32::LIGHT_RED, format!("Warn: {a}"));
                             }
                             Status::Error(a) => {
-                                ui.colored_label(Color32::LIGHT_RED, format!("Error: {}", a));
+                                ui.colored_label(Color32::LIGHT_RED, format!("Error: {a}"));
                             }
                         }
                     });
@@ -466,7 +479,7 @@ impl eframe::App for MyEguiApp {
                                                                 Ok(x) => x,
                                                                 Err(e) => {
                                                                     self.status = Status::Error(
-                                                                        format!("{}", e),
+                                                                        format!("{e}"),
                                                                     );
                                                                     return;
                                                                 }
@@ -475,7 +488,7 @@ impl eframe::App for MyEguiApp {
                                                                 Ok(x) => x,
                                                                 Err(e) => {
                                                                     self.status = Status::Error(
-                                                                        format!("{}", e),
+                                                                        format!("{e}"),
                                                                     );
                                                                     return;
                                                                 }

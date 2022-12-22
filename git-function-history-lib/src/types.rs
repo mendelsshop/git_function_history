@@ -91,6 +91,18 @@ impl FileTrait for FileType {
             Self::Ruby(file) => file.get_current(),
         }
     }
+
+    fn get_language(&self) -> crate::Language {
+        match self {
+            Self::Rust(file) => file.get_language(),
+            Self::Python(file) => file.get_language(),
+            // #[cfg(feature = "c_lang")]
+            // Self::C(file) => file.get_language(),
+            #[cfg(feature = "unstable")]
+            Self::Go(file) => file.get_language(),
+            Self::Ruby(file) => file.get_language(),
+        }
+    }
 }
 
 impl fmt::Display for FileType {
@@ -121,6 +133,10 @@ pub struct Commit {
 
 impl Commit {
     /// Create a new `Commit` with the given `commit_hash`, functions, and date.
+    ///
+    /// # Errors
+    ///
+    /// will return `Err` if it cannot parse the date provided.
     pub fn new(
         commit_hash: &str,
         files: Vec<FileType>,
@@ -128,17 +144,17 @@ impl Commit {
         author: &str,
         email: &str,
         message: &str,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
             commit_hash: commit_hash.to_string(),
             files,
-            date: DateTime::parse_from_rfc2822(date).expect("Failed to parse date"),
+            date: DateTime::parse_from_rfc2822(date)?,
             current_pos: 0,
             current_iter_pos: 0,
             author: author.to_string(),
             email: email.to_string(),
             message: message.to_string(),
-        }
+        })
     }
 
     /// sets the current file to the next file if possible
@@ -165,19 +181,19 @@ impl Commit {
         map.insert("date".to_string(), self.date.to_rfc2822());
         map.insert(
             "file".to_string(),
-            self.files[self.current_pos].get_file_name(),
+            self.files.get(self.current_pos).map_or("error occured, could not get filename, no file found\nfile a bug to https://github.com/mendelsshop/git_function_history/issues".to_string(), FileTrait::get_file_name),
         );
         map
     }
 
     /// returns the current file
-    pub fn get_file(&self) -> &FileType {
-        &self.files[self.current_pos]
+    pub fn get_file(&self) -> Option<&FileType> {
+        self.files.get(self.current_pos)
     }
 
     /// returns the current file (mutable)
-    pub fn get_file_mut(&mut self) -> &mut FileType {
-        &mut self.files[self.current_pos]
+    pub fn get_file_mut(&mut self) -> Option<&mut FileType> {
+        self.files.get_mut(self.current_pos)
     }
 
     /// tells you in which directions you can move through the files in the commit
@@ -193,6 +209,10 @@ impl Commit {
     /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
     ///
     /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
+    ///
+    /// # Errors
+    ///
+    /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         match filter {
             Filter::FileAbsolute(_)
@@ -265,7 +285,14 @@ impl Iterator for Commit {
 
 impl Display for Commit {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.files[self.current_pos])?;
+        writeln!(
+            f,
+            "{}",
+            match self.files.get(self.current_pos) {
+                Some(file) => file,
+                None => return Err(fmt::Error),
+            }
+        )?;
         Ok(())
     }
 }
@@ -299,49 +326,61 @@ impl FunctionHistory {
     }
 
     /// this will move to the next commit if possible
-    pub fn move_forward(&mut self) {
+    pub fn move_forward(&mut self) -> Option<()> {
         if self.current_pos >= self.commit_history.len() - 1 {
-            return;
+            return None;
         }
         self.current_pos += 1;
-        self.commit_history[self.current_pos].current_iter_pos = 0;
-        self.commit_history[self.current_pos].current_pos = 0;
+        self.commit_history
+            .get_mut(self.current_pos)?
+            .current_iter_pos = 0;
+        self.commit_history.get_mut(self.current_pos)?.current_pos = 0;
+        Some(())
     }
 
     /// this will move to the previous commit if possible
-    pub fn move_back(&mut self) {
+    pub fn move_back(&mut self) -> Option<()> {
         if self.current_pos == 0 {
-            return;
+            return None;
         }
         self.current_pos -= 1;
-        self.commit_history[self.current_pos].current_iter_pos = 0;
-        self.commit_history[self.current_pos].current_pos = 0;
+        self.commit_history
+            .get_mut(self.current_pos)?
+            .current_iter_pos = 0;
+        self.commit_history.get_mut(self.current_pos)?.current_pos = 0;
+        Some(())
     }
 
     /// this will move to the next file in the current commit if possible
     pub fn move_forward_file(&mut self) {
-        self.commit_history[self.current_pos].move_forward();
+        self.commit_history
+            .get_mut(self.current_pos)
+            .map(Commit::move_forward);
     }
 
     /// this will move to the previous file in the current commit if possible
     pub fn move_back_file(&mut self) {
-        self.commit_history[self.current_pos].move_back();
+        self.commit_history
+            .get_mut(self.current_pos)
+            .map(Commit::move_back);
     }
 
     /// this returns some metadata about the current commit
     /// including the `commit hash`, `date`, and `file`
     pub fn get_metadata(&self) -> HashMap<String, String> {
-        self.commit_history[self.current_pos].get_metadata()
+        self.commit_history
+            .get(self.current_pos)
+            .map_or_else(HashMap::new, Commit::get_metadata)
     }
 
     /// returns a mutable reference to the current commit
-    pub fn get_mut_commit(&mut self) -> &mut Commit {
-        &mut self.commit_history[self.current_pos]
+    pub fn get_mut_commit(&mut self) -> Option<&mut Commit> {
+        self.commit_history.get_mut(self.current_pos)
     }
 
     /// returns a reference to the current commit
-    pub fn get_commit(&self) -> &Commit {
-        &self.commit_history[self.current_pos]
+    pub fn get_commit(&self) -> Option<&Commit> {
+        self.commit_history.get(self.current_pos)
     }
 
     /// returns the directions in which ways you can move through the commit history
@@ -356,7 +395,9 @@ impl FunctionHistory {
 
     /// tells you in which directions you can move through the files in the current commit
     pub fn get_commit_move_direction(&self) -> Directions {
-        self.commit_history[self.current_pos].get_move_direction()
+        self.commit_history
+            .get(self.current_pos)
+            .map_or(Directions::None, Commit::get_move_direction)
     }
 
     /// returns a new `FunctionHistory` by filtering the current one by the filter specified (does not modify the current one).
@@ -370,6 +411,10 @@ impl FunctionHistory {
     ///
     /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// returns `Err` if no files or commits are match the filter specified
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
@@ -398,14 +443,8 @@ impl FunctionHistory {
                     }
                 }
                 Filter::DateRange(start, end) => {
-                    let start = match DateTime::parse_from_rfc2822(start) {
-                        Ok(date) => date,
-                        Err(_) => return None,
-                    };
-                    let end = match DateTime::parse_from_rfc2822(end) {
-                        Ok(date) => date,
-                        Err(_) => return None,
-                    };
+                    let Ok(start) = DateTime::parse_from_rfc2822(start) else { return None };
+                    let Ok(end) = DateTime::parse_from_rfc2822(end) else { return None };
                     if f.date >= start || f.date <= end {
                         Some(f.clone())
                     } else {
@@ -448,7 +487,18 @@ impl FunctionHistory {
         })
     }
 }
-// TODO: add docs
+
+/// Macro to filter a the whole git history, a singe commit, or a file.
+///
+/// All variants take the thing to be filtered as the first argument.
+///
+/// If you just want to pass in a filter of type `Filter` pass in as the second argument the filter.
+///
+/// if you just want to pass in a `LanguageFilter` pass in as the second argument the filter and the final argument literal such as 5 or 'a' or "a".
+/// This is just to differentiate between the first two variants of the macro.
+///
+/// Finally, if you just want to pass in a specific `LanguageFilter` like `RustFilter` pass in as the second argument the filter
+/// and the 3rd argument should the variant of `LanguageFilter` such as `Rust`
 #[macro_export]
 macro_rules! filter_by {
     // option 1: takes a filter
@@ -460,15 +510,22 @@ macro_rules! filter_by {
         $self.filter_by(&Filter::PLFilter($pl_filter))
     };
     // option 3: takes a language specific filter ie RustFilter and a language ie Rust
-    ($self:expr, $rust_filter:expr, $language:ident) => {{
+    ($self:expr, $lang_filter:expr, $language:ident) => {{
         use $crate::languages::LanguageFilter;
-        $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($rust_filter)))
+        $self.filter_by(&Filter::PLFilter(LanguageFilter::$language($lang_filter)))
     }};
 }
 
 impl Display for FunctionHistory {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.commit_history[self.current_pos])?;
+        writeln!(
+            f,
+            "{}",
+            self.commit_history.get(self.current_pos).map_or(
+                "could not retrieve commit please file a bug".to_string(),
+                ToString::to_string
+            )
+        )?;
         Ok(())
     }
 }

@@ -5,7 +5,7 @@ use ra_ap_syntax::{
     AstNode, SourceFile, SyntaxKind,
 };
 
-use crate::impl_function_trait;
+use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
 
@@ -24,6 +24,7 @@ pub struct RustFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -48,6 +49,8 @@ impl RustFunction {
 }
 
 impl fmt::Display for RustFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Display` for `RustFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.block {
             None => {}
@@ -62,7 +65,7 @@ impl fmt::Display for RustFunction {
         }
         match &self.block {
             None => {}
-            Some(block) => write!(f, "\n...{}", block.bottom)?,
+            Some(block) => write!(f, "\n...\n{}", block.bottom)?,
         };
         Ok(())
     }
@@ -82,6 +85,7 @@ pub struct RustParentFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -136,6 +140,7 @@ pub struct Block {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The blocks atrributes
     pub(crate) attributes: Vec<String>,
@@ -217,7 +222,7 @@ pub(crate) fn find_function_in_file(
         .collect::<HashMap<usize, &usize>>();
     let mut hist = Vec::new();
     for f in &functions {
-        let stuff = get_stuff(f, file_contents, &map);
+        let stuff = get_stuff(f, file_contents, &map).unwrap_to_error("could not get endline")?;
         let generics = get_genrerics_and_lifetime(f);
         let mut parent = f.syntax().parent();
         let mut parent_fn: Vec<RustParentFunction> = Vec::new();
@@ -230,7 +235,9 @@ pub(crate) fn find_function_in_file(
                 || {
                     if let Some(block) = ast::Impl::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, file_contents, &map);
+                        let Some(stuff) = get_stuff(&block, file_contents, &map) else {
+                            return;
+                        };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.self_ty().map(|ty| ty.to_string()),
@@ -245,7 +252,9 @@ pub(crate) fn find_function_in_file(
                         });
                     } else if let Some(block) = ast::Trait::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
-                        let stuff = get_stuff(&block, file_contents, &map);
+                        let Some(stuff) = get_stuff(&block, file_contents, &map) else {
+                            return;
+                        };
                         let generics = get_genrerics_and_lifetime(&block);
                         parent_block = Some(Block {
                             name: block.name().map(|ty| ty.to_string()),
@@ -261,28 +270,33 @@ pub(crate) fn find_function_in_file(
                     } else if let Some(block) = ast::ExternBlock::cast(p.clone()) {
                         let attr = get_doc_comments_and_attrs(&block);
                         let stuff = get_stuff(&block, file_contents, &map);
-                        parent_block = Some(Block {
-                            name: block.abi().map(|ty| ty.to_string()),
-                            lifetime: Vec::new(),
-                            generics: Vec::new(),
-                            top: stuff.1 .0,
-                            bottom: stuff.1 .1,
-                            block_type: BlockType::Extern,
-                            lines: (stuff.0 .0, stuff.0 .1),
-                            attributes: attr.1,
-                            doc_comments: attr.0,
-                        });
+                        if let Some(stuff) = stuff {
+                            parent_block = Some(Block {
+                                name: None,
+                                lifetime: Vec::new(),
+                                generics: Vec::new(),
+                                top: stuff.1 .0,
+                                bottom: stuff.1 .1,
+                                block_type: BlockType::Extern,
+                                lines: (stuff.0 .0, stuff.0 .1),
+                                attributes: attr.1,
+                                doc_comments: attr.0,
+                            });
+                        }
                     }
                 },
-                |function| {
-                    let stuff = get_stuff(&function, file_contents, &map);
+                |function: ast::Fn| {
+                    let Some(stuff) = get_stuff(&function, file_contents, &map) else {
+                        return;
+                    };
                     let generics = get_genrerics_and_lifetime(&function);
                     let attr = get_doc_comments_and_attrs(&function);
+                    let name = match function.name() {
+                        Some(name) => name.to_string(),
+                        None => return,
+                    };
                     parent_fn.push(RustParentFunction {
-                        name: function
-                            .name()
-                            .expect("could not retrieve function name")
-                            .to_string(),
+                        name,
                         lifetime: generics.1,
                         generics: generics.0,
                         top: stuff.1 .0,
@@ -306,25 +320,24 @@ pub(crate) fn find_function_in_file(
             parent = p.parent();
         }
         let attr = get_doc_comments_and_attrs(f);
-        let mut start = stuff.0 .0;
-        let bb = match map[&start] {
+        let start_line = stuff.0 .0;
+        let start_idx = match map
+            .get(&(start_line - 1))
+            .unwrap_to_error("could not get start index for function based off line number")?
+        {
             0 => 0,
-            x => x + 1,
+            x => *x + 1,
         };
-        let contents: String = file_contents[bb..f.syntax().text_range().end().into()]
-            .to_string()
-            .lines()
-            .map(|l| {
-                start += 1;
-                format!("{start}: {l}\n",)
-            })
-            .collect();
-        let body = contents.trim_end().to_string();
+        let contents: String = file_contents
+            .get(start_idx..f.syntax().text_range().end().into())
+            .unwrap_to_error("could not function text based off of start and stop indexes")?
+            .to_string();
+        let body = super::make_lined(&contents, start_line);
         let function = RustFunction {
-            name: f
-                .name()
-                .expect("could not retrieve function name")
-                .to_string(),
+            name: match f.name() {
+                Some(name) => name.to_string(),
+                None => continue,
+            },
             body,
             block: parent_block,
             function: parent_fn,
@@ -366,78 +379,47 @@ fn get_stuff<T: AstNode>(
     block: &T,
     file: &str,
     map: &HashMap<usize, &usize>,
-) -> ((usize, usize), (String, String), (usize, usize)) {
+) -> Option<((usize, usize), (String, String))> {
     let start = block.syntax().text_range().start();
-    let end = block.syntax().text_range().end();
+    let end: usize = block.syntax().text_range().end().into();
     // get the start and end lines
     let mut found_start_brace = 0;
-    let mut end_line = 0;
-    let mut starts = 0;
-    let mut start_line = 0;
-    // TODO: combine these loops
+    let index = super::turn_into_index(file).ok()?;
+    let end_line = super::get_from_index(&index, end - 1)?;
+    let start_line = super::get_from_index(&index, start.into())?;
     for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(start) < i {
-                starts = i;
-                break;
-            }
-            start_line += 1;
-        }
-    }
-    for (i, line) in file.chars().enumerate() {
-        if line == '\n' {
-            if usize::from(end) < i {
-                break;
-            }
-            end_line += 1;
-        }
         if line == '{' && found_start_brace == 0 && usize::from(start) < i {
             found_start_brace = i;
+            break;
         }
     }
     if found_start_brace == 0 {
         found_start_brace = usize::from(start);
     }
-    let start = map[&start_line];
-    let mut start_lines = start_line;
-    let mut content: String = file[(*start)..=found_start_brace].to_string();
-    if &content[..1] == "\n" {
-        content = content[1..].to_string();
+    let start_idx = map.get(&(start_line - 1))?;
+    let start_lines = start_line;
+    let mut content: String = file.get((**start_idx)..=found_start_brace)?.to_string();
+    if content.get(..1)? == "\n" {
+        content = content.get(1..)?.to_string();
     }
-    (
+    Some((
         (start_line, end_line),
         (
-            content
-                .lines()
-                .map(|l| {
-                    start_lines += 1;
-                    format!("{start_lines}: {l}\n",)
-                })
-                .collect::<String>()
-                .trim_end()
-                .to_string(),
-            format!(
-                "\n{}: {}",
-                end_line,
-                file.lines()
-                    .nth(if end_line == file.lines().count() - 1 {
-                        end_line
-                    } else {
-                        end_line - 1
-                    })
-                    .unwrap_or("")
-            ),
+            super::make_lined(&content, start_lines),
+            super::make_lined(file.lines().nth(end_line - 1).unwrap_or("}"), end_line),
         ),
-        (starts, end_line),
-    )
+    ))
 }
 #[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
-    // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
+    // TODO: map trait bounds from where clauses to the generics so it will return a (HashMap<String, Vec<String>>, HashMap<String, Vec<String>>)
+    // the key of each hashmap will be the name of the generic/lifetime and the values will be the trait bounds
+    // and also use type_or_const_params
     block.generic_param_list().map_or_else(
         || (vec![], vec![]),
         |gt| {
             (
+                // gt.
                 gt.generic_params()
                     .map(|gt| gt.to_string())
                     .collect::<Vec<String>>(),
@@ -589,15 +571,26 @@ impl RustFilter {
 }
 
 impl FunctionTrait for RustFunction {
-    fn get_tops(&self) -> Vec<String> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         let mut tops = Vec::new();
         self.block.as_ref().map_or((), |block| {
-            tops.push(block.top.clone());
+            tops.push((block.top.clone(), block.lines.0));
         });
         for parent in &self.function {
-            tops.push(parent.top.clone());
+            tops.push((parent.top.clone(), parent.lines.0));
         }
         tops
+    }
+
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
+        let mut bottoms = Vec::new();
+        self.block.as_ref().map_or((), |block| {
+            bottoms.push((block.bottom.clone(), block.lines.1));
+        });
+        for parent in &self.function {
+            bottoms.push((parent.bottom.clone(), parent.lines.1));
+        }
+        bottoms
     }
 
     fn get_total_lines(&self) -> (usize, usize) {
@@ -615,17 +608,6 @@ impl FunctionTrait for RustFunction {
             },
             |block| (block.lines.0, block.lines.1),
         )
-    }
-
-    fn get_bottoms(&self) -> Vec<String> {
-        let mut bottoms = Vec::new();
-        self.block.as_ref().map_or((), |block| {
-            bottoms.push(block.bottom.clone());
-        });
-        for parent in &self.function {
-            bottoms.push(parent.bottom.clone());
-        }
-        bottoms
     }
 
     impl_function_trait!(RustFunction);

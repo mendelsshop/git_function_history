@@ -1,6 +1,5 @@
 use rustpython_parser::{
-    ast::{Located, StatementType},
-    location::Location,
+    ast::{Arguments, ExprKind, Located, StmtKind},
     parser,
 };
 use std::collections::VecDeque;
@@ -9,78 +8,93 @@ use std::{collections::HashMap, fmt};
 use crate::{impl_function_trait, UnwrapToError};
 
 use super::FunctionTrait;
-// #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-// pub struct Range {
-//     pub location: Location,
-//     pub end_location: Location,
-// }
-
-// impl Range {
-//     pub fn from_located<T>(located: &Located<T>) -> Self {
-//         Range {
-//             location: located.location,
-//             end_location: located
-//                 .end_location
-//                 .expect("AST nodes should have end_location."),
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone)]
+/// A python function
 pub struct PythonFunction {
     pub(crate) name: String,
     pub(crate) body: String,
-    // parameters: Params,
-    pub(crate) parameters: Vec<String>,
+    pub(crate) parameters: PythonParams,
     pub(crate) parent: Vec<PythonParentFunction>,
-    pub(crate) decorators: Vec<String>,
-    pub(crate) class: Option<Class>,
+    pub(crate) decorators: Vec<(usize, String)>,
+    pub(crate) class: Vec<PythonClass>,
     pub(crate) lines: (usize, usize),
     pub(crate) returns: Option<String>,
 }
 
 impl fmt::Display for PythonFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Displa`y for `PythonFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ref class) = self.class {
-            write!(f, "{}", class.top)?;
+        for class in &self.class {
+            for decorator in &class.decorators {
+                write!(f, "{}\n...\n", decorator.1)?;
+            }
+            write!(f, "{}\n...\n", class.top)?;
         }
         for parent in &self.parent {
-            write!(f, "{}", parent.top)?;
+            for decorator in &parent.decorators {
+                write!(f, "{}\n...\n", decorator.1)?;
+            }
+            write!(f, "{}\n...\n", parent.top)?;
         }
-        write!(f, "{}", self.body)?;
-        for parent in &self.parent {
-            write!(f, "{}", parent.bottom)?;
+        for decorator in &self.decorators {
+            write!(f, "{}\n...\n", decorator.1)?;
         }
-        self.class
-            .as_ref()
-            .map_or(Ok(()), |class| write!(f, "{}", class.bottom))
+        write!(f, "{}", self.body)
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct Params {
-//     args: Vec<String>,
-//     kwargs: Vec<String>,
-//     varargs: Option<String>,
-//     varkwargs: Option<String>,
-// }
 #[derive(Debug, Clone)]
-pub struct Class {
+/// A single parameter of a python function
+pub struct Param {
+    /// The name of the parameter
+    pub name: String,
+    /// The optional type of the parameter
+    pub r#type: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+/// The parameters of a python function
+/// refer to python docs for more info
+/// note: currently we don't save default values
+pub struct PythonParams {
+    pub args: Vec<Param>,
+    pub kwargs: Vec<Param>,
+    pub posonlyargs: Vec<Param>,
+    pub varargs: Option<Param>,
+    pub varkwargs: Option<Param>,
+}
+
+impl PythonParams {
+    pub fn arg_has_name(&self, name: &str) -> bool {
+        self.args.iter().any(|arg| arg.name == name)
+            || self.kwargs.iter().any(|arg| arg.name == name)
+            || self.posonlyargs.iter().any(|arg| arg.name == name)
+            || self.varargs.as_ref().map_or(false, |arg| arg.name == name)
+            || self
+                .varkwargs
+                .as_ref()
+                .map_or(false, |arg| arg.name == name)
+    }
+}
+
+#[derive(Debug, Clone)]
+/// A python class
+pub struct PythonClass {
     pub(crate) name: String,
     pub(crate) top: String,
-    pub(crate) bottom: String,
     pub(crate) lines: (usize, usize),
-    pub(crate) decorators: Vec<String>,
+    pub(crate) decorators: Vec<(usize, String)>,
 }
 #[derive(Debug, Clone)]
+/// A python function that is a parent of another python function, we don't keep the body of the function
 pub struct PythonParentFunction {
     pub(crate) name: String,
     pub(crate) top: String,
-    pub(crate) bottom: String,
     pub(crate) lines: (usize, usize),
-    pub(crate) parameters: Vec<String>,
-    pub(crate) decorators: Vec<String>,
-    // pub(crate) class: Option<String>,
+    pub(crate) parameters: PythonParams,
+    pub(crate) decorators: Vec<(usize, String)>,
     pub(crate) returns: Option<String>,
 }
 
@@ -88,23 +102,10 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
-    let ast = parser::parse_program(file_contents)?;
+    let ast = parser::parse_program(file_contents, "<stdin>")?;
     let mut functions = vec![];
-    let mut last = None;
-
-    if ast.statements.is_empty() {
+    if ast.is_empty() {
         return Err("No code found")?;
-    }
-    let mut new_ast = VecDeque::from(ast.statements);
-    loop {
-        if new_ast.is_empty() {
-            break;
-        }
-        let stmt = new_ast
-            .pop_front()
-            .unwrap_to_error("could not get statement")?;
-        let next = new_ast.front();
-        get_functions(stmt, next, &mut functions, name, &mut last, &mut None);
     }
     let mut starts = file_contents
         .match_indices('\n')
@@ -116,57 +117,128 @@ pub(crate) fn find_function_in_file(
         .iter()
         .enumerate()
         .collect::<HashMap<usize, &usize>>();
+    get_functions_recurisve(
+        ast,
+        &map,
+        &mut functions,
+        &mut Vec::new(),
+        &mut Vec::new(),
+        name,
+    );
     let mut new = Vec::new();
-    for mut func in functions {
-        if func.1 .0 == func.1 .1 {
-            // get the last line of the file
-            let last_line = file_contents
-                .lines()
-                .last()
-                .unwrap_to_error("could not get last line")?;
-            let row = file_contents.lines().count();
-            let column = last_line.len();
-            let end = Location::new(row, column);
-            func.1 .1 = end;
-        }
-        // get the function body based on the location
-        let start = func.1 .0.row();
-        let end = func.1 .1.row();
-        let start = map[&(start - 1)];
-
-        let end = map[&(end - 1)];
-        if let StatementType::FunctionDef {
+    for func in functions {
+        let start = func.0.location.row();
+        let end = func
+            .0
+            .end_location
+            .unwrap_to_error("no end location for this function")?
+            .row();
+        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end))) else { continue };
+        if let StmtKind::FunctionDef {
             name,
             args,
             decorator_list,
             returns,
-            is_async: _,
             ..
-        } = func.0
+        }
+        | StmtKind::AsyncFunctionDef {
+            name,
+            args,
+            decorator_list,
+            returns,
+            ..
+        } = func.0.node
         {
-            let mut start_s = func.1 .0.row();
-            let body = file_contents[*start..*end]
-                .trim_start_matches('\n')
-                .to_string()
-                .lines()
-                .map(|l| {
-                    let t = format!("{start_s}: {l}\n",);
-                    start_s += 1;
-                    t
+            let start_line = func.0.location.row();
+            let body = match file_contents.get(**starts..**ends) {
+                Some(str) => str,
+                None => continue,
+            }
+            .trim_start_matches('\n');
+            let body = super::make_lined(body, start_line);
+            let class = func
+                .1
+                .iter()
+                .filter_map(|class| {
+                    if let StmtKind::ClassDef {
+                        ref name,
+                        ref decorator_list,
+                        ..
+                    } = class.node
+                    {
+                        let start = class.location.row();
+                        if let Some(end) = class.end_location {
+                            let end = end.row();
+                            let top = match file_contents.lines().nth(start - 1) {
+                                Some(l) => l.trim_end().to_string(),
+                                None => return None,
+                            };
+                            let top = format!("{start}: {top}");
+                            let decorators = get_decorator_list_new(decorator_list, file_contents);
+                            return Some(PythonClass {
+                                name: name.to_string(),
+                                top,
+                                lines: (start, end),
+                                decorators,
+                            });
+                        }
+                    }
+                    None
                 })
-                .collect::<String>();
+                .collect::<Vec<PythonClass>>();
+            let parent = func
+                .2
+                .iter()
+                .filter_map(|parent| {
+                    if let StmtKind::FunctionDef {
+                        ref name,
+                        ref args,
+                        ref decorator_list,
+                        ref returns,
+                        ..
+                    }
+                    | StmtKind::AsyncFunctionDef {
+                        ref name,
+                        ref args,
+                        ref decorator_list,
+                        ref returns,
+                        ..
+                    } = parent.node
+                    {
+                        let start = parent.location.row();
+                        if let Some(end) = parent.end_location {
+                            let end = end.row();
+                            let top = match file_contents.lines().nth(start - 1) {
+                                Some(l) => l.trim_end().to_string(),
+                                None => return None,
+                            };
+                            let top = format!("{start}: {top}");
+                            let decorators = get_decorator_list_new(decorator_list, file_contents);
+                            let parameters = get_args(*args.clone());
+                            let returns = get_return_type(returns.clone());
+                            return Some(PythonParentFunction {
+                                name: name.to_string(),
+                                top,
+                                lines: (start, end),
+                                parameters,
+                                decorators,
+                                returns,
+                            });
+                        }
+                    }
+                    None
+                })
+                .collect::<Vec<PythonParentFunction>>();
+
             let new_func = PythonFunction {
                 name: name.to_string(),
-                returns: returns.as_ref().map(|x| x.name().to_string()),
-                parameters: args.args.iter().map(|x| x.arg.to_string()).collect(),
-                parent: vec![],
-                decorators: decorator_list
-                    .iter()
-                    .map(|x| x.name().to_string())
-                    .collect(),
-                class: None,
+                parameters: get_args(*args),
+                parent,
+                decorators: get_decorator_list_new(&decorator_list, file_contents),
+                returns: get_return_type(returns),
+                class,
                 body,
-                lines: (*start, *end),
+                lines: (start, end),
             };
             new.push(new_func);
         }
@@ -177,150 +249,268 @@ pub(crate) fn find_function_in_file(
     Ok(new)
 }
 #[inline]
-fn fun_name1(
-    body: Vec<Located<StatementType>>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
+fn get_functions_recurisve(
+    body: Vec<Located<StmtKind>>,
+    map: &HashMap<usize, &usize>,
+    functions: &mut Vec<(
+        Located<StmtKind>,
+        Vec<Located<StmtKind>>,
+        Vec<Located<StmtKind>>,
+    )>,
+    current_parent: &mut Vec<Located<StmtKind>>,
+    current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
-    last_found_fn: &mut Option<(StatementType, Location)>,
-    other_last_found_fn: &mut Option<(StatementType, Location)>,
 ) {
     let mut new_ast = VecDeque::from(body);
     loop {
         if new_ast.is_empty() {
             break;
         }
-        let stmt = new_ast.pop_front().expect("could not get statement");
-        let next = new_ast.front();
+        let stmt = new_ast.pop_front().expect("No stmt found edge case shouldn't happen please file a bug to https://github.com/mendelsshop/git_function_history/issues");
         get_functions(
             stmt,
-            next,
+            map,
             functions,
+            current_parent,
+            current_class,
             lookup_name,
-            last_found_fn,
-            other_last_found_fn,
         );
     }
 }
-#[inline]
-fn fun_name(
-    other_last_found_fn: &mut Option<(StatementType, Location)>,
-    last_found_fn: &mut Option<(StatementType, Location)>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
-    stmt: Location,
-) {
-    std::mem::swap(other_last_found_fn, last_found_fn);
-    let mut other = None;
-    std::mem::swap(&mut other, other_last_found_fn);
-    if let Some(body) = other {
-        functions.push((body.0, (body.1, stmt)));
-    }
-}
 
-fn get_functions<'a>(
-    // TODO: get parent functions and classes
-    stmt: Located<StatementType>,
-    next_stmt: Option<&Located<StatementType>>,
-    functions: &mut Vec<(StatementType, (Location, Location))>,
+fn get_functions(
+    stmt: Located<StmtKind>,
+    map: &HashMap<usize, &usize>,
+    functions: &mut Vec<(
+        Located<StmtKind>,
+        Vec<Located<StmtKind>>,
+        Vec<Located<StmtKind>>,
+    )>,
+    current_parent: &mut Vec<Located<StmtKind>>,
+    current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
-    last_found_fn: &'a mut Option<(StatementType, Location)>,
-    other_last_found_fn: &'a mut Option<(StatementType, Location)>,
 ) {
+    let stmt_clone = stmt.clone();
     match stmt.node {
-        StatementType::FunctionDef { ref name, .. } if name == lookup_name => {
-            if let Some(ref mut last) = last_found_fn {
-                let mut new = (stmt.node, stmt.location);
-                std::mem::swap(last, &mut new);
-                functions.push((new.0, (new.1, stmt.location)));
-            } else if next_stmt.is_none() {
-                functions.push((stmt.node, (stmt.location, stmt.location)));
-            } else {
-                *last_found_fn = Some((stmt.node, stmt.location));
-            }
-            // let r = Range::from_located(&stmt);
-            // println!("Found function {} at {:?}", name, r);
-        }
-
-        StatementType::If { body, orelse, .. }
-        | StatementType::While { body, orelse, .. }
-        | StatementType::For { body, orelse, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
-                body,
-                functions,
-                lookup_name,
-                last_found_fn,
-                other_last_found_fn,
-            );
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
+        StmtKind::FunctionDef { ref name, .. } | StmtKind::AsyncFunctionDef { ref name, .. }
+            if name == lookup_name =>
+        {
+            if stmt.end_location.is_some() {
+                functions.push((stmt, current_class.clone(), current_parent.clone()));
             }
         }
-        StatementType::FunctionDef { body, .. }
-        | StatementType::ClassDef { body, .. }
-        | StatementType::With { body, .. } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
+        StmtKind::If { body, orelse, .. }
+        | StmtKind::While { body, orelse, .. }
+        | StmtKind::For { body, orelse, .. }
+        | StmtKind::AsyncFor { body, orelse, .. } => {
+            get_functions_recurisve(
                 body,
+                map,
                 functions,
+                current_parent,
+                current_class,
                 lookup_name,
-                last_found_fn,
-                other_last_found_fn,
+            );
+            get_functions_recurisve(
+                orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
             );
         }
-        StatementType::Try {
+        StmtKind::FunctionDef { body, .. } | StmtKind::AsyncFunctionDef { body, .. } => {
+            current_parent.push(stmt_clone);
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            current_parent.pop();
+        }
+        StmtKind::ClassDef { body, .. } => {
+            current_class.push(stmt_clone);
+            get_functions_recurisve(
+                body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            current_class.pop();
+        }
+        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => get_functions_recurisve(
             body,
-            handlers,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        ),
+        StmtKind::Try {
+            body,
             orelse,
             finalbody,
+            ..
         } => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-            fun_name1(
+            get_functions_recurisve(
                 body,
+                map,
                 functions,
+                current_parent,
+                current_class,
                 lookup_name,
-                last_found_fn,
-                other_last_found_fn,
             );
-            for handler in handlers {
-                fun_name1(
-                    handler.body,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
-
-            if let Some(stmts) = orelse {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
-            if let Some(stmts) = finalbody {
-                fun_name1(
-                    stmts,
-                    functions,
-                    lookup_name,
-                    last_found_fn,
-                    other_last_found_fn,
-                );
-            }
+            get_functions_recurisve(
+                orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                finalbody,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
         }
-        _ => {
-            fun_name(other_last_found_fn, last_found_fn, functions, stmt.location);
-        }
+        _ => {}
     }
 }
+// TODO save arg.defaults & arg.kwdefaults and attempt to map them to the write parameters
+fn get_args(args: Arguments) -> PythonParams {
+    let mut parameters = PythonParams {
+        args: Vec::new(),
+        varargs: None,
+        posonlyargs: Vec::new(),
+        kwargs: Vec::new(),
+        varkwargs: None,
+    };
+    for arg in args.args {
+        parameters.args.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
+    }
+    for arg in args.kwonlyargs {
+        parameters.kwargs.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
+    }
+    if let Some(arg) = args.vararg {
+        parameters.varargs = Some(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
+    }
+    if let Some(arg) = args.kwarg {
+        parameters.varkwargs = Some(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
+    }
+    for arg in args.posonlyargs {
+        parameters.posonlyargs.push(Param {
+            name: arg.node.arg,
+            r#type: arg.node.annotation.and_then(|x| {
+                if let ExprKind::Name { id, .. } = x.node {
+                    Some(id)
+                } else {
+                    None
+                }
+            }),
+        });
+    }
+
+    parameters
+}
+
+fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
+    if let Some(retr) = retr {
+        if let ExprKind::Name { ref id, .. } = retr.node {
+            return Some(id.to_string());
+        }
+    }
+    None
+}
+#[allow(dead_code)]
+// keeping this here just in case
+fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<(usize, String)> {
+    decorator_list
+        .iter()
+        .map(located_expr_to_decorator)
+        .collect::<Vec<(usize, String)>>()
+}
+
+fn located_expr_to_decorator(expr: &Located<ExprKind>) -> (usize, String) {
+    (
+        expr.location.row(),
+        format!(
+            "{}:{}decorator with {}",
+            expr.location.row(),
+            vec![" "; expr.location.column()].join(""),
+            expr.node.name()
+        ),
+    )
+}
+
+fn get_located_expr_line(expr: &Located<ExprKind>, file_contents: &str) -> Option<String> {
+    // does not add line numbers to string
+    file_contents
+        .lines()
+        .nth(expr.location.row() - 1)
+        .map(ToString::to_string)
+}
+
+fn get_decorator_list_new(
+    decorator_list: &[Located<ExprKind>],
+    file_contents: &str,
+) -> Vec<(usize, String)> {
+    decorator_list
+        .iter()
+        .map(|x| {
+            get_located_expr_line(x, file_contents).map_or_else(
+                || located_expr_to_decorator(x),
+                |dec| (x.location.row(), super::make_lined(&dec, x.location.row())),
+            )
+        })
+        .collect::<Vec<(usize, String)>>()
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
@@ -346,28 +536,30 @@ pub enum PythonFilter {
 impl PythonFilter {
     pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
-            Self::InClass(class) => function.class.as_ref().map_or(false, |x| x.name == *class),
+            Self::InClass(class) => function.class.iter().any(|c| c.name == *class),
             Self::HasParentFunction(parent) => function.parent.iter().any(|x| x.name == *parent),
             Self::HasReturnType(return_type) => function
                 .returns
                 .as_ref()
                 .map_or(false, |x| x == return_type),
             Self::HasParameterName(parameter_name) => {
-                function.parameters.iter().any(|x| x == parameter_name)
+                function.parameters.arg_has_name(parameter_name)
             }
-            Self::HasDecorator(decorator) => function.decorators.iter().any(|x| x == decorator),
+            Self::HasDecorator(decorator) => {
+                function.decorators.iter().any(|x| x.1.contains(decorator))
+            }
             Self::HasClasswithDecorator(decorator) => function
                 .class
-                .as_ref()
-                .map_or(false, |x| x.decorators.iter().any(|x| x == decorator)),
+                .iter()
+                .any(|x| x.decorators.iter().any(|y| y.1.contains(decorator))),
             Self::HasParentFunctionwithDecorator(decorator) => function
                 .parent
                 .iter()
-                .any(|x| x.decorators.iter().any(|x| x == decorator)),
+                .any(|x| x.decorators.iter().any(|x| x.1.contains(decorator))),
             Self::HasParentFunctionwithParameterName(parameter_name) => function
                 .parent
                 .iter()
-                .any(|x| x.parameters.iter().any(|x| x == parameter_name)),
+                .any(|x| x.parameters.arg_has_name(parameter_name)),
             Self::HasParentFunctionwithReturnType(return_type) => function
                 .parent
                 .iter()
@@ -377,43 +569,39 @@ impl PythonFilter {
 }
 
 impl FunctionTrait for PythonFunction {
-    fn get_tops(&self) -> Vec<String> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         let mut tops = Vec::new();
-        self.class.as_ref().map_or((), |block| {
-            tops.push(block.top.clone());
-        });
-        for parent in &self.parent {
-            tops.push(parent.top.clone());
+        for class in &self.class {
+            tops.push((class.top.clone(), class.lines.0));
+            for decorator in &class.decorators {
+                tops.push((decorator.1.clone(), decorator.0));
+            }
         }
+        for decorator in &self.decorators {
+            tops.push((decorator.1.clone(), decorator.0));
+        }
+        for parent in &self.parent {
+            tops.push((parent.top.clone(), parent.lines.0));
+            for decorator in &parent.decorators {
+                tops.push((decorator.1.clone(), decorator.0));
+            }
+        }
+        tops.sort_by(|top1, top2| top1.1.cmp(&top2.1));
         tops
     }
 
-    fn get_total_lines(&self) -> (usize, usize) {
-        self.class.as_ref().map_or_else(
-            || {
-                let mut start = self.lines.0;
-                let mut end = self.lines.1;
-                for parent in &self.parent {
-                    if parent.lines.0 < start {
-                        start = parent.lines.0;
-                        end = parent.lines.1;
-                    }
-                }
-                (start, end)
-            },
-            |block| block.lines,
-        )
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
+        Vec::new()
     }
 
-    fn get_bottoms(&self) -> Vec<String> {
-        let mut bottoms = Vec::new();
-        self.class.as_ref().map_or((), |block| {
-            bottoms.push(block.bottom.clone());
-        });
-        for parent in &self.parent {
-            bottoms.push(parent.bottom.clone());
-        }
-        bottoms
+    fn get_total_lines(&self) -> (usize, usize) {
+        // find the first line of the function (could be the parent or the class)
+        self.class
+            .iter()
+            .map(|x| x.lines)
+            .chain(self.parent.iter().map(|x| x.lines))
+            .min()
+            .unwrap_or(self.lines)
     }
     impl_function_trait!(PythonFunction);
 }

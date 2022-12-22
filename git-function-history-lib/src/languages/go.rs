@@ -4,6 +4,7 @@ use std::{collections::HashMap, error::Error, fmt};
 use super::FunctionTrait;
 
 #[derive(Debug, Clone)]
+/// A Go function
 pub struct GoFunction {
     pub(crate) name: String,
     pub(crate) body: String,
@@ -12,10 +13,11 @@ pub struct GoFunction {
     pub(crate) lines: (usize, usize),
 }
 #[derive(Debug, Clone)]
+/// The parameters of a Go function
 pub enum GoParameter {
-    /// type
+    /// type parameter
     Type(Vec<String>),
-    /// (name, type)
+    /// named parameter, still has a type (name, type)
     Named(HashMap<String, String>),
 }
 
@@ -57,11 +59,11 @@ impl fmt::Display for GoFunction {
 impl FunctionTrait for GoFunction {
     impl_function_trait!(GoFunction);
 
-    fn get_bottoms(&self) -> Vec<String> {
+    fn get_tops(&self) -> Vec<(String, usize)> {
         vec![]
     }
 
-    fn get_tops(&self) -> Vec<String> {
+    fn get_bottoms(&self) -> Vec<(String, usize)> {
         vec![]
     }
 
@@ -91,38 +93,26 @@ pub(crate) fn find_function_in_file(
                     if let Some(recv) = func.recv {
                         lines.0 = recv.pos();
                     }
-                    lines.0 = file_contents[..lines.0].rfind("func")?;
-
+                    // FIXME: make sure that func is not commented out
+                    lines.0 = file_contents
+                        .get(..lines.0)
+                        .map_or(lines.0, |c| c.rfind("func").unwrap_or(lines.0));
                     for i in &func.docs {
                         if i.pos < lines.0 {
                             lines.0 = i.pos;
                         }
                     }
-                    let body = file_contents[lines.0..=lines.1].to_string();
-                    let mut start_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > lines.0 {
-                                lines.0 = i.0;
-                                break;
-                            }
-                            start_line += 1;
-                        }
-                    }
-                    let mut end_line = 0;
-                    for i in file_contents.chars().enumerate() {
-                        if i.1 == '\n' {
-                            if i.0 > lines.1 {
-                                lines.1 = i.0;
-                                break;
-                            }
-                            end_line += 1;
-                        }
-                    }
+                    let mut body = file_contents
+                        .get(lines.0..=lines.1)?
+                        .to_string()
+                        .trim_end()
+                        .to_string();
+                    let index = super::turn_into_index(file_contents).ok()?;
+                    lines.1 = super::get_from_index(&index, lines.1)?;
+                    lines.0 = super::get_from_index(&index, lines.0)?;
 
-                    lines.0 = start_line;
-                    lines.1 = end_line;
-
+                    let start = lines.0;
+                    body = super::make_lined(&body, start);
                     // see if the first parameter has a name:
                     let mut parameters = func.typ.params.list.get(0).map_or_else(
                         || GoParameter::Type(vec![]),
@@ -210,10 +200,11 @@ pub(crate) fn find_function_in_file(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GoFilter {
-    // refers to the type of a parameter
+    // refers to the type of a parameter of a function
     HasParameter(String),
-    // refers to the name of a parameter
+    // refers to the name of a parameter of a function
     HasParameterName(String),
+    // refers to the type of the return value of a function
     HasReturnType(String),
 }
 

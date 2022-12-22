@@ -1,5 +1,5 @@
 use std::error::Error;
-
+use std::fmt::Debug;
 pub fn empty_test() {
 
 }
@@ -15,7 +15,7 @@ pub struct Test<a> {
     pub history: Vec<a>,
 }
 
-impl<a>Test<a>  {
+impl<a>Test<a: Debug>  {
     /// empty test
     pub fn empty_test<'a>() {
         println!("empty test");
@@ -27,6 +27,9 @@ impl<a>Test<a>  {
     }
 
     pub fn test_2() {
+        pub fn empty_test() {
+            println!("empty test");
+        }
         println!("empty test");
         // }
     }
@@ -49,7 +52,7 @@ impl<a>Test<a>  {
     }
 }
 
-#[derive(Debug)]
+
 pub trait super_trait {
     fn super_trait_method(&self);
 
@@ -121,16 +124,22 @@ super_trait {
 impl<A> Test2<A,> 
 where A:
 super_trait  + Clone,
-T: super
+A: Debug + Clone
 
 {
-    pub fn empty_test<'a>() {
+    pub fn empty_test<'a>() where 'a: Debug {
         println!("empty test");
     }
 
 }
 
+mod c {
+    extern "C" {
+        pub fn empty_test(t: String);
+    }
+}
 
-extern "C" {
-    pub fn empty_test(t: String);
+
+fn main() {
+    println!("Hello, world!");
 }
