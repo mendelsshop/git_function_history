@@ -24,6 +24,7 @@ pub struct RustFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -48,6 +49,8 @@ impl RustFunction {
 }
 
 impl fmt::Display for RustFunction {
+    /// don't use this for anything other than debugging the output is not guaranteed to be in the right order
+    /// use `fmt::Display` for `RustFile` instead
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.block {
             None => {}
@@ -82,6 +85,7 @@ pub struct RustParentFunction {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The arguments of the function
     pub(crate) arguments: HashMap<String, String>,
@@ -136,6 +140,7 @@ pub struct Block {
     /// The lifetime of the function
     pub(crate) lifetime: Vec<String>,
     /// The generic types of the function
+    /// also includes lifetimes
     pub(crate) generics: Vec<String>,
     /// The blocks atrributes
     pub(crate) attributes: Vec<String>,
@@ -315,13 +320,19 @@ pub(crate) fn find_function_in_file(
             parent = p.parent();
         }
         let attr = get_doc_comments_and_attrs(f);
-        let start = stuff.0 .0;
-        let bb = match map[&(start - 1)] {
+        let start_line = stuff.0 .0;
+        let start_idx = match map
+            .get(&(start_line - 1))
+            .unwrap_to_error("could not get start index for function based off line number")?
+        {
             0 => 0,
-            x => x + 1,
+            x => *x + 1,
         };
-        let contents: String = file_contents[bb..f.syntax().text_range().end().into()].to_string();
-        let body = super::make_lined(&contents, start);
+        let contents: String = file_contents
+            .get(start_idx..f.syntax().text_range().end().into())
+            .unwrap_to_error("could not function text based off of start and stop indexes")?
+            .to_string();
+        let body = super::make_lined(&contents, start_line);
         let function = RustFunction {
             name: match f.name() {
                 Some(name) => name.to_string(),
@@ -385,11 +396,11 @@ fn get_stuff<T: AstNode>(
     if found_start_brace == 0 {
         found_start_brace = usize::from(start);
     }
-    let start = map[&(start_line - 1)];
+    let start_idx = map.get(&(start_line - 1))?;
     let start_lines = start_line;
-    let mut content: String = file[(*start)..=found_start_brace].to_string();
-    if &content[..1] == "\n" {
-        content = content[1..].to_string();
+    let mut content: String = file.get((**start_idx)..=found_start_brace)?.to_string();
+    if content.get(..1)? == "\n" {
+        content = content.get(1..)?.to_string();
     }
     Some((
         (start_line, end_line),
@@ -401,11 +412,14 @@ fn get_stuff<T: AstNode>(
 }
 #[inline]
 fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, Vec<String>) {
-    // TODO: map trait bounds from where clauses to the generics and also use type_or_const_params
+    // TODO: map trait bounds from where clauses to the generics so it will return a (HashMap<String, Vec<String>>, HashMap<String, Vec<String>>)
+    // the key of each hashmap will be the name of the generic/lifetime and the values will be the trait bounds
+    // and also use type_or_const_params
     block.generic_param_list().map_or_else(
         || (vec![], vec![]),
         |gt| {
             (
+                // gt.
                 gt.generic_params()
                     .map(|gt| gt.to_string())
                     .collect::<Vec<String>>(),

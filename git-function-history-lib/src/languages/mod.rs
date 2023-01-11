@@ -46,6 +46,11 @@ pub enum LanguageFilter {
 }
 
 impl Language {
+    /// takes string and returns the corresponding language
+    ///
+    /// # Errors
+    ///
+    /// `Err` will be returned if the string is not a valid language
     pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
         match s {
             "python" => Ok(Self::Python),
@@ -60,6 +65,7 @@ impl Language {
         }
     }
 
+    /// returns the name of the language(s)
     pub const fn get_names(&self) -> &str {
         match self {
             Self::Python => "python",
@@ -72,10 +78,11 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => "python, rust, go, or ruby",
             #[cfg(not(feature = "unstable"))]
-            Language::All => "python, rust, or ruby",
+            Self::All => "python, rust, or ruby",
         }
     }
 
+    /// returns the file extensions of the language(s)
     pub const fn get_file_endings(&self) -> &[&str] {
         match self {
             Self::Python => &["py", "pyw"],
@@ -88,7 +95,7 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::All => &["py", "pyw", "rs", "go", "rb"],
             #[cfg(not(feature = "unstable"))]
-            Language::All => &["py", "pyw", "rs", "rb"],
+            Self::All => &["py", "pyw", "rs", "rb"],
         }
     }
 }
@@ -117,10 +124,15 @@ pub mod python;
 pub mod ruby;
 pub mod rust;
 
+/// trait that all languages functions must implement
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
+    /// returns the starting and ending line of the function
     fn get_lines(&self) -> (usize, usize);
+    /// returns the starting and ending line of the the function including any class/impls (among others) the function is part of
     fn get_total_lines(&self) -> (usize, usize);
+    /// returns the name of the function
     fn get_name(&self) -> String;
+    /// returns the body of the function (the whole function including its signature and end)
     fn get_body(&self) -> String;
     /// returns the tops like any the heading of classes/impls (among others) the function is part of along with the starting line of each heading
     /// for example it could return `[("impl Test {", 3)]`
@@ -160,9 +172,19 @@ fn make_lined(snippet: &str, mut start: usize) -> String {
         .to_string()
 }
 
+/// trait that all languages files must implement
 pub trait FileTrait: fmt::Debug + fmt::Display {
+    /// returns the language of the file
+    fn get_language(&self) -> Language;
+    /// returns the name of the file
     fn get_file_name(&self) -> String;
+    /// returns the found functions in the file
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>>;
+
+    /// # Errors
+    ///
+    /// returns `Err` if the wrong filter is given, only `PLFilter` and `FunctionInLines` variants of `Filter` are valid.
+    /// with `PLFilter` it will return `Err` if you mismatch the file type with the filter Ie: using `RustFile` and `PythonFilter` will return `Err`.
     fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>>
     where
         Self: Sized;
@@ -197,23 +219,6 @@ fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> Option<usi
         .iter()
         .find(|(_, v)| v.contains(&char))
         .map(|(k, _)| *k)
-}
-
-#[test]
-fn test_turn_into_index() {
-    let snippet = "hello world
-Python is cool
-Rust is cool
-Go is cool
-Ruby😂 is cool";
-    let index = turn_into_index(snippet).unwrap();
-    // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    // assert_eq!(index[&0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    println!("done {index:?}");
-
-    // assert_eq!(get_from_index(&index, 0), 0);
-    let emoji_index = snippet.find('😂').unwrap();
-    println!("{:?}", get_from_index(&index, emoji_index));
 }
 
 // macro that generates the code for the different languages
@@ -252,6 +257,9 @@ macro_rules! make_file {
         }
 
         impl FileTrait for $name {
+            fn get_language(&self) -> Language {
+                Language::$filtername
+            }
             fn get_file_name(&self) -> String {
                 self.file_name.clone()
             }

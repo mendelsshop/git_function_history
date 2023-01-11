@@ -13,8 +13,11 @@ def assert_that(message):
         return wrapper
     return decorator
 
-def test_with_assert(y, n,/,c=7, *, a , args, **kwargs):
+def test_with_assert(y, n,/,c=7, *, a ,aas = ["a", "b"], **krer,):
     @assert_that("This is a test with an assert")
+
+
+    
     def empty_test(t):
         return t == n
 
@@ -24,15 +27,18 @@ class Test:
     pass
 passing_test = test_with_assert
 @assert_that("This is a test with an assert")
+
 def empty_test(n: int) -> list:
     """This is an empty test with a docstring"""
     pass
+
+# def empty_test(n: int) -> list:
 
 class TestClass:
     def test_method(self):
         pass
 
-    def test_with_assert(n: Test):
+    def test_with_assert(n: Test, a =10,* argss,  ** args):
         @assert_that("This is a test with an assert")
         def empty_test(t):
             return t == n

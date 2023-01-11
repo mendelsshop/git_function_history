@@ -26,12 +26,12 @@
   - [/] add support for other languages (currently only supports rust)
   - [x] save search queries and filters to a file
   - [ ] rework the way filters and filefilters are handled ie maybe use a builder pattern
-  - [ ] remove all potentially panicking code
+  - [/] remove all potentially panicking code
 
 - release 7.0:
   - python:
-    - [ ] save parent function and classes
-    - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
+    - [x] save parent function and classes
+    - [x] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
   - ruby:
     - [ ] save kwargs and varargs etc using the args enum and be able to filter by all args or just kwargs etc
   - gui:
@@ -43,3 +43,7 @@
     - [ ] (possibly) use tree sitter to provide syntax highlighting
   - lib:
     - [x] possibly stop using Commmad::new("git") and use https://crates.io/crates/git_rs OR https://crates.io/crates/rs-git-lib OR  https://crates.io/crates/gitoxide, to imporve performance with program compibilty assistant sevice on windows
+
+    - [ ] move language module into its own crate
+  - general:
+    - [/] update readmes with feautes and benchamrks specifically the repo & git-function-history-lib readmes 
