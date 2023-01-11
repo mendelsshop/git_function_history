@@ -5,7 +5,7 @@ use std::{
     fmt::{self},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
-use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction};
+use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl::UMPLFunction};
 
 // #[cfg(feature = "c_lang")]
 // use self::c::CFunction;
@@ -26,6 +26,8 @@ pub enum Language {
     Go,
     /// the Ruby language
     Ruby,
+    /// UMPL
+    UMPL,
     /// all available languages
     All,
 }
@@ -43,6 +45,8 @@ pub enum LanguageFilter {
     Go(go::GoFilter),
     /// ruby filter
     Ruby(ruby::RubyFilter),
+    /// umpl filter
+    UMPL(umpl::UMPLFilter),
 }
 
 impl Language {
@@ -75,10 +79,11 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::Go => "go",
             Self::Ruby => "ruby",
+            Self::UMPL => "umpl",
             #[cfg(feature = "unstable")]
-            Self::All => "python, rust, go, or ruby",
+            Self::All => "python, rust, go, ruby, or umpl",
             #[cfg(not(feature = "unstable"))]
-            Self::All => "python, rust, or ruby",
+            Self::All => "python, rust, ruby, or umpl",
         }
     }
 
@@ -92,10 +97,11 @@ impl Language {
             #[cfg(feature = "unstable")]
             Self::Go => &["go"],
             Self::Ruby => &["rb"],
+            Self::UMPL => &["umpl"],
             #[cfg(feature = "unstable")]
-            Self::All => &["py", "pyw", "rs", "go", "rb"],
+            Self::All => &["py", "pyw", "rs", "go", "rb", "umpl"],
             #[cfg(not(feature = "unstable"))]
-            Self::All => &["py", "pyw", "rs", "rb"],
+            Self::All => &["py", "pyw", "rs", "rb", "umpl"],
         }
     }
 }
@@ -110,6 +116,7 @@ impl fmt::Display for Language {
             #[cfg(feature = "unstable")]
             Self::Go => write!(f, "go"),
             Self::Ruby => write!(f, "ruby"),
+            Self::UMPL => write!(f, "umpl"),
             Self::All => write!(f, "all"),
         }
     }
@@ -123,6 +130,7 @@ pub mod go;
 pub mod python;
 pub mod ruby;
 pub mod rust;
+pub mod umpl;
 
 /// trait that all languages functions must implement
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
@@ -324,6 +332,7 @@ make_file!(RustFile, RustFunction, Rust);
 #[cfg(feature = "unstable")]
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
+make_file!(UMPLFile, UMPLFunction, UMPL);
 
 #[cfg(test)]
 mod lang_tests {

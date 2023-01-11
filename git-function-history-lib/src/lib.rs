@@ -38,7 +38,7 @@ macro_rules! get_item_from_oid_option {
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile};
+use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
@@ -381,6 +381,11 @@ fn traverse_tree(
                                 continue;
                             }
                         }
+                        Language::UMPL=> {
+                            if !ends_with_cmp_no_case(&file, "ump") {
+                                continue;
+                            }
+                        }
                         Language::All => {
                             cfg_if::cfg_if! {
                                 // if #[cfg(feature = "c_lang")] {
@@ -549,6 +554,10 @@ fn find_function_in_file_with_commit(
         Language::Ruby => {
             let functions = languages::ruby::find_function_in_file(fc, name)?;
             FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
+        }
+        Language::UMPL => {
+            let functions = languages::umpl::find_function_in_file(fc, name)?;
+            FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {

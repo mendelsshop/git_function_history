@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile},
+    languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile, UMPLFile},
     Filter,
 };
 
@@ -27,6 +27,7 @@ pub enum FileType {
     #[cfg(feature = "unstable")]
     Go(GoFile),
     Ruby(RubyFile),
+    UMPL(UMPLFile),
 }
 
 impl FileTrait for FileType {
@@ -39,6 +40,7 @@ impl FileTrait for FileType {
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_file_name(),
             Self::Ruby(file) => file.get_file_name(),
+            Self::UMPL(file) => file.get_file_name(),
         }
     }
     fn get_functions(&self) -> Vec<Box<dyn FunctionTrait>> {
@@ -50,6 +52,7 @@ impl FileTrait for FileType {
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_functions(),
             Self::Ruby(file) => file.get_functions(),
+            Self::UMPL(file) => file.get_functions(),
         }
     }
 
@@ -63,6 +66,7 @@ impl FileTrait for FileType {
                 let filtered = file.filter_by(filter)?;
                 Ok(Self::Python(filtered))
             }
+
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => {
             //     let filtered = file.filter_by(filter)?;
@@ -77,6 +81,10 @@ impl FileTrait for FileType {
                 let filtered = file.filter_by(filter)?;
                 Ok(Self::Ruby(filtered))
             }
+            Self::UMPL(file) => {
+                let filtered = file.filter_by(filter)?;
+                Ok(Self::UMPL(filtered))
+            }
         }
     }
 
@@ -89,6 +97,7 @@ impl FileTrait for FileType {
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_current(),
             Self::Ruby(file) => file.get_current(),
+            Self::UMPL(file) => file.get_current(),
         }
     }
 
@@ -101,6 +110,7 @@ impl FileTrait for FileType {
             #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_language(),
             Self::Ruby(file) => file.get_language(),
+            Self::UMPL(file) => file.get_language(),
         }
     }
 }
@@ -115,6 +125,7 @@ impl fmt::Display for FileType {
             #[cfg(feature = "unstable")]
             Self::Go(file) => write!(f, "{file}"),
             Self::Ruby(file) => write!(f, "{file}"),
+            Self::UMPL(file) => write!(f, "{file}"),
         }
     }
 }
