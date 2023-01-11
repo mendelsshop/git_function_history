@@ -7,9 +7,9 @@ use crate::impl_function_trait;
 use super::FunctionTrait;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UMPLFunction {
-    pub (crate) lines:  (usize, usize),
-    pub (crate) name:   String,
-    pub (crate) body:   String,
+    pub(crate) lines: (usize, usize),
+    pub(crate) name: String,
+    pub(crate) body: String,
 }
 
 impl fmt::Display for UMPLFunction {
@@ -43,17 +43,12 @@ pub(crate) fn find_function_in_file(
     let tokens = lexed.scan_tokens();
     let mut parsed = umpl::parser::Parser::new(tokens);
     let ast = parsed.parse();
-    for node in ast {
-
-    }
+    for node in ast {}
     Err("")?
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum UMPLFilter {
-
-    
-}
+pub enum UMPLFilter {}
 
 impl UMPLFilter {
     pub fn matches(&self, function: &UMPLFunction) -> bool {

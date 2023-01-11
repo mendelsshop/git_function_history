@@ -381,7 +381,7 @@ fn traverse_tree(
                                 continue;
                             }
                         }
-                        Language::UMPL=> {
+                        Language::UMPL => {
                             if !ends_with_cmp_no_case(&file, "ump") {
                                 continue;
                             }
