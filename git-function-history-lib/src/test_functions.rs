@@ -1,5 +1,5 @@
 use std::error::Error;
-
+use std::fmt::Debug;
 pub fn empty_test() {
 
 }
@@ -15,7 +15,7 @@ pub struct Test<a> {
     pub history: Vec<a>,
 }
 
-impl<a>Test<a>  {
+impl<a>Test<a: Debug>  {
     /// empty test
     pub fn empty_test<'a>() {
         println!("empty test");
@@ -27,6 +27,9 @@ impl<a>Test<a>  {
     }
 
     pub fn test_2() {
+        pub fn empty_test() {
+            println!("empty test");
+        }
         println!("empty test");
         // }
     }
@@ -49,11 +52,11 @@ impl<a>Test<a>  {
     }
 }
 
-#[derive(Debug)]
+
 pub trait super_trait {
     fn super_trait_method(&self);
 
-    fn empty_test<T>() ->  String where T: super_trait;
+    fn empty_test<T: Clone + Send>() ->  String where T: super_trait;
 }
 
 impl <'a, t> super_trait for t {
@@ -62,7 +65,7 @@ impl <'a, t> super_trait for t {
 /*   dff
 gdg
 */
-        fn empty_test<T>() ->  String where T: super_trait {
+        fn empty_test<T>() ->  String where T: super_trait + Clone {
             String::from("fn empty_test() ");
             fn broken() {
                 r#"#"}"#;
@@ -110,21 +113,33 @@ pub fn function_within(t: String) -> Result<i32, Box<dyn Error>> {
     empty_test(t)
 }
 
-pub struct Test2<T> 
-where T: super_trait {
+pub struct Test2<A> 
+where 
+A: 
+super_trait {
     pub contents: String,
-    pub history: Vec<T>,
+    pub history: Vec<A>,
 }
 
-impl<T> Test2<T> 
-where T: super_trait {
-    pub fn empty_test<'a>() {
+impl<A> Test2<A,> 
+where A:
+super_trait  + Clone,
+A: Debug + Clone
+
+{
+    pub fn empty_test<'a>() where 'a: Debug {
         println!("empty test");
     }
 
 }
 
+mod c {
+    extern "C" {
+        pub fn empty_test(t: String);
+    }
+}
 
-extern "C" {
-    pub fn empty_test(t: String);
+
+fn main() {
+    println!("Hello, world!");
 }

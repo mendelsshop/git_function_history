@@ -8,11 +8,38 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: |
-          rustup component add clippy
+          
+          rustup toolchain install nightly
+          rustup +nightly component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features -p git_function_history
+          toolchain: nightly
+          args: -p git_function_history --features unstable
+          #  --features c_lang 
+  # nightly-clang-test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: nightly
+  #         override: true
+  #     - name: test
+  #       run: |
+  #         cargo +nightly test -p git_function_history --features unstable --features c_lang -- --nocapture
+
+  # test-clang: 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #     - name: test
+  #       run: |
+  #         cargo test -p git_function_history --features c_lang -- --nocapture
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -22,3 +49,16 @@ jobs:
       - name: test
         run: |
           cargo test -p git_function_history -- --nocapture
+
+  test-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+          override: true
+      - name: test
+        run: |
+          cargo +nightly test -p git_function_history --features unstable -- --nocapture

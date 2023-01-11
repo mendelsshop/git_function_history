@@ -1,11 +1,10 @@
-use self::actions::Actions;
-use self::state::AppState;
+use self::{actions::Actions, state::AppState};
 use crate::{app::actions::Action, keys::Key};
 
 use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, Status,
 };
-use git_function_history::{BlockType, FileType, Filter};
+use git_function_history::{languages::Language, FileFilterType, Filter};
 use std::{
     fs,
     io::{Read, Write},
@@ -59,8 +58,8 @@ impl App {
         let mut history = String::new();
         file.read_to_string(&mut history)
             .expect("Failed to read history file");
-        let history = history.split('\n').map(|s| s.to_string()).collect();
-
+        let history: Vec<String> = history.split('\n').map(|s| s.to_string()).collect();
+        // let history_index = history.len();
         let actions = vec![
             Action::Quit,
             Action::TextEdit,
@@ -82,8 +81,8 @@ impl App {
             body_height: 0,
             channels,
             status,
+            history_index: history.len() - 1,
             history,
-            history_index: 0,
         }
     }
 
@@ -169,290 +168,199 @@ impl App {
         let mut iter = iter.trim().split(' ');
         match iter.next() {
             Some(cmd) => match cmd {
-                "filter" => {
-                    if let CommandResult::History(_) = &self.cmd_output {
-                        self.status = Status::Loading;
-                        if let Some(filter) = iter.next() {
-                            let filter = match filter {
-                                "date" => {
-                                    if let Some(date) = iter.next() {
-                                        let date = date.replace('_', " ");
-                                        Some(Filter::Date(date))
-                                    } else {
-                                        self.status = Status::Error("No date given".to_string());
-                                        None
-                                    }
-                                }
-                                "commit" => {
-                                    if let Some(commit) = iter.next() {
-                                        Some(Filter::CommitHash(commit.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No commit given".to_string());
-                                        None
-                                    }
-                                }
-                                "parent" => {
-                                    if let Some(parent) = iter.next() {
-                                        Some(Filter::FunctionWithParent(parent.to_string()))
-                                    } else {
-                                        self.status =
-                                            Status::Error("No parent function given".to_string());
-                                        None
-                                    }
-                                }
-                                "block" => {
-                                    if let Some(block) = iter.next() {
-                                        Some(Filter::FunctionInBlock(BlockType::from_string(block)))
-                                    } else {
-                                        self.status =
-                                            Status::Error("No block type given".to_string());
-                                        None
-                                    }
-                                }
-                                "date-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            // remove all - from the date
-                                            let start = start.replace('_', " ");
-                                            let end = end.replace('_', " ");
-                                            Some(Filter::DateRange(start, end))
-                                        } else {
-                                            self.status =
-                                                Status::Error("No end date given".to_string());
-                                            None
-                                        }
-                                    } else {
-                                        self.status =
-                                            Status::Error("No start date given".to_string());
-                                        None
-                                    }
-                                }
-                                "line-range" => {
-                                    if let Some(start) = iter.next() {
-                                        if let Some(end) = iter.next() {
-                                            let start = match start.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            let end = match end.parse::<usize>() {
-                                                Ok(x) => x,
-                                                Err(e) => {
-                                                    self.status = Status::Error(format!("{}", e));
-                                                    return;
-                                                }
-                                            };
-                                            Some(Filter::FunctionInLines(start, end))
-                                        } else {
-                                            self.status =
-                                                Status::Error("No end line given".to_string());
-                                            None
-                                        }
-                                    } else {
-                                        self.status =
-                                            Status::Error("No start line given".to_string());
-                                        None
-                                    }
-                                }
-                                "file-absolute" => {
-                                    if let Some(file) = iter.next() {
-                                        Some(Filter::FileAbsolute(file.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No file given".to_string());
-                                        None
-                                    }
-                                }
-                                "file-relative" => {
-                                    if let Some(file) = iter.next() {
-                                        Some(Filter::FileRelative(file.to_string()))
-                                    } else {
-                                        self.status = Status::Error("No file given".to_string());
-                                        None
-                                    }
-                                }
-                                "directory" => {
-                                    if let Some(dir) = iter.next() {
-                                        Some(Filter::Directory(dir.to_string()))
-                                    } else {
-                                        self.status =
-                                            Status::Error("No directory given".to_string());
-                                        None
-                                    }
-                                }
-                                _ => {
-                                    self.status = Status::Error("Invalid filter".to_string());
-                                    None
-                                }
-                            };
-                            if let Some(filter) = filter {
-                                self.channels
-                                    .0
-                                    .send(FullCommand::Filter(FilterType {
-                                        thing: self.cmd_output.clone(),
-                                        filter,
-                                    }))
-                                    .unwrap();
-                            }
-                        } else {
-                            self.status = Status::Error("No filter given".to_string());
-                        }
-                    } else if iter.next().is_some() {
-                        self.status = Status::Error("no filters available".to_string());
-                    }
-                }
                 "search" => {
                     // check for a function name
                     if let Some(name) = iter.next() {
                         // check if there next arg stars with file or filter
                         self.status = Status::Loading;
-                        let search = match iter.next() {
-                            None => {
-                                // if there is no next arg then we are searching for a function
-                                // with the given name
-                                Some(FullCommand::Search(
-                                    name.to_string(),
-                                    FileType::None,
-                                    Filter::None,
-                                ))
-                            }
-                            Some(thing) => match thing {
-                                "relative" | "absolute" => {
-                                    let file_type = match iter.next() {
-                                        Some(filter) => match thing {
-                                            "relative" => FileType::Relative(filter.to_string()),
-                                            "absolute" => FileType::Absolute(filter.to_string()),
-                                            _ => FileType::None,
-                                        },
+                        let mut file = FileFilterType::None;
+                        let mut filter = Filter::None;
+                        let mut lang = Language::All;
+                        let new_vec = iter.collect::<Vec<_>>();
+                        let mut new_iter = new_vec.windows(2);
+                        log::debug!("searching for {:?}", new_iter);
+
+                        if new_vec.len() % 2 != 0 {
+                            self.status = Status::Error(format!("uncomplete search, command: {} doesnt have its parameters",new_vec.last().expect("oops look like theres nothing in this vec don't how this happened")));
+                            return;
+                        }
+                        for i in &mut new_iter {
+                            log::info!("i: {:?}", i);
+                            match i {
+                                ["relative", filepath] => {
+                                    log::trace!("relative file: {}", filepath);
+                                    file = FileFilterType::Relative(filepath.to_string());
+                                }
+                                ["absolute", filepath] => {
+                                    log::trace!("absolute file: {}", filepath);
+                                    file = FileFilterType::Absolute(filepath.to_string());
+                                }
+                                ["date", date] => {
+                                    log::trace!("date: {}", date);
+                                    filter = Filter::Date(date.to_string());
+                                }
+                                ["commit", commit] => {
+                                    log::trace!("commit: {}", commit);
+                                    filter = Filter::CommitHash(commit.to_string());
+                                }
+                                ["directory", dir] => {
+                                    log::trace!("directory: {}", dir);
+                                    file = FileFilterType::Directory(dir.to_string());
+                                }
+                                ["date-range", pos] => {
+                                    log::trace!("date range: {}", pos);
+                                    let (start, end) = match pos.split_once("..") {
+                                        Some((start, end)) => (start, end),
                                         None => {
-                                            self.status =
-                                                Status::Error("No filter given".to_string());
+                                            self.status = Status::Error(
+                                                "Invalid date range, expected start..end"
+                                                    .to_string(),
+                                            );
                                             return;
                                         }
                                     };
-                                    let filter = match iter.next() {
-                                        Some(filter) => match filter {
-                                            "date" => {
-                                                let date = iter.next();
-                                                match date {
-                                                    Some(date) => {
-                                                        let date = date.replace('_', " ");
-                                                        Filter::Date(date)
-                                                    }
-                                                    None => {
-                                                        self.status = Status::Error(
-                                                            "No date given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            "commit" => {
-                                                let commit = iter.next();
-                                                match commit {
-                                                    Some(commit) => {
-                                                        Filter::CommitHash(commit.to_string())
-                                                    }
-                                                    None => {
-                                                        self.status = Status::Error(
-                                                            "No commit given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            "date range" => {
-                                                let start = iter.next();
-                                                let end = iter.next();
-                                                match (start, end) {
-                                                    (Some(start), Some(end)) => {
-                                                        let start = start.replace('_', " ");
-                                                        let end = end.replace('_', " ");
-                                                        Filter::DateRange(start, end)
-                                                    }
-                                                    _ => {
-                                                        self.status = Status::Error(
-                                                            "No date range given".to_string(),
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                            _ => {
-                                                self.status =
-                                                    Status::Error("No filter given".to_string());
-                                                return;
-                                            }
-                                        },
-                                        None => Filter::None,
+                                    filter = Filter::DateRange(start.to_string(), end.to_string());
+                                }
+                                ["language", language] => {
+                                    log::trace!("language: {}", language);
+                                    lang = match language {
+                                        &"rust" => Language::Rust,
+                                        &"python" => Language::Python,
+                                        // #[cfg(feature = "c_lang")]
+                                        // &"c" => Language::C,
+                                        #[cfg(feature = "unstable")]
+                                        &"go" => Language::Go,
+                                        &"ruby" => Language::Ruby,
+                                        _ => {
+                                            self.status =
+                                                Status::Error("Invalid language".to_string());
+                                            return;
+                                        }
                                     };
+                                }
+                                ["author", author] => {
+                                    log::trace!("author: {}", author);
+                                    filter = Filter::Author(author.to_string());
+                                }
+                                ["author-email", author_email] => {
+                                    log::trace!("author-email: {}", author_email);
+                                    filter = Filter::AuthorEmail(author_email.to_string());
+                                }
+                                ["message", message] => {
+                                    log::trace!("message: {}", message);
+                                    filter = Filter::Message(message.to_string());
+                                }
 
-                                    Some(FullCommand::Search(name.to_string(), file_type, filter))
-                                }
-                                "date" | "commit" | "date range" => {
-                                    let filter = match thing {
-                                        "date" => {
-                                            let date = iter.next();
-                                            match date {
-                                                Some(date) => Filter::Date(date.to_string()),
-                                                None => {
-                                                    self.status =
-                                                        Status::Error("No date given".to_string());
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        "commit" => {
-                                            let commit = iter.next();
-                                            match commit {
-                                                Some(commit) => {
-                                                    Filter::CommitHash(commit.to_string())
-                                                }
-                                                None => {
-                                                    self.status = Status::Error(
-                                                        "No commit given".to_string(),
-                                                    );
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        "date range" => {
-                                            let start = iter.next();
-                                            let end = iter.next();
-                                            match (start, end) {
-                                                (Some(start), Some(end)) => Filter::DateRange(
-                                                    start.to_string(),
-                                                    end.to_string(),
-                                                ),
-                                                _ => {
-                                                    self.status = Status::Error(
-                                                        "No date range given".to_string(),
-                                                    );
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        _ => Filter::None,
-                                    };
-                                    Some(FullCommand::Search(
-                                        name.to_string(),
-                                        FileType::None,
-                                        filter,
-                                    ))
-                                }
                                 _ => {
-                                    self.status = Status::Error("Invalid file type".to_string());
-                                    None
+                                    log::debug!("invalid arg: {i:?}");
+                                    self.status = Status::Error(format!("Invalid search {i:?}"));
+                                    return;
                                 }
-                            },
-                        };
-                        if let Some(search) = search {
-                            self.channels.0.send(search).unwrap();
+                            }
                         }
+                        self.channels
+                            .0
+                            .send(FullCommand::Search(name.to_string(), file, filter, lang))
+                            .expect("could not send message in thread")
                     } else {
                         self.status = Status::Error("No function name given".to_string());
                     }
+                }
+                "filter" => {
+                    self.status = Status::Loading;
+                    let mut filter = Filter::None;
+                    for i in &mut iter.clone().collect::<Vec<_>>().windows(2) {
+                        match i {
+                            ["date", date] => {
+                                filter = Filter::Date(date.to_string());
+                            }
+                            ["commit", commit] => {
+                                filter = Filter::CommitHash(commit.to_string());
+                            }
+                            ["date-range", pos] => {
+                                let (start, end) = match pos.split_once("..") {
+                                    Some((start, end)) => (start, end),
+                                    None => {
+                                        self.status = Status::Error(
+                                            "Invalid date range, expected start..end".to_string(),
+                                        );
+                                        return;
+                                    }
+                                };
+                                filter = Filter::DateRange(start.to_string(), end.to_string());
+                            }
+                            ["author", author] => {
+                                log::trace!("author: {}", author);
+                                filter = Filter::Author(author.to_string());
+                            }
+                            ["author-email", author_email] => {
+                                log::trace!("author-email: {}", author_email);
+                                filter = Filter::AuthorEmail(author_email.to_string());
+                            }
+                            ["message", message] => {
+                                log::trace!("message: {}", message);
+                                filter = Filter::Message(message.to_string());
+                            }
+                            ["line-range", pos] => {
+                                // get the start and end by splitting the pos by: ..
+                                let (start, end) = match pos.split_once("..") {
+                                    Some((start, end)) => (start, end),
+                                    None => {
+                                        self.status = Status::Error(
+                                            "Invalid line range, expected start..end".to_string(),
+                                        );
+                                        return;
+                                    }
+                                };
+                                let start = match start.parse::<usize>() {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        self.status = Status::Error(format!("{e}"));
+                                        return;
+                                    }
+                                };
+                                let end = match end.parse::<usize>() {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        self.status = Status::Error(format!("{e}"));
+                                        return;
+                                    }
+                                };
+                                filter = Filter::FunctionInLines(start, end);
+                            }
+                            ["file-absolute", file] => {
+                                filter = Filter::FileAbsolute(file.to_string());
+                            }
+                            ["file-relative", file] => {
+                                filter = Filter::FileRelative(file.to_string());
+                            }
+                            ["directory", dir] => {
+                                filter = Filter::Directory(dir.to_string());
+                            }
+                            _ => {
+                                self.status = Status::Error(format!(
+                                    "Invalid filter {}",
+                                    i.first().unwrap_or(&"")
+                                ));
+                                return;
+                            }
+                        }
+                    }
+                    if iter.clone().count() > 0 {
+                        self.status = Status::Error(format!(
+                            "Invalid filter, command: {:?} missing args",
+                            iter.collect::<Vec<_>>()
+                        ));
+                        return;
+                    }
+
+                    self.channels
+                        .0
+                        .send(FullCommand::Filter(FilterType {
+                            thing: self.cmd_output.clone(),
+                            filter,
+                        }))
+                        .expect("could not send message in thread")
                 }
                 "list" => {
                     self.status = Status::Loading;
@@ -471,11 +379,14 @@ impl App {
                         }
                     };
                     if let Some(list) = list {
-                        self.channels.0.send(list).unwrap();
+                        self.channels
+                            .0
+                            .send(list)
+                            .expect("could not send message in thread")
                     }
                 }
                 other => {
-                    self.status = Status::Error(format!("Invalid command: {}", other));
+                    self.status = Status::Error(format!("Invalid command: {other}"));
                 }
             },
             None => {

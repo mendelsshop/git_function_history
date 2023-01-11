@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, Paragraph};
-use tui::Frame;
 use tui::{
     backend::Backend,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
     text::{Span, Spans},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
 };
 
 use crate::app::App;
@@ -52,8 +52,17 @@ where
         )
         .split(whole_chunks);
     app.get_result();
-    draw_body(app, body_chunks[0], rect);
-    let width = body_chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
+    draw_body(
+        app,
+        *body_chunks.get(0).expect("could not get area to draw"),
+        rect,
+    );
+    let width = body_chunks
+        .get(0)
+        .expect("could not get area to draw")
+        .width
+        .max(3)
+        - 3; // keep 2 for borders and 1 for cursor
     let scroll = (app.input_buffer.cursor() as u16).max(width) - width;
     let input = Paragraph::new(app.input_buffer.value())
         .style(match app.state() {
@@ -67,18 +76,25 @@ where
                 .style(Style::default().fg(Color::White)),
         )
         .scroll((0, scroll));
-    rect.render_widget(input, body_chunks[1]);
+    rect.render_widget(
+        input,
+        *body_chunks.get(1).expect("could not get area to draw"),
+    );
     if let AppState::Editing = app.state() {
         // AppState::Editing => {
         rect.set_cursor(
             // Put cursor past the end of the input text
-            body_chunks[1].x + (app.input_buffer.cursor() as u16).min(width),
+            body_chunks.get(1).expect("could not get area to draw").x
+                + (app.input_buffer.cursor() as u16).min(width),
             // Move one line down, from the border to the input line
-            body_chunks[1].y,
+            body_chunks.get(1).expect("could not get area to draw").y,
         )
     }
     let status = draw_status(app.status());
-    rect.render_widget(status, body_chunks[2]);
+    rect.render_widget(
+        status,
+        *body_chunks.get(2).expect("could not get area to draw"),
+    );
 }
 
 fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
@@ -118,7 +134,7 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
         a => a
             .to_string()
             .split('\n')
-            .map(|s| Spans::from(format!("{}\n", s)))
+            .map(|s| Spans::from(format!("{s}\n")))
             .collect(),
     };
     let body = Paragraph::new(tick_text)

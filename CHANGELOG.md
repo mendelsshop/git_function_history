@@ -12,20 +12,40 @@ All notable changes to this project will be documented in this file.
 - Update changelog
 - Update changelog
 - Update changelog
+- Update changelog
+- Update changelog
+- Update changelog
+- Update changelog
+
+### TODO
+
+- Figure out how to map filers and seraches based languges
 
 ### Changelog
 
 - Trying to fix changelog
 
+### Gui
+
+- Added scrollbar to command builder & now supports other languages
+- Started working on clickable dates/commits using list
+
+### Lib
+
+- Python works besides for one edge case when the function is the last node
+- Pl filters now working very messy and boilerplatety
+- Fixed bug where I didnt understand how cfg-if works, also filter_by macro works just neeeds docs
+
 ### Tui
 
 - Saving search history to a file now
+- Shortend filter loc
+- Added more filters
 
 ## [2.1.0] - 2022-09-28
 
 ### Library
 
-- Added git filters for commit, aothor and emai, messagel
 - More parllesim
 - Trying to optimize threading realizng the problem is not with the trreading but with something else
 - Added parelel as optinal (but default feature

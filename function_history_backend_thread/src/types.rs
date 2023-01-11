@@ -1,6 +1,6 @@
 use std::fmt;
 
-use git_function_history::{FileType, Filter, FunctionHistory};
+use git_function_history::{languages::Language, FileFilterType, Filter, FunctionHistory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
@@ -73,11 +73,11 @@ impl fmt::Display for CommandResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CommandResult::History(history) => {
-                write!(f, "{}", history)
+                write!(f, "{history}")
             }
             CommandResult::String(string) => {
                 for line in string {
-                    writeln!(f, "{}", line)?;
+                    writeln!(f, "{line}")?;
                 }
                 Ok(())
             }
@@ -98,11 +98,11 @@ impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Status::Ok(s) => match s {
-                Some(s) => write!(f, "Ok: {}", s),
+                Some(s) => write!(f, "Ok: {s}"),
                 None => write!(f, "Ok"),
             },
-            Status::Error(s) => write!(f, "Err {}", s),
-            Status::Warning(s) => write!(f, "Warn {}", s),
+            Status::Error(s) => write!(f, "Err {s}"),
+            Status::Warning(s) => write!(f, "Warn {s}"),
             Status::Loading => write!(f, "Loading..."),
         }
     }
@@ -117,7 +117,7 @@ impl Default for Status {
 pub enum FullCommand {
     Filter(FilterType),
     List(ListType),
-    Search(String, FileType, Filter),
+    Search(String, FileFilterType, Filter, Language),
 }
 
 #[derive(Debug, Clone)]

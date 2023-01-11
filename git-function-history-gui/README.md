@@ -1,4 +1,4 @@
-# [![crates.io](https://img.shields.io/crates/v/git-function-history-gui.svg?label=latest%20version)](https://crates.io/crates/git-function-history-gui) [![Crates.io](https://img.shields.io/crates/d/git-function-history-gui?label=crates.io%20downloads)](https://crates.io/crates/git-function-history-gui)
+# [![crates.io](https://img.shields.io/crates/v/git-function-history-gui.svg?label=latest%20version)](https://crates.io/crates/git-function-history-gui) [![Crates.io](https://img.shields.io/crates/d/git-function-history-gui?label=crates.io%20downloads)](https://crates.io/crates/git-function-history-gui) ![msrv](../resources/msrv.svg)
 
 # git function history GUI
 
@@ -26,7 +26,7 @@ Under Linux you may need to install the following packages:
 - libssl-dev
 
 On ubuntu you can install them with:
-`sudo apt-get install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev`
+`sudo apt install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev`
 
 ## Usage
 
