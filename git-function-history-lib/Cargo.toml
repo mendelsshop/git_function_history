@@ -22,7 +22,7 @@ chrono = "0.4.23"
 ra_ap_syntax = "0.0.148"
 rayon = { version = "1.6.1", optional = true }
 rustpython-parser = { features = ["lalrpop"], version = "0.2.0" }
-lib-ruby-parser = "3.0.12"
+lib-ruby-parser = "4.0.4"
 gosyn = {version = "0.2.0", optional = true}
 # can't be published b/c git dependency
 # javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
