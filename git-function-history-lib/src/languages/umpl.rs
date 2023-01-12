@@ -123,11 +123,34 @@ fn find_function_recurse(
                         continue;
                     };
                     // FIXME: this should find the last line of the `top` by looking at its first element of is ast instead of finding the the first `⧼` (which could be commented out)
-                    let Some(top_end) = file_contents.lines().enumerate().skip(lines.0 -1).find_map(|line| {
-                        line.1.contains('⧼').then_some(line.0)
-                    }) else {
-                        results.append(&mut find_function_recurse(name, file_contents, fns.body, &new_current));
-                        continue;
+                    let top_end = if let Some(top_end) = file_contents
+                        .lines()
+                        .enumerate()
+                        .skip(lines.0 - 1)
+                        .find_map(|line| line.1.contains('⧼').then_some(line.0))
+                    {
+                        top_end
+                    } else {
+                        (if let Some(body) = fns.body.first() {
+                            match body {
+                                Thing::Identifier(ident) => ident.line,
+                                Thing::Expression(expr) => expr.line,
+                                Thing::Function(fns) => fns.line,
+                                Thing::IfStatement(ifs) => ifs.line,
+                                Thing::LoopStatement(loops) => loops.line,
+                                Thing::Break(line)
+                                | Thing::Continue(line)
+                                | Thing::Return(_, line) => *line,
+                            }
+                        } else {
+                            results.append(&mut find_function_recurse(
+                                name,
+                                file_contents,
+                                fns.body,
+                                &new_current,
+                            ));
+                            continue;
+                        }) as usize
                     };
                     let top = file_contents
                         .lines()
