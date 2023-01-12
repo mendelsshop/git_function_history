@@ -60,7 +60,11 @@ pub(crate) fn find_function_in_file(
     Err("no function found")?
 }
 
-fn find_function_recurse(name: &str, ast: Vec<Thing>, current: &Vec<UMPLParentFunction>) -> Vec<(UMPLFunction)> {
+fn find_function_recurse(
+    name: &str,
+    ast: Vec<Thing>,
+    current: &Vec<UMPLParentFunction>,
+) -> Vec<(UMPLFunction)> {
     let mut results = Vec::new();
     for node in ast {
         match node {
@@ -72,19 +76,19 @@ fn find_function_recurse(name: &str, ast: Vec<Thing>, current: &Vec<UMPLParentFu
                         // TODO: get the function body
                         body: String::new(),
                         args_count: fns.num_arguments as usize,
-                        parents: current.clone()
+                        parents: current.clone(),
                     };
                     results.push(new_fn);
                 } else {
                     let mut new_current = current.clone();
                     // turn into a parent function
-                    let pfn  = UMPLParentFunction {
+                    let pfn = UMPLParentFunction {
                         lines: (fns.line as usize, fns.end_line as usize),
                         name: fns.name.to_string(),
                         // TODO: get the top and bottom lines
                         top: String::new(),
                         bottom: String::new(),
-                        args_count: fns.num_arguments as usize
+                        args_count: fns.num_arguments as usize,
                     };
                     new_current.push(pfn);
                     results.append(&mut find_function_recurse(name, fns.body, &new_current));
@@ -101,7 +105,6 @@ fn find_function_recurse(name: &str, ast: Vec<Thing>, current: &Vec<UMPLParentFu
         }
     }
     results
-
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
