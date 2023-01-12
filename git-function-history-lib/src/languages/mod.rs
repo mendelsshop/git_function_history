@@ -338,7 +338,7 @@ make_file!(UMPLFile, UMPLFunction, UMPL);
 mod lang_tests {
     // macro that auto genertes the test parse_<lang>_file_time
     macro_rules! make_file_time_test {
-        ($name:ident, $extname:ident, $function:ident, $filetype:ident) => {
+        ($name:ident, $extname:ident, $function:ident, $filetype:ident, $fnname:literal) => {
             #[test]
             fn $name() {
                 let mut file = std::env::current_dir().unwrap();
@@ -347,7 +347,7 @@ mod lang_tests {
                 let files = std::fs::read_to_string(file.clone())
                     .expect(format!("could not read file {:?}", file).as_str());
                 let start = std::time::Instant::now();
-                let ok = $function::find_function_in_file(&files, "empty_test");
+                let ok = $function::find_function_in_file(&files, $fnname);
                 let end = std::time::Instant::now();
                 match &ok {
                     Ok(hist) => {
@@ -371,11 +371,13 @@ mod lang_tests {
     }
 
     use super::*;
-    make_file_time_test!(python_parses, py, python, PythonFile);
-    make_file_time_test!(rust_parses, rs, rust, RustFile);
+    make_file_time_test!(python_parses, py, python, PythonFile, "empty_test");
+    make_file_time_test!(rust_parses, rs, rust, RustFile, "empty_test");
     // #[cfg(feature = "c_lang")]
-    // make_file_time_test!(c_parses, c, c, CFile);
+    // make_file_time_test!(c_parses, c, c, CFile, "empty_test");
     #[cfg(feature = "unstable")]
-    make_file_time_test!(go_parses, go, go, GoFile);
-    make_file_time_test!(ruby_parses, rb, ruby, RubyFile);
+    make_file_time_test!(go_parses, go, go, GoFile, "empty_test");
+    make_file_time_test!(ruby_parses, rb, ruby, RubyFile, "empty_test");
+
+    make_file_time_test!(umpl_parses, umpl, umpl, UMPLFile, "😂");
 }
