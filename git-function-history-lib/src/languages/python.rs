@@ -252,11 +252,7 @@ pub(crate) fn find_function_in_file(
 fn get_functions_recurisve(
     body: Vec<Located<StmtKind>>,
     map: &HashMap<usize, &usize>,
-    functions: &mut Vec<(
-        Located<StmtKind>,
-        Vec<Located<StmtKind>>,
-        Vec<Located<StmtKind>>,
-    )>,
+    functions: &mut FnState,
     current_parent: &mut Vec<Located<StmtKind>>,
     current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
@@ -277,15 +273,15 @@ fn get_functions_recurisve(
         );
     }
 }
-
+type FnState = Vec<(
+    Located<StmtKind>,
+    Vec<Located<StmtKind>>,
+    Vec<Located<StmtKind>>,
+)>;
 fn get_functions(
     stmt: Located<StmtKind>,
     map: &HashMap<usize, &usize>,
-    functions: &mut Vec<(
-        Located<StmtKind>,
-        Vec<Located<StmtKind>>,
-        Vec<Located<StmtKind>>,
-    )>,
+    functions: &mut FnState,
     current_parent: &mut Vec<Located<StmtKind>>,
     current_class: &mut Vec<Located<StmtKind>>,
     lookup_name: &str,
