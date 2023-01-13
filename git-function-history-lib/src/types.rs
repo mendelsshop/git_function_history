@@ -58,11 +58,11 @@ impl FileTrait for FileType {
     fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
         match self {
             Self::Rust(file) => {
-                let filtered =  file.filter_by(filter)?;
+                let filtered = file.filter_by(filter)?;
                 Ok(Self::Rust(filtered))
             }
             Self::Python(file) => {
-                let filtered =  file.filter_by(filter)?;
+                let filtered = file.filter_by(filter)?;
                 Ok(Self::Python(filtered))
             }
 
@@ -73,15 +73,15 @@ impl FileTrait for FileType {
             // }
             #[cfg(feature = "unstable")]
             Self::Go(file) => {
-                let filtered =  file.filter_by(filter)?;
+                let filtered = file.filter_by(filter)?;
                 Ok(Self::Go(filtered))
             }
             Self::Ruby(file) => {
-                let filtered =  file.filter_by(filter)?;
+                let filtered = file.filter_by(filter)?;
                 Ok(Self::Ruby(filtered))
             }
             Self::UMPL(file) => {
-                let filtered =  file.filter_by(filter)?;
+                let filtered = file.filter_by(filter)?;
                 Ok(Self::UMPL(filtered))
             }
         }
@@ -158,7 +158,7 @@ impl Commit {
         Ok(Self {
             commit_hash: commit_hash.to_string(),
             files,
-            date:DateTime::parse_from_rfc2822(date).map_err(|e| e.to_string())?,
+            date: DateTime::parse_from_rfc2822(date).map_err(|e| e.to_string())?,
             current_pos: 0,
             current_iter_pos: 0,
             author: author.to_string(),

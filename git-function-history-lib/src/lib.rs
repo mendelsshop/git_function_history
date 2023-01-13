@@ -20,8 +20,10 @@ macro_rules! get_item_from {
     ($oid:expr, $repo:expr, $typs:ident) => {
         git_repository::hash::ObjectId::from($oid)
             .attach(&$repo)
-            .object().map_err(|_| "Could not find object")?
-            .$typs().map_err(|_| format!("Could not find {} from object", stringify!($typs)))?
+            .object()
+            .map_err(|_| "Could not find object")?
+            .$typs()
+            .map_err(|_| format!("Could not find {} from object", stringify!($typs)))?
     };
 }
 
@@ -414,8 +416,11 @@ fn traverse_tree(
                         }
                     },
                 }
-                let obh = repo.find_object(i.oid()).map_err(|_| "failed to find object")?;
-                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data).map_err(|_| "failed to get object ref")?;
+                let obh = repo
+                    .find_object(i.oid())
+                    .map_err(|_| "failed to find object")?;
+                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)
+                    .map_err(|_| "failed to get object ref")?;
                 let blob = objref.into_blob();
                 if let Some(blob) = blob {
                     files.push((file, String::from_utf8_lossy(blob.data).to_string()));
@@ -534,7 +539,7 @@ fn find_function_in_file_with_commit(
 ) -> Result<FileType, String> {
     let file = match langs {
         Language::Rust => {
-            let functions =  rust::find_function_in_file(fc, name)?;
+            let functions = rust::find_function_in_file(fc, name)?;
             FileType::Rust(RustFile::new(file_path.to_string(), functions))
         }
         // #[cfg(feature = "c_lang")]
@@ -544,25 +549,24 @@ fn find_function_in_file_with_commit(
         // }
         #[cfg(feature = "unstable")]
         Language::Go => {
-            let functions =  languages::go::find_function_in_file(fc, name)?;
+            let functions = languages::go::find_function_in_file(fc, name)?;
             FileType::Go(GoFile::new(file_path.to_string(), functions))
         }
         Language::Python => {
-            let functions =  languages::python::find_function_in_file(fc, name)?;
+            let functions = languages::python::find_function_in_file(fc, name)?;
             FileType::Python(PythonFile::new(file_path.to_string(), functions))
         }
         Language::Ruby => {
-            let functions =  languages::ruby::find_function_in_file(fc, name)?;
+            let functions = languages::ruby::find_function_in_file(fc, name)?;
             FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
         }
         Language::UMPL => {
-            let functions =  languages::umpl::find_function_in_file(fc, name)?;
+            let functions = languages::umpl::find_function_in_file(fc, name)?;
             FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
-                
-                let functions =  rust::find_function_in_file(fc, name)?;
+                let functions = rust::find_function_in_file(fc, name)?;
                 FileType::Rust(RustFile::new(file_path.to_string(), functions))
             }
             // #[cfg(feature = "c_lang")]
@@ -571,16 +575,16 @@ fn find_function_in_file_with_commit(
             //     FileType::C(CFile::new(file_path.to_string(), functions))
             // }
             Some("py" | "pyw") => {
-                let functions =  languages::python::find_function_in_file(fc, name)?;
+                let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
             #[cfg(feature = "unstable")]
             Some("go") => {
-                let functions =  languages::go::find_function_in_file(fc, name)?;
+                let functions = languages::go::find_function_in_file(fc, name)?;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
             }
             Some("rb") => {
-                let functions =  languages::ruby::find_function_in_file(fc, name)?;
+                let functions = languages::ruby::find_function_in_file(fc, name)?;
                 FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
             }
             _ => Err("unknown file type")?,
@@ -618,7 +622,6 @@ trait UnwrapToError<T> {
 }
 
 impl<T> UnwrapToError<T> for Option<T> {
-
     fn unwrap_to_error(self, message: &str) -> Result<T, String> {
         self.map_or_else(|| Err(message.to_string()), |val| Ok(val))
     }

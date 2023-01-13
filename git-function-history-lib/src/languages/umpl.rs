@@ -1,6 +1,6 @@
 use umpl::{self, parser::Thing};
 
-use std::{fmt};
+use std::fmt;
 
 use crate::impl_function_trait;
 
