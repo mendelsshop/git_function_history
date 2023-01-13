@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, fmt};
 
 use lib_ruby_parser::{
     nodes::{Class, Def},
@@ -115,7 +115,7 @@ impl Default for RubyParams {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<RubyFunction>, Box<dyn Error>> {
+) -> Result<Vec<RubyFunction>, String> {
     let mut starts = file_contents
         .match_indices('\n')
         .map(|x| x.0)
@@ -128,6 +128,11 @@ pub(crate) fn find_function_in_file(
         .collect::<HashMap<usize, &usize>>();
     let parser = Parser::new(file_contents, ParserOptions::default());
     let parsed = parser.do_parse();
+    for d in parsed.diagnostics {
+        if d.is_error() {
+            return Err(d.message.render())?;
+        }
+    }
     // POSSBLE TODO check if there is any error dianostics parsed.dadnostices and return error is so
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
     let fns = get_functions_from_node(&ast, &vec![], name);
@@ -175,7 +180,7 @@ pub(crate) fn find_function_in_file(
             let end_line = super::get_from_index(&index, f.expression_l.end)
                 .unwrap_to_error("Failed to get end line")?;
             let starts = start_line + 1;
-            Ok::<RubyFunction, Box<dyn Error>>(RubyFunction {
+            Ok::<RubyFunction, String>(RubyFunction {
                 name: f.name.clone(),
                 lines: (start_line, end_line),
                 class,

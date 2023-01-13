@@ -101,11 +101,14 @@ pub struct PythonParentFunction {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<PythonFunction>, Box<dyn std::error::Error>> {
-    let ast = parser::parse_program(file_contents, "<stdin>")?;
+) -> Result<Vec<PythonFunction>, String> {
+    let ast = match parser::parse_program(file_contents, "<stdin>") {
+        Ok(ast) => ast,
+        Err(e) => return Err(format!("error parsing file: {e}")),
+    };
     let mut functions = vec![];
     if ast.is_empty() {
-        return Err("No code found")?;
+        return Err("no code found".to_string());
     }
     let mut starts = file_contents
         .match_indices('\n')
@@ -244,7 +247,7 @@ pub(crate) fn find_function_in_file(
         }
     }
     if new.is_empty() {
-        Err("No function found")?;
+        return Err("no functions found".to_string());
     }
     Ok(new)
 }

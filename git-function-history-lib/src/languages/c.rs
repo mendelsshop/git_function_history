@@ -68,7 +68,7 @@ pub struct ParentFunction {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<CFunction>, Box<dyn Error>> {
+) -> Result<Vec<CFunction>, String> {
     println!("Finding function {} in commit {}", name, file_contents);
 
     todo!("find_function_in_commit")

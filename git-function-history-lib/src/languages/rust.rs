@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, fmt};
 
 use ra_ap_syntax::{
     ast::{self, HasDocComments, HasGenericParams, HasName},
@@ -207,7 +207,7 @@ impl fmt::Display for BlockType {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<RustFunction>, Box<dyn Error>> {
+) -> Result<Vec<RustFunction>, String> {
     let mut functions = Vec::new();
     get_function_asts(name, file_contents, &mut functions);
     let mut starts = file_contents

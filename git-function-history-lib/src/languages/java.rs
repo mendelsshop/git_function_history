@@ -72,7 +72,7 @@ pub enum JavaBlockType {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<JavaFunction>, String> {
+) -> Result<Vec<JavaFunction>, &str> {
     let file = javaparser::parse::apply(file_contents, "<stdin>").map_err(|_| "Parse error")?;
     let parsed = file.unit.clone().items;
     let mut functions = Vec::new();
@@ -85,7 +85,7 @@ pub(crate) fn find_function_in_file(
 fn extract_methods_from_compilation_unit(
     unit: &CompilationUnitItem<'_>,
     name: &str,
-) -> Result<Vec<JavaFunction>, String> {
+) -> Result<Vec<JavaFunction>, &str> {
     // recursively search for items with type Method
     let mut methods = Vec::new();
 
@@ -128,7 +128,7 @@ fn extract_methods_from_compilation_unit(
 fn extract_methods_from_class_item(
     item: &javaparser::parse::tree::ClassBodyItem<'_>,
     name: &str,
-) -> Result<Vec<JavaFunction>, String> {
+) -> Result<Vec<JavaFunction>, &str> {
     let mut methods = Vec::new();
     match item {
         javaparser::parse::tree::ClassBodyItem::Method(method) => {
@@ -241,7 +241,7 @@ fn extract_methods_from_class_item(
 fn extract_methods_from_annotation_item(
     item: &javaparser::parse::tree::AnnotationBodyItem<'_>,
     name: &str,
-) -> Result<Vec<JavaFunction>, String> {
+) -> Result<Vec<JavaFunction>, &str> {
     let mut methods = Vec::new();
     match item {
         javaparser::parse::tree::AnnotationBodyItem::Annotation(annotation) => {

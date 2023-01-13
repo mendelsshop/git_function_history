@@ -1,7 +1,6 @@
 use crate::{Filter, UnwrapToError};
 use std::{
     collections::HashMap,
-    error::Error,
     fmt::{self},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
@@ -55,7 +54,7 @@ impl Language {
     /// # Errors
     ///
     /// `Err` will be returned if the string is not a valid language
-    pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn from_string(s: &str) -> Result<Self, String> {
         match s {
             "python" => Ok(Self::Python),
             "rust" => Ok(Self::Rust),
@@ -193,13 +192,13 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     ///
     /// returns `Err` if the wrong filter is given, only `PLFilter` and `FunctionInLines` variants of `Filter` are valid.
     /// with `PLFilter` it will return `Err` if you mismatch the file type with the filter Ie: using `RustFile` and `PythonFilter` will return `Err`.
-    fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>>
+    fn filter_by(&self, filter: &Filter) -> Result<Self, String>
     where
         Self: Sized;
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
 }
 
-fn turn_into_index(snippet: &str) -> Result<HashMap<usize, Vec<usize>>, Box<dyn Error>> {
+fn turn_into_index(snippet: &str) -> Result<HashMap<usize, Vec<usize>>, String> {
     // turn snippet into a hashmap of line number to char index
     // so line 1 is 0 to 10, line 2 is 11 to 20, etc
     let mut index = HashMap::new();
@@ -279,7 +278,7 @@ macro_rules! make_file {
                     .map(|x| Box::new(x) as Box<dyn FunctionTrait>)
                     .collect()
             }
-            fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+            fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
                 let mut filtered_functions = Vec::new();
                 if let Filter::PLFilter(LanguageFilter::$filtername(_))
                 | Filter::FunctionInLines(..) = filter

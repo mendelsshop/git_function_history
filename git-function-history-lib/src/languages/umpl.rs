@@ -1,6 +1,6 @@
 use umpl::{self, parser::Thing};
 
-use std::{error::Error, fmt};
+use std::{fmt};
 
 use crate::impl_function_trait;
 
@@ -68,7 +68,7 @@ impl FunctionTrait for UMPLFunction {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<UMPLFunction>, Box<dyn Error>> {
+) -> Result<Vec<UMPLFunction>, String> {
     // parse the file contents
     let lexed = umpl::lexer::Lexer::new(file_contents.to_string());
     let tokens = lexed.scan_tokens();
@@ -78,7 +78,7 @@ pub(crate) fn find_function_in_file(
     if !res.is_empty() {
         return Ok(res);
     }
-    Err("no function found")?
+    Err(String::from("Function not found"))
 }
 
 fn find_function_recurse(

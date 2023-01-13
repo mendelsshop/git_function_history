@@ -1,5 +1,5 @@
 use crate::impl_function_trait;
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, fmt};
 
 use super::FunctionTrait;
 
@@ -77,7 +77,7 @@ impl FunctionTrait for GoFunction {
 pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
-) -> Result<Vec<GoFunction>, Box<dyn Error>> {
+) -> Result<Vec<GoFunction>, String> {
     let parsed_file = gosyn::parse_source(file_contents)
         .map_err(|e| format!("{e:?}"))?
         .decl;

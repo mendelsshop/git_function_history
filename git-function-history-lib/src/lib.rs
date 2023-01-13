@@ -20,8 +20,8 @@ macro_rules! get_item_from {
     ($oid:expr, $repo:expr, $typs:ident) => {
         git_repository::hash::ObjectId::from($oid)
             .attach(&$repo)
-            .object()?
-            .$typs()?
+            .object().map_err(|_| "Could not find object")?
+            .$typs().map_err(|_| format!("Could not find {} from object", stringify!($typs)))?
     };
 }
 
@@ -170,7 +170,7 @@ pub fn get_function_history(
                     // elem.0.signed_duration_since(date)
                 })
                 .map(|elem| elem.hash.clone())
-                .unwrap_to_error_sync("no commits found")?
+                .unwrap_to_error("no commits found")?
         }
         Filter::Author(_)
         | Filter::AuthorEmail(_)
@@ -310,9 +310,9 @@ fn sender(
     name: &str,
     langs: Language,
     file: &FileFilterType,
-) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
-    let object = repo.find_object(id)?;
-    let tree = object.try_into_tree()?;
+) -> Result<Vec<FileType>, String> {
+    let object = repo.find_object(id).map_err(|_| "failed to find object")?;
+    let tree = object.try_into_tree().map_err(|_| "failed to find tree")?;
     traverse_tree(&tree, repo, name, "", langs, file)
 }
 
@@ -323,12 +323,12 @@ fn traverse_tree(
     path: &str,
     langs: Language,
     filetype: &FileFilterType,
-) -> Result<Vec<FileType>, Box<dyn std::error::Error>> {
+) -> Result<Vec<FileType>, String> {
     let treee_iter = tree.iter();
     let mut files: Vec<(String, String)> = Vec::new();
     let mut ret = Vec::new();
     for i in treee_iter {
-        let i = i?;
+        let i = i.map_err(|_| "failed to get tree entry")?;
         match &i.mode() {
             objs::tree::EntryMode::Tree => {
                 let new = get_item_from!(i.oid(), &repo, try_into_tree);
@@ -414,8 +414,8 @@ fn traverse_tree(
                         }
                     },
                 }
-                let obh = repo.find_object(i.oid())?;
-                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)?;
+                let obh = repo.find_object(i.oid()).map_err(|_| "failed to find object")?;
+                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data).map_err(|_| "failed to get object ref")?;
                 let blob = objref.into_blob();
                 if let Some(blob) = blob {
                     files.push((file, String::from_utf8_lossy(blob.data).to_string()));
@@ -531,10 +531,10 @@ fn find_function_in_file_with_commit(
     fc: &str,
     name: &str,
     langs: Language,
-) -> Result<FileType, Box<dyn Error>> {
+) -> Result<FileType, String> {
     let file = match langs {
         Language::Rust => {
-            let functions = rust::find_function_in_file(fc, name)?;
+            let functions =  rust::find_function_in_file(fc, name)?;
             FileType::Rust(RustFile::new(file_path.to_string(), functions))
         }
         // #[cfg(feature = "c_lang")]
@@ -544,24 +544,25 @@ fn find_function_in_file_with_commit(
         // }
         #[cfg(feature = "unstable")]
         Language::Go => {
-            let functions = languages::go::find_function_in_file(fc, name)?;
+            let functions =  languages::go::find_function_in_file(fc, name)?;
             FileType::Go(GoFile::new(file_path.to_string(), functions))
         }
         Language::Python => {
-            let functions = languages::python::find_function_in_file(fc, name)?;
+            let functions =  languages::python::find_function_in_file(fc, name)?;
             FileType::Python(PythonFile::new(file_path.to_string(), functions))
         }
         Language::Ruby => {
-            let functions = languages::ruby::find_function_in_file(fc, name)?;
+            let functions =  languages::ruby::find_function_in_file(fc, name)?;
             FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
         }
         Language::UMPL => {
-            let functions = languages::umpl::find_function_in_file(fc, name)?;
+            let functions =  languages::umpl::find_function_in_file(fc, name)?;
             FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
         }
         Language::All => match file_path.split('.').last() {
             Some("rs") => {
-                let functions = rust::find_function_in_file(fc, name)?;
+                
+                let functions =  rust::find_function_in_file(fc, name)?;
                 FileType::Rust(RustFile::new(file_path.to_string(), functions))
             }
             // #[cfg(feature = "c_lang")]
@@ -570,16 +571,16 @@ fn find_function_in_file_with_commit(
             //     FileType::C(CFile::new(file_path.to_string(), functions))
             // }
             Some("py" | "pyw") => {
-                let functions = languages::python::find_function_in_file(fc, name)?;
+                let functions =  languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
             #[cfg(feature = "unstable")]
             Some("go") => {
-                let functions = languages::go::find_function_in_file(fc, name)?;
+                let functions =  languages::go::find_function_in_file(fc, name)?;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
             }
             Some("rb") => {
-                let functions = languages::ruby::find_function_in_file(fc, name)?;
+                let functions =  languages::ruby::find_function_in_file(fc, name)?;
                 FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
             }
             _ => Err("unknown file type")?,
@@ -613,16 +614,13 @@ fn ends_with_cmp_no_case(filename: &str, file_ext: &str) -> bool {
 }
 
 trait UnwrapToError<T> {
-    fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>>;
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>>;
+    fn unwrap_to_error(self, message: &str) -> Result<T, String>;
 }
 
 impl<T> UnwrapToError<T> for Option<T> {
-    fn unwrap_to_error_sync(self, message: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-        self.map_or_else(|| Err(message)?, |val| Ok(val))
-    }
-    fn unwrap_to_error(self, message: &str) -> Result<T, Box<dyn Error>> {
-        self.map_or_else(|| Err(message)?, |val| Ok(val))
+
+    fn unwrap_to_error(self, message: &str) -> Result<T, String> {
+        self.map_or_else(|| Err(message.to_string()), |val| Ok(val))
     }
 }
 

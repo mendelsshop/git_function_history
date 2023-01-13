@@ -3,7 +3,6 @@ use chrono::{DateTime, FixedOffset};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     collections::HashMap,
-    error::Error,
     fmt::{self, Display, Formatter},
 };
 
@@ -56,33 +55,33 @@ impl FileTrait for FileType {
         }
     }
 
-    fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
         match self {
             Self::Rust(file) => {
-                let filtered = file.filter_by(filter)?;
+                let filtered =  file.filter_by(filter)?;
                 Ok(Self::Rust(filtered))
             }
             Self::Python(file) => {
-                let filtered = file.filter_by(filter)?;
+                let filtered =  file.filter_by(filter)?;
                 Ok(Self::Python(filtered))
             }
 
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => {
-            //     let filtered = file.filter_by(filter)?;
+            //     let filtered =  file.filter_by(filter)?;
             //     Ok(Self::C(filtered))
             // }
             #[cfg(feature = "unstable")]
             Self::Go(file) => {
-                let filtered = file.filter_by(filter)?;
+                let filtered =  file.filter_by(filter)?;
                 Ok(Self::Go(filtered))
             }
             Self::Ruby(file) => {
-                let filtered = file.filter_by(filter)?;
+                let filtered =  file.filter_by(filter)?;
                 Ok(Self::Ruby(filtered))
             }
             Self::UMPL(file) => {
-                let filtered = file.filter_by(filter)?;
+                let filtered =  file.filter_by(filter)?;
                 Ok(Self::UMPL(filtered))
             }
         }
@@ -155,11 +154,11 @@ impl Commit {
         author: &str,
         email: &str,
         message: &str,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<Self, String> {
         Ok(Self {
             commit_hash: commit_hash.to_string(),
             files,
-            date: DateTime::parse_from_rfc2822(date)?,
+            date:DateTime::parse_from_rfc2822(date).map_err(|e| e.to_string())?,
             current_pos: 0,
             current_iter_pos: 0,
             author: author.to_string(),
@@ -224,7 +223,7 @@ impl Commit {
     /// # Errors
     ///
     /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
         match filter {
             Filter::FileAbsolute(_)
             | Filter::FileRelative(_)
@@ -426,7 +425,7 @@ impl FunctionHistory {
     /// # Errors
     ///
     /// returns `Err` if no files or commits are match the filter specified
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, Box<dyn Error>> {
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
         #[cfg(not(feature = "parallel"))]
@@ -571,7 +570,7 @@ trait ErrorToOption<FileType> {
     fn to_option(self) -> Option<FileType>;
 }
 
-impl<FileType> ErrorToOption<FileType> for Result<FileType, Box<dyn Error>> {
+impl<FileType> ErrorToOption<FileType> for Result<FileType, String> {
     fn to_option(self) -> Option<FileType> {
         self.map_or(None, |t| Some(t))
     }
