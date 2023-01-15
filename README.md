@@ -2,6 +2,9 @@
 
 # git function history
 
+[github pages documentation](https://mendelsshop.github.io/git_function_history/)
+
+
 ## crates in this project
 
 * [git-function-history-lib](https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-lib) - the library itself
