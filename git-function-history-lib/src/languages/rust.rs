@@ -341,7 +341,7 @@ pub(crate) fn find_function_in_file(
             body,
             block: parent_block,
             function: parent_fn,
-            return_type: get_ret_type(&f),
+            return_type: get_ret_type(f),
             arguments: f.param_list().map_or_else(HashMap::new, |args| {
                 args.params()
                     .filter_map(|arg| {
@@ -447,13 +447,7 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
 }
 
 fn get_ret_type(fns: &Fn) -> Option<String> {
-    match fns.ret_type() {
-        Some(ret) => match ret.ty() {
-            Some(ty) => Some(ty.to_string()),
-            None => None,
-        },
-        None => None,
-    }
+    fns.ret_type().and_then(|ret| ret.ty().map(|ty| ty.to_string()))
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RustFilter {
