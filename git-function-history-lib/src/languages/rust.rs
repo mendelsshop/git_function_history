@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 use ra_ap_syntax::{
-    ast::{self, HasDocComments, HasGenericParams, HasName, Fn},
+    ast::{self, Fn, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
 };
 
@@ -420,7 +420,7 @@ fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, V
         |gt| {
             (
                 gt.type_or_const_params()
-                    .map(|gt|match gt {
+                    .map(|gt| match gt {
                         ast::TypeOrConstParam::Type(ty) => ty.to_string(),
                         ast::TypeOrConstParam::Const(c) => c.to_string(),
                     })
