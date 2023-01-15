@@ -133,7 +133,6 @@ pub(crate) fn find_function_in_file(
             return Err(d.message.render())?;
         }
     }
-    // POSSBLE TODO check if there is any error dianostics parsed.dadnostices and return error is so
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
     let fns = get_functions_from_node(&ast, &vec![], name);
     let index = super::turn_into_index(file_contents)?;

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 use ra_ap_syntax::{
-    ast::{self, HasDocComments, HasGenericParams, HasName},
+    ast::{self, HasDocComments, HasGenericParams, HasName, Fn},
     AstNode, SourceFile, SyntaxKind,
 };
 
@@ -302,7 +302,7 @@ pub(crate) fn find_function_in_file(
                         top: stuff.1 .0,
                         bottom: stuff.1 .1,
                         lines: (stuff.0 .0, stuff.0 .1),
-                        return_type: function.ret_type().map(|ty| ty.to_string()),
+                        return_type: get_ret_type(&function),
                         arguments: f.param_list().map_or_else(HashMap::new, |args| {
                             args.params()
                                 .filter_map(|arg| {
@@ -341,7 +341,7 @@ pub(crate) fn find_function_in_file(
             body,
             block: parent_block,
             function: parent_fn,
-            return_type: f.ret_type().map(|ty| ty.to_string()),
+            return_type: get_ret_type(&f),
             arguments: f.param_list().map_or_else(HashMap::new, |args| {
                 args.params()
                     .filter_map(|arg| {
@@ -419,9 +419,11 @@ fn get_genrerics_and_lifetime<T: HasGenericParams>(block: &T) -> (Vec<String>, V
         || (vec![], vec![]),
         |gt| {
             (
-                // gt.
-                gt.generic_params()
-                    .map(|gt| gt.to_string())
+                gt.type_or_const_params()
+                    .map(|gt|match gt {
+                        ast::TypeOrConstParam::Type(ty) => ty.to_string(),
+                        ast::TypeOrConstParam::Const(c) => c.to_string(),
+                    })
                     .collect::<Vec<String>>(),
                 gt.lifetime_params()
                     .map(|lt| lt.to_string())
@@ -442,6 +444,16 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
             .map(|c| c.to_string())
             .collect::<Vec<String>>(),
     )
+}
+
+fn get_ret_type(fns: &Fn) -> Option<String> {
+    match fns.ret_type() {
+        Some(ret) => match ret.ty() {
+            Some(ty) => Some(ty.to_string()),
+            None => None,
+        },
+        None => None,
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RustFilter {
