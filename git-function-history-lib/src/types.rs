@@ -18,6 +18,7 @@ use crate::{
 use crate::languages::GoFile;
 
 #[derive(Debug, Clone)]
+/// a enum that can be used to store a file of any of the supported languages
 pub enum FileType {
     Rust(RustFile),
     Python(PythonFile),
@@ -312,7 +313,6 @@ impl Display for Commit {
 pub struct FunctionHistory {
     pub(crate) name: String,
     pub(crate) commit_history: Vec<Commit>,
-
     current_iter_pos: usize,
     current_pos: usize,
 }

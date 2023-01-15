@@ -21,6 +21,7 @@ pub struct RubyFunction {
 }
 
 impl RubyFunction {
+    /// creates a new `RubyFunction`
     pub const fn new(
         name: String,
         lines: (usize, usize),
@@ -83,6 +84,7 @@ pub struct RubyParams {
 }
 
 impl RubyParams {
+    /// creates `RubyParams` which is a repersentation of the parameters of a ruby function
     pub const fn new() -> Self {
         Self {
             args: Vec::new(),
@@ -320,6 +322,7 @@ impl FunctionTrait for RubyFunction {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// filter for ruby functions
 pub enum RubyFilter {
     /// find a Ruby functions in a specific class
     FunctionInClass(String),
@@ -330,6 +333,7 @@ pub enum RubyFilter {
 }
 
 impl RubyFilter {
+    /// check if a function matches the filter
     pub fn matches(&self, function: &RubyFunction) -> bool {
         match self {
             Self::FunctionInClass(name) => function.class.iter().any(|class| &class.name == name),

@@ -11,6 +11,7 @@ use crate::types::{CommandResult, ListType, Status};
 
 pub mod types;
 
+/// the thread that handles the commands
 pub fn command_thread(
     rx_t: Receiver<FullCommand>,
     tx_t: Sender<(CommandResult, Status)>,

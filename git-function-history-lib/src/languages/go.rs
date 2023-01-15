@@ -32,6 +32,7 @@ impl GoParameter {
 }
 
 impl GoFunction {
+    /// Create a new Go function
     pub const fn new(
         name: String,
         body: String,
@@ -199,6 +200,7 @@ pub(crate) fn find_function_in_file(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// filter for go functions
 pub enum GoFilter {
     // refers to the type of a parameter of a function
     HasParameter(String),
@@ -209,6 +211,7 @@ pub enum GoFilter {
 }
 
 impl GoFilter {
+    /// checks if a function matches the filter
     pub fn matches(&self, func: &GoFunction) -> bool {
         match self {
             Self::HasParameter(param) => match &func.parameters {

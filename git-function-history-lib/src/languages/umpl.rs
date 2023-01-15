@@ -6,6 +6,8 @@ use crate::impl_function_trait;
 
 use super::FunctionTrait;
 #[derive(Debug, Clone, PartialEq, Eq)]
+
+/// represents a function in the umpl language
 pub struct UMPLFunction {
     pub(crate) lines: (usize, usize),
     pub(crate) name: String,
@@ -13,6 +15,8 @@ pub struct UMPLFunction {
     pub(crate) args_count: usize,
     pub(crate) parents: Vec<UMPLParentFunction>,
 }
+
+/// represents a parent function in the umpl language
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UMPLParentFunction {
     pub(crate) lines: (usize, usize),
@@ -203,6 +207,8 @@ fn find_function_recurse(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+
+/// filter for umpl functions
 pub enum UMPLFilter {
     HasParameterCount(usize),
     HasParentWithParamCount(usize),
@@ -211,6 +217,7 @@ pub enum UMPLFilter {
 }
 
 impl UMPLFilter {
+    /// check if a function matches the filter
     pub fn matches(&self, function: &UMPLFunction) -> bool {
         match self {
             Self::HasParameterCount(count) => function.args_count == *count,

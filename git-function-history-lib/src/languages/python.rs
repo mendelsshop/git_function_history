@@ -67,6 +67,7 @@ pub struct PythonParams {
 }
 
 impl PythonParams {
+    /// Check if a parameter with the given name exists
     pub fn arg_has_name(&self, name: &str) -> bool {
         self.args.iter().any(|arg| arg.name == name)
             || self.kwargs.iter().any(|arg| arg.name == name)
@@ -511,6 +512,7 @@ fn get_decorator_list_new(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// filters for python functions
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
     InClass(String),
@@ -533,6 +535,7 @@ pub enum PythonFilter {
 }
 
 impl PythonFilter {
+    /// checks if a function matches the filter
     pub fn matches(&self, function: &PythonFunction) -> bool {
         match self {
             Self::InClass(class) => function.class.iter().any(|c| c.name == *class),

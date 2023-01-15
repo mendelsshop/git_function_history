@@ -451,6 +451,8 @@ fn get_ret_type(fns: &Fn) -> Option<String> {
         .and_then(|ret| ret.ty().map(|ty| ty.to_string()))
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+
+/// filters for rust functions
 pub enum RustFilter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
     InBlock(BlockType),
@@ -495,6 +497,7 @@ pub enum RustFilter {
 }
 
 impl RustFilter {
+    /// checks if a function matches the filter
     pub fn matches(&self, function: &RustFunction) -> bool {
         match self {
             Self::InBlock(block_type) => function

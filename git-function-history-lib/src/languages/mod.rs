@@ -12,6 +12,7 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 #[cfg(feature = "unstable")]
 use go::GoFunction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// an enum representing the different languages that are supported
 pub enum Language {
     /// The python language
     Python,
@@ -31,6 +32,7 @@ pub enum Language {
     All,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// the different filters that can be used to filter the functions for different languages
 pub enum LanguageFilter {
     /// python filter
     Python(python::PythonFilter),
@@ -195,6 +197,8 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     fn filter_by(&self, filter: &Filter) -> Result<Self, String>
     where
         Self: Sized;
+
+    /// returns the current function that the file is on
     fn get_current(&self) -> Option<Box<dyn FunctionTrait>>;
 }
 
@@ -230,14 +234,17 @@ fn get_from_index(index: &HashMap<usize, Vec<usize>>, char: usize) -> Option<usi
 
 // macro that generates the code for the different languages
 macro_rules! make_file {
-    ($name:ident, $function:ident, $filtername:ident) => {
+    (@gen $name:ident, $function:ident, $doc:expr) => {
+        #[doc = $doc]
         #[derive(Debug, Clone)]
         pub struct $name {
             file_name: String,
             functions: Vec<$function>,
             current_pos: usize,
         }
-
+    };
+    ($name:ident, $function:ident, $filtername:ident) => {
+        make_file!(@gen $name, $function, concat!(" a way to hold a bunch of ", stringify!($filtername), " functions in a file"));
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let mut file: Vec<(String, usize)> = Vec::new();
@@ -323,7 +330,6 @@ macro_rules! make_file {
         }
     };
 }
-
 make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
 // #[cfg(feature = "c_lang")]
