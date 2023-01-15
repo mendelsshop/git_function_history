@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["UMPLFilter","filter for umpl functions"]],"struct":[["UMPLFunction","represents a function in the umpl language"],["UMPLParentFunction","represents a parent function in the umpl language"]]};

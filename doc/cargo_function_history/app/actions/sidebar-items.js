@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Action","We define all available action"]],"struct":[["Actions","The application should have some contextual actions."]]};

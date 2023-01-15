@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["GoFilter","filter for go functions"],["GoParameter","The parameters of a Go function"]],"struct":[["GoFunction","A Go function"]]};
