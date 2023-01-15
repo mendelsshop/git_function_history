@@ -16,7 +16,7 @@ jobs:
         uses: orhun/git-cliff-action@v2
         with:
           config: fixtures/cliff.toml
-          args: --verbose --strip footer
+          args: --verbose --strip footer --exclude-path "CHANGELOG.md"
         env:
           OUTPUT: CHANGELOG.md
       - name: Print the changelog
