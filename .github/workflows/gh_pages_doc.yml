@@ -39,7 +39,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: switch to gh-pages branch and copy docs
         run: |
-          cd loading_bar
+          cd git_function_history
           mkdir ../gh_pages
           echo "made gh_pages dir"
           cp -r target/doc/* ../gh_pages/
@@ -54,7 +54,7 @@ jobs:
 
       - name: configure git
         run: |
-          cd loading_bar
+          cd git_function_history
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: commit gh_pages
