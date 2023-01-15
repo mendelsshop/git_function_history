@@ -447,7 +447,8 @@ fn get_doc_comments_and_attrs<T: HasDocComments>(block: &T) -> (Vec<String>, Vec
 }
 
 fn get_ret_type(fns: &Fn) -> Option<String> {
-    fns.ret_type().and_then(|ret| ret.ty().map(|ty| ty.to_string()))
+    fns.ret_type()
+        .and_then(|ret| ret.ty().map(|ty| ty.to_string()))
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RustFilter {
