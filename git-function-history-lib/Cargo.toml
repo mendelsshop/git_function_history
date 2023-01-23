@@ -19,7 +19,7 @@ cache = ["dep:cached"]
 
 [dependencies]
 chrono = "0.4.23"
-ra_ap_syntax = "0.0.148"
+ra_ap_syntax = "0.0.149"
 rayon = { version = "1.6.1", optional = true }
 rustpython-parser = { features = ["lalrpop"], version = "0.2.0" }
 lib-ruby-parser = "4.0.4"
