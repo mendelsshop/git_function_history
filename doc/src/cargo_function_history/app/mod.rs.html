@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-52c5db6f6f352e54.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-4743e13df3dfe8c4.css"><link rel="stylesheet" disabled href="../../../static.files/dark-0e1b889528bd466b.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-65289d5d067c7c66.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-d2686a620d99aad7.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../cargo_function_history/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-0ef3deca4ed45ad8.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-f501212b8b071243.css"><link rel="stylesheet" disabled href="../../../static.files/dark-e92fc12c34ff89d3.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-a0090c8b1ced384f.css"><script src="../../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-364b95f387bc3166.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../cargo_function_history/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -476,13 +476,38 @@
 <a href="#476" id="476">476</a>
 <a href="#477" id="477">477</a>
 <a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="self">self</span>::{actions::Actions, state::AppState};
 <span class="kw">use crate</span>::{app::actions::Action, keys::Key};
 
 <span class="kw">use </span>function_history_backend_thread::types::{
-    CommandResult, FilterType, FullCommand, ListType, Status,
+    CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
-<span class="kw">use </span>git_function_history::{languages::Language, FileFilterType, Filter};
+<span class="kw">use </span>git_function_history::{
+    languages::{Language, LanguageFilter},
+    FileFilterType, Filter,
+};
 <span class="kw">use </span>std::{
     fs,
     io::{Read, Write},
@@ -516,7 +541,17 @@
     <span class="kw">pub </span>history: Vec&lt;String&gt;,
     <span class="kw">pub </span>history_index: usize,
 }
-
+<span class="macro">macro_rules! </span>unwrap_set_error {
+    (<span class="macro-nonterminal">$self</span>:ident, <span class="macro-nonterminal">$expr</span>:expr, <span class="macro-nonterminal">$error</span>:expr) =&gt; {
+        <span class="kw">match </span><span class="macro-nonterminal">$expr </span>{
+            <span class="prelude-val">Some</span>(val) =&gt; val,
+            <span class="prelude-val">None </span>=&gt; {
+                <span class="macro-nonterminal">$self</span>.status = Status::Error(<span class="macro-nonterminal">$error</span>.to_string());
+                <span class="kw">return </span><span class="prelude-val">None</span>;
+            }
+        }
+    }; <span class="comment">// does the same thing but takes a closure to call when is some
+</span>}
 <span class="kw">impl </span>App {
     <span class="attr">#[allow(clippy::new_without_default)]
     </span><span class="kw">pub fn </span>new(
@@ -641,235 +676,244 @@
     }
 
     <span class="kw">pub fn </span>run_command(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-        <span class="comment">// iterate through the tha commnad by space
-        </span><span class="kw">let </span>iter = <span class="self">self</span>.input_buffer.to_string();
-        <span class="kw">let </span><span class="kw-2">mut </span>iter = iter.trim().split(<span class="string">&#39; &#39;</span>);
-        <span class="kw">match </span>iter.next() {
-            <span class="prelude-val">Some</span>(cmd) =&gt; <span class="kw">match </span>cmd {
-                <span class="string">&quot;search&quot; </span>=&gt; {
-                    <span class="comment">// check for a function name
-                    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(name) = iter.next() {
-                        <span class="comment">// check if there next arg stars with file or filter
-                        </span><span class="self">self</span>.status = Status::Loading;
-                        <span class="kw">let </span><span class="kw-2">mut </span>file = FileFilterType::None;
-                        <span class="kw">let </span><span class="kw-2">mut </span>filter = Filter::None;
-                        <span class="kw">let </span><span class="kw-2">mut </span>lang = Language::All;
-                        <span class="kw">let </span>new_vec = iter.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-                        <span class="kw">let </span><span class="kw-2">mut </span>new_iter = new_vec.windows(<span class="number">2</span>);
-                        <span class="macro">log::debug!</span>(<span class="string">&quot;searching for {:?}&quot;</span>, new_iter);
+        <span class="kw">let </span>command = <span class="self">self</span>.parse_command(<span class="kw-2">&amp;</span><span class="self">self</span>.input_buffer.to_string());
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(command) = command {
+            <span class="self">self</span>.channels
+                .<span class="number">0
+                </span>.send(command)
+                .expect(<span class="string">&quot;could not send message in thread&quot;</span>);
+        }
+    }
 
-                        <span class="kw">if </span>new_vec.len() % <span class="number">2 </span>!= <span class="number">0 </span>{
-                            <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;uncomplete search, command: {} doesnt have its parameters&quot;</span>,new_vec.last().expect(<span class="string">&quot;oops look like theres nothing in this vec don&#39;t how this happened&quot;</span>)));
-                            <span class="kw">return</span>;
-                        }
-                        <span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;mut </span>new_iter {
-                            <span class="macro">log::info!</span>(<span class="string">&quot;i: {:?}&quot;</span>, i);
-                            <span class="kw">match </span>i {
-                                [<span class="string">&quot;relative&quot;</span>, filepath] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;relative file: {}&quot;</span>, filepath);
-                                    file = FileFilterType::Relative(filepath.to_string());
-                                }
-                                [<span class="string">&quot;absolute&quot;</span>, filepath] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;absolute file: {}&quot;</span>, filepath);
-                                    file = FileFilterType::Absolute(filepath.to_string());
-                                }
-                                [<span class="string">&quot;date&quot;</span>, date] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;date: {}&quot;</span>, date);
-                                    filter = Filter::Date(date.to_string());
-                                }
-                                [<span class="string">&quot;commit&quot;</span>, commit] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;commit: {}&quot;</span>, commit);
-                                    filter = Filter::CommitHash(commit.to_string());
-                                }
-                                [<span class="string">&quot;directory&quot;</span>, dir] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;directory: {}&quot;</span>, dir);
-                                    file = FileFilterType::Directory(dir.to_string());
-                                }
-                                [<span class="string">&quot;date-range&quot;</span>, pos] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;date range: {}&quot;</span>, pos);
-                                    <span class="kw">let </span>(start, end) = <span class="kw">match </span>pos.split_once(<span class="string">&quot;..&quot;</span>) {
-                                        <span class="prelude-val">Some</span>((start, end)) =&gt; (start, end),
-                                        <span class="prelude-val">None </span>=&gt; {
-                                            <span class="self">self</span>.status = Status::Error(
-                                                <span class="string">&quot;Invalid date range, expected start..end&quot;
-                                                    </span>.to_string(),
-                                            );
-                                            <span class="kw">return</span>;
-                                        }
-                                    };
-                                    filter = Filter::DateRange(start.to_string(), end.to_string());
-                                }
-                                [<span class="string">&quot;language&quot;</span>, language] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;language: {}&quot;</span>, language);
-                                    lang = <span class="kw">match </span>language {
-                                        <span class="kw-2">&amp;</span><span class="string">&quot;rust&quot; </span>=&gt; Language::Rust,
-                                        <span class="kw-2">&amp;</span><span class="string">&quot;python&quot; </span>=&gt; Language::Python,
-                                        <span class="comment">// #[cfg(feature = &quot;c_lang&quot;)]
-                                        // &amp;&quot;c&quot; =&gt; Language::C,
-                                        </span><span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
-                                        </span><span class="kw-2">&amp;</span><span class="string">&quot;go&quot; </span>=&gt; Language::Go,
-                                        <span class="kw-2">&amp;</span><span class="string">&quot;ruby&quot; </span>=&gt; Language::Ruby,
-                                        <span class="kw">_ </span>=&gt; {
-                                            <span class="self">self</span>.status =
-                                                Status::Error(<span class="string">&quot;Invalid language&quot;</span>.to_string());
-                                            <span class="kw">return</span>;
-                                        }
-                                    };
-                                }
-                                [<span class="string">&quot;author&quot;</span>, author] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;author: {}&quot;</span>, author);
-                                    filter = Filter::Author(author.to_string());
-                                }
-                                [<span class="string">&quot;author-email&quot;</span>, author_email] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;author-email: {}&quot;</span>, author_email);
-                                    filter = Filter::AuthorEmail(author_email.to_string());
-                                }
-                                [<span class="string">&quot;message&quot;</span>, message] =&gt; {
-                                    <span class="macro">log::trace!</span>(<span class="string">&quot;message: {}&quot;</span>, message);
-                                    filter = Filter::Message(message.to_string());
-                                }
-
-                                <span class="kw">_ </span>=&gt; {
-                                    <span class="macro">log::debug!</span>(<span class="string">&quot;invalid arg: {i:?}&quot;</span>);
-                                    <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid search {i:?}&quot;</span>));
-                                    <span class="kw">return</span>;
-                                }
-                            }
-                        }
-                        <span class="self">self</span>.channels
-                            .<span class="number">0
-                            </span>.send(FullCommand::Search(name.to_string(), file, filter, lang))
-                            .expect(<span class="string">&quot;could not send message in thread&quot;</span>)
-                    } <span class="kw">else </span>{
-                        <span class="self">self</span>.status = Status::Error(<span class="string">&quot;No function name given&quot;</span>.to_string());
-                    }
+    <span class="kw">pub fn </span>parse_command(<span class="kw-2">&amp;mut </span><span class="self">self</span>, command: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;FullCommand&gt; {
+        <span class="kw">match </span>command.split_once(<span class="string">&#39; &#39;</span>) {
+            <span class="prelude-val">Some</span>((cmd, args)) =&gt; {
+                <span class="kw">let </span>args = args.split(<span class="string">&#39; &#39;</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+                <span class="kw">let </span>iter = args.as_slice();
+                <span class="self">self</span>.status = Status::Loading;
+                <span class="kw">match </span>cmd {
+                    <span class="string">&quot;search&quot; </span>=&gt; <span class="prelude-val">Some</span>(FullCommand::Search(<span class="self">self</span>.parse_search(iter)<span class="question-mark">?</span>)),
+                    <span class="string">&quot;filter&quot; </span>=&gt; <span class="prelude-val">Some</span>(FullCommand::Filter(FilterType {
+                        thing: <span class="self">self</span>.cmd_output.clone(),
+                        filter: <span class="self">self</span>.parse_filter(iter)<span class="question-mark">?</span>,
+                    })),
+                    <span class="string">&quot;list&quot; </span>=&gt; <span class="prelude-val">Some</span>(FullCommand::List(<span class="self">self</span>.parse_list(iter)<span class="question-mark">?</span>)),
+                    <span class="kw">_ </span>=&gt; {
+                        <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid command: {cmd}&quot;</span>));
+                        <span class="prelude-val">None
+                    </span>}
                 }
-                <span class="string">&quot;filter&quot; </span>=&gt; {
-                    <span class="self">self</span>.status = Status::Loading;
-                    <span class="kw">let </span><span class="kw-2">mut </span>filter = Filter::None;
-                    <span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;mut </span>iter.clone().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;().windows(<span class="number">2</span>) {
-                        <span class="kw">match </span>i {
-                            [<span class="string">&quot;date&quot;</span>, date] =&gt; {
-                                filter = Filter::Date(date.to_string());
-                            }
-                            [<span class="string">&quot;commit&quot;</span>, commit] =&gt; {
-                                filter = Filter::CommitHash(commit.to_string());
-                            }
-                            [<span class="string">&quot;date-range&quot;</span>, pos] =&gt; {
-                                <span class="kw">let </span>(start, end) = <span class="kw">match </span>pos.split_once(<span class="string">&quot;..&quot;</span>) {
-                                    <span class="prelude-val">Some</span>((start, end)) =&gt; (start, end),
-                                    <span class="prelude-val">None </span>=&gt; {
-                                        <span class="self">self</span>.status = Status::Error(
-                                            <span class="string">&quot;Invalid date range, expected start..end&quot;</span>.to_string(),
-                                        );
-                                        <span class="kw">return</span>;
-                                    }
-                                };
-                                filter = Filter::DateRange(start.to_string(), end.to_string());
-                            }
-                            [<span class="string">&quot;author&quot;</span>, author] =&gt; {
-                                <span class="macro">log::trace!</span>(<span class="string">&quot;author: {}&quot;</span>, author);
-                                filter = Filter::Author(author.to_string());
-                            }
-                            [<span class="string">&quot;author-email&quot;</span>, author_email] =&gt; {
-                                <span class="macro">log::trace!</span>(<span class="string">&quot;author-email: {}&quot;</span>, author_email);
-                                filter = Filter::AuthorEmail(author_email.to_string());
-                            }
-                            [<span class="string">&quot;message&quot;</span>, message] =&gt; {
-                                <span class="macro">log::trace!</span>(<span class="string">&quot;message: {}&quot;</span>, message);
-                                filter = Filter::Message(message.to_string());
-                            }
-                            [<span class="string">&quot;line-range&quot;</span>, pos] =&gt; {
-                                <span class="comment">// get the start and end by splitting the pos by: ..
-                                </span><span class="kw">let </span>(start, end) = <span class="kw">match </span>pos.split_once(<span class="string">&quot;..&quot;</span>) {
-                                    <span class="prelude-val">Some</span>((start, end)) =&gt; (start, end),
-                                    <span class="prelude-val">None </span>=&gt; {
-                                        <span class="self">self</span>.status = Status::Error(
-                                            <span class="string">&quot;Invalid line range, expected start..end&quot;</span>.to_string(),
-                                        );
-                                        <span class="kw">return</span>;
-                                    }
-                                };
-                                <span class="kw">let </span>start = <span class="kw">match </span>start.parse::&lt;usize&gt;() {
-                                    <span class="prelude-val">Ok</span>(x) =&gt; x,
-                                    <span class="prelude-val">Err</span>(e) =&gt; {
-                                        <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;{e}&quot;</span>));
-                                        <span class="kw">return</span>;
-                                    }
-                                };
-                                <span class="kw">let </span>end = <span class="kw">match </span>end.parse::&lt;usize&gt;() {
-                                    <span class="prelude-val">Ok</span>(x) =&gt; x,
-                                    <span class="prelude-val">Err</span>(e) =&gt; {
-                                        <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;{e}&quot;</span>));
-                                        <span class="kw">return</span>;
-                                    }
-                                };
-                                filter = Filter::FunctionInLines(start, end);
-                            }
-                            [<span class="string">&quot;file-absolute&quot;</span>, file] =&gt; {
-                                filter = Filter::FileAbsolute(file.to_string());
-                            }
-                            [<span class="string">&quot;file-relative&quot;</span>, file] =&gt; {
-                                filter = Filter::FileRelative(file.to_string());
-                            }
-                            [<span class="string">&quot;directory&quot;</span>, dir] =&gt; {
-                                filter = Filter::Directory(dir.to_string());
-                            }
-                            <span class="kw">_ </span>=&gt; {
-                                <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(
-                                    <span class="string">&quot;Invalid filter {}&quot;</span>,
-                                    i.first().unwrap_or(<span class="kw-2">&amp;</span><span class="string">&quot;&quot;</span>)
-                                ));
-                                <span class="kw">return</span>;
-                            }
-                        }
-                    }
-                    <span class="kw">if </span>iter.clone().count() &gt; <span class="number">0 </span>{
-                        <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(
-                            <span class="string">&quot;Invalid filter, command: {:?} missing args&quot;</span>,
-                            iter.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-                        ));
-                        <span class="kw">return</span>;
-                    }
-
-                    <span class="self">self</span>.channels
-                        .<span class="number">0
-                        </span>.send(FullCommand::Filter(FilterType {
-                            thing: <span class="self">self</span>.cmd_output.clone(),
-                            filter,
-                        }))
-                        .expect(<span class="string">&quot;could not send message in thread&quot;</span>)
-                }
-                <span class="string">&quot;list&quot; </span>=&gt; {
-                    <span class="self">self</span>.status = Status::Loading;
-                    <span class="kw">let </span>list = <span class="kw">match </span>iter.next() {
-                        <span class="prelude-val">Some</span>(arg) =&gt; <span class="kw">match </span>arg {
-                            <span class="string">&quot;dates&quot; </span>=&gt; <span class="prelude-val">Some</span>(FullCommand::List(ListType::Dates)),
-                            <span class="string">&quot;commits&quot; </span>=&gt; <span class="prelude-val">Some</span>(FullCommand::List(ListType::Commits)),
-                            <span class="kw">_ </span>=&gt; {
-                                <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid list type&quot;</span>.to_string());
-                                <span class="prelude-val">None
-                            </span>}
-                        },
-                        <span class="prelude-val">None </span>=&gt; {
-                            <span class="self">self</span>.status = Status::Error(<span class="string">&quot;No list type given&quot;</span>.to_string());
-                            <span class="prelude-val">None
-                        </span>}
-                    };
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(list) = list {
-                        <span class="self">self</span>.channels
-                            .<span class="number">0
-                            </span>.send(list)
-                            .expect(<span class="string">&quot;could not send message in thread&quot;</span>)
-                    }
-                }
-                other =&gt; {
-                    <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid command: {other}&quot;</span>));
-                }
-            },
+            }
             <span class="prelude-val">None </span>=&gt; {
                 <span class="self">self</span>.status = Status::Error(<span class="string">&quot;No command given&quot;</span>.to_string());
+                <span class="prelude-val">None
+            </span>}
+        }
+    }
+
+    <span class="kw">fn </span>parse_search(<span class="kw-2">&amp;mut </span><span class="self">self</span>, command: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;SearchType&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>command_iter = command.iter();
+        <span class="kw">let </span><span class="kw-2">mut </span>file = FileFilterType::None;
+        <span class="kw">let </span><span class="kw-2">mut </span>filter = Filter::None;
+        <span class="kw">let </span><span class="kw-2">mut </span>lang = Language::All;
+
+        <span class="kw">let </span>name = <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No function name&quot;</span>);
+        <span class="kw">while let </span><span class="prelude-val">Some</span>(cmd) = command_iter.next() {
+            <span class="kw">match </span><span class="kw-2">*</span>cmd {
+                <span class="string">&quot;language&quot; </span>=&gt; {
+                    lang = <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No language given&quot;</span>)
+                    {
+                        <span class="string">&quot;rust&quot; </span>=&gt; Language::Rust,
+                        <span class="string">&quot;python&quot; </span>=&gt; Language::Python,
+                        <span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
+                        </span><span class="string">&quot;go&quot; </span>=&gt; Language::Go,
+                        <span class="string">&quot;ruby&quot; </span>=&gt; Language::Ruby,
+                        <span class="string">&quot;umpl&quot; </span>=&gt; Language::UMPL,
+                        <span class="kw">_ </span>=&gt; {
+                            <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid language&quot;</span>.to_string());
+                            <span class="kw">return </span><span class="prelude-val">None</span>;
+                        }
+                    };
+                }
+                <span class="string">&quot;date&quot; </span>=&gt; {
+                    filter = <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No date given&quot;</span>) {
+                        <span class="string">&quot;range&quot; </span>=&gt; Filter::DateRange(
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No start date given&quot;</span>)
+                                .to_string(),
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No end date given&quot;</span>)
+                                .to_string(),
+                        ),
+                        date =&gt; Filter::Date(date.to_string()),
+                    };
+                }
+                <span class="string">&quot;commit&quot; </span>=&gt; {
+                    filter = Filter::CommitHash(
+                        <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No commit given&quot;</span>).to_string(),
+                    );
+                }
+                <span class="string">&quot;author&quot; </span>=&gt; {
+                    filter =
+                        <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No author name given&quot;</span>)
+                        {
+                            <span class="string">&quot;email&quot; </span>=&gt; Filter::AuthorEmail(
+                                <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No email given&quot;</span>)
+                                    .to_string(),
+                            ),
+                            name =&gt; Filter::Author(name.to_string()),
+                        };
+                }
+                <span class="string">&quot;file&quot; </span>=&gt; {
+                    file = <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;Invalid file type&quot;</span>)
+                    {
+                        <span class="string">&quot;absolute&quot; </span>=&gt; FileFilterType::Absolute,
+                        <span class="string">&quot;relative&quot; </span>=&gt; FileFilterType::Relative,
+                        <span class="string">&quot;directory&quot; </span>=&gt; FileFilterType::Directory,
+                        <span class="kw">_ </span>=&gt; {
+                            <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid file type&quot;</span>.to_string());
+                            <span class="kw">return </span><span class="prelude-val">None</span>;
+                        }
+                    }(
+                        <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No file given&quot;</span>).to_string(),
+                    );
+                }
+                <span class="string">&quot;message&quot; </span>=&gt; {
+                    filter = Filter::Message(
+                        <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No commit message given&quot;</span>)
+                            .to_string(),
+                    )
+                }
+                <span class="kw">_ </span>=&gt; {
+                    <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid search command: {cmd}&quot;</span>));
+                    <span class="kw">return </span><span class="prelude-val">None</span>;
+                }
             }
+        }
+        <span class="prelude-val">Some</span>(SearchType {
+            search: name.to_string(),
+            file,
+            filter,
+            lang,
+        })
+    }
+
+    <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, command: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;Filter&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>command_iter = command.iter();
+        <span class="kw">let </span><span class="kw-2">mut </span>filter = Filter::None;
+        <span class="kw">while let </span><span class="prelude-val">Some</span>(cmd) = command_iter.next() {
+            <span class="kw">match </span>cmd {
+                <span class="kw-2">&amp;</span><span class="string">&quot;language&quot; </span>=&gt; {
+                    filter = Filter::Language(
+                        <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No language given&quot;</span>) {
+                            <span class="string">&quot;rust&quot; </span>=&gt; Language::Rust,
+                            <span class="string">&quot;python&quot; </span>=&gt; Language::Python,
+                            <span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
+                            </span><span class="string">&quot;go&quot; </span>=&gt; Language::Go,
+                            <span class="string">&quot;ruby&quot; </span>=&gt; Language::Ruby,
+                            <span class="string">&quot;umpl&quot; </span>=&gt; Language::UMPL,
+                            <span class="kw">_ </span>=&gt; {
+                                <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid language&quot;</span>.to_string());
+                                <span class="kw">return </span><span class="prelude-val">None</span>;
+                            }
+                        },
+                    );
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;date&quot; </span>=&gt; {
+                    filter = <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No date given&quot;</span>) {
+                        <span class="string">&quot;range&quot; </span>=&gt; Filter::DateRange(
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No start date given&quot;</span>)
+                                .to_string(),
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No end date given&quot;</span>)
+                                .to_string(),
+                        ),
+                        date =&gt; Filter::Date(date.to_string()),
+                    };
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;commit&quot; </span>=&gt; {
+                    filter = Filter::CommitHash(
+                        <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No commit given&quot;</span>).to_string(),
+                    );
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;author&quot; </span>=&gt; {
+                    filter =
+                        <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No author name given&quot;</span>)
+                        {
+                            <span class="string">&quot;email&quot; </span>=&gt; Filter::AuthorEmail(
+                                <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No email given&quot;</span>)
+                                    .to_string(),
+                            ),
+                            name =&gt; Filter::Author(name.to_string()),
+                        };
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;file&quot; </span>=&gt; {
+                    filter =
+                        <span class="kw">match </span><span class="kw-2">*</span><span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;Invalid file type&quot;</span>) {
+                            <span class="string">&quot;absolute&quot; </span>=&gt; Filter::FileAbsolute,
+                            <span class="string">&quot;relative&quot; </span>=&gt; Filter::FileRelative,
+                            <span class="string">&quot;directory&quot; </span>=&gt; Filter::Directory,
+                            <span class="kw">_ </span>=&gt; {
+                                <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid file type&quot;</span>.to_string());
+                                <span class="kw">return </span><span class="prelude-val">None</span>;
+                            }
+                        }(
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No file given&quot;</span>)
+                                .to_string(),
+                        );
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;message&quot; </span>=&gt; {
+                    filter = Filter::Message(
+                        <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;No commit message given&quot;</span>)
+                            .to_string(),
+                    )
+                }
+                <span class="kw-2">&amp;</span><span class="string">&quot;line&quot; </span>=&gt; {
+                    <span class="macro">unwrap_set_error!</span>(
+                        <span class="self">self</span>,
+                        command_iter.next(),
+                        <span class="string">&quot;only supported argument line is range currently&quot;
+                    </span>);
+                    filter = Filter::FunctionInLines(
+                        <span class="macro">unwrap_set_error!</span>(
+                            <span class="self">self</span>,
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;start line not supplied&quot;</span>)
+                                .parse::&lt;usize&gt;()
+                                .ok(),
+                            <span class="string">&quot;could not parse start line&quot;
+                        </span>),
+                        <span class="macro">unwrap_set_error!</span>(
+                            <span class="self">self</span>,
+                            <span class="macro">unwrap_set_error!</span>(<span class="self">self</span>, command_iter.next(), <span class="string">&quot;End line not supplied&quot;</span>)
+                                .parse::&lt;usize&gt;()
+                                .ok(),
+                            <span class="string">&quot;could not parse end line&quot;
+                        </span>),
+                    );
+                }
+                filter
+                    <span class="kw">if </span>LanguageFilter::get_variant_names()
+                        .iter()
+                        .map(|x| x.to_lowercase())
+                        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+                        .contains(<span class="kw-2">&amp;</span>filter.to_string()) =&gt;
+                {
+                    <span class="macro">print!</span>(<span class="string">&quot;hi&quot;</span>)
+                }
+                <span class="kw">_ </span>=&gt; {
+                    <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid search command: {cmd}&quot;</span>));
+                    <span class="kw">return </span><span class="prelude-val">None</span>;
+                }
+            }
+        }
+        <span class="prelude-val">Some</span>(filter)
+    }
+
+    <span class="kw">fn </span>parse_list(<span class="kw-2">&amp;mut </span><span class="self">self</span>, command: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;ListType&gt; {
+        <span class="kw">match </span>command {
+            [<span class="string">&quot;dates&quot;</span>] =&gt; <span class="prelude-val">Some</span>(ListType::Dates),
+            [<span class="string">&quot;commits&quot;</span>] =&gt; <span class="prelude-val">Some</span>(ListType::Commits),
+            <span class="kw">_ </span>=&gt; {
+                <span class="self">self</span>.status = Status::Error(<span class="string">&quot;Invalid list type&quot;</span>.to_string());
+                <span class="prelude-val">None
+            </span>}
         }
     }
 
@@ -955,4 +999,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0-nightly (afaf3e07a 2023-01-14)" data-search-js="search-181581080540673f.js" data-settings-js="settings-a2afdefbb7c817f1.js" data-settings-css="settings-84508a86fe805444.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (ef934d9b6 2023-02-08)" data-search-js="search-28136cea55c34037.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

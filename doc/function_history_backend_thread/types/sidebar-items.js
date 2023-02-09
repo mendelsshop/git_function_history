@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Command",""],["CommandResult",""],["FullCommand",""],["HistoryFilterType",""],["ListType",""],["Status",""]],"struct":[["FilterType",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["Command",""],["CommandResult",""],["FullCommand",""],["HistoryFilterType",""],["ListType",""],["Status",""]],"struct":[["FilterType",""],["SearchType",""]]};
