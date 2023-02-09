@@ -1,7 +1,7 @@
-use crate::impl_function_trait;
-use std::{collections::HashMap, fmt};
-
 use super::FunctionTrait;
+use crate::impl_function_trait;
+use enum_stuff::enumstuff;
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Clone)]
 /// A Go function
@@ -199,7 +199,7 @@ pub(crate) fn find_function_in_file(
     Ok(parsed)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// filter for go functions
 pub enum GoFilter {
     // refers to the type of a parameter of a function

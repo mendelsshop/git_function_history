@@ -1,3 +1,4 @@
+use enum_stuff::enumstuff;
 use rustpython_parser::{
     ast::{Arguments, ExprKind, Located, StmtKind},
     parser,
@@ -511,7 +512,7 @@ fn get_decorator_list_new(
         .collect::<Vec<(usize, String)>>()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// filters for python functions
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class

@@ -230,7 +230,8 @@ impl Commit {
             | Filter::FileRelative(_)
             | Filter::Directory(_)
             | Filter::FunctionInLines(..)
-            | Filter::PLFilter(_) => {}
+            | Filter::PLFilter(_)
+            | Filter::Language(_) => {}
             Filter::None => {
                 return Ok(self.clone());
             }
@@ -264,6 +265,13 @@ impl Commit {
                     }
                 }
                 Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).ok(),
+                Filter::Language(lang) => {
+                    if f.get_language() == *lang {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
                 _ => None,
             })
             .collect();
@@ -436,7 +444,8 @@ impl FunctionHistory {
                 | Filter::Directory(_)
                 | Filter::FileAbsolute(_)
                 | Filter::PLFilter(_)
-                | Filter::FileRelative(_) => f.filter_by(filter).ok(),
+                | Filter::FileRelative(_)
+                | Filter::Language(_) => f.filter_by(filter).ok(),
                 Filter::CommitHash(commit_hash) => {
                     if &f.commit_hash == commit_hash {
                         Some(f.clone())

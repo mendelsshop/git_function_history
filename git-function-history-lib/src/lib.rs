@@ -96,6 +96,8 @@ pub enum Filter {
     Message(String),
     /// when you want to filter by proggramming language filter
     PLFilter(LanguageFilter),
+    /// when you want to filter to only have files that are in a specific language
+    Language(Language),
     /// When you want to filter by nothing.
     None,
 }

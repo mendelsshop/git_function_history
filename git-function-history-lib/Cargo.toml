@@ -32,3 +32,4 @@ gitoxide-core = "0.22.0"
 git-repository = { version = "0.33.0", default-features = false, features = ["max-performance-safe"] }
 git-features = { version = "0.26.1", features = ["zlib", "once_cell"] }
 umpl = "1.1.0"
+enum_stuff = {path = "../enum_stuff"}

@@ -9,6 +9,7 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 // #[cfg(feature = "c_lang")]
 // use self::c::CFunction;
 
+use enum_stuff::enumstuff;
 #[cfg(feature = "unstable")]
 use go::GoFunction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,7 +32,7 @@ pub enum Language {
     /// all available languages
     All,
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
 pub enum LanguageFilter {
     /// python filter

@@ -1,3 +1,4 @@
+use enum_stuff::enumstuff;
 use umpl::{self, parser::Thing};
 
 use std::fmt;
@@ -206,9 +207,8 @@ fn find_function_recurse(
     results
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-
 /// filter for umpl functions
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 pub enum UMPLFilter {
     HasParameterCount(usize),
     HasParentWithParamCount(usize),

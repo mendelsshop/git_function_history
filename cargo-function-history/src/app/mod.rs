@@ -2,9 +2,12 @@ use self::{actions::Actions, state::AppState};
 use crate::{app::actions::Action, keys::Key};
 
 use function_history_backend_thread::types::{
-    CommandResult, FilterType, FullCommand, ListType, Status,
+    CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
-use git_function_history::{languages::Language, FileFilterType, Filter};
+use git_function_history::{
+    languages::{Language, LanguageFilter},
+    FileFilterType, Filter,
+};
 use std::{
     fs,
     io::{Read, Write},
@@ -38,7 +41,17 @@ pub struct App {
     pub history: Vec<String>,
     pub history_index: usize,
 }
-
+macro_rules! unwrap_set_error {
+    ($self:ident, $expr:expr, $error:expr) => {
+        match $expr {
+            Some(val) => val,
+            None => {
+                $self.status = Status::Error($error.to_string());
+                return None;
+            }
+        }
+    }; // does the same thing but takes a closure to call when is some
+}
 impl App {
     #[allow(clippy::new_without_default)]
     pub fn new(
@@ -163,234 +176,243 @@ impl App {
     }
 
     pub fn run_command(&mut self) {
-        // iterate through the tha commnad by space
-        let iter = self.input_buffer.to_string();
-        let mut iter = iter.trim().split(' ');
-        match iter.next() {
-            Some(cmd) => match cmd {
-                "search" => {
-                    // check for a function name
-                    if let Some(name) = iter.next() {
-                        // check if there next arg stars with file or filter
-                        self.status = Status::Loading;
-                        let mut file = FileFilterType::None;
-                        let mut filter = Filter::None;
-                        let mut lang = Language::All;
-                        let new_vec = iter.collect::<Vec<_>>();
-                        let mut new_iter = new_vec.windows(2);
-                        log::debug!("searching for {:?}", new_iter);
+        let command = self.parse_command(&self.input_buffer.to_string());
+        if let Some(command) = command {
+            self.channels
+                .0
+                .send(command)
+                .expect("could not send message in thread");
+        }
+    }
 
-                        if new_vec.len() % 2 != 0 {
-                            self.status = Status::Error(format!("uncomplete search, command: {} doesnt have its parameters",new_vec.last().expect("oops look like theres nothing in this vec don't how this happened")));
-                            return;
-                        }
-                        for i in &mut new_iter {
-                            log::info!("i: {:?}", i);
-                            match i {
-                                ["relative", filepath] => {
-                                    log::trace!("relative file: {}", filepath);
-                                    file = FileFilterType::Relative(filepath.to_string());
-                                }
-                                ["absolute", filepath] => {
-                                    log::trace!("absolute file: {}", filepath);
-                                    file = FileFilterType::Absolute(filepath.to_string());
-                                }
-                                ["date", date] => {
-                                    log::trace!("date: {}", date);
-                                    filter = Filter::Date(date.to_string());
-                                }
-                                ["commit", commit] => {
-                                    log::trace!("commit: {}", commit);
-                                    filter = Filter::CommitHash(commit.to_string());
-                                }
-                                ["directory", dir] => {
-                                    log::trace!("directory: {}", dir);
-                                    file = FileFilterType::Directory(dir.to_string());
-                                }
-                                ["date-range", pos] => {
-                                    log::trace!("date range: {}", pos);
-                                    let (start, end) = match pos.split_once("..") {
-                                        Some((start, end)) => (start, end),
-                                        None => {
-                                            self.status = Status::Error(
-                                                "Invalid date range, expected start..end"
-                                                    .to_string(),
-                                            );
-                                            return;
-                                        }
-                                    };
-                                    filter = Filter::DateRange(start.to_string(), end.to_string());
-                                }
-                                ["language", language] => {
-                                    log::trace!("language: {}", language);
-                                    lang = match language {
-                                        &"rust" => Language::Rust,
-                                        &"python" => Language::Python,
-                                        // #[cfg(feature = "c_lang")]
-                                        // &"c" => Language::C,
-                                        #[cfg(feature = "unstable")]
-                                        &"go" => Language::Go,
-                                        &"ruby" => Language::Ruby,
-                                        _ => {
-                                            self.status =
-                                                Status::Error("Invalid language".to_string());
-                                            return;
-                                        }
-                                    };
-                                }
-                                ["author", author] => {
-                                    log::trace!("author: {}", author);
-                                    filter = Filter::Author(author.to_string());
-                                }
-                                ["author-email", author_email] => {
-                                    log::trace!("author-email: {}", author_email);
-                                    filter = Filter::AuthorEmail(author_email.to_string());
-                                }
-                                ["message", message] => {
-                                    log::trace!("message: {}", message);
-                                    filter = Filter::Message(message.to_string());
-                                }
-
-                                _ => {
-                                    log::debug!("invalid arg: {i:?}");
-                                    self.status = Status::Error(format!("Invalid search {i:?}"));
-                                    return;
-                                }
-                            }
-                        }
-                        self.channels
-                            .0
-                            .send(FullCommand::Search(name.to_string(), file, filter, lang))
-                            .expect("could not send message in thread")
-                    } else {
-                        self.status = Status::Error("No function name given".to_string());
+    pub fn parse_command(&mut self, command: &str) -> Option<FullCommand> {
+        match command.split_once(' ') {
+            Some((cmd, args)) => {
+                let args = args.split(' ').collect::<Vec<_>>();
+                let iter = args.as_slice();
+                self.status = Status::Loading;
+                match cmd {
+                    "search" => Some(FullCommand::Search(self.parse_search(iter)?)),
+                    "filter" => Some(FullCommand::Filter(FilterType {
+                        thing: self.cmd_output.clone(),
+                        filter: self.parse_filter(iter)?,
+                    })),
+                    "list" => Some(FullCommand::List(self.parse_list(iter)?)),
+                    _ => {
+                        self.status = Status::Error(format!("Invalid command: {cmd}"));
+                        None
                     }
                 }
-                "filter" => {
-                    self.status = Status::Loading;
-                    let mut filter = Filter::None;
-                    for i in &mut iter.clone().collect::<Vec<_>>().windows(2) {
-                        match i {
-                            ["date", date] => {
-                                filter = Filter::Date(date.to_string());
-                            }
-                            ["commit", commit] => {
-                                filter = Filter::CommitHash(commit.to_string());
-                            }
-                            ["date-range", pos] => {
-                                let (start, end) = match pos.split_once("..") {
-                                    Some((start, end)) => (start, end),
-                                    None => {
-                                        self.status = Status::Error(
-                                            "Invalid date range, expected start..end".to_string(),
-                                        );
-                                        return;
-                                    }
-                                };
-                                filter = Filter::DateRange(start.to_string(), end.to_string());
-                            }
-                            ["author", author] => {
-                                log::trace!("author: {}", author);
-                                filter = Filter::Author(author.to_string());
-                            }
-                            ["author-email", author_email] => {
-                                log::trace!("author-email: {}", author_email);
-                                filter = Filter::AuthorEmail(author_email.to_string());
-                            }
-                            ["message", message] => {
-                                log::trace!("message: {}", message);
-                                filter = Filter::Message(message.to_string());
-                            }
-                            ["line-range", pos] => {
-                                // get the start and end by splitting the pos by: ..
-                                let (start, end) = match pos.split_once("..") {
-                                    Some((start, end)) => (start, end),
-                                    None => {
-                                        self.status = Status::Error(
-                                            "Invalid line range, expected start..end".to_string(),
-                                        );
-                                        return;
-                                    }
-                                };
-                                let start = match start.parse::<usize>() {
-                                    Ok(x) => x,
-                                    Err(e) => {
-                                        self.status = Status::Error(format!("{e}"));
-                                        return;
-                                    }
-                                };
-                                let end = match end.parse::<usize>() {
-                                    Ok(x) => x,
-                                    Err(e) => {
-                                        self.status = Status::Error(format!("{e}"));
-                                        return;
-                                    }
-                                };
-                                filter = Filter::FunctionInLines(start, end);
-                            }
-                            ["file-absolute", file] => {
-                                filter = Filter::FileAbsolute(file.to_string());
-                            }
-                            ["file-relative", file] => {
-                                filter = Filter::FileRelative(file.to_string());
-                            }
-                            ["directory", dir] => {
-                                filter = Filter::Directory(dir.to_string());
-                            }
-                            _ => {
-                                self.status = Status::Error(format!(
-                                    "Invalid filter {}",
-                                    i.first().unwrap_or(&"")
-                                ));
-                                return;
-                            }
-                        }
-                    }
-                    if iter.clone().count() > 0 {
-                        self.status = Status::Error(format!(
-                            "Invalid filter, command: {:?} missing args",
-                            iter.collect::<Vec<_>>()
-                        ));
-                        return;
-                    }
-
-                    self.channels
-                        .0
-                        .send(FullCommand::Filter(FilterType {
-                            thing: self.cmd_output.clone(),
-                            filter,
-                        }))
-                        .expect("could not send message in thread")
-                }
-                "list" => {
-                    self.status = Status::Loading;
-                    let list = match iter.next() {
-                        Some(arg) => match arg {
-                            "dates" => Some(FullCommand::List(ListType::Dates)),
-                            "commits" => Some(FullCommand::List(ListType::Commits)),
-                            _ => {
-                                self.status = Status::Error("Invalid list type".to_string());
-                                None
-                            }
-                        },
-                        None => {
-                            self.status = Status::Error("No list type given".to_string());
-                            None
-                        }
-                    };
-                    if let Some(list) = list {
-                        self.channels
-                            .0
-                            .send(list)
-                            .expect("could not send message in thread")
-                    }
-                }
-                other => {
-                    self.status = Status::Error(format!("Invalid command: {other}"));
-                }
-            },
+            }
             None => {
                 self.status = Status::Error("No command given".to_string());
+                None
+            }
+        }
+    }
+
+    fn parse_search(&mut self, command: &[&str]) -> Option<SearchType> {
+        let mut command_iter = command.iter();
+        let mut file = FileFilterType::None;
+        let mut filter = Filter::None;
+        let mut lang = Language::All;
+
+        let name = unwrap_set_error!(self, command_iter.next(), "No function name");
+        while let Some(cmd) = command_iter.next() {
+            match *cmd {
+                "language" => {
+                    lang = match *unwrap_set_error!(self, command_iter.next(), "No language given")
+                    {
+                        "rust" => Language::Rust,
+                        "python" => Language::Python,
+                        #[cfg(feature = "unstable")]
+                        "go" => Language::Go,
+                        "ruby" => Language::Ruby,
+                        "umpl" => Language::UMPL,
+                        _ => {
+                            self.status = Status::Error("Invalid language".to_string());
+                            return None;
+                        }
+                    };
+                }
+                "date" => {
+                    filter = match *unwrap_set_error!(self, command_iter.next(), "No date given") {
+                        "range" => Filter::DateRange(
+                            unwrap_set_error!(self, command_iter.next(), "No start date given")
+                                .to_string(),
+                            unwrap_set_error!(self, command_iter.next(), "No end date given")
+                                .to_string(),
+                        ),
+                        date => Filter::Date(date.to_string()),
+                    };
+                }
+                "commit" => {
+                    filter = Filter::CommitHash(
+                        unwrap_set_error!(self, command_iter.next(), "No commit given").to_string(),
+                    );
+                }
+                "author" => {
+                    filter =
+                        match *unwrap_set_error!(self, command_iter.next(), "No author name given")
+                        {
+                            "email" => Filter::AuthorEmail(
+                                unwrap_set_error!(self, command_iter.next(), "No email given")
+                                    .to_string(),
+                            ),
+                            name => Filter::Author(name.to_string()),
+                        };
+                }
+                "file" => {
+                    file = match *unwrap_set_error!(self, command_iter.next(), "Invalid file type")
+                    {
+                        "absolute" => FileFilterType::Absolute,
+                        "relative" => FileFilterType::Relative,
+                        "directory" => FileFilterType::Directory,
+                        _ => {
+                            self.status = Status::Error("Invalid file type".to_string());
+                            return None;
+                        }
+                    }(
+                        unwrap_set_error!(self, command_iter.next(), "No file given").to_string(),
+                    );
+                }
+                "message" => {
+                    filter = Filter::Message(
+                        unwrap_set_error!(self, command_iter.next(), "No commit message given")
+                            .to_string(),
+                    )
+                }
+                _ => {
+                    self.status = Status::Error(format!("Invalid search command: {cmd}"));
+                    return None;
+                }
+            }
+        }
+        Some(SearchType {
+            search: name.to_string(),
+            file,
+            filter,
+            lang,
+        })
+    }
+
+    fn parse_filter(&mut self, command: &[&str]) -> Option<Filter> {
+        let mut command_iter = command.iter();
+        let mut filter = Filter::None;
+        while let Some(cmd) = command_iter.next() {
+            match cmd {
+                &"language" => {
+                    filter = Filter::Language(
+                        match *unwrap_set_error!(self, command_iter.next(), "No language given") {
+                            "rust" => Language::Rust,
+                            "python" => Language::Python,
+                            #[cfg(feature = "unstable")]
+                            "go" => Language::Go,
+                            "ruby" => Language::Ruby,
+                            "umpl" => Language::UMPL,
+                            _ => {
+                                self.status = Status::Error("Invalid language".to_string());
+                                return None;
+                            }
+                        },
+                    );
+                }
+                &"date" => {
+                    filter = match *unwrap_set_error!(self, command_iter.next(), "No date given") {
+                        "range" => Filter::DateRange(
+                            unwrap_set_error!(self, command_iter.next(), "No start date given")
+                                .to_string(),
+                            unwrap_set_error!(self, command_iter.next(), "No end date given")
+                                .to_string(),
+                        ),
+                        date => Filter::Date(date.to_string()),
+                    };
+                }
+                &"commit" => {
+                    filter = Filter::CommitHash(
+                        unwrap_set_error!(self, command_iter.next(), "No commit given").to_string(),
+                    );
+                }
+                &"author" => {
+                    filter =
+                        match *unwrap_set_error!(self, command_iter.next(), "No author name given")
+                        {
+                            "email" => Filter::AuthorEmail(
+                                unwrap_set_error!(self, command_iter.next(), "No email given")
+                                    .to_string(),
+                            ),
+                            name => Filter::Author(name.to_string()),
+                        };
+                }
+                &"file" => {
+                    filter =
+                        match *unwrap_set_error!(self, command_iter.next(), "Invalid file type") {
+                            "absolute" => Filter::FileAbsolute,
+                            "relative" => Filter::FileRelative,
+                            "directory" => Filter::Directory,
+                            _ => {
+                                self.status = Status::Error("Invalid file type".to_string());
+                                return None;
+                            }
+                        }(
+                            unwrap_set_error!(self, command_iter.next(), "No file given")
+                                .to_string(),
+                        );
+                }
+                &"message" => {
+                    filter = Filter::Message(
+                        unwrap_set_error!(self, command_iter.next(), "No commit message given")
+                            .to_string(),
+                    )
+                }
+                &"line" => {
+                    unwrap_set_error!(
+                        self,
+                        command_iter.next(),
+                        "only supported argument line is range currently"
+                    );
+                    filter = Filter::FunctionInLines(
+                        unwrap_set_error!(
+                            self,
+                            unwrap_set_error!(self, command_iter.next(), "start line not supplied")
+                                .parse::<usize>()
+                                .ok(),
+                            "could not parse start line"
+                        ),
+                        unwrap_set_error!(
+                            self,
+                            unwrap_set_error!(self, command_iter.next(), "End line not supplied")
+                                .parse::<usize>()
+                                .ok(),
+                            "could not parse end line"
+                        ),
+                    );
+                }
+                filter
+                    if LanguageFilter::get_variant_names()
+                        .iter()
+                        .map(|x| x.to_lowercase())
+                        .collect::<Vec<_>>()
+                        .contains(&filter.to_string()) =>
+                {
+                    print!("hi")
+                }
+                _ => {
+                    self.status = Status::Error(format!("Invalid search command: {cmd}"));
+                    return None;
+                }
+            }
+        }
+        Some(filter)
+    }
+
+    fn parse_list(&mut self, command: &[&str]) -> Option<ListType> {
+        match command {
+            ["dates"] => Some(ListType::Dates),
+            ["commits"] => Some(ListType::Commits),
+            _ => {
+                self.status = Status::Error("Invalid list type".to_string());
+                None
             }
         }
     }

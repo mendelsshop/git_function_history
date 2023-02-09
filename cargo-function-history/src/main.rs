@@ -1,7 +1,7 @@
 use std::{cell::RefCell, env, error::Error, process::exit, rc::Rc, sync::mpsc};
 
 use cargo_function_history::{app::App, start_ui};
-use function_history_backend_thread::types::{FullCommand, Status};
+use function_history_backend_thread::types::{FullCommand, SearchType, Status};
 use git_function_history::{FileFilterType, Filter};
 use log::info;
 
@@ -16,12 +16,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let status = match config.function_name {
         string if string.is_empty() => Status::Ok(None),
         string => {
-            tx_m.send(FullCommand::Search(
+            tx_m.send(FullCommand::Search(SearchType::new(
                 string,
                 config.file_type,
                 config.filter,
                 config.language,
-            ))?;
+            )))?;
             Status::Loading
         }
     };

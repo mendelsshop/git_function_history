@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt};
 
+use enum_stuff::enumstuff;
 use lib_ruby_parser::{
     nodes::{Class, Def},
     source::DecodedInput,
@@ -321,7 +322,7 @@ impl FunctionTrait for RubyFunction {
             .collect()
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// filter for ruby functions
 pub enum RubyFilter {
     /// find a Ruby functions in a specific class

@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt};
 
+use enum_stuff::enumstuff;
 use ra_ap_syntax::{
     ast::{self, Fn, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,
@@ -450,7 +451,7 @@ fn get_ret_type(fns: &Fn) -> Option<String> {
     fns.ret_type()
         .and_then(|ret| ret.ty().map(|ty| ty.to_string()))
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 
 /// filters for rust functions
 pub enum RustFilter {

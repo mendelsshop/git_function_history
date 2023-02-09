@@ -3,5 +3,6 @@ members = [
     "git-function-history-lib",
     "cargo-function-history",
     "git-function-history-gui",
-    "function_history_backend_thread"
+    "function_history_backend_thread",
+    "enum_stuff"
 ]

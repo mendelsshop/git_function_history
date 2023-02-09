@@ -1,18 +1,16 @@
 use std::fmt;
 
-use git_function_history::{languages::Language, FileFilterType, Filter, FunctionHistory};
+use git_function_history::{
+    languages::{Language, LanguageFilter},
+    FileFilterType, Filter, FunctionHistory,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Command {
     Filter,
     List,
+    #[default]
     Search,
-}
-
-impl Default for Command {
-    fn default() -> Self {
-        Command::Search
-    }
 }
 
 impl std::fmt::Display for Command {
@@ -25,8 +23,9 @@ impl std::fmt::Display for Command {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ListType {
+    #[default]
     Dates,
     Commits,
 }
@@ -40,23 +39,12 @@ impl std::fmt::Display for ListType {
     }
 }
 
-impl Default for ListType {
-    fn default() -> Self {
-        ListType::Dates
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum CommandResult {
     History(FunctionHistory),
     String(Vec<String>),
+    #[default]
     None,
-}
-
-impl Default for CommandResult {
-    fn default() -> Self {
-        CommandResult::None
-    }
 }
 
 impl CommandResult {
@@ -117,7 +105,40 @@ impl Default for Status {
 pub enum FullCommand {
     Filter(FilterType),
     List(ListType),
-    Search(String, FileFilterType, Filter, Language),
+    Search(SearchType),
+}
+
+#[derive(Debug, Clone)]
+pub struct SearchType {
+    pub search: String,
+    pub file: FileFilterType,
+    pub filter: Filter,
+    pub lang: Language,
+}
+
+impl SearchType {
+    pub fn new(
+        search: String,
+        file_filter: FileFilterType,
+        filter: Filter,
+        language: Language,
+    ) -> Self {
+        SearchType {
+            search,
+            file: file_filter,
+            filter,
+            lang: language,
+        }
+    }
+
+    pub fn new_from_tuple(tuple: (String, FileFilterType, Filter, Language)) -> Self {
+        SearchType {
+            search: tuple.0,
+            file: tuple.1,
+            filter: tuple.2,
+            lang: tuple.3,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -130,13 +151,12 @@ pub struct FilterType {
 pub enum HistoryFilterType {
     Date(String),
     DateRange(String, String),
-    FunctionInBlock(String),
     FunctionInLines(String, String),
-    FunctionInFunction(String),
     CommitHash(String),
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
+    PL(LanguageFilter),
     None,
 }
 
@@ -145,13 +165,23 @@ impl fmt::Display for HistoryFilterType {
         match self {
             HistoryFilterType::Date(_) => write!(f, "date"),
             HistoryFilterType::DateRange(_, _) => write!(f, "date range"),
-            HistoryFilterType::FunctionInBlock(_) => write!(f, "function in block"),
             HistoryFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
-            HistoryFilterType::FunctionInFunction(_) => write!(f, "function in function"),
             HistoryFilterType::CommitHash(_) => write!(f, "commit hash"),
             HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
             HistoryFilterType::FileRelative(_) => write!(f, "file relative"),
             HistoryFilterType::Directory(_) => write!(f, "directory"),
+            HistoryFilterType::PL(pl) => write!(
+                f,
+                "{}",
+                match pl {
+                    LanguageFilter::Python(_) => "python",
+                    LanguageFilter::Rust(_) => "rust",
+                    LanguageFilter::Ruby(_) => "ruby",
+                    LanguageFilter::UMPL(_) => "umpl",
+                    #[cfg(feature = "unstable")]
+                    LanguageFilter::Go(_) => "go",
+                }
+            ),
             HistoryFilterType::None => write!(f, "none"),
         }
     }

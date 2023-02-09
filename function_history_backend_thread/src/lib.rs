@@ -5,7 +5,7 @@ use std::{
 };
 
 use git_function_history::get_function_history;
-use types::FullCommand;
+use types::{FullCommand, SearchType};
 
 use crate::types::{CommandResult, ListType, Status};
 
@@ -89,7 +89,12 @@ pub fn command_thread(
                             },
                         }
                     }
-                    FullCommand::Search(name, file, filter, lang) => {
+                    FullCommand::Search(SearchType {
+                        search: name,
+                        file,
+                        filter,
+                        lang,
+                    }) => {
                         if log {
                             log::info!(
                                 "Searching for {} in {:?} with language {} and filter {:?}",
