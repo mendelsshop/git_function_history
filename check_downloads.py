@@ -33,6 +33,7 @@ for member in members:
         count += i['downloads']
     for i in jsons["version_downloads"]:
         count += i['downloads']
+    print(count, "afer", member)
 os.system("git switch stats")
 print(f"Total: {count}")
 
