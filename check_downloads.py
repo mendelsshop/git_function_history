@@ -28,6 +28,7 @@ for member in members:
     crate_name = cargo_toml_file["package"]["name"]
     print(f"crate name: {crate_name}")
     jsons = requests.get(f"https://crates.io/api/v1/crates/{crate_name}/downloads").json()
+    print(jsons)
     for i in jsons["meta"]["extra_downloads"]:
         count += i['downloads']
     for i in jsons["version_downloads"]:
