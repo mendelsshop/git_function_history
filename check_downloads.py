@@ -1,50 +1,41 @@
-
 import requests
-import toml
 import json
 import sys
 from github import Github
 import os
-
-if len(sys.argv) != 2:
-    print(f"Usage: {sys.argv[0]} <github token>")
-    sys.exit(1)
-# parse cargo.toml file and get list of members
-os.system("git switch main")
-toml_file = toml.load("Cargo.toml")
-members = toml_file["workspace"]["members"]
+import xml.etree.ElementTree as ET
 
 count = 0
-# iterate through members and use https://crates.io/api/v1/crates/{member}/downloads to get download count
+# if len(sys.argv) != 2:
+#     print(f"Usage: {sys.argv[0]} <github token>")
+#     sys.exit(1)
+crates = ["git_function_history", "cargo-function-history", "git-function-history-gui", "function_history_backend_thread"]
+for crate in crates:
+    jsons = requests.get(f'https://img.shields.io/crates/d/{crate}?label=crates.io%20downloads')
+    root = ET.fromstring(jsons.content)
+    for i in root:
+        if type(i.text) is str:
+            if i.text.startswith('crates.io'):
+                print(f'{crate}: {i.text.split(" ")[-1]}')
+                print(i.text.split(' ')[0], i.text.split(' ')[2])
+                number = i.text.split(' ')[-1]
+                if number.endswith('k'):
+                    number = number[:-1]
+                    number = int(number)
+                    number = number * 1000
+                elif number.endswith('M'):
+                    number = number[:-1]
+                    number = int(number)
+                    number = number * 1000000
+                else:
+                    number = int(number)
+                count += int(number)
 
-# parse the download count which has to parts: meta and version_downloads
-# under meta there is a section called extra_downloads which has a list of number which contain a  download count and date
 
-# the version_downloads section contains a numbered list of a date, download count and version
-
-for member in members:
-    # get the crates name from its Cargo.toml file
-    cargo_toml_file = toml.load(f"{member}/Cargo.toml")
-    crate_name = cargo_toml_file["package"]["name"]
-    print(f"crate name: {crate_name}")
-    jsons = requests.get(f"https://crates.io/api/v1/crates/{crate_name}/downloads").json()
-    print(jsons)
-    for i in jsons["meta"]["extra_downloads"]:
-        count += i['downloads']
-    for i in jsons["version_downloads"]:
-        count += i['downloads']
-    print(count, "afer", member)
-os.system("git switch stats")
-print(f"Total: {count}")
-
-# upload the results to https://github.com/mendelsshop/git_function_history/stats/downloads.json
-# with this format: {"schemaVersion":1,"label":"Crates.io Total Downloads","message":"0","color":"black"}
 base64_json = {"schemaVersion":1,"label":"Crates.io Total Downloads","message":f"{count}","color":"black"}
 base64_json = json.dumps(base64_json)
-
-# using an access token
+print(count)
 g = Github(sys.argv[1])
-
 # get last sha
 git = g.get_repo("mendelsshop/git_function_history")
 commit = git.get_contents("downloads.json", ref="stats")
