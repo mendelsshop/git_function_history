@@ -12,7 +12,7 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 use enum_stuff::enumstuff;
 #[cfg(feature = "unstable")]
 use go::GoFunction;
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, enumstuff)]
 /// an enum representing the different languages that are supported
 pub enum Language {
     /// The python language
@@ -31,6 +31,12 @@ pub enum Language {
     UMPL,
     /// all available languages
     All,
+}
+
+#[test]
+fn test_enum_macro() {
+    assert_eq!(Language::get_variant_names(), vec!["python", "rust", "go", "ruby", "umpl", "all"]);
+
 }
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
