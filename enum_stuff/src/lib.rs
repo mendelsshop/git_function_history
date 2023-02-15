@@ -1,14 +1,10 @@
-use std::collections::HashMap;
-
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
-extern crate syn;
-/// .
+
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
 pub fn enum_stuff(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
-    // ast.identifier
     let name = &ast.ident;
     let vis = &ast.vis;
     let data = match ast.data {
@@ -19,18 +15,15 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         .variants
         .iter()
         .map(|v| {
-            (
-                v.ident.clone(),
                 v.fields
                     .iter()
                     .filter_map(|field| match &field.ty {
                         syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
                         _ => None,
                     })
-                    .collect::<Vec<_>>(),
-            )
+                    .collect::<Vec<_>>()
         })
-        .collect::<HashMap<_, _>>();
+        .collect::<Vec<_>>();
 
     let variants_names = data.variants.iter().map(|v| {
         let mut ret = v.ident.to_string();
@@ -48,7 +41,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         }
         ret
     });
-    // let ty = Type;
+
     let variant_list = data
         .variants
         .iter()
@@ -61,15 +54,13 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 vec![#(#variants_names),*]
             }
 
-            // gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
-            // #vis fn get_variant_types(&self) -> Vec<&'static str> {
-            //     let variant = self.get_variant_name();
-
-
-
-
-
-            // }
+            /// gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
+            #vis fn get_variant_types(&self) -> &[&str] {
+                match (self.get_variant_name().as_str()) {
+                    #(#variant_list =>  &[#(#data_type),*]),*,
+                    _ => &[] as &[&str],
+                }
+            }
 
             #vis fn from_str(variant: &str) -> Option<Self> {
                 if vec![#(#variant_list),*].contains(&variant) {

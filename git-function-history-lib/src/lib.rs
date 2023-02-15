@@ -40,6 +40,7 @@ macro_rules! get_item_from_oid_option {
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
+use enum_stuff::enumstuff;
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
@@ -72,7 +73,7 @@ pub enum FileFilterType {
 }
 
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitHash(String),
@@ -101,6 +102,16 @@ pub enum Filter {
     /// When you want to filter by nothing.
     None,
 }
+
+#[test]
+fn test_macro() {
+    let filter = Filter::FunctionInLines(1, 2);
+    // filter.get_variant_name();
+    println!("{:?}", filter.get_variant_name());
+    println!("{:?}", Filter::get_variant_names());
+    println!("{:?}", filter.get_variant_types());
+}
+
 
 /// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
 ///
