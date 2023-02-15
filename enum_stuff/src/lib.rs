@@ -15,15 +15,22 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         syn::Data::Enum(data) => data,
         _ => panic!("Only enums are supported"),
     };
-    let data_type = data.variants.iter().map(|v| {
-        (v.ident.clone(),v.fields
-            .iter()
-            .filter_map(|field| match &field.ty {
-                syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
-                _ => None,
-            })
-            .collect::<Vec<_>>())
-    }).collect::<HashMap<_,_>>();
+    let data_type = data
+        .variants
+        .iter()
+        .map(|v| {
+            (
+                v.ident.clone(),
+                v.fields
+                    .iter()
+                    .filter_map(|field| match &field.ty {
+                        syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect::<HashMap<_, _>>();
 
     let variants_names = data.variants.iter().map(|v| {
         let mut ret = v.ident.to_string();
@@ -58,10 +65,10 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             // #vis fn get_variant_types(&self) -> Vec<&'static str> {
             //     let variant = self.get_variant_name();
 
-                
 
 
-         
+
+
             // }
 
             #vis fn from_str(variant: &str) -> Option<Self> {
