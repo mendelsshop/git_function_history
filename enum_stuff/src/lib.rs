@@ -5,7 +5,6 @@ use syn::{parse_macro_input, DeriveInput, Type};
 /// .
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
 pub fn enum_stuff(input: TokenStream) -> TokenStream {
-
     let ast = parse_macro_input!(input as DeriveInput);
     // ast.identifier
     let name = &ast.ident;
@@ -15,9 +14,10 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         _ => panic!("Only enums are supported"),
     };
     let data_type = data.variants.iter().map(|v| {
-        v.fields.iter().map(|field| 
-            field.ty.clone()
-        ).collect::<Vec<_>>()
+        v.fields
+            .iter()
+            .map(|field| field.ty.clone())
+            .collect::<Vec<_>>()
     });
 
     for field in data_type {
@@ -53,7 +53,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         // }
         // use syn::Type;
         impl #name {
-            
+
             #vis fn get_variant_names() -> Vec<&'static str> {
                 vec![#(#variants_names),*]
             }
@@ -76,5 +76,3 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
     };
     gen.into()
 }
-
-
