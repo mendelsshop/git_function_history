@@ -76,10 +76,19 @@
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
-</pre><pre class="rust"><code><span class="kw">use </span>proc_macro::TokenStream;
-<span class="kw">use </span>proc_macro2::Literal;
-<span class="kw">use </span>quote::quote;
-<span class="kw">use </span>syn::{parse_macro_input, DeriveInput, Type};
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+</pre><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+
+<span class="kw">use </span>proc_macro::TokenStream;
+<span class="kw">use </span>quote::{quote, ToTokens};
+<span class="kw">use </span>syn::{parse_macro_input, DeriveInput};
+<span class="kw">extern crate </span>syn;
 <span class="doccomment">/// .
 </span><span class="attr">#[proc_macro_derive(enumstuff, attributes(enumstuff))]
 </span><span class="kw">pub fn </span>enum_stuff(input: TokenStream) -&gt; TokenStream {
@@ -92,15 +101,15 @@
         <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Only enums are supported&quot;</span>),
     };
     <span class="kw">let </span>data_type = data.variants.iter().map(|v| {
-        v.fields
+        (v.ident.clone(),v.fields
             .iter()
-            .map(|field| field.ty.clone())
-            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-    });
+            .filter_map(|field| <span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
+                syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path.into_token_stream().to_string()),
+                <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+            })
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;())
+    }).collect::&lt;HashMap&lt;<span class="kw">_</span>,<span class="kw">_</span>&gt;&gt;();
 
-    <span class="kw">for </span>field <span class="kw">in </span>data_type {
-        <span class="macro">println!</span>(<span class="string">&quot;data type: {:?}\n&quot;</span>, field);
-    }
     <span class="kw">let </span>variants_names = data.variants.iter().map(|v| {
         <span class="kw">let </span><span class="kw-2">mut </span>ret = v.ident.to_string();
         <span class="kw">for </span>attr <span class="kw">in </span><span class="kw-2">&amp;</span>v.attrs {
@@ -124,24 +133,21 @@
         .map(|v| v.ident.to_string())
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     <span class="kw">let </span>gen = <span class="macro">quote! </span>{
-        <span class="comment">// use syn::Type;
-        // pub struct Ty {
-        //     pub name: String,
-        //     pub fields: Vec&lt;Type&gt;
-        // }
-        // use syn::Type;
-        </span><span class="kw">impl </span>#name {
+        <span class="kw">impl </span>#name {
 
             #vis <span class="kw">fn </span>get_variant_names() -&gt; Vec&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
                 <span class="macro">vec!</span>[#(#variants_names),<span class="kw-2">*</span>]
             }
 
-            <span class="comment">// // gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
-            // #vis fn get_variant_types() -&gt; Vec&lt;Ty&gt; {
-            //     // vec![#(#data_type),*]
-            //     vec![]
-            // }
+            <span class="comment">// gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
+            // #vis fn get_variant_types(&amp;self) -&gt; Vec&lt;&amp;&#39;static str&gt; {
+            //     let variant = self.get_variant_name();
 
+                
+
+
+         
+            // }
 
             </span>#vis <span class="kw">fn </span>from_str(variant: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
                 <span class="kw">if </span><span class="macro">vec!</span>[#(#variant_list),<span class="kw-2">*</span>].contains(<span class="kw-2">&amp;</span>variant) {
@@ -149,6 +155,14 @@
                 </span>} <span class="kw">else </span>{
                     <span class="prelude-val">None
                 </span>}
+            }
+
+            #vis <span class="kw">fn </span>get_variant_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+                <span class="comment">// we cannot just use format!(&quot;{:?}&quot;, self) because it will return the variant name with its prameters
+                // we want to get the variant name without its parameters
+                </span><span class="kw">let </span>variant = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>);
+                <span class="kw">let </span><span class="kw-2">mut </span>variant = variant.split(<span class="string">&quot;(&quot;</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+                variant[<span class="number">0</span>].to_string()
             }
         }
     };
