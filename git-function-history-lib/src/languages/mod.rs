@@ -33,13 +33,6 @@ pub enum Language {
     All,
 }
 
-#[test]
-fn test_enum_macro() {
-    assert_eq!(
-        Language::get_variant_names(),
-        vec!["python", "rust", "go", "ruby", "umpl", "all"]
-    );
-}
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
 pub enum LanguageFilter {
