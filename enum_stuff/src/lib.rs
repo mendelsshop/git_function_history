@@ -15,13 +15,13 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         .variants
         .iter()
         .map(|v| {
-                v.fields
-                    .iter()
-                    .filter_map(|field| match &field.ty {
-                        syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
+            v.fields
+                .iter()
+                .filter_map(|field| match &field.ty {
+                    syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 

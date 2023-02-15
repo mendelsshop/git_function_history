@@ -112,7 +112,6 @@ fn test_macro() {
     println!("{:?}", filter.get_variant_types());
 }
 
-
 /// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
 ///
 /// Checks if git is installed if its not it will error out with `git is not installed`.
