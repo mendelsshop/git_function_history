@@ -927,6 +927,17 @@
 <a href="#927" id="927">927</a>
 <a href="#928" id="928">928</a>
 <a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
@@ -969,6 +980,7 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;cache&quot;</span>)]
 </span><span class="kw">use </span>cached::proc_macro::cached;
 <span class="kw">use </span>chrono::{DateTime, NaiveDateTime, Utc};
+<span class="kw">use </span>enum_stuff::enumstuff;
 <span class="kw">use </span>languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 <span class="attr">#[cfg(feature = <span class="string">&quot;parallel&quot;</span>)]
 </span><span class="kw">use </span>rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
@@ -1001,7 +1013,7 @@
 }
 
 <span class="doccomment">/// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
-</span><span class="attr">#[derive(Debug, Clone, PartialEq, Eq)]
+</span><span class="attr">#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 </span><span class="kw">pub enum </span>Filter {
     <span class="doccomment">/// When you want to filter by a commit hash.
     </span>CommitHash(String),
@@ -1030,6 +1042,16 @@
     <span class="doccomment">/// When you want to filter by nothing.
     </span><span class="prelude-val">None</span>,
 }
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>test_macro() {
+    <span class="kw">let </span>filter = Filter::FunctionInLines(<span class="number">1</span>, <span class="number">2</span>);
+    <span class="comment">// filter.get_variant_name();
+    </span><span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, filter.get_variant_name());
+    <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, Filter::get_variant_names());
+    <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, filter.get_variant_types());
+}
+
 
 <span class="doccomment">/// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
 ///
