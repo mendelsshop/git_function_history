@@ -23,16 +23,20 @@ count = 0
 # the version_downloads section contains a numbered list of a date, download count and version
 
 for member in members:
-    # get the crates name from its Cargo.toml file
-    cargo_toml_file = toml.load(f"{member}/Cargo.toml")
-    crate_name = cargo_toml_file["package"]["name"]
-    print(f"crate name: {crate_name}")
-    jsons = requests.get(f"https://crates.io/api/v1/crates/{crate_name}").json()
-    print(jsons)
-    # get the download count
-    downloads = jsons["crate"]["downloads"]
-    print(f"downloads: {downloads}")
-    count += int(downloads)
+    try:
+        # get the crates name from its Cargo.toml file
+        cargo_toml_file = toml.load(f"{member}/Cargo.toml")
+        crate_name = cargo_toml_file["package"]["name"]
+        print(f"crate name: {crate_name}")
+        jsons = requests.get(f"https://crates.io/api/v1/crates/{crate_name}").json()
+        print(jsons)
+        # get the download count
+        downloads = jsons["crate"]["downloads"]
+        print(f"downloads: {downloads}")
+        count += int(downloads)
+    except Exception as e:
+        print(e)
+        print(f"error with {member}")
 os.system("git switch stats")
 print(f"Total: {count}")
 
