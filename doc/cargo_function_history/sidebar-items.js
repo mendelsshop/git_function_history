@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["start_ui",""]],"mod":[["app",""],["keys",""]]};
+window.SIDEBAR_ITEMS = {"fn":["start_ui"],"mod":["app","keys"]};

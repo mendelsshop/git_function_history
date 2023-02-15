@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["MyEguiApp",""]]};
+window.SIDEBAR_ITEMS = {"struct":["MyEguiApp"]};

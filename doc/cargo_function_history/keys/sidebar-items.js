@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Key","Represents an key."]]};
+window.SIDEBAR_ITEMS = {"enum":["Key"]};

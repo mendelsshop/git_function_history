@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"derive":[["enumstuff","."]]};
+window.SIDEBAR_ITEMS = {"derive":["enumstuff"]};

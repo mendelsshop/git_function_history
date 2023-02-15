@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["RubyFilter","filter for ruby functions"]],"struct":[["RubyClass","represents a Ruby class"],["RubyFunction",""],["RubyParams","repersents parameters of a ruby function"]]};
+window.SIDEBAR_ITEMS = {"enum":["RubyFilter"],"struct":["RubyClass","RubyFunction","RubyParams"]};
