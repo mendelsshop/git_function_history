@@ -81,6 +81,14 @@
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
 </pre><pre class="rust"><code><span class="kw">use </span>proc_macro::TokenStream;
 <span class="kw">use </span>quote::{quote, ToTokens};
 <span class="kw">use </span>syn::{parse_macro_input, DeriveInput};
@@ -98,13 +106,13 @@
         .variants
         .iter()
         .map(|v| {
-                v.fields
-                    .iter()
-                    .filter_map(|field| <span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
-                        syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path.into_token_stream().to_string()),
-                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-                    })
-                    .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+            v.fields
+                .iter()
+                .filter_map(|field| <span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
+                    syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path.into_token_stream().to_string()),
+                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                })
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
         })
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
@@ -145,12 +153,20 @@
                 }
             }
 
-            #vis <span class="kw">fn </span>from_str(variant: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
+            <span class="comment">// we nned to have a list of the types the variant is constructed of so we can create the variant
+            </span>#vis <span class="kw">fn </span>from_str(variant: <span class="kw-2">&amp;</span>str, inside: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
                 <span class="kw">if </span><span class="macro">vec!</span>[#(#variant_list),<span class="kw-2">*</span>].contains(<span class="kw-2">&amp;</span>variant) {
                     <span class="prelude-val">None
                 </span>} <span class="kw">else </span>{
                     <span class="prelude-val">None
                 </span>}
+            }
+
+            #vis <span class="kw">fn </span>get_variant_types_from_str(variant: <span class="kw-2">&amp;</span>str) -&gt; <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] {
+                <span class="kw">match </span>variant {
+                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
+                    <span class="kw">_ </span>=&gt; <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str],
+                }
             }
 
             #vis <span class="kw">fn </span>get_variant_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
@@ -165,4 +181,4 @@
     gen.into()
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="enum_stuff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (0416b1a6f 2023-02-14)" data-search-js="search-14421e1532aead08.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="enum_stuff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (2d14db321 2023-02-15)" data-search-js="search-14421e1532aead08.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

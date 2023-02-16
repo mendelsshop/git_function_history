@@ -498,6 +498,7 @@
 <a href="#498" id="498">498</a>
 <a href="#499" id="499">499</a>
 <a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="self">self</span>::{actions::Actions, state::AppState};
 <span class="kw">use crate</span>::{app::actions::Action, keys::Key};
 
@@ -895,7 +896,8 @@
                         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
                         .contains(<span class="kw-2">&amp;</span>filter.to_string()) =&gt;
                 {
-                    <span class="macro">print!</span>(<span class="string">&quot;hi&quot;</span>)
+                    <span class="kw">let </span>types = LanguageFilter::get_variant_types_from_str(filter);
+                    
                 }
                 <span class="kw">_ </span>=&gt; {
                     <span class="self">self</span>.status = Status::Error(<span class="macro">format!</span>(<span class="string">&quot;Invalid search command: {cmd}&quot;</span>));
@@ -999,4 +1001,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (0416b1a6f 2023-02-14)" data-search-js="search-14421e1532aead08.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (2d14db321 2023-02-15)" data-search-js="search-14421e1532aead08.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
