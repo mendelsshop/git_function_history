@@ -62,11 +62,19 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 }
             }
 
-            #vis fn from_str(variant: &str) -> Option<Self> {
+            // we nned to have a list of the types the variant is constructed of so we can create the variant
+            #vis fn from_str(variant: &str, inside: &[&str]) -> Option<Self> {
                 if vec![#(#variant_list),*].contains(&variant) {
                     None
                 } else {
                     None
+                }
+            }
+
+            #vis fn get_variant_types_from_str(variant: &str) -> &[&str] {
+                match variant {
+                    #(#variant_list =>  &[#(#data_type),*]),*,
+                    _ => &[] as &[&str],
                 }
             }
 

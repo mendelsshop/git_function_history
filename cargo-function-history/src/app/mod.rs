@@ -395,7 +395,8 @@ impl App {
                         .collect::<Vec<_>>()
                         .contains(&filter.to_string()) =>
                 {
-                    print!("hi")
+                    let types = LanguageFilter::get_variant_types_from_str(filter);
+                    
                 }
                 _ => {
                     self.status = Status::Error(format!("Invalid search command: {cmd}"));
