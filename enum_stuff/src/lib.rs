@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, DeriveInput, Type};
 
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
 pub fn enum_stuff(input: TokenStream) -> TokenStream {
@@ -25,6 +25,21 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
+let types =  data
+        .variants
+        .iter()
+        .filter_map(|v| {
+            println!("{:?}",(&v.fields).into_token_stream());
+            let tts = match v.fields.clone() {
+                syn::Fields::Named(n) => n.into_token_stream(),
+                syn::Fields::Unnamed(u) => u.into_token_stream(),
+                syn::Fields::Unit => return None,
+            };
+            syn::parse2::<Type>(tts).ok()
+        })
+        .collect::<Vec<_>>();
+    
+
     let variants_names = data.variants.iter().map(|v| {
         let mut ret = v.ident.to_string();
         for attr in &v.attrs {
@@ -42,12 +57,23 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         ret
     });
 
+    
+
     let variant_list = data
         .variants
         .iter()
         .map(|v| v.ident.to_string())
         .collect::<Vec<_>>();
+    println!("\n\n{:?}\n\n", types);
+    for ty in &types {
+        let quoted = quote! {
+            #ty
+        };
+        println!("ty is {:?}", quoted);
+    }
     let gen = quote! {
+        // TODO: make a function that can recurse through the enum and get the types of the variants and types of the variants variants and so on to a specified depth
+        // amd also make a function that can does the same but for the variant names
         impl #name {
 
             #vis fn get_variant_names() -> Vec<&'static str> {
@@ -62,6 +88,15 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 }
             }
 
+            // /// makes an into function for each variant
+            // #(#vis fn #variant_list(variant: &str) -> Option<#types> {
+            //     if let #variant_list = variant {
+            //         Some(#types)
+            //     } else {
+            //         None
+            //     }
+            // })*
+
             // we nned to have a list of the types the variant is constructed of so we can create the variant
             #vis fn from_str(variant: &str, inside: &[&str]) -> Option<Self> {
                 if vec![#(#variant_list),*].contains(&variant) {
@@ -74,7 +109,8 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             #vis fn get_variant_types_from_str(variant: &str) -> &[&str] {
                 match variant {
                     #(#variant_list =>  &[#(#data_type),*]),*,
-                    _ => &[] as &[&str],
+                    var => {
+                        &[] as &[&str]},
                 }
             }
 

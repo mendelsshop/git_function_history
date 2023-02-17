@@ -677,11 +677,12 @@ impl eframe::App for MyEguiApp {
                                         self.status = Status::Loading;
                                         self.channels
                                             .0
-                                            .send(FullCommand::Search(
+                                            .send(FullCommand::Search(SearchType::new(
                                                 self.input_buffer.clone(),
                                                 self.file_type.clone(),
                                                 self.filter.clone(),
                                                 self.language,
+                                            )
                                             ))
                                             .expect("could not send message in thread");
                                     }
