@@ -25,11 +25,11 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
-let types =  data
+    let types = data
         .variants
         .iter()
         .filter_map(|v| {
-            println!("{:?}",(&v.fields).into_token_stream());
+            println!("{:?}", (&v.fields).into_token_stream());
             let tts = match v.fields.clone() {
                 syn::Fields::Named(n) => n.into_token_stream(),
                 syn::Fields::Unnamed(u) => u.into_token_stream(),
@@ -38,7 +38,6 @@ let types =  data
             syn::parse2::<Type>(tts).ok()
         })
         .collect::<Vec<_>>();
-    
 
     let variants_names = data.variants.iter().map(|v| {
         let mut ret = v.ident.to_string();
@@ -56,8 +55,6 @@ let types =  data
         }
         ret
     });
-
-    
 
     let variant_list = data
         .variants
