@@ -1,7 +1,7 @@
 use eframe::{epaint::Vec2, run_native};
 use git_function_history_gui::MyEguiApp;
 use image::ImageFormat::Png;
-use std::{sync::mpsc};
+use std::sync::mpsc;
 fn main() -> eframe::Result<()> {
     let (tx_t, rx_m) = mpsc::channel();
     let (tx_m, rx_t) = mpsc::channel();

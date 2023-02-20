@@ -6,7 +6,8 @@ use eframe::{
     epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status, SearchType,
+    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, SearchType,
+    Status,
 };
 use git_function_history::{
     languages::Language, types::Directions, Commit, FileFilterType, Filter, FunctionHistory,

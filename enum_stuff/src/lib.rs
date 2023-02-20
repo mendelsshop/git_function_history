@@ -39,22 +39,26 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
-    let variants_names = data.variants.iter().map(|v| {
-        let mut ret = v.ident.to_string();
-        for attr in &v.attrs {
-            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "enumstuff" {
-                if let Some(proc_macro2::TokenTree::Group(group)) =
-                    attr.tokens.clone().into_iter().next()
-                {
-                    let mut tokens = group.stream().into_iter();
-                    if let Some(proc_macro2::TokenTree::Literal(lit)) = tokens.next() {
-                        ret = lit.to_string().trim_matches('"').to_string();
+    let variants_names = data
+        .variants
+        .iter()
+        .map(|v| {
+            let mut ret = v.ident.to_string();
+            for attr in &v.attrs {
+                if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "enumstuff" {
+                    if let Some(proc_macro2::TokenTree::Group(group)) =
+                        attr.tokens.clone().into_iter().next()
+                    {
+                        let mut tokens = group.stream().into_iter();
+                        if let Some(proc_macro2::TokenTree::Literal(lit)) = tokens.next() {
+                            ret = lit.to_string().trim_matches('"').to_string();
+                        }
                     }
                 }
             }
-        }
-        ret
-    }).collect::<Vec<_>>();
+            ret
+        })
+        .collect::<Vec<_>>();
 
     let variant_list = data
         .variants
