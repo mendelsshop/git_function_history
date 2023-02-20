@@ -17,7 +17,7 @@ parallel = ["git_function_history/parallel", "function_history_backend_thread/pa
 unstable = ["git_function_history/unstable", "function_history_backend_thread/unstable"]
 
 [dependencies]
-eframe = {version = "0.21.2", features = ["dark-light"]}
+eframe = {version = "0.21.3", features = ["dark-light"]}
 git_function_history = { path = "../git-function-history-lib", version = "0.7.0", default-features = false}
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.3.0", default-features = false}
 simple_file_logger = "0.3.1"

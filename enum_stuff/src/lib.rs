@@ -55,7 +55,7 @@ let types =  data
             }
         }
         ret
-    });
+    }).collect::<Vec<_>>();
 
     
 
@@ -76,12 +76,21 @@ let types =  data
         // amd also make a function that can does the same but for the variant names
         impl #name {
 
-            #vis fn get_variant_names() -> Vec<&'static str> {
-                vec![#(#variants_names),*]
+            #vis fn get_variant_names() -> &'static [&'static str] {
+                &[#(#variants_names),*]
+            }
+
+            #vis fn get_variant_names_recurse(list: &[&str]) -> Option<&'static [&'static str]> {
+                let mut list = list.iter();
+                let variants = list.next()?;
+                None
+
+
+
             }
 
             /// gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
-            #vis fn get_variant_types(&self) -> &[&str] {
+            #vis fn get_variant_types(&self) -> &'static [&'static str] {
                 match (self.get_variant_name().as_str()) {
                     #(#variant_list =>  &[#(#data_type),*]),*,
                     _ => &[] as &[&str],
@@ -106,7 +115,15 @@ let types =  data
                 }
             }
 
-            #vis fn get_variant_types_from_str(variant: &str) -> &[&str] {
+            #vis fn get_variant_types_from_str(variant: &str) -> &'static [&'static str] {
+                match variant {
+                    #(#variant_list =>  &[#(#data_type),*]),*,
+                    var => {
+                        &[] as &[&str]},
+                }
+            }
+
+            #vis fn get_variant_types_from_str_recurse(variant: &str, depth: usize) -> &'static [&'static str] {
                 match variant {
                     #(#variant_list =>  &[#(#data_type),*]),*,
                     var => {
@@ -117,9 +134,7 @@ let types =  data
             #vis fn get_variant_name(&self) -> String {
                 // we cannot just use format!("{:?}", self) because it will return the variant name with its prameters
                 // we want to get the variant name without its parameters
-                let variant = format!("{:?}", self);
-                let mut variant = variant.split("(").collect::<Vec<_>>();
-                variant[0].to_string()
+                format!("{:?}", self).split("(").next().unwrap_or("").to_string()
             }
         }
     };

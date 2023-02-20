@@ -6,7 +6,7 @@ use eframe::{
     epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status,
+    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, Status, SearchType,
 };
 use git_function_history::{
     languages::Language, types::Directions, Commit, FileFilterType, Filter, FunctionHistory,
@@ -362,13 +362,13 @@ impl eframe::App for MyEguiApp {
                                                         ),
                                                         "in date range",
                                                     );
-                                                    ui.selectable_value(
-                                                        &mut self.history_filter_type,
-                                                        HistoryFilterType::FunctionInBlock(
-                                                            String::new(),
-                                                        ),
-                                                        "function in block",
-                                                    );
+                                                    // ui.selectable_value(
+                                                    //     &mut self.history_filter_type,
+                                                    //     HistoryFilterType::FunctionInBlock(
+                                                    //         String::new(),
+                                                    //     ),
+                                                    //     "function in block",
+                                                    // );
                                                     ui.selectable_value(
                                                         &mut self.history_filter_type,
                                                         HistoryFilterType::FunctionInLines(
@@ -377,13 +377,13 @@ impl eframe::App for MyEguiApp {
                                                         ),
                                                         "function in lines",
                                                     );
-                                                    ui.selectable_value(
-                                                        &mut self.history_filter_type,
-                                                        HistoryFilterType::FunctionInFunction(
-                                                            String::new(),
-                                                        ),
-                                                        "function in function",
-                                                    );
+                                                    // ui.selectable_value(
+                                                    //     &mut self.history_filter_type,
+                                                    //     HistoryFilterType::FunctionInFunction(
+                                                    //         String::new(),
+                                                    //     ),
+                                                    //     "function in function",
+                                                    // );
                                                     ui.selectable_value(
                                                         &mut self.history_filter_type,
                                                         HistoryFilterType::FileAbsolute(
@@ -430,8 +430,8 @@ impl eframe::App for MyEguiApp {
                                                 }
                                                 HistoryFilterType::Date(dir)
                                                 | HistoryFilterType::CommitHash(dir)
-                                                | HistoryFilterType::FunctionInBlock(dir)
-                                                | HistoryFilterType::FunctionInFunction(dir)
+                                                // | HistoryFilterType::FunctionInBlock(dir)
+                                                // | HistoryFilterType::FunctionInFunction(dir)
                                                 | HistoryFilterType::FileAbsolute(dir)
                                                 | HistoryFilterType::FileRelative(dir)
                                                 | HistoryFilterType::Directory(dir) => {
@@ -445,6 +445,7 @@ impl eframe::App for MyEguiApp {
                                                 HistoryFilterType::None => {
                                                     // do nothing
                                                 }
+                                                HistoryFilterType::PL(_) => todo!(),
                                             }
                                             let resp = ui.add(Button::new("Go"));
                                             if resp.clicked() {
@@ -464,9 +465,9 @@ impl eframe::App for MyEguiApp {
                                                             date2.to_string(),
                                                         ))
                                                     }
-                                                    HistoryFilterType::FunctionInBlock(_block) => {
-                                                        None
-                                                    }
+                                                    // HistoryFilterType::FunctionInBlock(_block) => {
+                                                    //     None
+                                                    // }
                                                     // Some(
                                                     //     Filter::FunctionInBlock(BlockType::from_string(block)),
                                                     // ),
@@ -499,12 +500,12 @@ impl eframe::App for MyEguiApp {
                                                             fn_in_lines.1,
                                                         ))
                                                     }
-                                                    HistoryFilterType::FunctionInFunction(
-                                                        _function,
-                                                    ) => {
-                                                        // Some(Filter::FunctionWithParent(function.to_string()))
-                                                        None
-                                                    }
+                                                    // HistoryFilterType::FunctionInFunction(
+                                                    //     _function,
+                                                    // ) => {
+                                                    //     // Some(Filter::FunctionWithParent(function.to_string()))
+                                                    //     None
+                                                    // }
                                                     HistoryFilterType::FileAbsolute(file) => {
                                                         Some(Filter::FileAbsolute(file.to_string()))
                                                     }
@@ -518,6 +519,7 @@ impl eframe::App for MyEguiApp {
                                                         self.status = Status::Ok(None);
                                                         None
                                                     }
+                                                    HistoryFilterType::PL(_) => todo!(),
                                                 };
                                                 if let Some(filter) = filter {
                                                     self.channels
