@@ -684,8 +684,7 @@ impl eframe::App for MyEguiApp {
                                                 self.file_type.clone(),
                                                 self.filter.clone(),
                                                 self.language,
-                                            )
-                                            ))
+                                            )))
                                             .expect("could not send message in thread");
                                     }
                                 }

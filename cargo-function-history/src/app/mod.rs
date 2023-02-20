@@ -12,7 +12,7 @@ use std::{
     fs,
     io::{Read, Write},
     sync::mpsc,
-    time::Duration
+    time::Duration,
 };
 use tui_input::InputRequest;
 pub mod actions;
@@ -388,16 +388,19 @@ impl App {
                         ),
                     );
                 }
-                filter
-                    if LanguageFilter::get_variant_names()
-                        .contains(&filter) =>
-                {
-                    let filt = unwrap_set_error!(self, command_iter.next(), &format!("filters of {} must specify what they are filtiring by ", filter));
-                    log::info!("filtering by {}::{}",filter, filt);
+                filter if LanguageFilter::get_variant_names().contains(&filter) => {
+                    let filt = unwrap_set_error!(
+                        self,
+                        command_iter.next(),
+                        &format!(
+                            "filters of {} must specify what they are filtiring by ",
+                            filter
+                        )
+                    );
+                    log::info!("filtering by {}::{}", filter, filt);
                     let types = LanguageFilter::get_variant_types_from_str(filter);
                     // TODO: in enum stuff or somewhere else make a macro that returns a type based on the given string
                     println!("type: {:?}", types);
-
                 }
                 _ => {
                     self.status = Status::Error(format!("Invalid search command filter: {cmd}"));

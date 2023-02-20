@@ -230,7 +230,6 @@ impl UMPLFilter {
     }
 }
 
-
 #[test]
 fn test_macro2() {
     let filter = UMPLFilter::HasParentWithName(String::new());
@@ -238,5 +237,8 @@ fn test_macro2() {
     println!("{:?}", filter.get_variant_name());
     println!("{:?}", UMPLFilter::get_variant_names());
     println!("{:?}", filter.get_variant_types());
-    println!("{:?}", UMPLFilter::get_variant_types_from_str("HasParentWithName"));
+    println!(
+        "{:?}",
+        UMPLFilter::get_variant_types_from_str("HasParentWithName")
+    );
 }
