@@ -889,7 +889,7 @@
                         </span>),
                     );
                 }
-                filter <span class="kw">if </span>LanguageFilter::get_variant_names().contains(<span class="kw-2">&amp;</span>filter) =&gt; {
+                filter <span class="kw">if </span>LanguageFilter::get_variant_names().contains(filter) =&gt; {
                     <span class="kw">let </span>filt = <span class="macro">unwrap_set_error!</span>(
                         <span class="self">self</span>,
                         command_iter.next(),

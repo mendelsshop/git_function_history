@@ -141,6 +141,31 @@
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
 </pre><pre class="rust"><code><span class="kw">use </span>proc_macro::TokenStream;
 <span class="kw">use </span>quote::{quote, ToTokens};
 <span class="kw">use </span>syn::{parse_macro_input, DeriveInput, Type};
@@ -227,7 +252,32 @@
             #vis <span class="kw">fn </span>get_variant_names_recurse(list: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str]&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>list = list.iter();
                 <span class="kw">let </span>variants = list.next()<span class="question-mark">?</span>;
-                <span class="prelude-val">None
+                <span class="comment">// if the first element of the list is not a variant then we return None
+                </span><span class="kw">if </span>!<span class="self">Self</span>::get_variant_names().contains(variants) {
+                    <span class="kw">return </span><span class="prelude-val">None</span>;
+                }
+                <span class="comment">// if the then we access the variant and get its variants
+                </span><span class="kw">let </span>variants = <span class="self">Self</span>::get_variant_types_from_str(variants);
+                <span class="comment">// if the list is empty then we return the variants of the variant
+                </span><span class="kw">if </span>list.next().is_none() {
+                    <span class="kw">return </span><span class="prelude-val">Some</span>(variants);
+                }
+                <span class="comment">// let ret = vec![];
+                // then we need to go do the same thing for each variant in variants
+                // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
+                // for variant in variants {
+                //     // use syn::parse2::&lt;Type&gt;(tts).ok()
+                //     // to turn variant into a type
+                //     // then call get_variant_names_recurse on the type
+                //     // and return the result
+                //     let variant = syn::parse2::&lt;Type&gt;(variant.into()).ok()?;
+                //     let variant = variant.get_variant_names_recurse(list);
+                //     if let Some(variant) = variant {
+                //         ret.extend(variant);
+                //     }
+
+                // }
+                </span><span class="prelude-val">None
 
 
 
