@@ -8,22 +8,42 @@ on:
 jobs:
   create-msrv-badge:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        crates: [yea_fen, yea_fen_uci, yea_fen_gui]
+      fail-fast: false
+    container: mendelrubin/cargo-msrv:latest
     steps:
       - uses: actions/checkout@v3
-      - uses: spenserblack/actions-msrv@v0.4.1
+      - name: remove Cargo.toml so cargo-msrv doesn't find it
+        run: |
+          rm Cargo.toml
+          ls -l
+      - uses: actions/checkout@v3
+      - name: Get MSRV and create badge
+        
         id: get-msrv
-        with:
-          set: true
+        run: |
+          rm Cargo.toml
+        
+          cd ${{ matrix.crates }}
+          ls -l
+          cargo msrv --output-format minimal > msrv.txt
+          tr -d '\n' < msrv.txt > msrv2.txt
+          cat msrv2.txt
+          echo "msrv=$(cat msrv2.txt)" >> $GITHUB_OUTPUT
+          cargo msrv set $(cat msrv2.txt)
       - name: Create Badge
-        run: curl https://img.shields.io/badge/minimum%20rust%20version-${{ steps.get-msrv.outputs.msrv }}-blue > resources/msrv.svg
+        run: |
+          curl https://img.shields.io/badge/minimum%20rust%20version-${{ steps.get-msrv.outputs.msrv }}-blue.svg > resources/${{ matrix.crates }}_msrv.svg
       - name: Commit Badge
         # If there are no changes to the badge this would error out. But it
         # isn't a problem if there were no changes, so errors are allowed.
         continue-on-error: true
         run: |
-          git add resources/msrv.svg
-          git add **/Cargo.toml
+          git pull
+          git add resources/${{ matrix.crates }}_msrv.svg
+          git add ${{ matrix.crates }}/Cargo.toml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "Update MSRV badge [Skip CI]"
