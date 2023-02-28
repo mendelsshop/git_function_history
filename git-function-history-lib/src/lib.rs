@@ -399,8 +399,13 @@ fn traverse_tree(
                             }
                         }
                         Language::All => {
-                            if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) || ends_with_cmp_no_case(&file, "umpl") {
-                                continue
+                            if !(ends_with_cmp_no_case(&file, "go")
+                                || ends_with_cmp_no_case(&file, "rs")
+                                || ends_with_cmp_no_case(&file, "py")
+                                || ends_with_cmp_no_case(&file, "rb"))
+                                || ends_with_cmp_no_case(&file, "umpl")
+                            {
+                                continue;
                             }
                         }
                     },
@@ -566,7 +571,7 @@ fn find_function_in_file_with_commit(
                 let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
-        
+
             Some("go") => {
                 let functions = languages::go::find_function_in_file(fc, name)?;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
