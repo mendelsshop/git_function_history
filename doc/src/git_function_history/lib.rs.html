@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-1def573a4779b29b.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-d59023bfa12059d2.css"><link rel="stylesheet" disabled href="../../static.files/dark-1ca41bb1e10af075.css"><link rel="stylesheet" disabled href="../../static.files/ayu-18b4181a2f3fb862.css"><script src="../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../git_function_history/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e5308b57e507db71.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-d59023bfa12059d2.css"><link rel="stylesheet" disabled href="../../static.files/dark-1ca41bb1e10af075.css"><link rel="stylesheet" disabled href="../../static.files/ayu-18b4181a2f3fb862.css"><script src="../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../git_function_history/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -921,22 +921,6 @@
 <a href="#921" id="921">921</a>
 <a href="#922" id="922">922</a>
 <a href="#923" id="923">923</a>
-<a href="#924" id="924">924</a>
-<a href="#925" id="925">925</a>
-<a href="#926" id="926">926</a>
-<a href="#927" id="927">927</a>
-<a href="#928" id="928">928</a>
-<a href="#929" id="929">929</a>
-<a href="#930" id="930">930</a>
-<a href="#931" id="931">931</a>
-<a href="#932" id="932">932</a>
-<a href="#933" id="933">933</a>
-<a href="#934" id="934">934</a>
-<a href="#935" id="935">935</a>
-<a href="#936" id="936">936</a>
-<a href="#937" id="937">937</a>
-<a href="#938" id="938">938</a>
-<a href="#939" id="939">939</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
@@ -957,7 +941,7 @@
 </span><span class="kw">pub mod </span>types;
 <span class="macro">macro_rules! </span>get_item_from {
     (<span class="macro-nonterminal">$oid</span>:expr, <span class="macro-nonterminal">$repo</span>:expr, <span class="macro-nonterminal">$typs</span>:ident) =&gt; {
-        git_repository::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>)
+        gix::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>)
             .attach(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$repo</span>)
             .object()
             .map_err(|<span class="kw">_</span>| <span class="string">&quot;Could not find object&quot;</span>)<span class="question-mark">?
@@ -968,7 +952,7 @@
 
 <span class="macro">macro_rules! </span>get_item_from_oid_option {
     (<span class="macro-nonterminal">$oid</span>:expr, <span class="macro-nonterminal">$repo</span>:expr, <span class="macro-nonterminal">$typs</span>:ident) =&gt; {
-        git_repository::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>)
+        gix::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>)
             .attach(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$repo</span>)
             .object()
             .ok()<span class="question-mark">?
@@ -984,12 +968,11 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;parallel&quot;</span>)]
 </span><span class="kw">use </span>rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-<span class="kw">use </span>git_repository::{objs, prelude::ObjectIdExt, ObjectId};
+<span class="kw">use </span>gix::{objs, prelude::ObjectIdExt, ObjectId};
 <span class="kw">use </span>std::{error::Error, ops::Sub};
 
 <span class="comment">// #[cfg(feature = &quot;c_lang&quot;)]
 // use languages::CFile;
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
 </span><span class="kw">use </span>languages::GoFile;
 
 <span class="kw">pub use </span>{
@@ -1098,7 +1081,7 @@
         <span class="prelude-val">Err</span>(<span class="string">&quot;function name is empty&quot;</span>)<span class="question-mark">?</span>;
     }
     <span class="comment">// if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
-    </span><span class="kw">let </span>repo = git_repository::discover(<span class="string">&quot;.&quot;</span>)<span class="question-mark">?</span>;
+    </span><span class="kw">let </span>repo = gix::discover(<span class="string">&quot;.&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>th_repo = repo.clone().into_sync();
     <span class="kw">let </span><span class="kw-2">mut </span>tips = <span class="macro">vec!</span>[];
     <span class="kw">let </span>head = repo.head_commit()<span class="question-mark">?</span>;
@@ -1259,7 +1242,7 @@
 
 <span class="kw">fn </span>sender(
     id: ObjectId,
-    repo: <span class="kw-2">&amp;</span>git_repository::Repository,
+    repo: <span class="kw-2">&amp;</span>gix::Repository,
     name: <span class="kw-2">&amp;</span>str,
     langs: Language,
     file: <span class="kw-2">&amp;</span>FileFilterType,
@@ -1270,8 +1253,8 @@
 }
 
 <span class="kw">fn </span>traverse_tree(
-    tree: <span class="kw-2">&amp;</span>git_repository::Tree&lt;<span class="lifetime">&#39;_</span>&gt;,
-    repo: <span class="kw-2">&amp;</span>git_repository::Repository,
+    tree: <span class="kw-2">&amp;</span>gix::Tree&lt;<span class="lifetime">&#39;_</span>&gt;,
+    repo: <span class="kw-2">&amp;</span>gix::Repository,
     name: <span class="kw-2">&amp;</span>str,
     path: <span class="kw-2">&amp;</span>str,
     langs: Language,
@@ -1313,7 +1296,6 @@
                         //         files.push(file);
                         //     }
                         // }
-                        </span><span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
                         </span>Language::Go =&gt; {
                             <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;go&quot;</span>) {
                                 <span class="kw">continue</span>;
@@ -1335,34 +1317,18 @@
                             }
                         }
                         Language::UMPL =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;ump&quot;</span>) {
+                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;umpl&quot;</span>) {
                                 <span class="kw">continue</span>;
                             }
                         }
                         Language::All =&gt; {
-                            <span class="macro">cfg_if::cfg_if! </span>{
-                                <span class="comment">// if #[cfg(feature = &quot;c_lang&quot;)] {
-                                //     if !(ends_with_cmp_no_case(&amp;file, &quot;c&quot;) || ends_with_cmp_no_case(&amp;file, &quot;h&quot;) || !ends_with_cmp_no_case(&amp;file, &quot;rs&quot;) || ends_with_cmp_no_case(&amp;file, &quot;py&quot;) || ends_with_cmp_no_case(&amp;file, &quot;rb&quot;)) {
-                                //         continue;
-                                //     }
-                                // }
-                                // else
-                                </span><span class="kw">if </span><span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)] </span>{
-                                    <span class="kw">if </span>!(ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;go&quot;</span>)  || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rs&quot;</span>) || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;py&quot;</span>) || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rb&quot;</span>)){
-                                        <span class="kw">continue
-                                    </span>}
-                                }
-                                <span class="comment">// else if #[cfg(all(feature = &quot;unstable&quot;, feature = &quot;c_lang&quot;))] {
-                                //     if !(ends_with_cmp_no_case(&amp;file, &quot;go&quot;) || ends_with_cmp_no_case(&amp;file, &quot;c&quot;) || ends_with_cmp_no_case(&amp;file, &quot;h&quot;) || ends_with_cmp_no_case(&amp;file, &quot;rs&quot;) || ends_with_cmp_no_case(&amp;file, &quot;py&quot;) || ends_with_cmp_no_case(&amp;file, &quot;rb&quot;)) {
-                                //         continue;
-                                //     }
-                                // }
-                                </span><span class="kw">else </span>{
-                                    <span class="kw">if </span>!(ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rs&quot;</span>) || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;py&quot;</span>) || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rb&quot;</span>)) {
-                                        <span class="kw">continue</span>;
-                                    }
-                                }
-
+                            <span class="kw">if </span>!(ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;go&quot;</span>)
+                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rs&quot;</span>)
+                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;py&quot;</span>)
+                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;rb&quot;</span>))
+                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">&quot;umpl&quot;</span>)
+                            {
+                                <span class="kw">continue</span>;
                             }
                         }
                     },
@@ -1438,7 +1404,7 @@
 /// wiil return `Err`if it cannot find or read from a git repository
 
 </span><span class="kw">pub fn </span>get_git_info() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CommitInfo&gt;, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
-    <span class="kw">let </span>repo = git_repository::discover(<span class="string">&quot;.&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>repo = gix::discover(<span class="string">&quot;.&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>tips = <span class="macro">vec!</span>[];
     <span class="kw">let </span>head = repo.head_commit()<span class="question-mark">?</span>;
     tips.push(head.id);
@@ -1498,7 +1464,6 @@
         //     let functions = languages::c::find_function_in_file(fc, name)?;
         //     FileType::C(CFile::new(file_path.to_string(), functions))
         // }
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
         </span>Language::Go =&gt; {
             <span class="kw">let </span>functions = languages::go::find_function_in_file(fc, name)<span class="question-mark">?</span>;
             FileType::Go(GoFile::new(file_path.to_string(), functions))
@@ -1529,14 +1494,18 @@
                 <span class="kw">let </span>functions = languages::python::find_function_in_file(fc, name)<span class="question-mark">?</span>;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
-            <span class="attr">#[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
-            </span><span class="prelude-val">Some</span>(<span class="string">&quot;go&quot;</span>) =&gt; {
+
+            <span class="prelude-val">Some</span>(<span class="string">&quot;go&quot;</span>) =&gt; {
                 <span class="kw">let </span>functions = languages::go::find_function_in_file(fc, name)<span class="question-mark">?</span>;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
             }
             <span class="prelude-val">Some</span>(<span class="string">&quot;rb&quot;</span>) =&gt; {
                 <span class="kw">let </span>functions = languages::ruby::find_function_in_file(fc, name)<span class="question-mark">?</span>;
                 FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
+            }
+            <span class="prelude-val">Some</span>(<span class="string">&quot;umpl&quot;</span>) =&gt; {
+                <span class="kw">let </span>functions = languages::umpl::find_function_in_file(fc, name)<span class="question-mark">?</span>;
+                FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
             }
             <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;unknown file type&quot;</span>)<span class="question-mark">?</span>,
         },
@@ -1793,7 +1762,6 @@
     //     assert!(output.is_ok());
     // }
     </span><span class="attr">#[test]
-    #[cfg(feature = <span class="string">&quot;unstable&quot;</span>)]
     </span><span class="kw">fn </span>go_whole() {
         <span class="kw">let </span>now = Utc::now();
         <span class="kw">let </span>output = get_function_history(
@@ -1877,4 +1845,4 @@
     }
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (2d14db321 2023-02-15)" data-search-js="search-14421e1532aead08.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (7281249a1 2023-02-27)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
