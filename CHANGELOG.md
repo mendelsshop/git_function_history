@@ -27,6 +27,7 @@ All notable changes to this project will be documented in this file.
 - Python works besides for one edge case when the function is the last node
 - Pl filters now working very messy and boilerplatety
 - Fixed bug where I didnt understand how cfg-if works, also filter_by macro works just neeeds docs
+- Removed unstable feature and switched to gix crate
 
 ### Proc-macro
 
