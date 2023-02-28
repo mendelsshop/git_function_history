@@ -1,4 +1,4 @@
-# [![crates.io](https://img.shields.io/crates/v/git-function-history-gui.svg?label=latest%20version)](https://crates.io/crates/git-function-history-gui) [![Crates.io](https://img.shields.io/crates/d/git-function-history-gui?label=crates.io%20downloads)](https://crates.io/crates/git-function-history-gui) ![msrv](../resources/msrv.svg)
+# [![crates.io](https://img.shields.io/crates/v/git-function-history-gui.svg?label=latest%20version)](https://crates.io/crates/git-function-history-gui) [![Crates.io](https://img.shields.io/crates/d/git-function-history-gui?label=crates.io%20downloads)](https://crates.io/crates/git-function-history-gui) ![msrv](https://raw.githubusercontent.com/mendelsshop/git_function_history/main/resources/git-function-history-gui_msrv.svg)
 
 # git function history GUI
 

@@ -1,4 +1,4 @@
-# [![crates.io](https://img.shields.io/crates/v/cargo-function-history.svg?label=latest%20version)](https://crates.io/crates/cargo-function-history) [![Crates.io](https://img.shields.io/crates/d/cargo-function-history?label=crates.io%20downloads)](https://crates.io/crates/cargo-function-history) ![msrv](../resources/msrv.svg)
+# [![crates.io](https://img.shields.io/crates/v/cargo-function-history.svg?label=latest%20version)](https://crates.io/crates/cargo-function-history) [![Crates.io](https://img.shields.io/crates/d/cargo-function-history?label=crates.io%20downloads)](https://crates.io/crates/cargo-function-history) ![msrv](https://raw.githubusercontent.com/mendelsshop/git_function_history/main/resources/cargo-function-history_msrv.svg)
 
 # cargo function history
 
