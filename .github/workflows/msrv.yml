@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crates: [yea_fen, yea_fen_uci, yea_fen_gui]
+        crates: [git_function_history, cargo-function-history, git-function-history-gui, cargo_function_history_backend_thread, enum_stuff]
       fail-fast: false
     container: mendelrubin/cargo-msrv:latest
     steps:
