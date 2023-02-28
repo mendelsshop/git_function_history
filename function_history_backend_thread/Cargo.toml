@@ -15,7 +15,6 @@ description = "threading and types for git-function-history"
 default = ["parallel"]
 parallel = ["git_function_history/parallel"]
 # c_lang = ["git_function_history/c_lang"]
-unstable = ["git_function_history/unstable"]
 
 [dependencies]
 git_function_history = { path = "../git-function-history-lib", version = "0.7.0", default-features = false}

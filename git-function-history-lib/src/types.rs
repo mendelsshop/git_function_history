@@ -14,7 +14,6 @@ use crate::{
 // #[cfg(feature = "c_lang")]
 // use crate::languages::CFile;
 
-#[cfg(feature = "unstable")]
 use crate::languages::GoFile;
 
 #[derive(Debug, Clone)]
@@ -24,7 +23,6 @@ pub enum FileType {
     Python(PythonFile),
     // #[cfg(feature = "c_lang")]
     // C(CFile),
-    #[cfg(feature = "unstable")]
     Go(GoFile),
     Ruby(RubyFile),
     UMPL(UMPLFile),
@@ -37,7 +35,6 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_file_name(),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => file.get_file_name(),
-            #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_file_name(),
             Self::Ruby(file) => file.get_file_name(),
             Self::UMPL(file) => file.get_file_name(),
@@ -49,7 +46,6 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_functions(),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => file.get_functions(),
-            #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_functions(),
             Self::Ruby(file) => file.get_functions(),
             Self::UMPL(file) => file.get_functions(),
@@ -72,7 +68,6 @@ impl FileTrait for FileType {
             //     let filtered =  file.filter_by(filter)?;
             //     Ok(Self::C(filtered))
             // }
-            #[cfg(feature = "unstable")]
             Self::Go(file) => {
                 let filtered = file.filter_by(filter)?;
                 Ok(Self::Go(filtered))
@@ -94,7 +89,6 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_current(),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => file.get_current(),
-            #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_current(),
             Self::Ruby(file) => file.get_current(),
             Self::UMPL(file) => file.get_current(),
@@ -107,7 +101,6 @@ impl FileTrait for FileType {
             Self::Python(file) => file.get_language(),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => file.get_language(),
-            #[cfg(feature = "unstable")]
             Self::Go(file) => file.get_language(),
             Self::Ruby(file) => file.get_language(),
             Self::UMPL(file) => file.get_language(),
@@ -122,7 +115,6 @@ impl fmt::Display for FileType {
             Self::Python(file) => write!(f, "{file}"),
             // #[cfg(feature = "c_lang")]
             // Self::C(file) => write!(f, "{}", file),
-            #[cfg(feature = "unstable")]
             Self::Go(file) => write!(f, "{file}"),
             Self::Ruby(file) => write!(f, "{file}"),
             Self::UMPL(file) => write!(f, "{file}"),

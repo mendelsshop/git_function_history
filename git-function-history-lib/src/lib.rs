@@ -18,7 +18,7 @@ pub mod languages;
 pub mod types;
 macro_rules! get_item_from {
     ($oid:expr, $repo:expr, $typs:ident) => {
-        git_repository::hash::ObjectId::from($oid)
+        gix::hash::ObjectId::from($oid)
             .attach(&$repo)
             .object()
             .map_err(|_| "Could not find object")?
@@ -29,7 +29,7 @@ macro_rules! get_item_from {
 
 macro_rules! get_item_from_oid_option {
     ($oid:expr, $repo:expr, $typs:ident) => {
-        git_repository::hash::ObjectId::from($oid)
+        gix::hash::ObjectId::from($oid)
             .attach(&$repo)
             .object()
             .ok()?
@@ -45,12 +45,11 @@ use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use git_repository::{objs, prelude::ObjectIdExt, ObjectId};
+use gix::{objs, prelude::ObjectIdExt, ObjectId};
 use std::{error::Error, ops::Sub};
 
 // #[cfg(feature = "c_lang")]
 // use languages::CFile;
-#[cfg(feature = "unstable")]
 use languages::GoFile;
 
 pub use {
@@ -159,7 +158,7 @@ pub fn get_function_history(
         Err("function name is empty")?;
     }
     // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
-    let repo = git_repository::discover(".")?;
+    let repo = gix::discover(".")?;
     let th_repo = repo.clone().into_sync();
     let mut tips = vec![];
     let head = repo.head_commit()?;
@@ -320,7 +319,7 @@ impl Default for MacroOpts<'_> {
 
 fn sender(
     id: ObjectId,
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
     name: &str,
     langs: Language,
     file: &FileFilterType,
@@ -331,8 +330,8 @@ fn sender(
 }
 
 fn traverse_tree(
-    tree: &git_repository::Tree<'_>,
-    repo: &git_repository::Repository,
+    tree: &gix::Tree<'_>,
+    repo: &gix::Repository,
     name: &str,
     path: &str,
     langs: Language,
@@ -374,7 +373,6 @@ fn traverse_tree(
                         //         files.push(file);
                         //     }
                         // }
-                        #[cfg(feature = "unstable")]
                         Language::Go => {
                             if !ends_with_cmp_no_case(&file, "go") {
                                 continue;
@@ -396,34 +394,13 @@ fn traverse_tree(
                             }
                         }
                         Language::UMPL => {
-                            if !ends_with_cmp_no_case(&file, "ump") {
+                            if !ends_with_cmp_no_case(&file, "umpl") {
                                 continue;
                             }
                         }
                         Language::All => {
-                            cfg_if::cfg_if! {
-                                // if #[cfg(feature = "c_lang")] {
-                                //     if !(ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || !ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
-                                //         continue;
-                                //     }
-                                // }
-                                // else
-                                if #[cfg(feature = "unstable")] {
-                                    if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")){
-                                        continue
-                                    }
-                                }
-                                // else if #[cfg(all(feature = "unstable", feature = "c_lang"))] {
-                                //     if !(ends_with_cmp_no_case(&file, "go") || ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
-                                //         continue;
-                                //     }
-                                // }
-                                else {
-                                    if !(ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) {
-                                        continue;
-                                    }
-                                }
-
+                            if !(ends_with_cmp_no_case(&file, "go")  || ends_with_cmp_no_case(&file, "rs") || ends_with_cmp_no_case(&file, "py") || ends_with_cmp_no_case(&file, "rb")) || ends_with_cmp_no_case(&file, "umpl") {
+                                continue
                             }
                         }
                     },
@@ -499,7 +476,7 @@ macro_rules! get_function_history {
 /// wiil return `Err`if it cannot find or read from a git repository
 
 pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
-    let repo = git_repository::discover(".")?;
+    let repo = gix::discover(".")?;
     let mut tips = vec![];
     let head = repo.head_commit()?;
     tips.push(head.id);
@@ -559,7 +536,6 @@ fn find_function_in_file_with_commit(
         //     let functions = languages::c::find_function_in_file(fc, name)?;
         //     FileType::C(CFile::new(file_path.to_string(), functions))
         // }
-        #[cfg(feature = "unstable")]
         Language::Go => {
             let functions = languages::go::find_function_in_file(fc, name)?;
             FileType::Go(GoFile::new(file_path.to_string(), functions))
@@ -590,7 +566,7 @@ fn find_function_in_file_with_commit(
                 let functions = languages::python::find_function_in_file(fc, name)?;
                 FileType::Python(PythonFile::new(file_path.to_string(), functions))
             }
-            #[cfg(feature = "unstable")]
+        
             Some("go") => {
                 let functions = languages::go::find_function_in_file(fc, name)?;
                 FileType::Go(GoFile::new(file_path.to_string(), functions))
@@ -598,6 +574,10 @@ fn find_function_in_file_with_commit(
             Some("rb") => {
                 let functions = languages::ruby::find_function_in_file(fc, name)?;
                 FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
+            }
+            Some("umpl") => {
+                let functions = languages::umpl::find_function_in_file(fc, name)?;
+                FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
             }
             _ => Err("unknown file type")?,
         },
@@ -854,7 +834,6 @@ mod tests {
     //     assert!(output.is_ok());
     // }
     #[test]
-    #[cfg(feature = "unstable")]
     fn go_whole() {
         let now = Utc::now();
         let output = get_function_history(

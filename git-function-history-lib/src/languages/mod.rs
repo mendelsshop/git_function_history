@@ -10,7 +10,6 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 // use self::c::CFunction;
 
 use enum_stuff::enumstuff;
-#[cfg(feature = "unstable")]
 use go::GoFunction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, enumstuff)]
 /// an enum representing the different languages that are supported
@@ -22,7 +21,6 @@ pub enum Language {
     // #[cfg(feature = "c_lang")]
     // /// c language
     // C,
-    #[cfg(feature = "unstable")]
     /// The go language
     Go,
     /// the Ruby language
@@ -43,7 +41,6 @@ pub enum LanguageFilter {
     // #[cfg(feature = "c_lang")]
     // /// c filter
     // C(c::CFilter),
-    #[cfg(feature = "unstable")]
     /// go filter
     Go(go::GoFilter),
     /// ruby filter
@@ -64,7 +61,6 @@ impl Language {
             "rust" => Ok(Self::Rust),
             // #[cfg(feature = "c_lang")]
             // "c" => Ok(Self::C),
-            #[cfg(feature = "unstable")]
             "go" => Ok(Self::Go),
             "all" => Ok(Self::All),
             "ruby" => Ok(Self::Ruby),
@@ -79,14 +75,10 @@ impl Language {
             Self::Rust => "rust",
             // #[cfg(feature = "c_lang")]
             // Language::C => "c",
-            #[cfg(feature = "unstable")]
             Self::Go => "go",
             Self::Ruby => "ruby",
             Self::UMPL => "umpl",
-            #[cfg(feature = "unstable")]
             Self::All => "python, rust, go, ruby, or umpl",
-            #[cfg(not(feature = "unstable"))]
-            Self::All => "python, rust, ruby, or umpl",
         }
     }
 
@@ -97,14 +89,10 @@ impl Language {
             Self::Rust => &["rs"],
             // #[cfg(feature = "c_lang")]
             // Language::C => &["c", "h"],
-            #[cfg(feature = "unstable")]
             Self::Go => &["go"],
             Self::Ruby => &["rb"],
             Self::UMPL => &["umpl"],
-            #[cfg(feature = "unstable")]
             Self::All => &["py", "pyw", "rs", "go", "rb", "umpl"],
-            #[cfg(not(feature = "unstable"))]
-            Self::All => &["py", "pyw", "rs", "rb", "umpl"],
         }
     }
 }
@@ -116,7 +104,6 @@ impl fmt::Display for Language {
             Self::Rust => write!(f, "rust"),
             // #[cfg(feature = "c_lang")]
             // Self::C => write!(f, "c"),
-            #[cfg(feature = "unstable")]
             Self::Go => write!(f, "go"),
             Self::Ruby => write!(f, "ruby"),
             Self::UMPL => write!(f, "umpl"),
@@ -126,7 +113,6 @@ impl fmt::Display for Language {
 }
 // #[cfg(feature = "c_lang")]
 // pub mod c;
-#[cfg(feature = "unstable")]
 pub mod go;
 // #[cfg(feature = "unstable")]
 // pub mod java;
@@ -336,7 +322,6 @@ make_file!(PythonFile, PythonFunction, Python);
 make_file!(RustFile, RustFunction, Rust);
 // #[cfg(feature = "c_lang")]
 // make_file!(CFile, CFunction, C);
-#[cfg(feature = "unstable")]
 make_file!(GoFile, GoFunction, Go);
 make_file!(RubyFile, RubyFunction, Ruby);
 make_file!(UMPLFile, UMPLFunction, UMPL);
@@ -382,7 +367,6 @@ mod lang_tests {
     make_file_time_test!(rust_parses, rs, rust, RustFile, "empty_test");
     // #[cfg(feature = "c_lang")]
     // make_file_time_test!(c_parses, c, c, CFile, "empty_test");
-    #[cfg(feature = "unstable")]
     make_file_time_test!(go_parses, go, go, GoFile, "empty_test");
     make_file_time_test!(ruby_parses, rb, ruby, RubyFile, "empty_test");
 

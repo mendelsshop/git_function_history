@@ -178,7 +178,6 @@ impl fmt::Display for HistoryFilterType {
                     LanguageFilter::Rust(_) => "rust",
                     LanguageFilter::Ruby(_) => "ruby",
                     LanguageFilter::UMPL(_) => "umpl",
-                    #[cfg(feature = "unstable")]
                     LanguageFilter::Go(_) => "go",
                 }
             ),

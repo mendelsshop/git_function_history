@@ -225,7 +225,6 @@ impl App {
                     {
                         "rust" => Language::Rust,
                         "python" => Language::Python,
-                        #[cfg(feature = "unstable")]
                         "go" => Language::Go,
                         "ruby" => Language::Ruby,
                         "umpl" => Language::UMPL,
@@ -306,7 +305,6 @@ impl App {
                         match *unwrap_set_error!(self, command_iter.next(), "No language given") {
                             "rust" => Language::Rust,
                             "python" => Language::Python,
-                            #[cfg(feature = "unstable")]
                             "go" => Language::Go,
                             "ruby" => Language::Ruby,
                             "umpl" => Language::UMPL,
