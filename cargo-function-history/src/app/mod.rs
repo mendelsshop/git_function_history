@@ -386,7 +386,7 @@ impl App {
                         ),
                     );
                 }
-                filter if LanguageFilter::get_variant_names().contains(&filter) => {
+                filter if LanguageFilter::get_variant_names().contains(filter) => {
                     let filt = unwrap_set_error!(
                         self,
                         command_iter.next(),
