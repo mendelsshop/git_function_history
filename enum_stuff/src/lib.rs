@@ -84,6 +84,31 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             #vis fn get_variant_names_recurse(list: &[&str]) -> Option<&'static [&'static str]> {
                 let mut list = list.iter();
                 let variants = list.next()?;
+                // if the first element of the list is not a variant then we return None
+                if !Self::get_variant_names().contains(variants) {
+                    return None;
+                }
+                // if the then we access the variant and get its variants
+                let variants = Self::get_variant_types_from_str(variants);
+                // if the list is empty then we return the variants of the variant
+                if list.next().is_none() {
+                    return Some(variants);
+                }
+                // let ret = vec![];
+                // then we need to go do the same thing for each variant in variants
+                // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
+                // for variant in variants {
+                //     // use syn::parse2::<Type>(tts).ok()
+                //     // to turn variant into a type
+                //     // then call get_variant_names_recurse on the type
+                //     // and return the result
+                //     let variant = syn::parse2::<Type>(variant.into()).ok()?;
+                //     let variant = variant.get_variant_names_recurse(list);
+                //     if let Some(variant) = variant {
+                //         ret.extend(variant);
+                //     }
+
+                // }
                 None
 
 
