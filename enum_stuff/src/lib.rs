@@ -1,5 +1,6 @@
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use proc_macro2::Span;
+use quote::{quote, ToTokens, quote_spanned};
 use syn::{parse_macro_input, DeriveInput, Type};
 
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
@@ -18,7 +19,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             v.fields
                 .iter()
                 .filter_map(|field| match &field.ty {
-                    syn::Type::Path(path) => Some(path.into_token_stream().to_string()),
+                    syn::Type::Path(path) => Some(path),
                     _ => None,
                 })
                 .collect::<Vec<_>>()
@@ -29,7 +30,6 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         .variants
         .iter()
         .filter_map(|v| {
-            println!("{:?}", (&v.fields).into_token_stream());
             let tts = match v.fields.clone() {
                 syn::Fields::Named(n) => n.into_token_stream(),
                 syn::Fields::Unnamed(u) => u.into_token_stream(),
@@ -38,6 +38,20 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             syn::parse2::<Type>(tts).ok()
         })
         .collect::<Vec<_>>();
+
+    let data_type_sr = data_type.iter().map(|v| {
+            v.iter()
+                .map(|t| {
+
+                    let mut ret = t.to_token_stream().to_string();
+                    if ret.starts_with("std::option::Option<") {
+                        ret = ret.replace("std::option::Option<", "");
+                        ret.pop();
+                    }
+                    ret
+                })
+                .collect::<Vec<_>>()
+        }).collect::<Vec<_>>();
 
     let variants_names = data
         .variants
@@ -65,16 +79,11 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         .iter()
         .map(|v| v.ident.to_string())
         .collect::<Vec<_>>();
-    println!("\n\n{:?}\n\n", types);
-    for ty in &types {
-        let quoted = quote! {
-            #ty
-        };
-        println!("ty is {:?}", quoted);
-    }
-    let gen = quote! {
+    let span = Span::call_site();
+    let gen = quote_spanned! {
         // TODO: make a function that can recurse through the enum and get the types of the variants and types of the variants variants and so on to a specified depth
         // amd also make a function that can does the same but for the variant names
+        span=>
         impl #name {
 
             #vis fn get_variant_names() -> &'static [&'static str] {
@@ -83,20 +92,21 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
 
             #vis fn get_variant_names_recurse(list: &[&str]) -> Option<&'static [&'static str]> {
                 let mut list = list.iter();
-                let variants = list.next()?;
+                let variants = list.next()?.clone();
                 // if the first element of the list is not a variant then we return None
-                if !Self::get_variant_names().contains(variants) {
-                    return None;
-                }
-                // if the then we access the variant and get its variants
-                let variants = Self::get_variant_types_from_str(variants);
-                // if the list is empty then we return the variants of the variant
-                if list.next().is_none() {
-                    return Some(variants);
-                }
+                // if !Self::get_variant_names().contains(variants) {
+                //     return None;
+                // }
+                // // if the then we access the variant and get its variants
+                // let variants = Self::get_variant_types_from_str(variants);
+                // // if the list is empty then we return the variants of the variant
+                // if list.next().is_none() {
+                //     return Some(variants);
+                // }
+                
                 // let ret = vec![];
-                // then we need to go do the same thing for each variant in variants
-                // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
+                // // then we need to go do the same thing for each variant in variants
+                // // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
                 // for variant in variants {
                 //     // use syn::parse2::<Type>(tts).ok()
                 //     // to turn variant into a type
@@ -109,7 +119,24 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 //     }
 
                 // }
-                None
+                match variants {
+                    #(#variant_list => {
+                        // let variants = #data_type::get_variant_types_from_str(variants);
+                        // if list.next().is_none() {
+                        //     return Some(variants);
+                        // }
+                        let ret = vec![].as_slice();
+                        // for variant in variants {
+                        //     let variant = syn::parse2::<Type>(variant.into()).ok()?;
+                        //     let variant = variant.get_variant_names_recurse(list);
+                        //     if let Some(variant) = variant {
+                        //         ret.extend(variant);
+                        //     }
+                        // }
+                        None::<'static [&'static str]> 
+                    }),*,
+                    _ => None
+                }
 
 
 
@@ -118,7 +145,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             /// gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
             #vis fn get_variant_types(&self) -> &'static [&'static str] {
                 match (self.get_variant_name().as_str()) {
-                    #(#variant_list =>  &[#(#data_type),*]),*,
+                    #(#variant_list =>  &[#(#data_type_sr),*]),*,
                     _ => &[] as &[&str],
                 }
             }
@@ -143,19 +170,19 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
 
             #vis fn get_variant_types_from_str(variant: &str) -> &'static [&'static str] {
                 match variant {
-                    #(#variant_list =>  &[#(#data_type),*]),*,
+                    #(#variant_list =>  &[#(#data_type_sr),*]),*,
                     var => {
-                        &[] as &[&str]},
+                        &[] as &[&'static str]},
                 }
             }
 
-            #vis fn get_variant_types_from_str_recurse(variant: &str, depth: usize) -> &'static [&'static str] {
-                match variant {
-                    #(#variant_list =>  &[#(#data_type),*]),*,
-                    var => {
-                        &[] as &[&str]},
-                }
-            }
+            // #vis fn get_variant_types_from_str_recurse(variant: &str, depth: usize) -> &'static [&'static str] {
+            //     match variant {
+            //         #(#variant_list =>  &[#(#data_type),*]),*,
+            //         var => {
+            //             &[] as &[&str]},
+            //     }
+            // }
 
             #vis fn get_variant_name(&self) -> String {
                 // we cannot just use format!("{:?}", self) because it will return the variant name with its prameters
