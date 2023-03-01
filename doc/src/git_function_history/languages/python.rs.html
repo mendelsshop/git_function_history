@@ -608,6 +608,15 @@
 <a href="#608" id="608">608</a>
 <a href="#609" id="609">609</a>
 <a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
 </pre><pre class="rust"><code><span class="kw">use </span>enum_stuff::enumstuff;
 <span class="kw">use </span>rustpython_parser::{
     ast::{Arguments, ExprKind, Located, StmtKind},
@@ -1126,22 +1135,31 @@
 </span><span class="doccomment">/// filters for python functions
 </span><span class="kw">pub enum </span>PythonFilter {
     <span class="doccomment">/// when you want to filter by function that are in a specific class
+    </span><span class="attr">#[enumstuff(skip)]
     </span>InClass(String),
     <span class="doccomment">/// when you want filter by a function that has a parent function of a specific name
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasParentFunction(String),
     <span class="doccomment">/// when you want to filter by a function that has a has a specific return type
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasReturnType(String),
     <span class="doccomment">/// when you want to filter by a function that has a specific parameter name
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasParameterName(String),
     <span class="doccomment">/// when you want to filter by a function that has a specific decorator
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasDecorator(String),
     <span class="doccomment">/// when you want to filter by a function thats class has a specific decorator
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasClasswithDecorator(String),
     <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific decorator
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasParentFunctionwithDecorator(String),
     <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific parameter name
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasParentFunctionwithParameterName(String),
     <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific return type
+    </span><span class="attr">#[enumstuff(skip)]
     </span>HasParentFunctionwithReturnType(String),
 }
 
@@ -1219,4 +1237,4 @@
     <span class="macro">impl_function_trait!</span>(PythonFunction);
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (7281249a1 2023-02-27)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (31f858d9a 2023-02-28)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

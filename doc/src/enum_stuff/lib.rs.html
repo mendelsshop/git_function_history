@@ -166,8 +166,85 @@
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
 </pre><pre class="rust"><code><span class="kw">use </span>proc_macro::TokenStream;
-<span class="kw">use </span>quote::{quote, ToTokens};
+<span class="kw">use </span>proc_macro2::Span;
+<span class="kw">use </span>quote::{quote, quote_spanned, ToTokens};
 <span class="kw">use </span>syn::{parse_macro_input, DeriveInput, Type};
 
 <span class="attr">#[proc_macro_derive(enumstuff, attributes(enumstuff))]
@@ -179,16 +256,68 @@
         syn::Data::Enum(data) =&gt; data,
         <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Only enums are supported&quot;</span>),
     };
+    <span class="kw">let </span>data_type_filtered = data
+        .variants
+        .iter()
+        .map(|v| {
+            v.fields
+                .iter()
+                .filter_map(|field| {
+                    <span class="comment">// see if the variant has the enum attribute #[enum_stuff(skip)]
+                    // use v to get the attributes of the variant
+
+                    </span><span class="kw">for </span>attr <span class="kw">in </span><span class="kw-2">&amp;</span>v.attrs {
+                        <span class="kw">if </span>attr.path.segments.len() == <span class="number">1
+                            </span>&amp;&amp; attr.path.segments[<span class="number">0</span>].ident == <span class="string">&quot;enumstuff&quot;
+                        </span>{
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Group(group)) =
+                                attr.tokens.clone().into_iter().next()
+                            {
+                                <span class="kw">let </span><span class="kw-2">mut </span>tokens = group.stream().into_iter();
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Ident(ident)) = tokens.next() {
+                                    <span class="kw">if </span>ident == <span class="string">&quot;skip&quot; </span>{
+                                        <span class="kw">return </span><span class="prelude-val">None</span>;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    <span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
+                        syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path),
+                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                    }
+                })
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+        })
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+
     <span class="kw">let </span>data_type = data
         .variants
         .iter()
         .map(|v| {
             v.fields
                 .iter()
-                .filter_map(|field| <span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
-                    syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path.into_token_stream().to_string()),
-                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                .filter_map(|field| {
+                    <span class="comment">// see if the variant has the enum attribute #[enum_stuff(skip)]
+                    // use v to get the attributes of the variant
+                    </span><span class="kw">match </span><span class="kw-2">&amp;</span>field.ty {
+                        syn::Type::Path(path) =&gt; <span class="prelude-val">Some</span>(path),
+                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                    }
                 })
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+        })
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+
+    <span class="comment">// element in data_type but not in data_type_filtered
+    </span><span class="kw">let </span>data_type_rest = data_type
+        .iter()
+        .zip(data_type_filtered.iter())
+        .map(|(a, b)| {
+            a.iter()
+                .filter(|x| !b.contains(x))
+                .map(|x| x.to_token_stream().to_string())
                 .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
         })
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
@@ -197,7 +326,6 @@
         .variants
         .iter()
         .filter_map(|v| {
-            <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, (<span class="kw-2">&amp;</span>v.fields).into_token_stream());
             <span class="kw">let </span>tts = <span class="kw">match </span>v.fields.clone() {
                 syn::Fields::Named(n) =&gt; n.into_token_stream(),
                 syn::Fields::Unnamed(u) =&gt; u.into_token_stream(),
@@ -207,6 +335,22 @@
         })
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
+    <span class="kw">let </span>data_type_sr = data_type
+        .iter()
+        .map(|v| {
+            v.iter()
+                .map(|t| {
+                    <span class="kw">let </span><span class="kw-2">mut </span>ret = t.to_token_stream().to_string();
+                    <span class="kw">if </span>ret.starts_with(<span class="string">&quot;std::option::Option&lt;&quot;</span>) {
+                        ret = ret.replace(<span class="string">&quot;std::option::Option&lt;&quot;</span>, <span class="string">&quot;&quot;</span>);
+                        ret.pop();
+                    }
+                    ret
+                })
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+        })
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+    <span class="kw">let </span>t = types.as_slice();
     <span class="kw">let </span>variants_names = data
         .variants
         .iter()
@@ -233,38 +377,34 @@
         .iter()
         .map(|v| v.ident.to_string())
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-    <span class="macro">println!</span>(<span class="string">&quot;\n\n{:?}\n\n&quot;</span>, types);
-    <span class="kw">for </span>ty <span class="kw">in </span><span class="kw-2">&amp;</span>types {
-        <span class="kw">let </span>quoted = <span class="macro">quote! </span>{
-            #ty
-        };
-        <span class="macro">println!</span>(<span class="string">&quot;ty is {:?}&quot;</span>, quoted);
-    }
-    <span class="kw">let </span>gen = <span class="macro">quote! </span>{
+    <span class="kw">let </span>span = Span::call_site();
+    <span class="kw">let </span>gen = <span class="macro">quote_spanned! </span>{
         <span class="comment">// TODO: make a function that can recurse through the enum and get the types of the variants and types of the variants variants and so on to a specified depth
         // amd also make a function that can does the same but for the variant names
-        </span><span class="kw">impl </span>#name {
+        </span>span=&gt;
+        <span class="kw">impl </span>#name {
 
             #vis <span class="kw">fn </span>get_variant_names() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str] {
                 <span class="kw-2">&amp;</span>[#(#variants_names),<span class="kw-2">*</span>]
             }
 
-            #vis <span class="kw">fn </span>get_variant_names_recurse(list: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str]&gt; {
+            #vis <span class="kw">fn </span>get_variant_names_recurse(list: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>list = list.iter();
-                <span class="kw">let </span>variants = list.next()<span class="question-mark">?</span>;
+                <span class="kw">let </span>variants = list.next()<span class="question-mark">?</span>.clone();
                 <span class="comment">// if the first element of the list is not a variant then we return None
-                </span><span class="kw">if </span>!<span class="self">Self</span>::get_variant_names().contains(variants) {
-                    <span class="kw">return </span><span class="prelude-val">None</span>;
-                }
-                <span class="comment">// if the then we access the variant and get its variants
-                </span><span class="kw">let </span>variants = <span class="self">Self</span>::get_variant_types_from_str(variants);
-                <span class="comment">// if the list is empty then we return the variants of the variant
-                </span><span class="kw">if </span>list.next().is_none() {
-                    <span class="kw">return </span><span class="prelude-val">Some</span>(variants);
-                }
-                <span class="comment">// let ret = vec![];
-                // then we need to go do the same thing for each variant in variants
-                // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
+                // if !Self::get_variant_names().contains(variants) {
+                //     return None;
+                // }
+                // // if the then we access the variant and get its variants
+                // let variants = Self::get_variant_types_from_str(variants);
+                // // if the list is empty then we return the variants of the variant
+                // if list.next().is_none() {
+                //     return Some(variants);
+                // }
+
+                // let ret = vec![];
+                // // then we need to go do the same thing for each variant in variants
+                // // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
                 // for variant in variants {
                 //     // use syn::parse2::&lt;Type&gt;(tts).ok()
                 //     // to turn variant into a type
@@ -277,16 +417,28 @@
                 //     }
 
                 // }
-                </span><span class="prelude-val">None
+                </span><span class="kw">use </span>std::collections::HashSet;
+                <span class="kw">match </span>variants {
+                    #(#variant_list =&gt; {
+                        <span class="comment">// turn to hashset so we can compare to the filtered data_type
+                        // [#(#data_type),*].iter().collect::&lt;HashSet&lt;_&gt;&gt;().difference(&amp;[#(#data_type_filtered),*]);
+                        </span><span class="kw">let  </span><span class="kw-2">mut </span>slice: Vec&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; = <span class="macro">vec!</span>[];
+                        <span class="comment">// recurse to next level list
+                        </span>#(#data_type_filtered::get_variant_names_recurse(list.cloned().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;().as_slice()).map(|x| slice.extend(x));)*
+                        #(slice.push(#data_type_rest);)*
+                        <span class="prelude-val">Some</span>(slice)
+                    }),<span class="kw-2">*</span>,
+                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None
+                </span>}
 
 
 
-            </span>}
+            }
 
             <span class="doccomment">/// gets the types of the variant ie (u32, u32) for a variant with two fields of type u32
             </span>#vis <span class="kw">fn </span>get_variant_types(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str] {
                 <span class="kw">match </span>(<span class="self">self</span>.get_variant_name().as_str()) {
-                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
+                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type_sr),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
                     <span class="kw">_ </span>=&gt; <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str],
                 }
             }
@@ -311,21 +463,21 @@
 
             #vis <span class="kw">fn </span>get_variant_types_from_str(variant: <span class="kw-2">&amp;</span>str) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str] {
                 <span class="kw">match </span>variant {
-                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
+                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type_sr),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
                     var =&gt; {
-                        <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]},
+                        <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str]},
                 }
             }
 
-            #vis <span class="kw">fn </span>get_variant_types_from_str_recurse(variant: <span class="kw-2">&amp;</span>str, depth: usize) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str] {
-                <span class="kw">match </span>variant {
-                    #(#variant_list =&gt;  <span class="kw-2">&amp;</span>[#(#data_type),<span class="kw-2">*</span>]),<span class="kw-2">*</span>,
-                    var =&gt; {
-                        <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]},
-                }
-            }
+            <span class="comment">// #vis fn get_variant_types_from_str_recurse(variant: &amp;str, depth: usize) -&gt; &amp;&#39;static [&amp;&#39;static str] {
+            //     match variant {
+            //         #(#variant_list =&gt;  &amp;[#(#data_type),*]),*,
+            //         var =&gt; {
+            //             &amp;[] as &amp;[&amp;str]},
+            //     }
+            // }
 
-            #vis <span class="kw">fn </span>get_variant_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+            </span>#vis <span class="kw">fn </span>get_variant_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
                 <span class="comment">// we cannot just use format!(&quot;{:?}&quot;, self) because it will return the variant name with its prameters
                 // we want to get the variant name without its parameters
                 </span><span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>).split(<span class="string">&quot;(&quot;</span>).next().unwrap_or(<span class="string">&quot;&quot;</span>).to_string()
@@ -335,4 +487,4 @@
     gen.into()
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="enum_stuff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (7281249a1 2023-02-27)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="enum_stuff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (31f858d9a 2023-02-28)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>

@@ -242,6 +242,9 @@
 <a href="#242" id="242">242</a>
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
 </pre><pre class="rust"><code><span class="kw">use </span>enum_stuff::enumstuff;
 <span class="kw">use </span>umpl::{<span class="self">self</span>, parser::Thing};
 
@@ -454,9 +457,12 @@
 <span class="doccomment">/// filter for umpl functions
 </span><span class="attr">#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 </span><span class="kw">pub enum </span>UMPLFilter {
-    HasParameterCount(usize),
-    HasParentWithParamCount(usize),
-    HasParentWithName(String),
+    <span class="attr">#[enumstuff(skip)]
+    </span>HasParameterCount(usize),
+    <span class="attr">#[enumstuff(skip)]
+    </span>HasParentWithParamCount(usize),
+    <span class="attr">#[enumstuff(skip)]
+    </span>HasParentWithName(String),
     HasParents,
 }
 
@@ -487,4 +493,4 @@
     );
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (7281249a1 2023-02-27)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (31f858d9a 2023-02-28)" data-search-js="search-d5a6cd8418084717.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
