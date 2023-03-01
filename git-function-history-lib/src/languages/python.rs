@@ -516,22 +516,31 @@ fn get_decorator_list_new(
 /// filters for python functions
 pub enum PythonFilter {
     /// when you want to filter by function that are in a specific class
+    #[enumstuff(skip)]
     InClass(String),
     /// when you want filter by a function that has a parent function of a specific name
+    #[enumstuff(skip)]
     HasParentFunction(String),
     /// when you want to filter by a function that has a has a specific return type
+    #[enumstuff(skip)]
     HasReturnType(String),
     /// when you want to filter by a function that has a specific parameter name
+    #[enumstuff(skip)]
     HasParameterName(String),
     /// when you want to filter by a function that has a specific decorator
+    #[enumstuff(skip)]
     HasDecorator(String),
     /// when you want to filter by a function thats class has a specific decorator
+    #[enumstuff(skip)]
     HasClasswithDecorator(String),
     /// when you want to filter by a function that's parent function has a specific decorator
+    #[enumstuff(skip)]
     HasParentFunctionwithDecorator(String),
     /// when you want to filter by a function that's parent function has a specific parameter name
+    #[enumstuff(skip)]
     HasParentFunctionwithParameterName(String),
     /// when you want to filter by a function that's parent function has a specific return type
+    #[enumstuff(skip)]
     HasParentFunctionwithReturnType(String),
 }
 

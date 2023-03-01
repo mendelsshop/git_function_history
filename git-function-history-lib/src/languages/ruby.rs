@@ -326,10 +326,13 @@ impl FunctionTrait for RubyFunction {
 /// filter for ruby functions
 pub enum RubyFilter {
     /// find a Ruby functions in a specific class
+    #[enumstuff(skip)]
     FunctionInClass(String),
     /// find a Ruby function with a specific parameter
+    #[enumstuff(skip)]
     FunctionWithParameter(String),
     /// find a Ruby function in a class that inherits from a specific class
+    #[enumstuff(skip)]
     FunctionWithSuperClass(String),
 }
 

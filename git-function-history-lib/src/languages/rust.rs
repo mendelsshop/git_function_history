@@ -169,7 +169,7 @@ impl Block {
 }
 
 /// This enum is used when filtering commit history only for let say impl and not externs or traits
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, enumstuff)]
 pub enum BlockType {
     /// This is for `impl` blocks
     Impl,
@@ -458,42 +458,61 @@ pub enum RustFilter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
     InBlock(BlockType),
     /// when you want filter by a function that has a parent function of a specific name
+    #[enumstuff(skip)]
     HasParentFunction(String),
     /// when you want to filter by a function that has a has a specific return type
+    #[enumstuff(skip)]
     HasReturnType(String),
     /// when you want to filter by a function that has a specific parameter type
+    #[enumstuff(skip)]
     HasParameterType(String),
     /// when you want to filter by a function that has a specific parameter name
+    #[enumstuff(skip)]
     HasParameterName(String),
     /// when you want to filter by a function that has a specific lifetime
+    #[enumstuff(skip)]
     HasLifetime(String),
     /// when you want to filter by a function that has a specific generic with name
+    #[enumstuff(skip)]
     HasGeneric(String),
     /// when you want to filter by a function that has a specific attribute
+    #[enumstuff(skip)]
     HasAttribute(String),
     /// when you want to filter by a function that has or contains a specific doc comment
+    #[enumstuff(skip)]
     HasDocComment(String),
     /// when you want to filter by a function that's block has a specific attribute
+    #[enumstuff(skip)]
     BlockHasAttribute(String),
     /// when you want to filter by a function that's block has a specific doc comment
+    #[enumstuff(skip)]
     BlockHasDocComment(String),
     /// when you want to filter by a function that's block has a specific lifetime
+    #[enumstuff(skip)]
     BlockHasLifetime(String),
     /// when you want to filter by a function that's block has a specific generic with name
+    #[enumstuff(skip)]
     BlockHasGeneric(String),
     /// when you want to filter by a function that's parent function has a specific attribute
+    #[enumstuff(skip)]
     ParentFunctionHasAttribute(String),
     /// when you want to filter by a function that's parent function has a specific doc comment
+    #[enumstuff(skip)]
     ParentFunctionHasDocComment(String),
     /// when you want to filter by a function that's parent function has a specific lifetime
+    #[enumstuff(skip)]
     ParentFunctionHasLifetime(String),
     /// when you want to filter by a function that's parent function has a specific generic with name
+    #[enumstuff(skip)]
     ParentFunctionHasGeneric(String),
     /// when you want to filter by a function that's parent function has a specific return type
+    #[enumstuff(skip)]
     ParentFunctionHasReturnType(String),
     /// when you want to filter by a function that's parent function has a specific parameter type
+    #[enumstuff(skip)]
     ParentFunctionHasParameterType(String),
     /// when you want to filter by a function that's parent function has a specific parameter name
+    #[enumstuff(skip)]
     ParentFunctionHasParameterName(String),
 }
 

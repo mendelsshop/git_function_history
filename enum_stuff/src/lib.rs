@@ -12,19 +12,57 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         syn::Data::Enum(data) => data,
         _ => panic!("Only enums are supported"),
     };
-    let data_type = data
+    let data_type_filtered = data
         .variants
         .iter()
         .map(|v| {
             v.fields
                 .iter()
-                .filter_map(|field| match &field.ty {
+                .filter_map(|field| {
+                    // see if the variant has the enum attribute #[enum_stuff(skip)]
+                    // use v to get the attributes of the variant
+                    
+                    for attr in &v.attrs {
+                        if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "enumstuff" {
+                            if let Some(proc_macro2::TokenTree::Group(group)) =
+                                attr.tokens.clone().into_iter().next()
+                            {
+                                let mut tokens = group.stream().into_iter();
+                                if let Some(proc_macro2::TokenTree::Ident(ident)) = tokens.next() {
+                                    if ident == "skip" {
+                                        return None;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    match &field.ty {
                     syn::Type::Path(path) => Some(path),
                     _ => None,
-                })
+                }})
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+
+    let data_type = data.variants.iter().map(|v| {
+        v.fields
+            .iter()
+            .filter_map(|field| {
+                // see if the variant has the enum attribute #[enum_stuff(skip)]
+                // use v to get the attributes of the variant            
+                match &field.ty {
+                syn::Type::Path(path) => Some(path),
+                _ => None,
+            }})
+            .collect::<Vec<_>>()
+    }).collect::<Vec<_>>();
+
+    // element in data_type but not in data_type_filtered
+    let data_type_rest = data_type.iter().zip(data_type_filtered.iter()).map(|(a, b)| {
+        a.iter().filter(|x| !b.contains(x)).map(|x| x.to_token_stream().to_string()).collect::<Vec<_>>()
+    })
+    .collect::<Vec<_>>();
 
     let types = data
         .variants
@@ -52,7 +90,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 })
                 .collect::<Vec<_>>()
         }).collect::<Vec<_>>();
-
+        let t = types.as_slice();
     let variants_names = data
         .variants
         .iter()
@@ -90,7 +128,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 &[#(#variants_names),*]
             }
 
-            #vis fn get_variant_names_recurse(list: &[&str]) -> Option<&'static [&'static str]> {
+            #vis fn get_variant_names_recurse(list: &[&str]) -> Option<Vec<&'static str>> {
                 let mut list = list.iter();
                 let variants = list.next()?.clone();
                 // if the first element of the list is not a variant then we return None
@@ -119,21 +157,16 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 //     }
 
                 // }
+                use std::collections::HashSet;
                 match variants {
                     #(#variant_list => {
-                        // let variants = #data_type::get_variant_types_from_str(variants);
-                        // if list.next().is_none() {
-                        //     return Some(variants);
-                        // }
-                        let ret = vec![].as_slice();
-                        // for variant in variants {
-                        //     let variant = syn::parse2::<Type>(variant.into()).ok()?;
-                        //     let variant = variant.get_variant_names_recurse(list);
-                        //     if let Some(variant) = variant {
-                        //         ret.extend(variant);
-                        //     }
-                        // }
-                        None::<'static [&'static str]> 
+                        // turn to hashset so we can compare to the filtered data_type
+                        // [#(#data_type),*].iter().collect::<HashSet<_>>().difference(&[#(#data_type_filtered),*]);
+                        let  mut slice: Vec<&'static str> = vec![];
+                        // recurse to next level list
+                        #(#data_type_filtered::get_variant_names_recurse(list.cloned().collect::<Vec<_>>().as_slice()).map(|x| slice.extend(x));)*
+                        #(slice.push(#data_type_rest);)*
+                        Some(slice)
                     }),*,
                     _ => None
                 }

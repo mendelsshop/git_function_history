@@ -75,30 +75,41 @@ pub enum FileFilterType {
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
+    #[enumstuff(skip)]
     CommitHash(String),
     /// When you want to filter by a specific date (in rfc2822 format).
+    #[enumstuff(skip)]
     Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
+    #[enumstuff(skip)]
     DateRange(String, String),
     /// When you have a absolute path to a file.
+    #[enumstuff(skip)]
     FileAbsolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
+    #[enumstuff(skip)]
     FileRelative(String),
     /// When you want to filter only files in a specific directory
+    #[enumstuff(skip)]
     Directory(String),
     /// when you want to filter by function that are in between specific lines
+    #[enumstuff(skip)]
     FunctionInLines(usize, usize),
     /// when you want to filter by a any commit author name that contains a specific string
+    #[enumstuff(skip)]
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
+    #[enumstuff(skip)]
     AuthorEmail(String),
     // when you want to filter by a a commit message that contains a specific string
+    #[enumstuff(skip)]
     Message(String),
     /// when you want to filter by proggramming language filter
     PLFilter(LanguageFilter),
     /// when you want to filter to only have files that are in a specific language
     Language(Language),
     /// When you want to filter by nothing.
+    
     None,
 }
 

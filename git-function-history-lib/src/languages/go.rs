@@ -203,9 +203,13 @@ pub(crate) fn find_function_in_file(
 /// filter for go functions
 pub enum GoFilter {
     // refers to the type of a parameter of a function
+    #[enumstuff(skip)]
     HasParameter(String),
     // refers to the name of a parameter of a function
+    #[enumstuff(skip)]
+    // refers to the type of a parameter of a function
     HasParameterName(String),
+    #[enumstuff(skip)]
     // refers to the type of the return value of a function
     HasReturnType(String),
 }

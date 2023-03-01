@@ -210,8 +210,11 @@ fn find_function_recurse(
 /// filter for umpl functions
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 pub enum UMPLFilter {
+    #[enumstuff(skip)]
     HasParameterCount(usize),
+    #[enumstuff(skip)]
     HasParentWithParamCount(usize),
+    #[enumstuff(skip)]
     HasParentWithName(String),
     HasParents,
 }
