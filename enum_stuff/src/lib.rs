@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{quote, ToTokens, quote_spanned};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{parse_macro_input, DeriveInput, Type};
 
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
@@ -21,9 +21,11 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 .filter_map(|field| {
                     // see if the variant has the enum attribute #[enum_stuff(skip)]
                     // use v to get the attributes of the variant
-                    
+
                     for attr in &v.attrs {
-                        if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "enumstuff" {
+                        if attr.path.segments.len() == 1
+                            && attr.path.segments[0].ident == "enumstuff"
+                        {
                             if let Some(proc_macro2::TokenTree::Group(group)) =
                                 attr.tokens.clone().into_iter().next()
                             {
@@ -36,33 +38,45 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                             }
                         }
                     }
-                    
+
                     match &field.ty {
-                    syn::Type::Path(path) => Some(path),
-                    _ => None,
-                }})
+                        syn::Type::Path(path) => Some(path),
+                        _ => None,
+                    }
+                })
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
-    let data_type = data.variants.iter().map(|v| {
-        v.fields
-            .iter()
-            .filter_map(|field| {
-                // see if the variant has the enum attribute #[enum_stuff(skip)]
-                // use v to get the attributes of the variant            
-                match &field.ty {
-                syn::Type::Path(path) => Some(path),
-                _ => None,
-            }})
-            .collect::<Vec<_>>()
-    }).collect::<Vec<_>>();
+    let data_type = data
+        .variants
+        .iter()
+        .map(|v| {
+            v.fields
+                .iter()
+                .filter_map(|field| {
+                    // see if the variant has the enum attribute #[enum_stuff(skip)]
+                    // use v to get the attributes of the variant
+                    match &field.ty {
+                        syn::Type::Path(path) => Some(path),
+                        _ => None,
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
 
     // element in data_type but not in data_type_filtered
-    let data_type_rest = data_type.iter().zip(data_type_filtered.iter()).map(|(a, b)| {
-        a.iter().filter(|x| !b.contains(x)).map(|x| x.to_token_stream().to_string()).collect::<Vec<_>>()
-    })
-    .collect::<Vec<_>>();
+    let data_type_rest = data_type
+        .iter()
+        .zip(data_type_filtered.iter())
+        .map(|(a, b)| {
+            a.iter()
+                .filter(|x| !b.contains(x))
+                .map(|x| x.to_token_stream().to_string())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
 
     let types = data
         .variants
@@ -77,10 +91,11 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
-    let data_type_sr = data_type.iter().map(|v| {
+    let data_type_sr = data_type
+        .iter()
+        .map(|v| {
             v.iter()
                 .map(|t| {
-
                     let mut ret = t.to_token_stream().to_string();
                     if ret.starts_with("std::option::Option<") {
                         ret = ret.replace("std::option::Option<", "");
@@ -89,8 +104,9 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                     ret
                 })
                 .collect::<Vec<_>>()
-        }).collect::<Vec<_>>();
-        let t = types.as_slice();
+        })
+        .collect::<Vec<_>>();
+    let t = types.as_slice();
     let variants_names = data
         .variants
         .iter()
@@ -141,7 +157,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 // if list.next().is_none() {
                 //     return Some(variants);
                 // }
-                
+
                 // let ret = vec![];
                 // // then we need to go do the same thing for each variant in variants
                 // // but we need to turn variant into an actual type so we can call get_variant_names_recurse on the inner variant
