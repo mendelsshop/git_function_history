@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote_spanned, ToTokens};
 use syn::{parse_macro_input, DeriveInput, Type};
 
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
@@ -106,7 +106,6 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
-    let t = types.as_slice();
     let variants_names = data
         .variants
         .iter()

@@ -2,6 +2,11 @@
 name = "enum_stuff"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/mendelsshop/git_function_history/tree/main/enum_stuff"
+keywords = ["enmum", "proc-macro"]
+categories = ["proc-macro"]
+description = "A proc macro to generate a bunch of stuff for enums - for git_function_history"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
