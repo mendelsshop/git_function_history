@@ -11,7 +11,7 @@ description = "A proc macro to generate a bunch of stuff for enums - for git_fun
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syn = { version = "1.0.109", features = ["full", "fold"] }
+syn = { version = "2.0.3", features = ["full", "fold"] }
 quote = "1.0.23"
 proc-macro2 = "1.0.51"
 [lib]
