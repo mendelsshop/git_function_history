@@ -23,7 +23,7 @@ ratatui = { version = "0.20.0", features = ["crossterm"], default-features = fal
 crossterm = "0.25.0"
 tokio = { version = "1.26.0", features = ["full"] }
 eyre = "0.6.8"
-dirs = "4.0.0"
+dirs = "5.0.0"
 simple_file_logger = "0.3.1"
 log = "0.4.17"
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.3.0", default-features = false}
