@@ -119,6 +119,9 @@ fn test_macro() {
     println!("{:?}", filter.get_variant_name());
     println!("{:?}", Filter::get_variant_names());
     println!("{:?}", filter.get_variant_types());
+
+    let types = Filter::get_variant_names_recurse(&["Language", "Rust"]);
+    println!("{:?}", types);
 }
 
 /// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.

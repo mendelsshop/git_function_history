@@ -31,6 +31,13 @@ pub enum Language {
     All,
 }
 
+#[test]
+fn macro_test2() {
+    let filter = Language::All;
+    println!("{:?}", filter);
+    print!("{:?}", Language::get_variant_names_recurse(&[]));
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
 pub enum LanguageFilter {

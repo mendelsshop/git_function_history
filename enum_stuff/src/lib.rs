@@ -181,6 +181,9 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                         // recurse to next level list
                         #(#data_type_filtered::get_variant_names_recurse(list.cloned().collect::<Vec<_>>().as_slice()).map(|x| slice.extend(x));)*
                         #(slice.push(#data_type_rest);)*
+                        if slice.len() <= 0 {
+                            return None;
+                        }
                         Some(slice)
                     }),*,
                     _ => None

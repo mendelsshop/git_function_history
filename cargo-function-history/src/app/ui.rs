@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
-use tui::{
+use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},

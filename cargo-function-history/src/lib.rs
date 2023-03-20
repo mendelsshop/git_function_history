@@ -4,7 +4,7 @@ use app::{state::AppState, ui, App, AppReturn};
 use crossterm::event::{self, Event, KeyCode};
 use eyre::Result;
 use keys::Key;
-use tui::{backend::CrosstermBackend, Terminal};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use tui_input::backend::crossterm as input_backend;
 
 pub mod app;
