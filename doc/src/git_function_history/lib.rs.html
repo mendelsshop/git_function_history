@@ -1593,7 +1593,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Rust,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1659,7 +1659,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Rust,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1679,7 +1679,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Rust,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1699,7 +1699,7 @@
             <span class="kw-2">&amp;</span>languages::Language::All,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1728,7 +1728,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Python,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1752,7 +1752,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Ruby,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>);
@@ -1780,7 +1780,7 @@
     //         &amp;languages::Language::C,
     //     );
     //     let after = Utc::now() - now;
-    //     println!(&quot;time taken: {}&quot;, after.num_seconds());
+    //     println!(&quot;time taken: {}&quot;, after);
     //     match &amp;output {
     //         Ok(functions) =&gt; println!(&quot;{}&quot;, functions),
     //         Err(e) =&gt; println!(&quot;{}&quot;, e),
@@ -1797,7 +1797,7 @@
             <span class="kw-2">&amp;</span>languages::Language::Go,
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken: {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{functions}&quot;</span>),
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{e}&quot;</span>),
@@ -1811,7 +1811,7 @@
         </span><span class="kw">let </span><span class="kw-2">mut </span>now = Utc::now();
         <span class="kw">let </span>output = <span class="macro">get_function_history!</span>(name = <span class="string">&quot;empty_test&quot;</span>, language = Language::Rust);
         <span class="kw">let </span><span class="kw-2">mut </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken to search: {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken to search: {}&quot;</span>, after);
         <span class="kw">let </span>output = <span class="kw">match </span>output {
             <span class="prelude-val">Ok</span>(result) =&gt; result,
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">panic!</span>(<span class="string">&quot;{}&quot;</span>, e),
@@ -1821,7 +1821,7 @@
             rust::RustFilter::HasParameterType(String::from(<span class="string">&quot;String&quot;</span>)),
         )));
         after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken to filter {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken to filter {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>new_output {
             <span class="prelude-val">Ok</span>(res) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{res}&quot;</span>),
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{e}&quot;</span>),
@@ -1830,7 +1830,7 @@
             rust::RustFilter::InBlock(BlockType::Extern),
         )));
         after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">&quot;time taken to filter {}&quot;</span>, after.num_seconds());
+        <span class="macro">println!</span>(<span class="string">&quot;time taken to filter {}&quot;</span>, after);
         <span class="kw">match </span><span class="kw-2">&amp;</span>new_output {
             <span class="prelude-val">Ok</span>(res) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{res}&quot;</span>),
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">&quot;{e}&quot;</span>),
