@@ -657,7 +657,7 @@ mod tests {
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -723,7 +723,7 @@ mod tests {
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -743,7 +743,7 @@ mod tests {
             &languages::Language::Rust,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -763,7 +763,7 @@ mod tests {
             &languages::Language::All,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -792,7 +792,7 @@ mod tests {
             &languages::Language::Python,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -816,7 +816,7 @@ mod tests {
             &languages::Language::Ruby,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -844,7 +844,7 @@ mod tests {
     //         &languages::Language::C,
     //     );
     //     let after = Utc::now() - now;
-    //     println!("time taken: {}", after.num_seconds());
+    //     println!("time taken: {}", after);
     //     match &output {
     //         Ok(functions) => println!("{}", functions),
     //         Err(e) => println!("{}", e),
@@ -861,7 +861,7 @@ mod tests {
             &languages::Language::Go,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after.num_seconds());
+        println!("time taken: {}", after);
         match &output {
             Ok(functions) => println!("{functions}"),
             Err(e) => println!("{e}"),
@@ -875,7 +875,7 @@ mod tests {
         let mut now = Utc::now();
         let output = get_function_history!(name = "empty_test", language = Language::Rust);
         let mut after = Utc::now() - now;
-        println!("time taken to search: {}", after.num_seconds());
+        println!("time taken to search: {}", after);
         let output = match output {
             Ok(result) => result,
             Err(e) => panic!("{}", e),
@@ -885,7 +885,7 @@ mod tests {
             rust::RustFilter::HasParameterType(String::from("String")),
         )));
         after = Utc::now() - now;
-        println!("time taken to filter {}", after.num_seconds());
+        println!("time taken to filter {}", after);
         match &new_output {
             Ok(res) => println!("{res}"),
             Err(e) => println!("{e}"),
@@ -894,7 +894,7 @@ mod tests {
             rust::RustFilter::InBlock(BlockType::Extern),
         )));
         after = Utc::now() - now;
-        println!("time taken to filter {}", after.num_seconds());
+        println!("time taken to filter {}", after);
         match &new_output {
             Ok(res) => println!("{res}"),
             Err(e) => println!("{e}"),
