@@ -229,21 +229,6 @@
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
 </pre><pre class="rust"><code><span class="kw">use </span>proc_macro::TokenStream;
 <span class="kw">use </span>proc_macro2::Span;
 <span class="kw">use </span>quote::{quote_spanned, ToTokens};
@@ -269,18 +254,11 @@
                     // use v to get the attributes of the variant
 
                     </span><span class="kw">for </span>attr <span class="kw">in </span><span class="kw-2">&amp;</span>v.attrs {
-                        <span class="kw">if </span>attr.path.segments.len() == <span class="number">1
-                            </span>&amp;&amp; attr.path.segments[<span class="number">0</span>].ident == <span class="string">&quot;enumstuff&quot;
-                        </span>{
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Group(group)) =
-                                attr.tokens.clone().into_iter().next()
-                            {
-                                <span class="kw">let </span><span class="kw-2">mut </span>tokens = group.stream().into_iter();
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Ident(ident)) = tokens.next() {
-                                    <span class="kw">if </span>ident == <span class="string">&quot;skip&quot; </span>{
-                                        <span class="kw">return </span><span class="prelude-val">None</span>;
-                                    }
-                                }
+                        <span class="comment">// #[enumstuff(skip)]
+                        </span><span class="kw">if </span>attr.path().is_ident(<span class="string">&quot;enumstuff&quot;</span>) {
+                            <span class="kw">let </span>p = attr.parse_args::&lt;syn::Ident&gt;().unwrap();
+                            <span class="kw">if </span>p == <span class="string">&quot;skip&quot; </span>{
+                                <span class="kw">return </span><span class="prelude-val">None</span>;
                             }
                         }
                     }
@@ -357,17 +335,9 @@
         .iter()
         .map(|v| {
             <span class="kw">let </span><span class="kw-2">mut </span>ret = v.ident.to_string();
-            <span class="kw">for </span>attr <span class="kw">in </span><span class="kw-2">&amp;</span>v.attrs {
-                <span class="kw">if </span>attr.path.segments.len() == <span class="number">1 </span>&amp;&amp; attr.path.segments[<span class="number">0</span>].ident == <span class="string">&quot;enumstuff&quot; </span>{
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Group(group)) =
-                        attr.tokens.clone().into_iter().next()
-                    {
-                        <span class="kw">let </span><span class="kw-2">mut </span>tokens = group.stream().into_iter();
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(proc_macro2::TokenTree::Literal(lit)) = tokens.next() {
-                            ret = lit.to_string().trim_matches(<span class="string">&#39;&quot;&#39;</span>).to_string();
-                        }
-                    }
-                }
+            <span class="comment">// #[enumstuff(name = &quot;PLFilter&quot;)]
+            </span><span class="kw">for </span>attr <span class="kw">in </span><span class="kw-2">&amp;</span>v.attrs {
+                <span class="kw">if </span>attr.path().is_ident(<span class="string">&quot;enumstuff&quot;</span>) {}
             }
             ret
         })
