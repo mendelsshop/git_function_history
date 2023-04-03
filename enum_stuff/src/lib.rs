@@ -23,20 +23,16 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                     // use v to get the attributes of the variant
 
                     for attr in &v.attrs {
-                        if attr.path.segments.len() == 1
-                            && attr.path.segments[0].ident == "enumstuff"
-                        {
-                            if let Some(proc_macro2::TokenTree::Group(group)) =
-                                attr.tokens.clone().into_iter().next()
-                            {
-                                let mut tokens = group.stream().into_iter();
-                                if let Some(proc_macro2::TokenTree::Ident(ident)) = tokens.next() {
-                                    if ident == "skip" {
-                                        return None;
-                                    }
-                                }
+                        // #[enumstuff(skip)]
+                        if attr.path().is_ident("enumstuff") {
+                            let p = attr.parse_args::<syn::Ident>().unwrap();
+                            if p == "skip" {
+                                return None;
                             }
+                            
+
                         }
+                        
                     }
 
                     match &field.ty {
@@ -111,16 +107,10 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         .iter()
         .map(|v| {
             let mut ret = v.ident.to_string();
+            // #[enumstuff(name = "PLFilter")]
             for attr in &v.attrs {
-                if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "enumstuff" {
-                    if let Some(proc_macro2::TokenTree::Group(group)) =
-                        attr.tokens.clone().into_iter().next()
-                    {
-                        let mut tokens = group.stream().into_iter();
-                        if let Some(proc_macro2::TokenTree::Literal(lit)) = tokens.next() {
-                            ret = lit.to_string().trim_matches('"').to_string();
-                        }
-                    }
+                if attr.path().is_ident("enumstuff") {
+                    
                 }
             }
             ret
