@@ -29,10 +29,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                             if p == "skip" {
                                 return None;
                             }
-                            
-
                         }
-                        
                     }
 
                     match &field.ty {
@@ -109,9 +106,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
             let mut ret = v.ident.to_string();
             // #[enumstuff(name = "PLFilter")]
             for attr in &v.attrs {
-                if attr.path().is_ident("enumstuff") {
-                    
-                }
+                if attr.path().is_ident("enumstuff") {}
             }
             ret
         })
