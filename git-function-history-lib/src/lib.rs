@@ -6,7 +6,6 @@
     clippy::cast_sign_loss,
     clippy::cognitive_complexity,
     clippy::float_cmp,
-    // clippy::similar_names,
     clippy::return_self_not_must_use,
     clippy::module_name_repetitions,
     clippy::multiple_crate_versions,
@@ -42,8 +41,9 @@ use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use enum_stuff::enumstuff;
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
+
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator, IntoParallelIterator};
 
 use gix::{objs, prelude::ObjectIdExt, ObjectId};
 use std::{error::Error, ops::Sub};
@@ -171,38 +171,16 @@ pub fn get_function_history(
         Err("function name is empty")?;
     }
     // if filter is date list all the dates and find the one that is closest to the date set that to closest_date and when using the first filter check if the date of the commit is equal to the closest_date
-    let repo = gix::discover(".")?;
-    let th_repo = repo.clone().into_sync();
-    let mut tips = vec![];
-    let head = repo.head_commit()?;
-    tips.push(head.id);
-    let commit_iter = repo.rev_walk(tips);
-    let commits = commit_iter
-        .all()?
-        .filter_map(|i| match i {
-            Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit),
-            Err(_) => None,
-        })
-        .collect::<Vec<_>>();
     // find the closest date by using get_git_dates_commits_oxide
-    let closest_date = match filter {
+    match filter {
         Filter::Date(date) => {
-            let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
-            let date_list = get_git_info()?;
-            date_list
-                .iter()
-                .min_by_key(|elem| {
-                    elem.date.sub(date).num_seconds().abs()
-                    // elem.0.signed_duration_since(date)
-                })
-                .map(|elem| elem.hash.clone())
-                .unwrap_to_error("no commits found")?
+            DateTime::parse_from_rfc2822(date)?;
         }
         Filter::Author(_)
         | Filter::AuthorEmail(_)
         | Filter::Message(_)
         | Filter::None
-        | Filter::CommitHash(_) => String::new(),
+        | Filter::CommitHash(_) => (),
         Filter::DateRange(start, end) => {
             // check if start is before end
             // vaildate that the dates are valid
@@ -211,10 +189,9 @@ pub fn get_function_history(
             if start > end {
                 Err("start date is after end date")?;
             }
-            String::new()
         }
         _ => Err("invalid filter")?,
-    };
+    }
     match file {
         FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
             // vaildate that the file makes sense with language
@@ -228,31 +205,70 @@ pub fn get_function_history(
         }
         FileFilterType::Directory(_) | FileFilterType::None => {}
     }
-    let commits = commits
-        .iter()
-        .filter_map(|i| {
-            let tree = i.tree().ok()?.id;
-            let time = i.time().ok()?;
-            let time = DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp_opt(time.seconds_since_unix_epoch.into(), 0)?,
-                Utc,
-            );
-            let authorinfo = i.author().ok()?;
-            let author = authorinfo.name.to_string();
-            let email = authorinfo.email.to_string();
-            let messages = i.message().ok()?;
-            let mut message = messages.title.to_string();
-            if let Some(i) = messages.body {
-                message.push_str(i.to_string().as_str());
+
+    let repo = gix::discover(".")?;
+    let th_repo = repo.clone().into_sync();
+    let mut tips = vec![];
+    let head = repo.head_commit()?;
+    tips.push(head.id);
+    let commit_iter = repo.rev_walk(tips);
+    let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
+    #[cfg(feature = "parallel")]
+    let commit_iter = {
+        // we have to collect here because we don't want any refrences to not send/sync structs
+        let binding = commit_iter.collect::<Vec<_>>();
+        binding.into_par_iter()
+    };
+    let commits = commit_iter.filter_map(|id| {
+        let repo = th_repo.to_thread_local();
+        let commit = id.attach(&repo).object().ok()?.try_into_commit().ok()?;
+        let tree = commit.tree().ok()?.id;
+        let time = commit.time().ok()?;
+        let time = DateTime::<Utc>::from_utc(
+            NaiveDateTime::from_timestamp_opt(time.seconds_since_unix_epoch.into(), 0)?,
+            Utc,
+        );
+        let authorinfo = commit.author().ok()?;
+        let author = authorinfo.name.to_string();
+        let email = authorinfo.email.to_string();
+        let messages = commit.message().ok()?;
+        let mut message = messages.title.to_string();
+        if let Some(i) = messages.body {
+            message.push_str(i.to_string().as_str());
+        }
+        let commit = commit.id().to_hex().to_string();
+        let metadata = (message, commit, author, email, time);
+        Some((tree, metadata))
+    });
+    if let Filter::Date(date) = filter {
+        let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
+        let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
+        return if let Some(i) = commit {
+            let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file)?;
+
+            if tree.is_empty() {
+                return Err("empty commit found")?;
             }
-            let commit = i.id().to_hex().to_string();
-            let metadata = (message, commit, author, email, time);
-            Some((tree, metadata))
-        })
-        .filter(|(_, metadata)| {
+
+            Ok(FunctionHistory::new(
+                name.to_owned(),
+                vec![Commit::new(
+                    &i.1 .1,
+                    tree,
+                    &i.1 .4.to_rfc2822(),
+                    &i.1 .2,
+                    &i.1 .3,
+                    &i.1 .0,
+                )?],
+            ))
+        } else {
+            Err("no history found")?
+        };
+    }
+    let commits = commits.filter(|(_, metadata)| {
             match filter {
                 Filter::CommitHash(hash) => *hash == metadata.1,
-                Filter::Date(_) => metadata.1 == closest_date,
+                Filter::Date(_) => unreachable!(),
                 Filter::DateRange(start, end) => {
                     // let date = metadata.4.seconds_since_unix_epoch;
                     let date = metadata.4;
@@ -274,12 +290,8 @@ pub fn get_function_history(
                 Filter::None => true,
                 _ => false,
             }
-        })
-        .collect::<Vec<_>>();
-    #[cfg(feature = "parallel")]
-    let commits = commits.into_par_iter();
-    #[cfg(not(feature = "parallel"))]
-    let commits = commits.iter();
+        });
+
     let commits = commits
         .filter_map(|i| {
             let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file);
@@ -338,10 +350,11 @@ fn sender(
     file: &FileFilterType,
 ) -> Result<Vec<FileType>, String> {
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
-    let tree = object.try_into_tree().map_err(|_| "failed to find tree")?;
-    traverse_tree(&tree, repo, name, "", langs, file)
+    let tree = object.try_into_tree();
+    traverse_tree(&tree.unwrap(), repo, name, "", langs, file)
 }
 
+#[inline]
 fn traverse_tree(
     tree: &gix::Tree<'_>,
     repo: &gix::Repository,
@@ -492,7 +505,6 @@ macro_rules! get_function_history {
 ///
 /// # Errors
 /// wiil return `Err`if it cannot find or read from a git repository
-
 pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let repo = gix::discover(".")?;
     let mut tips = vec![];
@@ -518,7 +530,7 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
                     Ok(Some(i)) => i,
                     _ => return None,
                 },
-                hash: i.id.to_string(),
+                hash: i.id,
                 author_email: author.email.to_string(),
                 author: author.name.to_string(),
                 message: msg,
@@ -527,17 +539,20 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
         Err(_) => None,
     });
     let commits = commits.flatten();
-    Ok(commits.collect())
+    let commits = commits.collect::<Vec<_>>();
+    Ok(commits)
 }
 
+#[derive(Debug, Clone)]
 pub struct CommitInfo {
     pub date: DateTime<Utc>,
-    pub hash: String,
+    pub hash: ObjectId,
     pub message: String,
     pub author: String,
     pub author_email: String,
 }
 
+#[inline]
 fn find_function_in_file_with_commit(
     file_path: &str,
     fc: &str,
@@ -603,6 +618,7 @@ fn find_function_in_file_with_commit(
     Ok(file)
 }
 
+#[inline]
 #[cfg_attr(feature = "cache", cached)]
 // function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 fn find_function_in_files_with_commit(
@@ -746,6 +762,8 @@ mod tests {
         println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
+                // println!("{}", functions.clone().last().unwrap().date);
+                println!("{:?}", functions.clone().last().unwrap().get_metadata());
                 println!("{functions}");
             }
             Err(e) => println!("-{e}-"),
