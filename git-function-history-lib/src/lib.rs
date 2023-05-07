@@ -43,7 +43,7 @@ use enum_stuff::enumstuff;
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator, IntoParallelIterator};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use gix::{objs, prelude::ObjectIdExt, ObjectId};
 use std::{error::Error, ops::Sub};
