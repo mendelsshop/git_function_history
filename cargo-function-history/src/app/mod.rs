@@ -386,19 +386,21 @@ impl App {
                         ),
                     );
                 }
-                filter if LanguageFilter::get_variant_names().contains(filter) => {
+                filter_name if LanguageFilter::has_variant(filter_name) => {
+                    let mut rest = command_iter.copied().collect::<Vec<_>>();
+                    rest.insert(0, filter_name);
                     let filt = unwrap_set_error!(
                         self,
-                        command_iter.next(),
-                        &format!(
-                            "filters of {} must specify what they are filtiring by ",
-                            filter
-                        )
+                        LanguageFilter::from_str(&rest),
+                        &format!("filters of {} could not be parsed properly ", filter_name)
                     );
-                    log::info!("filtering by {}::{}", filter, filt);
-                    let types = LanguageFilter::get_variant_types_from_str(filter);
+                    log::info!("filtering by {:?}", filt);
+                    filter = Filter::PLFilter(filt);
+                    break;
+
+                    // let types = LanguageFilter::get_variant_types_from_str(filter);
                     // TODO: in enum stuff or somewhere else make a macro that returns a type based on the given string
-                    println!("type: {:?}", types);
+                    // println!("type: {:?}", types);
                 }
                 _ => {
                     self.status = Status::Error(format!("Invalid search command filter: {cmd}"));

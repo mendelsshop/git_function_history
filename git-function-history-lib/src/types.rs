@@ -17,6 +17,21 @@ use crate::{
 use crate::languages::GoFile;
 
 #[derive(Debug, Clone)]
+pub enum ErrorReason {
+    NoHistory,
+    Other(String),
+}
+
+impl fmt::Display for ErrorReason {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NoHistory => write!(f, "nothing found"),
+            Self::Other(other) => write!(f, "{other}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 /// a enum that can be used to store a file of any of the supported languages
 pub enum FileType {
     Rust(RustFile),
@@ -52,7 +67,7 @@ impl FileTrait for FileType {
         }
     }
 
-    fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
+    fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
         match self {
             Self::Rust(file) => {
                 let filtered = file.filter_by(filter)?;
@@ -216,7 +231,7 @@ impl Commit {
     /// # Errors
     ///
     /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
         match filter {
             Filter::FileAbsolute(_)
             | Filter::FileRelative(_)
@@ -227,7 +242,7 @@ impl Commit {
             Filter::None => {
                 return Ok(self.clone());
             }
-            _ => Err("Invalid filter")?,
+            _ => Err(ErrorReason::Other("Invalid filter".to_string()))?,
         }
         #[cfg(feature = "parallel")]
         let t = self.files.iter();
@@ -269,7 +284,7 @@ impl Commit {
             .collect();
 
         if vec.is_empty() {
-            return Err("No files found for filter")?;
+            return Err(ErrorReason::Other("No files found for filter".to_string()))?;
         }
         Ok(Self {
             commit_hash: self.commit_hash.clone(),
@@ -425,7 +440,7 @@ impl FunctionHistory {
     /// # Errors
     ///
     /// returns `Err` if no files or commits are match the filter specified
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
         #[cfg(not(feature = "parallel"))]
@@ -488,7 +503,7 @@ impl FunctionHistory {
             .collect();
 
         if vec.is_empty() {
-            return Err("No history found for the filter")?;
+            return Err(ErrorReason::NoHistory);
         }
         Ok(Self {
             commit_history: vec,

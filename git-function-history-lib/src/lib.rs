@@ -13,6 +13,7 @@
 )]
 /// code and function related language
 pub mod languages;
+
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 macro_rules! get_item_from {
@@ -28,7 +29,7 @@ macro_rules! get_item_from {
 
 macro_rules! get_item_from_oid_option {
     ($oid:expr, $repo:expr, $typs:ident) => {
-        gix::hash::ObjectId::from($oid)
+        gix::hash::ObjectId::from($oid.id)
             .attach(&$repo)
             .object()
             .ok()?
@@ -75,34 +76,25 @@ pub enum FileFilterType {
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
-    #[enumstuff(skip)]
     CommitHash(String),
     /// When you want to filter by a specific date (in rfc2822 format).
-    #[enumstuff(skip)]
     Date(String),
     /// When you want to filter from one ate to another date (both in rfc2822 format).
-    #[enumstuff(skip)]
     DateRange(String, String),
     /// When you have a absolute path to a file.
-    #[enumstuff(skip)]
     FileAbsolute(String),
     /// When you have a relative path to a file and or want to find look in all files match a name.
-    #[enumstuff(skip)]
     FileRelative(String),
     /// When you want to filter only files in a specific directory
-    #[enumstuff(skip)]
     Directory(String),
     /// when you want to filter by function that are in between specific lines
     #[enumstuff(skip)]
     FunctionInLines(usize, usize),
     /// when you want to filter by a any commit author name that contains a specific string
-    #[enumstuff(skip)]
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
-    #[enumstuff(skip)]
     AuthorEmail(String),
     // when you want to filter by a a commit message that contains a specific string
-    #[enumstuff(skip)]
     Message(String),
     /// when you want to filter by proggramming language filter
     PLFilter(LanguageFilter),
@@ -110,18 +102,6 @@ pub enum Filter {
     Language(Language),
     /// When you want to filter by nothing.
     None,
-}
-
-#[test]
-fn test_macro() {
-    let filter = Filter::FunctionInLines(1, 2);
-    // filter.get_variant_name();
-    println!("{:?}", filter.get_variant_name());
-    println!("{:?}", Filter::get_variant_names());
-    println!("{:?}", filter.get_variant_types());
-
-    let types = Filter::get_variant_names_recurse(&["Language", "Rust"]);
-    println!("{:?}", types);
 }
 
 /// Valid filters are: `Filter::CommitId`, `Filter::Date`, `Filter::DateRange`.
@@ -221,7 +201,7 @@ pub fn get_function_history(
     };
     let commits = commit_iter.filter_map(|id| {
         let repo = th_repo.to_thread_local();
-        let commit = id.attach(&repo).object().ok()?.try_into_commit().ok()?;
+        let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
         let tree = commit.tree().ok()?.id;
         let time = commit.time().ok()?;
         let time = DateTime::<Utc>::from_utc(

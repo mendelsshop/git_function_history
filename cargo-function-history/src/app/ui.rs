@@ -5,7 +5,7 @@ use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::{Span, Spans},
+    text::{Span, Line},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
@@ -102,9 +102,9 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
         CommandResult::History(history) => {
             let metadata = history.get_metadata();
             let metadata = BTreeMap::from_iter(metadata.iter());
-            let metadata: Vec<Spans> = metadata
+            let metadata: Vec<Line> = metadata
                 .iter()
-                .map(|x| Spans::from(format!("{}: {}\n", x.0, x.1)))
+                .map(|x| Line::from(format!("{}: {}\n", x.0, x.1)))
                 .collect();
             Some(
                 Paragraph::new(metadata)
@@ -114,9 +114,9 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
         }
         _ => None,
     };
-    let tick_text: Vec<Spans> = match &app.cmd_output {
+    let tick_text: Vec<Line> = match &app.cmd_output {
         CommandResult::None => match app.status {
-            Status::Loading => vec![Spans::from(format!(
+            Status::Loading => vec![Line::from(format!(
                 "Loading{}",
                 ".".repeat(
                     ((std::time::SystemTime::now()
@@ -127,14 +127,14 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
                         % 4) as usize
                 )
             ))],
-            _ => vec![Spans::from(
+            _ => vec![Line::from(
                 "Please enter some commands to search for a function.",
             )],
         },
         a => a
             .to_string()
             .split('\n')
-            .map(|s| Spans::from(format!("{s}\n")))
+            .map(|s| Line::from(format!("{s}\n")))
             .collect(),
     };
     let body = Paragraph::new(tick_text)
@@ -166,7 +166,7 @@ fn draw_main<'a>() -> Block<'a> {
 }
 
 fn draw_status<'a>(status: &Status) -> Paragraph<'a> {
-    Paragraph::new(vec![Spans::from(Span::raw(status.to_string()))])
+    Paragraph::new(vec![Line::from(Span::raw(status.to_string()))])
         .style(Style::default().fg(Color::LightCyan))
         .block(
             Block::default()

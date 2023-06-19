@@ -1,3 +1,4 @@
+use crate::types::ErrorReason;
 use crate::{Filter, UnwrapToError};
 use std::{
     collections::HashMap,
@@ -11,32 +12,6 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 
 use enum_stuff::enumstuff;
 use go::GoFunction;
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, enumstuff)]
-/// an enum representing the different languages that are supported
-pub enum Language {
-    /// The python language
-    Python,
-    /// The rust language
-    Rust,
-    // #[cfg(feature = "c_lang")]
-    // /// c language
-    // C,
-    /// The go language
-    Go,
-    /// the Ruby language
-    Ruby,
-    /// UMPL
-    UMPL,
-    /// all available languages
-    All,
-}
-
-#[test]
-fn macro_test2() {
-    let filter = Language::All;
-    println!("{:?}", filter);
-    print!("{:?}", Language::get_variant_names_recurse(&[]));
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
@@ -189,7 +164,7 @@ pub trait FileTrait: fmt::Debug + fmt::Display {
     ///
     /// returns `Err` if the wrong filter is given, only `PLFilter` and `FunctionInLines` variants of `Filter` are valid.
     /// with `PLFilter` it will return `Err` if you mismatch the file type with the filter Ie: using `RustFile` and `PythonFilter` will return `Err`.
-    fn filter_by(&self, filter: &Filter) -> Result<Self, String>
+    fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason>
     where
         Self: Sized;
 
@@ -280,7 +255,7 @@ macro_rules! make_file {
                     .map(|x| Box::new(x) as Box<dyn FunctionTrait>)
                     .collect()
             }
-            fn filter_by(&self, filter: &Filter) -> Result<Self, String> {
+            fn filter_by(&self, filter: &Filter) -> Result<Self,ErrorReason> {
                 let mut filtered_functions = Vec::new();
                 if let Filter::PLFilter(LanguageFilter::$filtername(_))
                 | Filter::FunctionInLines(..) = filter
@@ -288,7 +263,7 @@ macro_rules! make_file {
                 } else if matches!(filter, Filter::None) {
                     return Ok(self.clone());
                 } else {
-                    return Err("filter not supported for this type")?;
+                    return Err(ErrorReason::Other( "filter not supported for this type".to_string()))?;
                 }
                 for function in &self.functions {
                     match filter {
@@ -304,6 +279,9 @@ macro_rules! make_file {
                         }
                         _ => {}
                     }
+                }
+                if filtered_functions.is_empty() {
+                    return Err(ErrorReason::NoHistory);
                 }
                 Ok($name::new(self.file_name.clone(), filtered_functions))
             }
@@ -378,4 +356,23 @@ mod lang_tests {
     make_file_time_test!(ruby_parses, rb, ruby, RubyFile, "empty_test");
 
     make_file_time_test!(umpl_parses, umpl, umpl, UMPLFile, "😂");
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, enumstuff)]
+/// an enum representing the different languages that are supported
+pub enum Language {
+    /// The python language
+    Python,
+    /// The rust language
+    Rust,
+    // #[cfg(feature = "c_lang")]
+    // /// c language
+    // C,
+    /// The go language
+    Go,
+    /// the Ruby language
+    Ruby,
+    /// UMPL
+    UMPL,
+    /// all available languages
+    All,
 }

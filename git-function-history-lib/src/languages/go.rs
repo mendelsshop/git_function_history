@@ -21,16 +21,6 @@ pub enum GoParameter {
     Named(HashMap<String, String>),
 }
 
-impl GoParameter {
-    pub fn extend(&mut self, other: &Self) {
-        match (self, other) {
-            (Self::Type(a), Self::Type(b)) => a.extend(b.clone()),
-            (Self::Named(a), Self::Named(b)) => a.extend(b.clone()),
-            _ => {}
-        }
-    }
-}
-
 impl GoFunction {
     /// Create a new Go function
     pub const fn new(
@@ -203,16 +193,16 @@ pub(crate) fn find_function_in_file(
 /// filter for go functions
 pub enum GoFilter {
     // refers to the type of a parameter of a function
-    #[enumstuff(skip)]
     HasParameter(String),
     // refers to the name of a parameter of a function
-    #[enumstuff(skip)]
+
     // refers to the type of a parameter of a function
     HasParameterName(String),
-    #[enumstuff(skip)]
+
     // refers to the type of the return value of a function
     HasReturnType(String),
 }
+// get_variant!(GoFilter);
 
 impl GoFilter {
     /// checks if a function matches the filter

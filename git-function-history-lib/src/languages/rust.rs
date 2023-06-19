@@ -168,19 +168,6 @@ impl Block {
     }
 }
 
-/// This enum is used when filtering commit history only for let say impl and not externs or traits
-#[derive(Debug, PartialEq, Eq, Copy, Clone, enumstuff)]
-pub enum BlockType {
-    /// This is for `impl` blocks
-    Impl,
-    /// This is for `trait` blocks
-    Extern,
-    /// This is for `extern` blocks
-    Trait,
-    /// This is for code that gets labeled as a block but `get_function_history` can't find a block type
-    Unknown,
-}
-
 impl BlockType {
     /// This is used to get the name of the block type from a string
     pub fn from_string(s: &str) -> Self {
@@ -365,6 +352,20 @@ pub(crate) fn find_function_in_file(
     }
     Ok(hist)
 }
+
+/// This enum is used when filtering commit history only for let say impl and not externs or traits
+#[derive(Debug, PartialEq, Eq, Copy, Clone, enumstuff)]
+pub enum BlockType {
+    /// This is for `impl` blocks
+    Impl,
+    /// This is for `trait` blocks
+    Extern,
+    /// This is for `extern` blocks
+    Trait,
+    /// This is for code that gets labeled as a block but `get_function_history` can't find a block type
+    Unknown,
+}
+
 #[inline]
 fn get_function_asts(name: &str, file: &str, functions: &mut Vec<ast::Fn>) {
     let parsed_file = SourceFile::parse(file).tree();
@@ -458,61 +459,42 @@ pub enum RustFilter {
     /// when you want to filter by function that are in a specific block (impl, trait, extern)
     InBlock(BlockType),
     /// when you want filter by a function that has a parent function of a specific name
-    #[enumstuff(skip)]
     HasParentFunction(String),
     /// when you want to filter by a function that has a has a specific return type
-    #[enumstuff(skip)]
     HasReturnType(String),
     /// when you want to filter by a function that has a specific parameter type
-    #[enumstuff(skip)]
     HasParameterType(String),
     /// when you want to filter by a function that has a specific parameter name
-    #[enumstuff(skip)]
     HasParameterName(String),
     /// when you want to filter by a function that has a specific lifetime
-    #[enumstuff(skip)]
     HasLifetime(String),
     /// when you want to filter by a function that has a specific generic with name
-    #[enumstuff(skip)]
     HasGeneric(String),
     /// when you want to filter by a function that has a specific attribute
-    #[enumstuff(skip)]
     HasAttribute(String),
     /// when you want to filter by a function that has or contains a specific doc comment
-    #[enumstuff(skip)]
     HasDocComment(String),
     /// when you want to filter by a function that's block has a specific attribute
-    #[enumstuff(skip)]
     BlockHasAttribute(String),
     /// when you want to filter by a function that's block has a specific doc comment
-    #[enumstuff(skip)]
     BlockHasDocComment(String),
     /// when you want to filter by a function that's block has a specific lifetime
-    #[enumstuff(skip)]
     BlockHasLifetime(String),
     /// when you want to filter by a function that's block has a specific generic with name
-    #[enumstuff(skip)]
     BlockHasGeneric(String),
     /// when you want to filter by a function that's parent function has a specific attribute
-    #[enumstuff(skip)]
     ParentFunctionHasAttribute(String),
     /// when you want to filter by a function that's parent function has a specific doc comment
-    #[enumstuff(skip)]
     ParentFunctionHasDocComment(String),
     /// when you want to filter by a function that's parent function has a specific lifetime
-    #[enumstuff(skip)]
     ParentFunctionHasLifetime(String),
     /// when you want to filter by a function that's parent function has a specific generic with name
-    #[enumstuff(skip)]
     ParentFunctionHasGeneric(String),
     /// when you want to filter by a function that's parent function has a specific return type
-    #[enumstuff(skip)]
     ParentFunctionHasReturnType(String),
     /// when you want to filter by a function that's parent function has a specific parameter type
-    #[enumstuff(skip)]
     ParentFunctionHasParameterType(String),
     /// when you want to filter by a function that's parent function has a specific parameter name
-    #[enumstuff(skip)]
     ParentFunctionHasParameterName(String),
 }
 

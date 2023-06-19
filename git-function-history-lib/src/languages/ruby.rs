@@ -1,13 +1,13 @@
 use std::{collections::HashMap, fmt};
 
+use crate::UnwrapToError;
 use enum_stuff::enumstuff;
+
 use lib_ruby_parser::{
     nodes::{Class, Def},
     source::DecodedInput,
     Loc, Parser, ParserOptions,
 };
-
-use crate::UnwrapToError;
 
 use super::FunctionTrait;
 
@@ -322,17 +322,22 @@ impl FunctionTrait for RubyFunction {
             .collect()
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    enumstuff,
+    // Nom
+)]
 /// filter for ruby functions
 pub enum RubyFilter {
     /// find a Ruby functions in a specific class
-    #[enumstuff(skip)]
     FunctionInClass(String),
     /// find a Ruby function with a specific parameter
-    #[enumstuff(skip)]
     FunctionWithParameter(String),
     /// find a Ruby function in a class that inherits from a specific class
-    #[enumstuff(skip)]
     FunctionWithSuperClass(String),
 }
 
