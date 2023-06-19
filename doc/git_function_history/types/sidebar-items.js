@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Directions","FileType"],"struct":["Commit","FunctionHistory"]};
+window.SIDEBAR_ITEMS = {"enum":["Directions","ErrorReason","FileType"],"struct":["Commit","FunctionHistory"]};
