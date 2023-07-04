@@ -43,7 +43,7 @@ fn usage() -> ! {
     println!("  --filter-commit-hash=<hash> - filter to the given commit hash");
     println!("  --filter-date-range=<date1>:<date2> - filter to the given date range");
     println!("  --lang=[lang] - filter to the given language");
-    println!("      Available languages: rust, python, c, all");
+    println!("      Available languages: rust, python, ruby, go, umpl, all");
     println!("      Default: all");
     exit(1);
 }

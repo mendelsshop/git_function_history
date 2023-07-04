@@ -329,7 +329,6 @@ impl FunctionTrait for RubyFunction {
     PartialEq,
     Eq,
     enumstuff,
-    // Nom
 )]
 /// filter for ruby functions
 pub enum RubyFilter {

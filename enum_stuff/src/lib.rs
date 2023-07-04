@@ -6,7 +6,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
 pub fn enum_stuff(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
-    let span = Span::mixed_site();
+    let span = Span::call_site();
     let name = &ast.ident;
     let vis = &ast.vis;
     let data = match ast.data {

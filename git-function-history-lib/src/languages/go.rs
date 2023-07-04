@@ -202,7 +202,6 @@ pub enum GoFilter {
     // refers to the type of the return value of a function
     HasReturnType(String),
 }
-// get_variant!(GoFilter);
 
 impl GoFilter {
     /// checks if a function matches the filter

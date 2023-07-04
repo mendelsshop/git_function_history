@@ -205,7 +205,7 @@ pub fn get_function_history(
         let tree = commit.tree().ok()?.id;
         let time = commit.time().ok()?;
         let time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(time.seconds_since_unix_epoch.into(), 0)?,
+            NaiveDateTime::from_timestamp_opt(time.seconds, 0)?,
             Utc,
         );
         let authorinfo = commit.author().ok()?;
@@ -503,7 +503,7 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
             Some(CommitInfo {
                 date: match i.time().map(|x| {
                     Some(DateTime::<Utc>::from_utc(
-                        NaiveDateTime::from_timestamp_opt(x.seconds_since_unix_epoch.into(), 0)?,
+                        NaiveDateTime::from_timestamp_opt(x.seconds, 0)?,
                         Utc,
                     ))
                 }) {
