@@ -204,10 +204,8 @@ pub fn get_function_history(
         let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
         let tree = commit.tree().ok()?.id;
         let time = commit.time().ok()?;
-        let time = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp_opt(time.seconds, 0)?,
-            Utc,
-        );
+        let time =
+            DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(time.seconds, 0)?, Utc);
         let authorinfo = commit.author().ok()?;
         let author = authorinfo.name.to_string();
         let email = authorinfo.email.to_string();

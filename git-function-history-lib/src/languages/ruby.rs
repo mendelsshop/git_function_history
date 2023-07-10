@@ -323,13 +323,7 @@ impl FunctionTrait for RubyFunction {
     }
 }
 
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    enumstuff,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// filter for ruby functions
 pub enum RubyFilter {
     /// find a Ruby functions in a specific class
