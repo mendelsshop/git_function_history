@@ -28,7 +28,7 @@ gosyn = "0.2.3"
 # javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
 cfg-if = "1.0.0"
 cached = {version = "0.44.0", optional = true}
-gix = { version = "0.48.0", default-features = false, features = ["max-performance-safe"] }
+gix = { version = "0.51.0", default-features = false, features = ["max-performance-safe"] }
 gix-features = { version = "0.31.1", features = ["zlib", "once_cell"] }
 umpl = "1.1.1"
 enum_stuff = {path = "../enum_stuff"}
