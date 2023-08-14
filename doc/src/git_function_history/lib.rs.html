@@ -1117,7 +1117,7 @@
 
     <span class="kw">let </span>repo = gix::discover(<span class="string">&quot;.&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>th_repo = repo.clone().into_sync();
-    <span class="kw">let </span>commit_iter = repo.rev_walk(<span class="prelude-val">Some</span>(repo.head_id().unwrap().detach()));
+    <span class="kw">let </span>commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
     <span class="kw">let </span>commit_iter = commit_iter.all()<span class="question-mark">?</span>.filter_map(|id| <span class="prelude-val">Some</span>(id.ok()<span class="question-mark">?</span>.detach()));
     <span class="attr">#[cfg(feature = <span class="string">&quot;parallel&quot;</span>)]
     </span><span class="kw">let </span>commit_iter = {
