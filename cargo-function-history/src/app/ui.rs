@@ -6,7 +6,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation},
     Frame,
 };
 
@@ -137,6 +137,7 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
             .map(|s| Line::from(format!("{s}\n")))
             .collect(),
     };
+    app.scroll_state = app.scroll_state.content_length(tick_text.len() as u16);
     let body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .scroll(app.scroll_pos)
@@ -154,6 +155,15 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
     }
     app.body_height = pos.height;
     frame.render_widget(body, pos);
+
+    frame.render_stateful_widget(
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓")),
+        pos,
+        &mut app.scroll_state,
+    )
 }
 
 fn draw_main<'a>() -> Block<'a> {

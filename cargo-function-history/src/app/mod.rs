@@ -8,6 +8,7 @@ use git_function_history::{
     languages::{Language, LanguageFilter},
     FileFilterType, Filter,
 };
+use ratatui::widgets::ScrollbarState;
 use std::{
     fs,
     io::{Read, Write},
@@ -32,6 +33,7 @@ pub struct App {
     pub input_buffer: tui_input::Input,
     cmd_output: CommandResult,
     pub scroll_pos: (u16, u16),
+    pub scroll_state: ScrollbarState,
     pub body_height: u16,
     channels: (
         mpsc::Sender<FullCommand>,
@@ -96,6 +98,7 @@ impl App {
             status,
             history_index: history.len() - 1,
             history,
+            scroll_state: ScrollbarState::default(),
         }
     }
 
@@ -117,6 +120,7 @@ impl App {
                         return AppReturn::Continue;
                     }
                     self.scroll_pos.0 -= 1;
+                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0);
                     AppReturn::Continue
                 }
                 Action::ScrollDown => {
@@ -126,7 +130,9 @@ impl App {
                     if usize::from(ot) >= self.cmd_output().len() {
                         return AppReturn::Continue;
                     }
+
                     self.scroll_pos.0 += 1;
+                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0);
                     AppReturn::Continue
                 }
                 Action::BackCommit => {

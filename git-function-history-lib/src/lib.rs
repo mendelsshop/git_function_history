@@ -188,10 +188,7 @@ pub fn get_function_history(
 
     let repo = gix::discover(".")?;
     let th_repo = repo.clone().into_sync();
-    let mut tips = vec![];
-    let head = repo.head_commit()?;
-    tips.push(head.id);
-    let commit_iter = repo.rev_walk(tips);
+    let commit_iter = repo.rev_walk(Some(repo.head_id().unwrap().detach()));
     let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
     #[cfg(feature = "parallel")]
     let commit_iter = {
