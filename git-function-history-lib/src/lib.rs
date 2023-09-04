@@ -201,8 +201,10 @@ pub fn get_function_history(
         let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
         let tree = commit.tree().ok()?.id;
         let time = commit.time().ok()?;
-        let time =
-            DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(time.seconds, 0)?, Utc);
+        let time = DateTime::<Utc>::from_naive_utc_and_offset(
+            NaiveDateTime::from_timestamp_opt(time.seconds, 0)?,
+            Utc,
+        );
         let authorinfo = commit.author().ok()?;
         let author = authorinfo.name.to_string();
         let email = authorinfo.email.to_string();
@@ -489,7 +491,9 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
     let commits = commit_iter.all()?.filter_map(|i| match i {
         Ok(i) => get_item_from_oid_option!(i, &repo, try_into_commit).map(|i| {
             let Ok(author) = i.author() else { return None };
-            let Ok(message) = i.message() else { return None };
+            let Ok(message) = i.message() else {
+                return None;
+            };
             let mut msg = message.title.to_string();
             if let Some(msg_body) = message.body {
                 msg.push_str(&msg_body.to_string());
@@ -497,7 +501,7 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
 
             Some(CommitInfo {
                 date: match i.time().map(|x| {
-                    Some(DateTime::<Utc>::from_utc(
+                    Some(DateTime::<Utc>::from_naive_utc_and_offset(
                         NaiveDateTime::from_timestamp_opt(x.seconds, 0)?,
                         Utc,
                     ))

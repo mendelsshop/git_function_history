@@ -1,12 +1,21 @@
 use enum_stuff::enumstuff;
 use rustpython_parser::{
-    ast::{Arguments, ExprKind, Located, StmtKind},
-    parser,
+    ast::{
+        self,
+        located::{
+            Arguments, Expr, Located, Stmt, StmtAsyncFunctionDef, StmtClassDef, StmtFunctionDef,
+        },
+        Fold,
+    },
+    source_code::LinearLocator,
+    Parse,
 };
 use std::collections::VecDeque;
 use std::{collections::HashMap, fmt};
 
 use crate::{impl_function_trait, UnwrapToError};
+
+// TODO: cleanup adapting from rp2 tp rp3
 
 use super::FunctionTrait;
 
@@ -104,7 +113,12 @@ pub(crate) fn find_function_in_file(
     file_contents: &str,
     name: &str,
 ) -> Result<Vec<PythonFunction>, String> {
-    let ast = match parser::parse_program(file_contents, "<stdin>") {
+    let ast = match rustpython_parser::ast::Suite::parse(file_contents, name) {
+        Ok(ast) => ast,
+        Err(e) => return Err(format!("error parsing file: {e}")),
+    };
+    let mut locator = LinearLocator::new(file_contents);
+    let ast = match locator.fold(ast) {
         Ok(ast) => ast,
         Err(e) => return Err(format!("error parsing file: {e}")),
     };
@@ -132,29 +146,19 @@ pub(crate) fn find_function_in_file(
     );
     let mut new = Vec::new();
     for func in functions {
-        let start = func.0.location.row();
+        let start = func.0.location().row.to_usize();
         let end = func
             .0
-            .end_location
+            .end_location()
             .unwrap_to_error("no end location for this function")?
-            .row();
-        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end))) else { continue };
-        if let StmtKind::FunctionDef {
-            name,
-            args,
-            decorator_list,
-            returns,
-            ..
-        }
-        | StmtKind::AsyncFunctionDef {
-            name,
-            args,
-            decorator_list,
-            returns,
-            ..
-        } = func.0.node
+            .row
+            .to_usize();
+        let (Some(starts), Some(ends)) = (map.get(&(start - 1)), map.get(&(end))) else {
+            continue;
+        };
+
         {
-            let start_line = func.0.location.row();
+            let start_line = func.0.location().row.to_usize();
             let body = match file_contents.get(**starts..**ends) {
                 Some(str) => str,
                 None => continue,
@@ -165,82 +169,63 @@ pub(crate) fn find_function_in_file(
                 .1
                 .iter()
                 .filter_map(|class| {
-                    if let StmtKind::ClassDef {
-                        ref name,
-                        ref decorator_list,
-                        ..
-                    } = class.node
-                    {
-                        let start = class.location.row();
-                        if let Some(end) = class.end_location {
-                            let end = end.row();
-                            let top = match file_contents.lines().nth(start - 1) {
-                                Some(l) => l.trim_end().to_string(),
-                                None => return None,
-                            };
-                            let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list_new(decorator_list, file_contents);
-                            return Some(PythonClass {
-                                name: name.to_string(),
-                                top,
-                                lines: (start, end),
-                                decorators,
-                            });
-                        }
-                    }
-                    None
+                    let start = class.location().row.to_usize();
+                    if let Some(end) = class.end_location() {
+                        let end = end.row.to_usize();
+                        let top = match file_contents.lines().nth(start - 1) {
+                            Some(l) => l.trim_end().to_string(),
+                            None => return None,
+                        };
+                        let top = format!("{start}: {top}");
+                        let decorators =
+                            get_decorator_list_new(&class.decorator_list, file_contents);
+                        return Some(PythonClass {
+                            name: name.to_string(),
+                            top,
+                            lines: (start, end),
+                            decorators,
+                        });
+                    } 
+                        None
+                    
                 })
                 .collect::<Vec<PythonClass>>();
             let parent = func
                 .2
                 .iter()
                 .filter_map(|parent| {
-                    if let StmtKind::FunctionDef {
-                        ref name,
-                        ref args,
-                        ref decorator_list,
-                        ref returns,
-                        ..
+                    let start = parent.location().row.to_usize();
+                    if let Some(end) = parent.end_location() {
+                        let end = end.row.to_usize();
+                        let top = match file_contents.lines().nth(start - 1) {
+                            Some(l) => l.trim_end().to_string(),
+                            None => return None,
+                        };
+                        let top = format!("{start}: {top}");
+                        let decorators =
+                            get_decorator_list_new(parent.decorator_list(), file_contents);
+                        let parameters = get_args(parent.args().clone());
+                        let returns = get_return_type(parent.returns().clone());
+                        return Some(PythonParentFunction {
+                            name: name.to_string(),
+                            top,
+                            lines: (start, end),
+                            parameters,
+                            decorators,
+                            returns,
+                        });
                     }
-                    | StmtKind::AsyncFunctionDef {
-                        ref name,
-                        ref args,
-                        ref decorator_list,
-                        ref returns,
-                        ..
-                    } = parent.node
-                    {
-                        let start = parent.location.row();
-                        if let Some(end) = parent.end_location {
-                            let end = end.row();
-                            let top = match file_contents.lines().nth(start - 1) {
-                                Some(l) => l.trim_end().to_string(),
-                                None => return None,
-                            };
-                            let top = format!("{start}: {top}");
-                            let decorators = get_decorator_list_new(decorator_list, file_contents);
-                            let parameters = get_args(*args.clone());
-                            let returns = get_return_type(returns.clone());
-                            return Some(PythonParentFunction {
-                                name: name.to_string(),
-                                top,
-                                lines: (start, end),
-                                parameters,
-                                decorators,
-                                returns,
-                            });
-                        }
-                    }
+
                     None
                 })
                 .collect::<Vec<PythonParentFunction>>();
 
             let new_func = PythonFunction {
                 name: name.to_string(),
-                parameters: get_args(*args),
+                parameters: get_args(func.0.args().clone()),
                 parent,
-                decorators: get_decorator_list_new(&decorator_list, file_contents),
-                returns: get_return_type(returns),
+                decorators: get_decorator_list_new(func.0.decorator_list(), file_contents),
+                returns: get_return_type(func.0.returns().clone()),
                 class,
                 body,
                 lines: (start, end),
@@ -255,11 +240,11 @@ pub(crate) fn find_function_in_file(
 }
 #[inline]
 fn get_functions_recurisve(
-    body: Vec<Located<StmtKind>>,
+    body: Vec<Stmt>,
     map: &HashMap<usize, &usize>,
     functions: &mut FnState,
-    current_parent: &mut Vec<Located<StmtKind>>,
-    current_class: &mut Vec<Located<StmtKind>>,
+    current_parent: &mut Vec<FunctionDef>,
+    current_class: &mut Vec<StmtClassDef>,
     lookup_name: &str,
 ) {
     let mut new_ast = VecDeque::from(body);
@@ -278,34 +263,92 @@ fn get_functions_recurisve(
         );
     }
 }
-type FnState = Vec<(
-    Located<StmtKind>,
-    Vec<Located<StmtKind>>,
-    Vec<Located<StmtKind>>,
-)>;
+
+#[derive(Clone)]
+enum FunctionDef {
+    Normal(StmtFunctionDef),
+    Async(StmtAsyncFunctionDef),
+}
+
+impl From<StmtAsyncFunctionDef> for FunctionDef {
+    fn from(v: StmtAsyncFunctionDef) -> Self {
+        Self::Async(v)
+    }
+}
+
+impl From<StmtFunctionDef> for FunctionDef {
+    fn from(v: StmtFunctionDef) -> Self {
+        Self::Normal(v)
+    }
+}
+
+impl FunctionDef {
+    fn location(&self) -> rustpython_parser::source_code::SourceLocation {
+        match self {
+            Self::Normal(n) => n.location(),
+            Self::Async(a) => a.location(),
+        }
+    }
+
+    fn end_location(&self) -> Option<rustpython_parser::source_code::SourceLocation> {
+        match self {
+            Self::Normal(n) => n.end_location(),
+            Self::Async(a) => a.end_location(),
+        }
+    }
+
+    fn decorator_list(&self) -> &[ast::Expr<rustpython_parser::source_code::SourceRange>] {
+        match self {
+            Self::Normal(n) => &n.decorator_list,
+            Self::Async(a) => &a.decorator_list,
+        }
+    }
+
+   const fn args(&self) -> &ast::located::Arguments {
+        match self {
+            Self::Normal(n) => &n.args,
+            Self::Async(a) => &a.args,
+        }
+    }
+
+    const fn returns(&self) -> &Option<Box<Expr>> {
+        match self {
+            Self::Normal(n) => &n.returns,
+            Self::Async(a) => &a.returns,
+        }
+    }
+}
+type FnState = Vec<(FunctionDef, Vec<StmtClassDef>, Vec<FunctionDef>)>;
 fn get_functions(
-    stmt: Located<StmtKind>,
+    stmt: Stmt,
     map: &HashMap<usize, &usize>,
     functions: &mut FnState,
-    current_parent: &mut Vec<Located<StmtKind>>,
-    current_class: &mut Vec<Located<StmtKind>>,
+    current_parent: &mut Vec<FunctionDef>,
+    current_class: &mut Vec<StmtClassDef>,
     lookup_name: &str,
 ) {
-    let stmt_clone = stmt.clone();
-    match stmt.node {
-        StmtKind::FunctionDef { ref name, .. } | StmtKind::AsyncFunctionDef { ref name, .. }
-            if name == lookup_name =>
-        {
-            if stmt.end_location.is_some() {
-                functions.push((stmt, current_class.clone(), current_parent.clone()));
+    match stmt {
+        Stmt::FunctionDef(function) if function.name.to_string() == lookup_name => {
+            if function.end_location().is_some() {
+                functions.push((
+                    function.into(),
+                    current_class.clone(),
+                    current_parent.clone(),
+                ));
             }
         }
-        StmtKind::If { body, orelse, .. }
-        | StmtKind::While { body, orelse, .. }
-        | StmtKind::For { body, orelse, .. }
-        | StmtKind::AsyncFor { body, orelse, .. } => {
+        Stmt::AsyncFunctionDef(function) if function.name.to_string() == lookup_name => {
+            if function.end_location().is_some() {
+                functions.push((
+                    function.into(),
+                    current_class.clone(),
+                    current_parent.clone(),
+                ));
+            }
+        }
+        Stmt::If(r#if) => {
             get_functions_recurisve(
-                body,
+                r#if.body,
                 map,
                 functions,
                 current_parent,
@@ -313,7 +356,7 @@ fn get_functions(
                 lookup_name,
             );
             get_functions_recurisve(
-                orelse,
+                r#if.orelse,
                 map,
                 functions,
                 current_parent,
@@ -321,10 +364,64 @@ fn get_functions(
                 lookup_name,
             );
         }
-        StmtKind::FunctionDef { body, .. } | StmtKind::AsyncFunctionDef { body, .. } => {
-            current_parent.push(stmt_clone);
+        Stmt::While(r#while) => {
             get_functions_recurisve(
-                body,
+                r#while.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#while.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::For(r#for) => {
+            get_functions_recurisve(
+                r#for.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#for.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::AsyncFor(r#for) => {
+            get_functions_recurisve(
+                r#for.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#for.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::FunctionDef(function) => {
+            current_parent.push(function.clone().into());
+            get_functions_recurisve(
+                function.body,
                 map,
                 functions,
                 current_parent,
@@ -333,10 +430,23 @@ fn get_functions(
             );
             current_parent.pop();
         }
-        StmtKind::ClassDef { body, .. } => {
-            current_class.push(stmt_clone);
+        Stmt::AsyncFunctionDef(function) => {
+            current_parent.push(function.clone().into());
             get_functions_recurisve(
-                body,
+                function.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            current_parent.pop();
+        }
+        Stmt::ClassDef(class) => {
+            current_class.push(class.clone());
+
+            get_functions_recurisve(
+                class.body,
                 map,
                 functions,
                 current_parent,
@@ -345,22 +455,25 @@ fn get_functions(
             );
             current_class.pop();
         }
-        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } => get_functions_recurisve(
-            body,
+        Stmt::With(with) => get_functions_recurisve(
+            with.body,
             map,
             functions,
             current_parent,
             current_class,
             lookup_name,
         ),
-        StmtKind::Try {
-            body,
-            orelse,
-            finalbody,
-            ..
-        } => {
+        Stmt::AsyncWith(with) => get_functions_recurisve(
+            with.body,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        ),
+        Stmt::Try(r#try) => {
             get_functions_recurisve(
-                body,
+                r#try.body,
                 map,
                 functions,
                 current_parent,
@@ -368,7 +481,7 @@ fn get_functions(
                 lookup_name,
             );
             get_functions_recurisve(
-                orelse,
+                r#try.orelse,
                 map,
                 functions,
                 current_parent,
@@ -376,7 +489,7 @@ fn get_functions(
                 lookup_name,
             );
             get_functions_recurisve(
-                finalbody,
+                r#try.finalbody,
                 map,
                 functions,
                 current_parent,
@@ -397,116 +510,91 @@ fn get_args(args: Arguments) -> PythonParams {
         varkwargs: None,
     };
     for arg in args.args {
+        let arg = arg.as_arg();
         parameters.args.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                if let ExprKind::Name { id, .. } = x.node {
-                    Some(id)
-                } else {
-                    None
-                }
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     for arg in args.kwonlyargs {
+        let arg = arg.as_arg();
         parameters.kwargs.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                if let ExprKind::Name { id, .. } = x.node {
-                    Some(id)
-                } else {
-                    None
-                }
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     if let Some(arg) = args.vararg {
         parameters.varargs = Some(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                if let ExprKind::Name { id, .. } = x.node {
-                    Some(id)
-                } else {
-                    None
-                }
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     if let Some(arg) = args.kwarg {
         parameters.varkwargs = Some(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                if let ExprKind::Name { id, .. } = x.node {
-                    Some(id)
-                } else {
-                    None
-                }
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     for arg in args.posonlyargs {
+        let arg = arg.as_arg();
         parameters.posonlyargs.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                if let ExprKind::Name { id, .. } = x.node {
-                    Some(id)
-                } else {
-                    None
-                }
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
 
     parameters
 }
 
-fn get_return_type(retr: Option<Box<Located<ExprKind>>>) -> Option<String> {
+fn get_return_type(retr: Option<Box<Expr>>) -> Option<String> {
     if let Some(retr) = retr {
-        if let ExprKind::Name { ref id, .. } = retr.node {
-            return Some(id.to_string());
+        if let Expr::Name(id) = *retr {
+            return Some(id.id.to_string());
         }
     }
     None
 }
 #[allow(dead_code)]
 // keeping this here just in case
-fn get_decorator_list(decorator_list: &[Located<ExprKind>]) -> Vec<(usize, String)> {
+fn get_decorator_list(decorator_list: &[Expr]) -> Vec<(usize, String)> {
     decorator_list
         .iter()
         .map(located_expr_to_decorator)
         .collect::<Vec<(usize, String)>>()
 }
 
-fn located_expr_to_decorator(expr: &Located<ExprKind>) -> (usize, String) {
+fn located_expr_to_decorator(expr: &Expr) -> (usize, String) {
     (
-        expr.location.row(),
+        expr.location().row.to_usize(),
         format!(
             "{}:{}decorator with {}",
-            expr.location.row(),
-            vec![" "; expr.location.column()].join(""),
-            expr.node.name()
+            expr.location().row.to_usize(),
+            vec![" "; expr.location().column.to_usize()].join(""),
+            expr.python_name()
         ),
     )
 }
 
-fn get_located_expr_line(expr: &Located<ExprKind>, file_contents: &str) -> Option<String> {
+fn get_located_expr_line(expr: &Expr, file_contents: &str) -> Option<String> {
     // does not add line numbers to string
     file_contents
         .lines()
-        .nth(expr.location.row() - 1)
+        .nth(expr.location().row.to_usize() - 1)
         .map(ToString::to_string)
 }
 
-fn get_decorator_list_new(
-    decorator_list: &[Located<ExprKind>],
-    file_contents: &str,
-) -> Vec<(usize, String)> {
+fn get_decorator_list_new(decorator_list: &[Expr], file_contents: &str) -> Vec<(usize, String)> {
     decorator_list
         .iter()
         .map(|x| {
             get_located_expr_line(x, file_contents).map_or_else(
                 || located_expr_to_decorator(x),
-                |dec| (x.location.row(), super::make_lined(&dec, x.location.row())),
+                |dec| {
+                    (
+                        x.location().row.to_usize(),
+                        super::make_lined(&dec, x.location().row.to_usize()),
+                    )
+                },
             )
         })
         .collect::<Vec<(usize, String)>>()

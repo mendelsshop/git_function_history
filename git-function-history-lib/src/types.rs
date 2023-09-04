@@ -469,8 +469,12 @@ impl FunctionHistory {
                     }
                 }
                 Filter::DateRange(start, end) => {
-                    let Ok(start) = DateTime::parse_from_rfc2822(start) else { return None };
-                    let Ok(end) = DateTime::parse_from_rfc2822(end) else { return None };
+                    let Ok(start) = DateTime::parse_from_rfc2822(start) else {
+                        return None;
+                    };
+                    let Ok(end) = DateTime::parse_from_rfc2822(end) else {
+                        return None;
+                    };
                     if f.date >= start || f.date <= end {
                         Some(f.clone())
                     } else {
