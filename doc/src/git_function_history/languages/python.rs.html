@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/python.rs`."><title>python.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (1b198b3a1 2023-08-13)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../git_function_history/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/python.rs`."><title>python.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-47e7ab555ef2818a.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0-nightly (58e967a9c 2023-09-03)" data-channel="nightly" data-search-js="search-5d3eaacf19ebf04f.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-f194925aa375ae96.css" data-theme-dark-css="dark-1dd4d1ce031e15de.css" data-theme-ayu-css="ayu-49e58d069f567085.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-ef3a2de404864b0b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-f194925aa375ae96.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1dd4d1ce031e15de.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../git_function_history/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -608,17 +608,114 @@
 <a href="#608" id="608">608</a>
 <a href="#609" id="609">609</a>
 <a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>enum_stuff::enumstuff;
 <span class="kw">use </span>rustpython_parser::{
-    ast::{Arguments, ExprKind, Located, StmtKind},
-    parser,
+    ast::{
+        <span class="self">self</span>,
+        located::{
+            Arguments, Expr, Located, Stmt, StmtAsyncFunctionDef, StmtClassDef, StmtFunctionDef,
+        },
+        Fold,
+    },
+    source_code::LinearLocator,
+    Parse,
 };
 <span class="kw">use </span>std::collections::VecDeque;
 <span class="kw">use </span>std::{collections::HashMap, fmt};
 
 <span class="kw">use crate</span>::{impl_function_trait, UnwrapToError};
 
-<span class="kw">use </span><span class="kw">super</span>::FunctionTrait;
+<span class="comment">// TODO: cleanup adapting from rp2 tp rp3
+
+</span><span class="kw">use </span><span class="kw">super</span>::FunctionTrait;
 
 <span class="attr">#[derive(Debug, Clone)]
 </span><span class="doccomment">/// A python function
@@ -714,7 +811,12 @@
     file_contents: <span class="kw-2">&amp;</span>str,
     name: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;PythonFunction&gt;, String&gt; {
-    <span class="kw">let </span>ast = <span class="kw">match </span>parser::parse_program(file_contents, <span class="string">&quot;&lt;stdin&gt;&quot;</span>) {
+    <span class="kw">let </span>ast = <span class="kw">match </span>rustpython_parser::ast::Suite::parse(file_contents, name) {
+        <span class="prelude-val">Ok</span>(ast) =&gt; ast,
+        <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;error parsing file: {e}&quot;</span>)),
+    };
+    <span class="kw">let </span><span class="kw-2">mut </span>locator = LinearLocator::new(file_contents);
+    <span class="kw">let </span>ast = <span class="kw">match </span>locator.fold(ast) {
         <span class="prelude-val">Ok</span>(ast) =&gt; ast,
         <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;error parsing file: {e}&quot;</span>)),
     };
@@ -742,29 +844,19 @@
     );
     <span class="kw">let </span><span class="kw-2">mut </span>new = Vec::new();
     <span class="kw">for </span>func <span class="kw">in </span>functions {
-        <span class="kw">let </span>start = func.<span class="number">0</span>.location.row();
+        <span class="kw">let </span>start = func.<span class="number">0</span>.location().row.to_usize();
         <span class="kw">let </span>end = func
             .<span class="number">0
-            </span>.end_location
+            </span>.end_location()
             .unwrap_to_error(<span class="string">&quot;no end location for this function&quot;</span>)<span class="question-mark">?
-            </span>.row();
-        <span class="kw">let </span>(<span class="prelude-val">Some</span>(starts), <span class="prelude-val">Some</span>(ends)) = (map.get(<span class="kw-2">&amp;</span>(start - <span class="number">1</span>)), map.get(<span class="kw-2">&amp;</span>(end))) <span class="kw">else </span>{ <span class="kw">continue </span>};
-        <span class="kw">if let </span>StmtKind::FunctionDef {
-            name,
-            args,
-            decorator_list,
-            returns,
-            ..
-        }
-        | StmtKind::AsyncFunctionDef {
-            name,
-            args,
-            decorator_list,
-            returns,
-            ..
-        } = func.<span class="number">0</span>.node
+            </span>.row
+            .to_usize();
+        <span class="kw">let </span>(<span class="prelude-val">Some</span>(starts), <span class="prelude-val">Some</span>(ends)) = (map.get(<span class="kw-2">&amp;</span>(start - <span class="number">1</span>)), map.get(<span class="kw-2">&amp;</span>(end))) <span class="kw">else </span>{
+            <span class="kw">continue</span>;
+        };
+
         {
-            <span class="kw">let </span>start_line = func.<span class="number">0</span>.location.row();
+            <span class="kw">let </span>start_line = func.<span class="number">0</span>.location().row.to_usize();
             <span class="kw">let </span>body = <span class="kw">match </span>file_contents.get(<span class="kw-2">**</span>starts..<span class="kw-2">**</span>ends) {
                 <span class="prelude-val">Some</span>(str) =&gt; str,
                 <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>,
@@ -775,82 +867,63 @@
                 .<span class="number">1
                 </span>.iter()
                 .filter_map(|class| {
-                    <span class="kw">if let </span>StmtKind::ClassDef {
-                        <span class="kw-2">ref </span>name,
-                        <span class="kw-2">ref </span>decorator_list,
-                        ..
-                    } = class.node
-                    {
-                        <span class="kw">let </span>start = class.location.row();
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(end) = class.end_location {
-                            <span class="kw">let </span>end = end.row();
-                            <span class="kw">let </span>top = <span class="kw">match </span>file_contents.lines().nth(start - <span class="number">1</span>) {
-                                <span class="prelude-val">Some</span>(l) =&gt; l.trim_end().to_string(),
-                                <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
-                            };
-                            <span class="kw">let </span>top = <span class="macro">format!</span>(<span class="string">&quot;{start}: {top}&quot;</span>);
-                            <span class="kw">let </span>decorators = get_decorator_list_new(decorator_list, file_contents);
-                            <span class="kw">return </span><span class="prelude-val">Some</span>(PythonClass {
-                                name: name.to_string(),
-                                top,
-                                lines: (start, end),
-                                decorators,
-                            });
-                        }
-                    }
-                    <span class="prelude-val">None
+                    <span class="kw">let </span>start = class.location().row.to_usize();
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(end) = class.end_location() {
+                        <span class="kw">let </span>end = end.row.to_usize();
+                        <span class="kw">let </span>top = <span class="kw">match </span>file_contents.lines().nth(start - <span class="number">1</span>) {
+                            <span class="prelude-val">Some</span>(l) =&gt; l.trim_end().to_string(),
+                            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
+                        };
+                        <span class="kw">let </span>top = <span class="macro">format!</span>(<span class="string">&quot;{start}: {top}&quot;</span>);
+                        <span class="kw">let </span>decorators =
+                            get_decorator_list_new(<span class="kw-2">&amp;</span>class.decorator_list, file_contents);
+                        <span class="kw">return </span><span class="prelude-val">Some</span>(PythonClass {
+                            name: name.to_string(),
+                            top,
+                            lines: (start, end),
+                            decorators,
+                        });
+                    } 
+                        <span class="prelude-val">None
+                    
                 </span>})
                 .collect::&lt;Vec&lt;PythonClass&gt;&gt;();
             <span class="kw">let </span>parent = func
                 .<span class="number">2
                 </span>.iter()
                 .filter_map(|parent| {
-                    <span class="kw">if let </span>StmtKind::FunctionDef {
-                        <span class="kw-2">ref </span>name,
-                        <span class="kw-2">ref </span>args,
-                        <span class="kw-2">ref </span>decorator_list,
-                        <span class="kw-2">ref </span>returns,
-                        ..
+                    <span class="kw">let </span>start = parent.location().row.to_usize();
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(end) = parent.end_location() {
+                        <span class="kw">let </span>end = end.row.to_usize();
+                        <span class="kw">let </span>top = <span class="kw">match </span>file_contents.lines().nth(start - <span class="number">1</span>) {
+                            <span class="prelude-val">Some</span>(l) =&gt; l.trim_end().to_string(),
+                            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
+                        };
+                        <span class="kw">let </span>top = <span class="macro">format!</span>(<span class="string">&quot;{start}: {top}&quot;</span>);
+                        <span class="kw">let </span>decorators =
+                            get_decorator_list_new(parent.decorator_list(), file_contents);
+                        <span class="kw">let </span>parameters = get_args(parent.args().clone());
+                        <span class="kw">let </span>returns = get_return_type(parent.returns().clone());
+                        <span class="kw">return </span><span class="prelude-val">Some</span>(PythonParentFunction {
+                            name: name.to_string(),
+                            top,
+                            lines: (start, end),
+                            parameters,
+                            decorators,
+                            returns,
+                        });
                     }
-                    | StmtKind::AsyncFunctionDef {
-                        <span class="kw-2">ref </span>name,
-                        <span class="kw-2">ref </span>args,
-                        <span class="kw-2">ref </span>decorator_list,
-                        <span class="kw-2">ref </span>returns,
-                        ..
-                    } = parent.node
-                    {
-                        <span class="kw">let </span>start = parent.location.row();
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(end) = parent.end_location {
-                            <span class="kw">let </span>end = end.row();
-                            <span class="kw">let </span>top = <span class="kw">match </span>file_contents.lines().nth(start - <span class="number">1</span>) {
-                                <span class="prelude-val">Some</span>(l) =&gt; l.trim_end().to_string(),
-                                <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
-                            };
-                            <span class="kw">let </span>top = <span class="macro">format!</span>(<span class="string">&quot;{start}: {top}&quot;</span>);
-                            <span class="kw">let </span>decorators = get_decorator_list_new(decorator_list, file_contents);
-                            <span class="kw">let </span>parameters = get_args(<span class="kw-2">*</span>args.clone());
-                            <span class="kw">let </span>returns = get_return_type(returns.clone());
-                            <span class="kw">return </span><span class="prelude-val">Some</span>(PythonParentFunction {
-                                name: name.to_string(),
-                                top,
-                                lines: (start, end),
-                                parameters,
-                                decorators,
-                                returns,
-                            });
-                        }
-                    }
+
                     <span class="prelude-val">None
                 </span>})
                 .collect::&lt;Vec&lt;PythonParentFunction&gt;&gt;();
 
             <span class="kw">let </span>new_func = PythonFunction {
                 name: name.to_string(),
-                parameters: get_args(<span class="kw-2">*</span>args),
+                parameters: get_args(func.<span class="number">0</span>.args().clone()),
                 parent,
-                decorators: get_decorator_list_new(<span class="kw-2">&amp;</span>decorator_list, file_contents),
-                returns: get_return_type(returns),
+                decorators: get_decorator_list_new(func.<span class="number">0</span>.decorator_list(), file_contents),
+                returns: get_return_type(func.<span class="number">0</span>.returns().clone()),
                 class,
                 body,
                 lines: (start, end),
@@ -865,11 +938,11 @@
 }
 <span class="attr">#[inline]
 </span><span class="kw">fn </span>get_functions_recurisve(
-    body: Vec&lt;Located&lt;StmtKind&gt;&gt;,
+    body: Vec&lt;Stmt&gt;,
     map: <span class="kw-2">&amp;</span>HashMap&lt;usize, <span class="kw-2">&amp;</span>usize&gt;,
     functions: <span class="kw-2">&amp;mut </span>FnState,
-    current_parent: <span class="kw-2">&amp;mut </span>Vec&lt;Located&lt;StmtKind&gt;&gt;,
-    current_class: <span class="kw-2">&amp;mut </span>Vec&lt;Located&lt;StmtKind&gt;&gt;,
+    current_parent: <span class="kw-2">&amp;mut </span>Vec&lt;FunctionDef&gt;,
+    current_class: <span class="kw-2">&amp;mut </span>Vec&lt;StmtClassDef&gt;,
     lookup_name: <span class="kw-2">&amp;</span>str,
 ) {
     <span class="kw">let </span><span class="kw-2">mut </span>new_ast = VecDeque::from(body);
@@ -888,34 +961,92 @@
         );
     }
 }
-<span class="kw">type </span>FnState = Vec&lt;(
-    Located&lt;StmtKind&gt;,
-    Vec&lt;Located&lt;StmtKind&gt;&gt;,
-    Vec&lt;Located&lt;StmtKind&gt;&gt;,
-)&gt;;
+
+<span class="attr">#[derive(Clone)]
+</span><span class="kw">enum </span>FunctionDef {
+    Normal(StmtFunctionDef),
+    Async(StmtAsyncFunctionDef),
+}
+
+<span class="kw">impl </span>From&lt;StmtAsyncFunctionDef&gt; <span class="kw">for </span>FunctionDef {
+    <span class="kw">fn </span>from(v: StmtAsyncFunctionDef) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Async(v)
+    }
+}
+
+<span class="kw">impl </span>From&lt;StmtFunctionDef&gt; <span class="kw">for </span>FunctionDef {
+    <span class="kw">fn </span>from(v: StmtFunctionDef) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Normal(v)
+    }
+}
+
+<span class="kw">impl </span>FunctionDef {
+    <span class="kw">fn </span>location(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; rustpython_parser::source_code::SourceLocation {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Normal(n) =&gt; n.location(),
+            <span class="self">Self</span>::Async(a) =&gt; a.location(),
+        }
+    }
+
+    <span class="kw">fn </span>end_location(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;rustpython_parser::source_code::SourceLocation&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Normal(n) =&gt; n.end_location(),
+            <span class="self">Self</span>::Async(a) =&gt; a.end_location(),
+        }
+    }
+
+    <span class="kw">fn </span>decorator_list(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[ast::Expr&lt;rustpython_parser::source_code::SourceRange&gt;] {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Normal(n) =&gt; <span class="kw-2">&amp;</span>n.decorator_list,
+            <span class="self">Self</span>::Async(a) =&gt; <span class="kw-2">&amp;</span>a.decorator_list,
+        }
+    }
+
+   <span class="kw">const fn </span>args(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>ast::located::Arguments {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Normal(n) =&gt; <span class="kw-2">&amp;</span>n.args,
+            <span class="self">Self</span>::Async(a) =&gt; <span class="kw-2">&amp;</span>a.args,
+        }
+    }
+
+    <span class="kw">const fn </span>returns(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Box&lt;Expr&gt;&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Normal(n) =&gt; <span class="kw-2">&amp;</span>n.returns,
+            <span class="self">Self</span>::Async(a) =&gt; <span class="kw-2">&amp;</span>a.returns,
+        }
+    }
+}
+<span class="kw">type </span>FnState = Vec&lt;(FunctionDef, Vec&lt;StmtClassDef&gt;, Vec&lt;FunctionDef&gt;)&gt;;
 <span class="kw">fn </span>get_functions(
-    stmt: Located&lt;StmtKind&gt;,
+    stmt: Stmt,
     map: <span class="kw-2">&amp;</span>HashMap&lt;usize, <span class="kw-2">&amp;</span>usize&gt;,
     functions: <span class="kw-2">&amp;mut </span>FnState,
-    current_parent: <span class="kw-2">&amp;mut </span>Vec&lt;Located&lt;StmtKind&gt;&gt;,
-    current_class: <span class="kw-2">&amp;mut </span>Vec&lt;Located&lt;StmtKind&gt;&gt;,
+    current_parent: <span class="kw-2">&amp;mut </span>Vec&lt;FunctionDef&gt;,
+    current_class: <span class="kw-2">&amp;mut </span>Vec&lt;StmtClassDef&gt;,
     lookup_name: <span class="kw-2">&amp;</span>str,
 ) {
-    <span class="kw">let </span>stmt_clone = stmt.clone();
-    <span class="kw">match </span>stmt.node {
-        StmtKind::FunctionDef { <span class="kw-2">ref </span>name, .. } | StmtKind::AsyncFunctionDef { <span class="kw-2">ref </span>name, .. }
-            <span class="kw">if </span>name == lookup_name =&gt;
-        {
-            <span class="kw">if </span>stmt.end_location.is_some() {
-                functions.push((stmt, current_class.clone(), current_parent.clone()));
+    <span class="kw">match </span>stmt {
+        Stmt::FunctionDef(function) <span class="kw">if </span>function.name.to_string() == lookup_name =&gt; {
+            <span class="kw">if </span>function.end_location().is_some() {
+                functions.push((
+                    function.into(),
+                    current_class.clone(),
+                    current_parent.clone(),
+                ));
             }
         }
-        StmtKind::If { body, orelse, .. }
-        | StmtKind::While { body, orelse, .. }
-        | StmtKind::For { body, orelse, .. }
-        | StmtKind::AsyncFor { body, orelse, .. } =&gt; {
+        Stmt::AsyncFunctionDef(function) <span class="kw">if </span>function.name.to_string() == lookup_name =&gt; {
+            <span class="kw">if </span>function.end_location().is_some() {
+                functions.push((
+                    function.into(),
+                    current_class.clone(),
+                    current_parent.clone(),
+                ));
+            }
+        }
+        Stmt::If(r#if) =&gt; {
             get_functions_recurisve(
-                body,
+                r#if.body,
                 map,
                 functions,
                 current_parent,
@@ -923,7 +1054,7 @@
                 lookup_name,
             );
             get_functions_recurisve(
-                orelse,
+                r#if.orelse,
                 map,
                 functions,
                 current_parent,
@@ -931,10 +1062,64 @@
                 lookup_name,
             );
         }
-        StmtKind::FunctionDef { body, .. } | StmtKind::AsyncFunctionDef { body, .. } =&gt; {
-            current_parent.push(stmt_clone);
+        Stmt::While(r#while) =&gt; {
             get_functions_recurisve(
-                body,
+                r#while.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#while.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::For(r#for) =&gt; {
+            get_functions_recurisve(
+                r#for.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#for.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::AsyncFor(r#for) =&gt; {
+            get_functions_recurisve(
+                r#for.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            get_functions_recurisve(
+                r#for.orelse,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+        }
+        Stmt::FunctionDef(function) =&gt; {
+            current_parent.push(function.clone().into());
+            get_functions_recurisve(
+                function.body,
                 map,
                 functions,
                 current_parent,
@@ -943,10 +1128,23 @@
             );
             current_parent.pop();
         }
-        StmtKind::ClassDef { body, .. } =&gt; {
-            current_class.push(stmt_clone);
+        Stmt::AsyncFunctionDef(function) =&gt; {
+            current_parent.push(function.clone().into());
             get_functions_recurisve(
-                body,
+                function.body,
+                map,
+                functions,
+                current_parent,
+                current_class,
+                lookup_name,
+            );
+            current_parent.pop();
+        }
+        Stmt::ClassDef(class) =&gt; {
+            current_class.push(class.clone());
+
+            get_functions_recurisve(
+                class.body,
                 map,
                 functions,
                 current_parent,
@@ -955,22 +1153,25 @@
             );
             current_class.pop();
         }
-        StmtKind::With { body, .. } | StmtKind::AsyncWith { body, .. } =&gt; get_functions_recurisve(
-            body,
+        Stmt::With(with) =&gt; get_functions_recurisve(
+            with.body,
             map,
             functions,
             current_parent,
             current_class,
             lookup_name,
         ),
-        StmtKind::Try {
-            body,
-            orelse,
-            finalbody,
-            ..
-        } =&gt; {
+        Stmt::AsyncWith(with) =&gt; get_functions_recurisve(
+            with.body,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        ),
+        Stmt::Try(r#try) =&gt; {
             get_functions_recurisve(
-                body,
+                r#try.body,
                 map,
                 functions,
                 current_parent,
@@ -978,7 +1179,7 @@
                 lookup_name,
             );
             get_functions_recurisve(
-                orelse,
+                r#try.orelse,
                 map,
                 functions,
                 current_parent,
@@ -986,7 +1187,7 @@
                 lookup_name,
             );
             get_functions_recurisve(
-                finalbody,
+                r#try.finalbody,
                 map,
                 functions,
                 current_parent,
@@ -1007,116 +1208,91 @@
         varkwargs: <span class="prelude-val">None</span>,
     };
     <span class="kw">for </span>arg <span class="kw">in </span>args.args {
+        <span class="kw">let </span>arg = arg.as_arg();
         parameters.args.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                <span class="kw">if let </span>ExprKind::Name { id, .. } = x.node {
-                    <span class="prelude-val">Some</span>(id)
-                } <span class="kw">else </span>{
-                    <span class="prelude-val">None
-                </span>}
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     <span class="kw">for </span>arg <span class="kw">in </span>args.kwonlyargs {
+        <span class="kw">let </span>arg = arg.as_arg();
         parameters.kwargs.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                <span class="kw">if let </span>ExprKind::Name { id, .. } = x.node {
-                    <span class="prelude-val">Some</span>(id)
-                } <span class="kw">else </span>{
-                    <span class="prelude-val">None
-                </span>}
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     <span class="kw">if let </span><span class="prelude-val">Some</span>(arg) = args.vararg {
         parameters.varargs = <span class="prelude-val">Some</span>(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                <span class="kw">if let </span>ExprKind::Name { id, .. } = x.node {
-                    <span class="prelude-val">Some</span>(id)
-                } <span class="kw">else </span>{
-                    <span class="prelude-val">None
-                </span>}
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     <span class="kw">if let </span><span class="prelude-val">Some</span>(arg) = args.kwarg {
         parameters.varkwargs = <span class="prelude-val">Some</span>(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                <span class="kw">if let </span>ExprKind::Name { id, .. } = x.node {
-                    <span class="prelude-val">Some</span>(id)
-                } <span class="kw">else </span>{
-                    <span class="prelude-val">None
-                </span>}
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
     <span class="kw">for </span>arg <span class="kw">in </span>args.posonlyargs {
+        <span class="kw">let </span>arg = arg.as_arg();
         parameters.posonlyargs.push(Param {
-            name: arg.node.arg,
-            r#type: arg.node.annotation.and_then(|x| {
-                <span class="kw">if let </span>ExprKind::Name { id, .. } = x.node {
-                    <span class="prelude-val">Some</span>(id)
-                } <span class="kw">else </span>{
-                    <span class="prelude-val">None
-                </span>}
-            }),
+            name: arg.arg.to_string(),
+            r#type: arg.type_comment.clone(),
         });
     }
 
     parameters
 }
 
-<span class="kw">fn </span>get_return_type(retr: <span class="prelude-ty">Option</span>&lt;Box&lt;Located&lt;ExprKind&gt;&gt;&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+<span class="kw">fn </span>get_return_type(retr: <span class="prelude-ty">Option</span>&lt;Box&lt;Expr&gt;&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
     <span class="kw">if let </span><span class="prelude-val">Some</span>(retr) = retr {
-        <span class="kw">if let </span>ExprKind::Name { <span class="kw-2">ref </span>id, .. } = retr.node {
-            <span class="kw">return </span><span class="prelude-val">Some</span>(id.to_string());
+        <span class="kw">if let </span>Expr::Name(id) = <span class="kw-2">*</span>retr {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(id.id.to_string());
         }
     }
     <span class="prelude-val">None
 </span>}
 <span class="attr">#[allow(dead_code)]
 </span><span class="comment">// keeping this here just in case
-</span><span class="kw">fn </span>get_decorator_list(decorator_list: <span class="kw-2">&amp;</span>[Located&lt;ExprKind&gt;]) -&gt; Vec&lt;(usize, String)&gt; {
+</span><span class="kw">fn </span>get_decorator_list(decorator_list: <span class="kw-2">&amp;</span>[Expr]) -&gt; Vec&lt;(usize, String)&gt; {
     decorator_list
         .iter()
         .map(located_expr_to_decorator)
         .collect::&lt;Vec&lt;(usize, String)&gt;&gt;()
 }
 
-<span class="kw">fn </span>located_expr_to_decorator(expr: <span class="kw-2">&amp;</span>Located&lt;ExprKind&gt;) -&gt; (usize, String) {
+<span class="kw">fn </span>located_expr_to_decorator(expr: <span class="kw-2">&amp;</span>Expr) -&gt; (usize, String) {
     (
-        expr.location.row(),
+        expr.location().row.to_usize(),
         <span class="macro">format!</span>(
             <span class="string">&quot;{}:{}decorator with {}&quot;</span>,
-            expr.location.row(),
-            <span class="macro">vec!</span>[<span class="string">&quot; &quot;</span>; expr.location.column()].join(<span class="string">&quot;&quot;</span>),
-            expr.node.name()
+            expr.location().row.to_usize(),
+            <span class="macro">vec!</span>[<span class="string">&quot; &quot;</span>; expr.location().column.to_usize()].join(<span class="string">&quot;&quot;</span>),
+            expr.python_name()
         ),
     )
 }
 
-<span class="kw">fn </span>get_located_expr_line(expr: <span class="kw-2">&amp;</span>Located&lt;ExprKind&gt;, file_contents: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+<span class="kw">fn </span>get_located_expr_line(expr: <span class="kw-2">&amp;</span>Expr, file_contents: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
     <span class="comment">// does not add line numbers to string
     </span>file_contents
         .lines()
-        .nth(expr.location.row() - <span class="number">1</span>)
+        .nth(expr.location().row.to_usize() - <span class="number">1</span>)
         .map(ToString::to_string)
 }
 
-<span class="kw">fn </span>get_decorator_list_new(
-    decorator_list: <span class="kw-2">&amp;</span>[Located&lt;ExprKind&gt;],
-    file_contents: <span class="kw-2">&amp;</span>str,
-) -&gt; Vec&lt;(usize, String)&gt; {
+<span class="kw">fn </span>get_decorator_list_new(decorator_list: <span class="kw-2">&amp;</span>[Expr], file_contents: <span class="kw-2">&amp;</span>str) -&gt; Vec&lt;(usize, String)&gt; {
     decorator_list
         .iter()
         .map(|x| {
             get_located_expr_line(x, file_contents).map_or_else(
                 || located_expr_to_decorator(x),
-                |dec| (x.location.row(), <span class="kw">super</span>::make_lined(<span class="kw-2">&amp;</span>dec, x.location.row())),
+                |dec| {
+                    (
+                        x.location().row.to_usize(),
+                        <span class="kw">super</span>::make_lined(<span class="kw-2">&amp;</span>dec, x.location().row.to_usize()),
+                    )
+                },
             )
         })
         .collect::&lt;Vec&lt;(usize, String)&gt;&gt;()
