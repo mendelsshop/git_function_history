@@ -185,9 +185,8 @@ pub(crate) fn find_function_in_file(
                             lines: (start, end),
                             decorators,
                         });
-                    } 
-                        None
-                    
+                    }
+                    None
                 })
                 .collect::<Vec<PythonClass>>();
             let parent = func
@@ -304,7 +303,7 @@ impl FunctionDef {
         }
     }
 
-   const fn args(&self) -> &ast::located::Arguments {
+    const fn args(&self) -> &ast::located::Arguments {
         match self {
             Self::Normal(n) => &n.args,
             Self::Async(a) => &a.args,
