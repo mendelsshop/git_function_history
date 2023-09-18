@@ -6,7 +6,7 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           
           rustup toolchain install nightly
@@ -22,7 +22,7 @@ jobs:
   # test-clang: 
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v3
+  #     - uses: actions/checkout@v4
   #     - name: setup rust
   #       uses: dtolnay/rust-toolchain@stable
   #     - name: test
@@ -32,7 +32,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
       - name: test

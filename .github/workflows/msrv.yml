@@ -14,12 +14,12 @@ jobs:
       fail-fast: false
     container: mendelrubin/cargo-msrv:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: remove Cargo.toml so cargo-msrv doesn't find it
         run: |
           rm Cargo.toml
           ls -l
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get MSRV and create badge
         
         id: get-msrv

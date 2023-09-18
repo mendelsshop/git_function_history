@@ -15,7 +15,7 @@ jobs:
         crate: [git_function_history, git-function-history-gui, cargo-function-history, function_history_backend_thread]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: setup rust
         uses: dtolnay/rust-toolchain@stable
       - run: |
