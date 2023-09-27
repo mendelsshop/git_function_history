@@ -6,3 +6,4 @@ members = [
     "function_history_backend_thread",
     "enum_stuff"
 ]
+resolver = "2"
