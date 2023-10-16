@@ -102,8 +102,7 @@ fn find_function_recurse(
                         .lines()
                         .enumerate()
                         .filter(|line| line.0 >= lines.0 - 1 && line.0 < lines.1)
-                        .map(|line| format!("{}\n", line.1))
-                        .collect::<String>();
+                        .fold(String::new(), |acc, current| acc + current.1 + "\n");
                     let new_fn = UMPLFunction {
                         lines,
                         name: fns.name.to_string(),
@@ -161,8 +160,7 @@ fn find_function_recurse(
                         .lines()
                         .enumerate()
                         .filter(|line| line.0 >= lines.0 - 1 && line.0 <= top_end)
-                        .map(|line| format!("{}\n", line.1))
-                        .collect::<String>();
+                        .fold(String::new(), |acc, current| acc + current.1 + "\n");
                     let pfn = UMPLParentFunction {
                         lines,
                         name: fns.name.to_string(),

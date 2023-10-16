@@ -15,7 +15,7 @@ use std::{collections::HashMap, fmt};
 
 use crate::{impl_function_trait, UnwrapToError};
 
-// TODO: cleanup adapting from rp2 tp rp3
+// TODO: cleanup adapting from rp2 to rp3
 
 use super::FunctionTrait;
 
@@ -326,6 +326,8 @@ fn get_functions(
     current_class: &mut Vec<StmtClassDef>,
     lookup_name: &str,
 ) {
+    // we create a list of blocks to be processed
+    let mut blocks = Vec::new();
     match stmt {
         Stmt::FunctionDef(function) if function.name.to_string() == lookup_name => {
             if function.end_location().is_some() {
@@ -346,77 +348,18 @@ fn get_functions(
             }
         }
         Stmt::If(r#if) => {
-            get_functions_recurisve(
-                r#if.body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#if.orelse,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
+            blocks.extend([r#if.body, r#if.orelse]);
         }
         Stmt::While(r#while) => {
-            get_functions_recurisve(
-                r#while.body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#while.orelse,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
+            blocks.extend([r#while.body, r#while.orelse]);
         }
         Stmt::For(r#for) => {
-            get_functions_recurisve(
-                r#for.body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#for.orelse,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
+            blocks.extend([r#for.body, r#for.orelse]);
         }
         Stmt::AsyncFor(r#for) => {
-            get_functions_recurisve(
-                r#for.body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#for.orelse,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
+            blocks.extend([r#for.body, r#for.orelse]);
         }
+        // we do functions/classes not through blocks as they tell us if a function is nested in a class/function
         Stmt::FunctionDef(function) => {
             current_parent.push(function.clone().into());
             get_functions_recurisve(
@@ -443,7 +386,6 @@ fn get_functions(
         }
         Stmt::ClassDef(class) => {
             current_class.push(class.clone());
-
             get_functions_recurisve(
                 class.body,
                 map,
@@ -454,49 +396,26 @@ fn get_functions(
             );
             current_class.pop();
         }
-        Stmt::With(with) => get_functions_recurisve(
-            with.body,
-            map,
-            functions,
-            current_parent,
-            current_class,
-            lookup_name,
-        ),
-        Stmt::AsyncWith(with) => get_functions_recurisve(
-            with.body,
-            map,
-            functions,
-            current_parent,
-            current_class,
-            lookup_name,
-        ),
+        Stmt::With(with) => {
+            blocks.push(with.body);
+        }
+        Stmt::AsyncWith(with) => {
+            blocks.push(with.body);
+        }
         Stmt::Try(r#try) => {
-            get_functions_recurisve(
-                r#try.body,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#try.orelse,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
-            get_functions_recurisve(
-                r#try.finalbody,
-                map,
-                functions,
-                current_parent,
-                current_class,
-                lookup_name,
-            );
+            blocks.extend([r#try.body, r#try.orelse, r#try.finalbody]);
         }
         _ => {}
+    };
+    for block in blocks {
+        get_functions_recurisve(
+            block,
+            map,
+            functions,
+            current_parent,
+            current_class,
+            lookup_name,
+        );
     }
 }
 // TODO save arg.defaults & arg.kwdefaults and attempt to map them to the write parameters

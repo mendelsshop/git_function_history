@@ -118,9 +118,9 @@ impl RustParentFunction {
         map.insert("lifetime generics".to_string(), self.lifetime.join(","));
         map.insert("attributes".to_string(), self.attributes.join(","));
         map.insert("doc comments".to_string(), self.doc_comments.join(","));
-        self.return_type.as_ref().map_or((), |return_type| {
+        if let Some(return_type) = &self.return_type {
             map.insert("return type".to_string(), return_type.clone());
-        });
+        }
         map
     }
 }
@@ -584,24 +584,31 @@ impl RustFilter {
 
 impl FunctionTrait for RustFunction {
     fn get_tops(&self) -> Vec<(String, usize)> {
-        let mut tops = Vec::new();
-        self.block.as_ref().map_or((), |block| {
-            tops.push((block.top.clone(), block.lines.0));
-        });
-        for parent in &self.function {
-            tops.push((parent.top.clone(), parent.lines.0));
-        }
+        let mut tops = self
+            .block
+            .as_ref()
+            .map_or(vec![], |block| vec![(block.top.clone(), block.lines.0)]);
+        tops.extend(
+            self.function
+                .iter()
+                .cloned()
+                .map(|parent| (parent.top.clone(), parent.lines.0)),
+        );
+
         tops
     }
 
     fn get_bottoms(&self) -> Vec<(String, usize)> {
-        let mut bottoms = Vec::new();
-        self.block.as_ref().map_or((), |block| {
-            bottoms.push((block.bottom.clone(), block.lines.1));
-        });
-        for parent in &self.function {
-            bottoms.push((parent.bottom.clone(), parent.lines.1));
-        }
+        let mut bottoms = self
+            .block
+            .as_ref()
+            .map_or(vec![], |block| vec![(block.bottom.clone(), block.lines.1)]);
+        bottoms.extend(
+            self.function
+                .iter()
+                .cloned()
+                .map(|parent| (parent.bottom.clone(), parent.lines.1)),
+        );
         bottoms
     }
 

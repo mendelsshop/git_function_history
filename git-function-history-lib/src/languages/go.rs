@@ -183,7 +183,7 @@ pub(crate) fn find_function_in_file(
         })
         .collect::<Vec<_>>();
     if parsed.is_empty() {
-        return Err(format!("could not find function {name} in file"))?;
+        return Err(format!("could not find function {name} in file"));
     }
 
     Ok(parsed)

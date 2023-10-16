@@ -133,7 +133,7 @@ pub(crate) fn find_function_in_file(
     let parsed = parser.do_parse();
     for d in parsed.diagnostics {
         if d.is_error() {
-            return Err(d.message.render())?;
+            return Err(d.message.render());
         }
     }
     let ast = parsed.ast.unwrap_to_error("Failed to parse file")?;
