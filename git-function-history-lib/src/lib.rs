@@ -269,8 +269,8 @@ pub fn get_function_history(
             }
         });
 
-        // todo use itertools to split into vec of oks and errs
-        // and report some of errors if no oks and if no oks and errs report no history found
+    // todo use itertools to split into vec of oks and errs
+    // and report some of errors if no oks and if no oks and errs report no history found
     let commits = commits
         .filter_map(|i| {
             let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file);
