@@ -4,7 +4,7 @@ version = "0.7.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-lib"
-keywords = ["git_function_history", "git", "function", ]
+keywords = ["git_function_history", "git", "function"]
 categories = ["tools", "git"]
 description = "show function history from git"
 rust-version = "1.70.0"
@@ -12,7 +12,11 @@ rust-version = "1.70.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["parallel", "cache"]
-parallel = ["dep:rayon", "gix-features/parallel", "gix-features/fs-walkdir-parallel"]
+parallel = [
+    "dep:rayon",
+    "gix-features/parallel",
+    "gix-features/fs-walkdir-parallel",
+]
 # c_lang = []
 # unstable = ["dep:gosyn", "dep:javaparser"]
 cache = ["dep:cached"]
@@ -27,9 +31,16 @@ gosyn = "0.2.5"
 # can't be published b/c git dependency
 # javaparser = {git = "https://github.com/tanin47/javaparser.rs", optional = true}
 cfg-if = "1.0.0"
-cached = {version = "0.46.0", optional = true}
+cached = { version = "0.46.0", optional = true }
 # git-index-performanc
-gix = { version = "0.55.2", default-features = false, features = ["max-performance-safe", "revision"] }
-gix-features = { version = "0.36.0", features = ["zlib", "once_cell" ,"walkdir"] }
+gix = { version = "0.55.2", default-features = false, features = [
+    "max-performance-safe",
+    "revision",
+] }
+gix-features = { version = "0.36.0", features = [
+    "zlib",
+    "once_cell",
+    "walkdir",
+] }
 umpl = "1.1.1"
-enum_stuff = {path = "../enum_stuff"}
+enum_stuff = { version = "0.1.0", path = "../enum_stuff" }
