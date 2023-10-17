@@ -17,7 +17,7 @@ parallel = ["git_function_history/parallel", "function_history_backend_thread/pa
 # c_lang = ["function_history_backend_thread/c_lang", "git_function_history/c_lang"]
 
 [dependencies]
-git_function_history = { path = "../git-function-history-lib", version = "0.7.0", default-features = false}
+git_function_history = { path = "../git-function-history-lib", version = "0.7.1", default-features = false}
 ratatui = { version = "0.23.0", features = ["crossterm"], default-features = false }
 crossterm = "0.27.0"
 eyre = "0.6.8"
