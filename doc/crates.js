@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["cargo_function_history","enum_stuff","function_history_backend_thread","git_function_history","git_function_history_gui"];
+window.ALL_CRATES = ["cargo_function_history","function_history_backend_thread","git_function_history","git_function_history_gui","git_function_history_proc_macro"];
