@@ -11,3 +11,4 @@
 * [function_history_backend_thread](https://github.com/mendelsshop/git_function_history/tree/main/function_history_backend_thread) - a threading middleware for the library (used by the GUI and TUI)
 * [cargo-function-history](https://github.com/mendelsshop/git_function_history/tree/main/cargo-function-history) - a cargo subcommand that uses the library (TUI)
 * [git-function-history-gui](https://github.com/mendelsshop/git_function_history/tree/main/git-function-history-gui) - the GUI frontend
+* [git-function-history-proc-macro](https://github.com/mendelsshop/git_function_history/tree/main/git_function_history-proc-macro) - proc macro for the library
