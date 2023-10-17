@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 use crate::UnwrapToError;
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 
 use lib_ruby_parser::{
     nodes::{Class, Def},

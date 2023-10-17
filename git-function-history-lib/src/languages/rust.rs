@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt};
 
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 use ra_ap_syntax::{
     ast::{self, Fn, HasDocComments, HasGenericParams, HasName},
     AstNode, SourceFile, SyntaxKind,

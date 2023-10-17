@@ -40,7 +40,7 @@ macro_rules! get_item_from_oid_option {
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
 
 #[cfg(feature = "parallel")]

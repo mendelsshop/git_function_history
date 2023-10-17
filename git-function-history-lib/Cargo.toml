@@ -43,4 +43,4 @@ gix-features = { version = "0.36.0", features = [
     "walkdir",
 ] }
 umpl = "1.1.1"
-enum_stuff = { version = "0.1.0", path = "../enum_stuff" }
+git_function_history-proc-macro = { version = "0.1.0", path = "../git_function_history-proc-macro" }

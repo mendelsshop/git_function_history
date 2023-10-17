@@ -1,6 +1,6 @@
 use super::FunctionTrait;
 use crate::impl_function_trait;
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Clone)]

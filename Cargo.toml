@@ -4,6 +4,6 @@ members = [
     "cargo-function-history",
     "git-function-history-gui",
     "function_history_backend_thread",
-    "enum_stuff"
+    "git_function_history-proc-macro"
 ]
 resolver = "2"

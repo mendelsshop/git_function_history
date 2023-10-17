@@ -3,6 +3,11 @@ use proc_macro2::Span;
 use quote::{quote_spanned, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
 
+/// Allows the type that derives this macro, to have a method from_str
+/// that takes a list of strings and returns the type.
+///
+/// use `[enumstuff(skip)]` attribute on a variant or field to
+/// make it not able to be parsed by `from_str`.
 #[proc_macro_derive(enumstuff, attributes(enumstuff))]
 pub fn enum_stuff(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);

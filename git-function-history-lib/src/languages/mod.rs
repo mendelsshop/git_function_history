@@ -10,7 +10,7 @@ use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl:
 // #[cfg(feature = "c_lang")]
 // use self::c::CFunction;
 
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 use go::GoFunction;
 
 #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]

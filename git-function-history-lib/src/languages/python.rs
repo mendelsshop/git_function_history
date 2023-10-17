@@ -1,4 +1,4 @@
-use enum_stuff::enumstuff;
+use git_function_history_proc_macro::enumstuff;
 use rustpython_parser::{
     ast::{
         self,
