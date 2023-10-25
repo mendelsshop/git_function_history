@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/ui.rs`."><title>ui.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-deb46770fd761b69.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (49691b1f7 2023-10-16)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f34af1a0ee6bacd.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/ui.rs`."><title>ui.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (df871fbf0 2023-10-24)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f34af1a0ee6bacd.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -152,44 +152,10 @@
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
 <a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
-<a href="#161" id="161">161</a>
-<a href="#162" id="162">162</a>
-<a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a>
-<a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
-<a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::BTreeMap;
 
 <span class="kw">use </span>function_history_backend_thread::types::Status;
 <span class="kw">use </span>ratatui::{
-    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
@@ -199,12 +165,9 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::app::App;
 
-<span class="kw">use super</span>::{state::AppState, CommandResult};
+<span class="kw">use </span><span class="kw">super</span>::CommandResult;
 
-<span class="kw">pub fn </span>draw&lt;B&gt;(rect: <span class="kw-2">&amp;mut </span>Frame&lt;B&gt;, app: <span class="kw-2">&amp;mut </span>App)
-<span class="kw">where
-    </span>B: Backend,
-{
+<span class="kw">pub fn </span>draw(rect: <span class="kw-2">&amp;mut </span>Frame, app: <span class="kw-2">&amp;mut </span>App) {
     <span class="kw">let </span>size = rect.size();
     <span class="comment">// check if we have enough space to draw
     </span><span class="kw">if </span>size.width &lt; <span class="number">10 </span>|| size.height &lt; <span class="number">10 </span>{
@@ -244,39 +207,10 @@
         <span class="kw-2">*</span>body_chunks.get(<span class="number">0</span>).expect(<span class="string">&quot;could not get area to draw&quot;</span>),
         rect,
     );
-    <span class="kw">let </span>width = body_chunks
-        .get(<span class="number">0</span>)
-        .expect(<span class="string">&quot;could not get area to draw&quot;</span>)
-        .width
-        .max(<span class="number">3</span>)
-        - <span class="number">3</span>; <span class="comment">// keep 2 for borders and 1 for cursor
-    </span><span class="kw">let </span>scroll = (app.input_buffer.cursor() <span class="kw">as </span>u16).max(width) - width;
-    <span class="kw">let </span>input = Paragraph::new(app.input_buffer.value())
-        .style(<span class="kw">match </span>app.state() {
-            AppState::Editing =&gt; Style::default().fg(Color::Yellow),
-            <span class="kw">_ </span>=&gt; Style::default(),
-        })
-        .block(
-            Block::default()
-                <span class="comment">// .borders(Borders::TOP)
-                </span>.borders(Borders::BOTTOM)
-                .style(Style::default().fg(Color::White)),
-        )
-        .scroll((<span class="number">0</span>, scroll));
     rect.render_widget(
-        input,
+        app.input_buffer.widget(),
         <span class="kw-2">*</span>body_chunks.get(<span class="number">1</span>).expect(<span class="string">&quot;could not get area to draw&quot;</span>),
     );
-    <span class="kw">if let </span>AppState::Editing = app.state() {
-        <span class="comment">// AppState::Editing =&gt; {
-        </span>rect.set_cursor(
-            <span class="comment">// Put cursor past the end of the input text
-            </span>body_chunks.get(<span class="number">1</span>).expect(<span class="string">&quot;could not get area to draw&quot;</span>).x
-                + (app.input_buffer.cursor() <span class="kw">as </span>u16).min(width),
-            <span class="comment">// Move one line down, from the border to the input line
-            </span>body_chunks.get(<span class="number">1</span>).expect(<span class="string">&quot;could not get area to draw&quot;</span>).y,
-        )
-    }
     <span class="kw">let </span>status = draw_status(app.status());
     rect.render_widget(
         status,
@@ -284,7 +218,7 @@
     );
 }
 
-<span class="kw">fn </span>draw_body&lt;B: Backend&gt;(app: <span class="kw-2">&amp;mut </span>App, <span class="kw-2">mut </span>pos: Rect, frame: <span class="kw-2">&amp;mut </span>Frame&lt;B&gt;) {
+<span class="kw">fn </span>draw_body(app: <span class="kw-2">&amp;mut </span>App, <span class="kw-2">mut </span>pos: Rect, frame: <span class="kw-2">&amp;mut </span>Frame) {
     <span class="kw">let </span>top = <span class="kw">match </span><span class="kw-2">&amp;</span>app.cmd_output {
         CommandResult::History(history) =&gt; {
             <span class="kw">let </span>metadata = history.get_metadata();
@@ -324,7 +258,7 @@
             .map(|s| Line::from(<span class="macro">format!</span>(<span class="string">&quot;{s}\n&quot;</span>)))
             .collect(),
     };
-    app.scroll_state = app.scroll_state.content_length(tick_text.len() <span class="kw">as </span>u16);
+    app.scroll_state = app.scroll_state.content_length(tick_text.len());
     <span class="kw">let </span>body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .scroll(app.scroll_pos)
