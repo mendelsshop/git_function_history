@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [3.1.0] - 2023-10-17
 
 ### Miscellaneous Tasks
 
