@@ -8,14 +8,18 @@ use git_function_history::{
     languages::{Language, LanguageFilter},
     FileFilterType, Filter,
 };
-use ratatui::widgets::ScrollbarState;
+use ratatui::{
+    style::Modifier,
+    widgets::{Block, Borders, ScrollbarState},
+};
 use std::{
     fs,
     io::{Read, Write},
     sync::mpsc,
     time::Duration,
 };
-use tui_input::InputRequest;
+use tui_textarea::TextArea;
+// use tui_input::InputRequest;
 pub mod actions;
 pub mod state;
 pub mod ui;
@@ -27,10 +31,10 @@ pub enum AppReturn {
 }
 
 /// The main application, containing the state
-pub struct App {
+pub struct App<'a> {
     actions: Actions,
     pub state: AppState,
-    pub input_buffer: tui_input::Input,
+    pub input_buffer: TextArea<'a>,
     cmd_output: CommandResult,
     pub scroll_pos: (u16, u16),
     pub scroll_state: ScrollbarState,
@@ -54,7 +58,7 @@ macro_rules! unwrap_set_error {
         }
     }; // does the same thing but takes a closure to call when is some
 }
-impl App {
+impl App<'_> {
     #[allow(clippy::new_without_default)]
     pub fn new(
         channels: (
@@ -74,7 +78,6 @@ impl App {
         file.read_to_string(&mut history)
             .expect("Failed to read history file");
         let history: Vec<String> = history.split('\n').map(|s| s.to_string()).collect();
-        // let history_index = history.len();
         let actions = vec![
             Action::Quit,
             Action::TextEdit,
@@ -90,7 +93,16 @@ impl App {
         Self {
             actions,
             state,
-            input_buffer: tui_input::Input::default(),
+            input_buffer: {
+                let mut area = TextArea::default();
+                area.set_cursor_line_style(
+                    area.cursor_line_style()
+                        .remove_modifier(Modifier::UNDERLINED),
+                );
+                area.set_cursor_style(area.cursor_style().remove_modifier(Modifier::REVERSED));
+                area.set_block(Block::default().borders(Borders::BOTTOM));
+                area
+            },
             cmd_output: CommandResult::None,
             scroll_pos: (0, 0),
             body_height: 0,
@@ -113,6 +125,11 @@ impl App {
                 Action::TextEdit => {
                     log::info!("change to edit mode");
                     self.state = AppState::Editing;
+                    let style = self
+                        .input_buffer
+                        .cursor_style()
+                        .add_modifier(Modifier::REVERSED);
+                    self.input_buffer.set_cursor_style(style);
                     AppReturn::Continue
                 }
                 Action::ScrollUp => {
@@ -120,7 +137,7 @@ impl App {
                         return AppReturn::Continue;
                     }
                     self.scroll_pos.0 -= 1;
-                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0);
+                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0.into());
                     AppReturn::Continue
                 }
                 Action::ScrollDown => {
@@ -132,7 +149,7 @@ impl App {
                     }
 
                     self.scroll_pos.0 += 1;
-                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0);
+                    self.scroll_state = self.scroll_state.position(self.scroll_pos.0.into());
                     AppReturn::Continue
                 }
                 Action::BackCommit => {
@@ -174,7 +191,7 @@ impl App {
     }
 
     pub fn input_buffer(&self) -> String {
-        self.input_buffer.to_string()
+        self.input_buffer.lines()[0].clone()
     }
 
     pub fn cmd_output(&self) -> &CommandResult {
@@ -182,7 +199,7 @@ impl App {
     }
 
     pub fn run_command(&mut self) {
-        let command = self.parse_command(&self.input_buffer.to_string());
+        let command = self.parse_command(&self.input_buffer());
         if let Some(command) = command {
             self.channels
                 .0
@@ -457,7 +474,7 @@ impl App {
         }
     }
     pub fn reset_and_save(&mut self) {
-        let mut input = self.input_buffer.to_string();
+        let mut input: String = self.input_buffer();
         if !input.is_empty() {
             let mut file = fs::OpenOptions::new()
                 .append(true)
@@ -479,7 +496,9 @@ impl App {
                 self.history.push(input.trim().to_string());
             }
         }
-        self.input_buffer.reset();
+        self.input_buffer
+            .move_cursor(tui_textarea::CursorMove::Head);
+        self.input_buffer.delete_line_by_end();
     }
 
     pub fn scroll_up(&mut self) {
@@ -488,10 +507,7 @@ impl App {
             Some(string) => string.as_str(),
             None => "",
         };
-        for character in strs.chars() {
-            let req = InputRequest::InsertChar(character);
-            self.input_buffer.handle(req);
-        }
+        self.input_buffer.insert_str(strs);
     }
 
     pub fn scroll_down(&mut self) {
@@ -503,9 +519,6 @@ impl App {
             Some(string) => string.as_str(),
             None => "",
         };
-        for character in strs.chars() {
-            let req = InputRequest::InsertChar(character);
-            self.input_buffer.handle(req);
-        }
+        self.input_buffer.insert_str(strs);
     }
 }

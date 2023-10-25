@@ -540,6 +540,7 @@ fn find_function_in_file_with_commit(
     name: &str,
     langs: Language,
 ) -> Result<FileType, String> {
+    log::trace!("parsing file '{}' ", file_path);
     let file = match langs {
         Language::Rust => {
             let functions = rust::find_function_in_file(fc, name)?;

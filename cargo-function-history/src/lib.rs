@@ -4,8 +4,7 @@ use app::{state::AppState, ui, App, AppReturn};
 use crossterm::event::{self, Event, KeyCode};
 use eyre::Result;
 use keys::Key;
-use ratatui::{backend::CrosstermBackend, Terminal};
-use tui_input::backend::crossterm as input_backend;
+use ratatui::{backend::CrosstermBackend, style::Modifier, Terminal};
 
 pub mod app;
 pub mod keys;
@@ -45,9 +44,13 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                             app.reset_and_save()
                         }
                         KeyCode::Esc => {
+                            let style = app
+                                .input_buffer
+                                .cursor_style()
+                                .remove_modifier(Modifier::REVERSED);
+                            app.input_buffer.set_cursor_style(style);
                             app.state = AppState::Looking;
                         }
-                        KeyCode::Delete => app.input_buffer.reset(),
                         KeyCode::Up => {
                             app.reset_and_save();
                             app.scroll_up();
@@ -57,8 +60,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
                             app.scroll_down();
                         }
                         _ => {
-                            input_backend::to_input_request(&Event::Key(key))
-                                .and_then(|req| app.input_buffer.handle(req));
+                            app.input_buffer.input(key);
                         }
                     },
                     _ => {

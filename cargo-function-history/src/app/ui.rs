@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use function_history_backend_thread::types::Status;
 use ratatui::{
-    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
@@ -12,12 +11,9 @@ use ratatui::{
 
 use crate::app::App;
 
-use super::{state::AppState, CommandResult};
+use super::CommandResult;
 
-pub fn draw<B>(rect: &mut Frame<B>, app: &mut App)
-where
-    B: Backend,
-{
+pub fn draw(rect: &mut Frame, app: &mut App) {
     let size = rect.size();
     // check if we have enough space to draw
     if size.width < 10 || size.height < 10 {
@@ -57,39 +53,10 @@ where
         *body_chunks.get(0).expect("could not get area to draw"),
         rect,
     );
-    let width = body_chunks
-        .get(0)
-        .expect("could not get area to draw")
-        .width
-        .max(3)
-        - 3; // keep 2 for borders and 1 for cursor
-    let scroll = (app.input_buffer.cursor() as u16).max(width) - width;
-    let input = Paragraph::new(app.input_buffer.value())
-        .style(match app.state() {
-            AppState::Editing => Style::default().fg(Color::Yellow),
-            _ => Style::default(),
-        })
-        .block(
-            Block::default()
-                // .borders(Borders::TOP)
-                .borders(Borders::BOTTOM)
-                .style(Style::default().fg(Color::White)),
-        )
-        .scroll((0, scroll));
     rect.render_widget(
-        input,
+        app.input_buffer.widget(),
         *body_chunks.get(1).expect("could not get area to draw"),
     );
-    if let AppState::Editing = app.state() {
-        // AppState::Editing => {
-        rect.set_cursor(
-            // Put cursor past the end of the input text
-            body_chunks.get(1).expect("could not get area to draw").x
-                + (app.input_buffer.cursor() as u16).min(width),
-            // Move one line down, from the border to the input line
-            body_chunks.get(1).expect("could not get area to draw").y,
-        )
-    }
     let status = draw_status(app.status());
     rect.render_widget(
         status,
@@ -97,7 +64,7 @@ where
     );
 }
 
-fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
+fn draw_body(app: &mut App, mut pos: Rect, frame: &mut Frame) {
     let top = match &app.cmd_output {
         CommandResult::History(history) => {
             let metadata = history.get_metadata();
@@ -137,7 +104,7 @@ fn draw_body<B: Backend>(app: &mut App, mut pos: Rect, frame: &mut Frame<B>) {
             .map(|s| Line::from(format!("{s}\n")))
             .collect(),
     };
-    app.scroll_state = app.scroll_state.content_length(tick_text.len() as u16);
+    app.scroll_state = app.scroll_state.content_length(tick_text.len());
     let body = Paragraph::new(tick_text)
         .style(Style::default().fg(Color::LightCyan))
         .scroll(app.scroll_pos)
