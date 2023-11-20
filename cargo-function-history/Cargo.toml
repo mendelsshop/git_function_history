@@ -25,4 +25,4 @@ dirs = "5.0.1"
 simple_file_logger = "0.3.1"
 log = "0.4.20"
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.3.1", default-features = false}
-tui-textarea = "0.3.0"
+tui-textarea = "0.4.0"
