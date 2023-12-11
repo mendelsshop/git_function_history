@@ -33,7 +33,7 @@ gosyn = "0.2.5"
 cfg-if = "1.0.0"
 cached = { version = "0.46.0", optional = true }
 # git-index-performanc
-gix = { version = "0.55.2", default-features = false, features = [
+gix = { version = "0.56.0", default-features = false, features = [
     "max-performance-safe",
     "revision",
 ] }
