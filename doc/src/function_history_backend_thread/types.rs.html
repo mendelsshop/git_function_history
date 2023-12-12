@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function_history_backend_thread/src/types.rs`."><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_history_backend_thread" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function_history_backend_thread/src/types.rs`."><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_history_backend_thread" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -201,11 +201,11 @@
 }
 
 <span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>Command {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; std::fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
-            Command::Filter =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;filter&quot;</span>),
-            Command::List =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;list&quot;</span>),
-            Command::Search =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;search&quot;</span>),
+            Command::Filter =&gt; <span class="macro">write!</span>(f, <span class="string">"filter"</span>),
+            Command::List =&gt; <span class="macro">write!</span>(f, <span class="string">"list"</span>),
+            Command::Search =&gt; <span class="macro">write!</span>(f, <span class="string">"search"</span>),
         }
     }
 }
@@ -218,10 +218,10 @@
 }
 
 <span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>ListType {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; std::fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
-            ListType::Dates =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;dates&quot;</span>),
-            ListType::Commits =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;commits&quot;</span>),
+            ListType::Dates =&gt; <span class="macro">write!</span>(f, <span class="string">"dates"</span>),
+            ListType::Commits =&gt; <span class="macro">write!</span>(f, <span class="string">"commits"</span>),
         }
     }
 }
@@ -237,7 +237,7 @@
 <span class="kw">impl </span>CommandResult {
     <span class="kw">pub fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
         <span class="kw">match </span><span class="self">self </span>{
-            CommandResult::History(history) =&gt; history.to_string().split(<span class="string">&#39;\n&#39;</span>).count(),
+            CommandResult::History(history) =&gt; history.to_string().split(<span class="string">'\n'</span>).count(),
             CommandResult::String(str) =&gt; str.len(),
             CommandResult::None =&gt; <span class="number">0</span>,
         }
@@ -245,19 +245,19 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>CommandResult {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
             CommandResult::History(history) =&gt; {
-                <span class="macro">write!</span>(f, <span class="string">&quot;{history}&quot;</span>)
+                <span class="macro">write!</span>(f, <span class="string">"{history}"</span>)
             }
             CommandResult::String(string) =&gt; {
                 <span class="kw">for </span>line <span class="kw">in </span>string {
-                    <span class="macro">writeln!</span>(f, <span class="string">&quot;{line}&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="macro">writeln!</span>(f, <span class="string">"{line}"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="prelude-val">Ok</span>(())
             }
             CommandResult::None =&gt; {
-                <span class="macro">write!</span>(f, <span class="string">&quot;Please enter some commands to search for a function&quot;</span>,)
+                <span class="macro">write!</span>(f, <span class="string">"Please enter some commands to search for a function"</span>,)
             }
         }
     }
@@ -270,15 +270,15 @@
     Loading,
 }
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>Status {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
             Status::Ok(s) =&gt; <span class="kw">match </span>s {
-                <span class="prelude-val">Some</span>(s) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Ok: {s}&quot;</span>),
-                <span class="prelude-val">None </span>=&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Ok&quot;</span>),
+                <span class="prelude-val">Some</span>(s) =&gt; <span class="macro">write!</span>(f, <span class="string">"Ok: {s}"</span>),
+                <span class="prelude-val">None </span>=&gt; <span class="macro">write!</span>(f, <span class="string">"Ok"</span>),
             },
-            Status::Error(s) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Err {s}&quot;</span>),
-            Status::Warning(s) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Warn {s}&quot;</span>),
-            Status::Loading =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Loading...&quot;</span>),
+            Status::Error(s) =&gt; <span class="macro">write!</span>(f, <span class="string">"Err {s}"</span>),
+            Status::Warning(s) =&gt; <span class="macro">write!</span>(f, <span class="string">"Warn {s}"</span>),
+            Status::Loading =&gt; <span class="macro">write!</span>(f, <span class="string">"Loading..."</span>),
         }
     }
 }
@@ -348,27 +348,27 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>HistoryFilterType {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
-            HistoryFilterType::Date(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;date&quot;</span>),
-            HistoryFilterType::DateRange(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;date range&quot;</span>),
-            HistoryFilterType::FunctionInLines(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;function in lines&quot;</span>),
-            HistoryFilterType::CommitHash(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;commit hash&quot;</span>),
-            HistoryFilterType::FileAbsolute(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;file absolute&quot;</span>),
-            HistoryFilterType::FileRelative(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;file relative&quot;</span>),
-            HistoryFilterType::Directory(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;directory&quot;</span>),
+            HistoryFilterType::Date(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"date"</span>),
+            HistoryFilterType::DateRange(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"date range"</span>),
+            HistoryFilterType::FunctionInLines(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"function in lines"</span>),
+            HistoryFilterType::CommitHash(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"commit hash"</span>),
+            HistoryFilterType::FileAbsolute(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"file absolute"</span>),
+            HistoryFilterType::FileRelative(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"file relative"</span>),
+            HistoryFilterType::Directory(<span class="kw">_</span>) =&gt; <span class="macro">write!</span>(f, <span class="string">"directory"</span>),
             HistoryFilterType::PL(pl) =&gt; <span class="macro">write!</span>(
                 f,
-                <span class="string">&quot;{}&quot;</span>,
+                <span class="string">"{}"</span>,
                 <span class="kw">match </span>pl {
-                    LanguageFilter::Python(<span class="kw">_</span>) =&gt; <span class="string">&quot;python&quot;</span>,
-                    LanguageFilter::Rust(<span class="kw">_</span>) =&gt; <span class="string">&quot;rust&quot;</span>,
-                    LanguageFilter::Ruby(<span class="kw">_</span>) =&gt; <span class="string">&quot;ruby&quot;</span>,
-                    LanguageFilter::UMPL(<span class="kw">_</span>) =&gt; <span class="string">&quot;umpl&quot;</span>,
-                    LanguageFilter::Go(<span class="kw">_</span>) =&gt; <span class="string">&quot;go&quot;</span>,
+                    LanguageFilter::Python(<span class="kw">_</span>) =&gt; <span class="string">"python"</span>,
+                    LanguageFilter::Rust(<span class="kw">_</span>) =&gt; <span class="string">"rust"</span>,
+                    LanguageFilter::Ruby(<span class="kw">_</span>) =&gt; <span class="string">"ruby"</span>,
+                    LanguageFilter::UMPL(<span class="kw">_</span>) =&gt; <span class="string">"umpl"</span>,
+                    LanguageFilter::Go(<span class="kw">_</span>) =&gt; <span class="string">"go"</span>,
                 }
             ),
-            HistoryFilterType::None =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;none&quot;</span>),
+            HistoryFilterType::None =&gt; <span class="macro">write!</span>(f, <span class="string">"none"</span>),
         }
     }
 }

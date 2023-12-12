@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/actions.rs`."><title>actions.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `cargo-function-history/src/app/actions.rs`."><title>actions.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cargo_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -152,7 +152,7 @@
 
 <span class="kw">impl </span>Action {
     <span class="doccomment">/// All available actions
-    </span><span class="kw">pub fn </span>iterator() -&gt; Iter&lt;<span class="lifetime">&#39;static</span>, Action&gt; {
+    </span><span class="kw">pub fn </span>iterator() -&gt; Iter&lt;<span class="lifetime">'static</span>, Action&gt; {
         <span class="kw">static </span>ACTIONS: [Action; <span class="number">8</span>] = [
             Action::Quit,
             Action::TextEdit,
@@ -169,33 +169,33 @@
     <span class="doccomment">/// List of key associated to action
     </span><span class="kw">pub fn </span>keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[Key] {
         <span class="kw">match </span><span class="self">self </span>{
-            Action::Quit =&gt; <span class="kw-2">&amp;</span>[Key::Ctrl(<span class="string">&#39;c&#39;</span>), Key::Char(<span class="string">&#39;q&#39;</span>)],
-            Action::TextEdit =&gt; <span class="kw-2">&amp;</span>[Key::Char(<span class="string">&#39;:&#39;</span>), Key::Shift(<span class="string">&#39;:&#39;</span>)],
-            Action::ScrollUp =&gt; <span class="kw-2">&amp;</span>[Key::Up, Key::Char(<span class="string">&#39;k&#39;</span>)],
-            Action::ScrollDown =&gt; <span class="kw-2">&amp;</span>[Key::Down, Key::Char(<span class="string">&#39;j&#39;</span>)],
-            Action::BackCommit =&gt; <span class="kw-2">&amp;</span>[Key::Left, Key::Char(<span class="string">&#39;h&#39;</span>)],
-            Action::ForwardCommit =&gt; <span class="kw-2">&amp;</span>[Key::Right, Key::Char(<span class="string">&#39;l&#39;</span>)],
-            Action::BackFile =&gt; <span class="kw-2">&amp;</span>[Key::Shiftleft, Key::Char(<span class="string">&#39;H&#39;</span>), Key::Shift(<span class="string">&#39;h&#39;</span>)],
-            Action::ForwardFile =&gt; <span class="kw-2">&amp;</span>[Key::Shiftright, Key::Char(<span class="string">&#39;L&#39;</span>), Key::Shift(<span class="string">&#39;l&#39;</span>)],
+            Action::Quit =&gt; <span class="kw-2">&amp;</span>[Key::Ctrl(<span class="string">'c'</span>), Key::Char(<span class="string">'q'</span>)],
+            Action::TextEdit =&gt; <span class="kw-2">&amp;</span>[Key::Char(<span class="string">':'</span>), Key::Shift(<span class="string">':'</span>)],
+            Action::ScrollUp =&gt; <span class="kw-2">&amp;</span>[Key::Up, Key::Char(<span class="string">'k'</span>)],
+            Action::ScrollDown =&gt; <span class="kw-2">&amp;</span>[Key::Down, Key::Char(<span class="string">'j'</span>)],
+            Action::BackCommit =&gt; <span class="kw-2">&amp;</span>[Key::Left, Key::Char(<span class="string">'h'</span>)],
+            Action::ForwardCommit =&gt; <span class="kw-2">&amp;</span>[Key::Right, Key::Char(<span class="string">'l'</span>)],
+            Action::BackFile =&gt; <span class="kw-2">&amp;</span>[Key::Shiftleft, Key::Char(<span class="string">'H'</span>), Key::Shift(<span class="string">'h'</span>)],
+            Action::ForwardFile =&gt; <span class="kw-2">&amp;</span>[Key::Shiftright, Key::Char(<span class="string">'L'</span>), Key::Shift(<span class="string">'l'</span>)],
         }
     }
 }
 
 <span class="doccomment">/// Could display a user friendly short description of action
 </span><span class="kw">impl </span>Display <span class="kw">for </span>Action {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="macro">write!</span>(
             f,
-            <span class="string">&quot;{}&quot;</span>,
+            <span class="string">"{}"</span>,
             <span class="kw">match </span><span class="self">self </span>{
-                Action::Quit =&gt; <span class="string">&quot;Quit&quot;</span>,
-                Action::TextEdit =&gt; <span class="string">&quot;TextEdit&quot;</span>,
-                Action::ScrollUp =&gt; <span class="string">&quot;ScrollUp&quot;</span>,
-                Action::ScrollDown =&gt; <span class="string">&quot;ScrollDown&quot;</span>,
-                Action::BackCommit =&gt; <span class="string">&quot;BackCommit&quot;</span>,
-                Action::ForwardCommit =&gt; <span class="string">&quot;ForwardCommit&quot;</span>,
-                Action::BackFile =&gt; <span class="string">&quot;BackFile&quot;</span>,
-                Action::ForwardFile =&gt; <span class="string">&quot;ForwardFile&quot;</span>,
+                Action::Quit =&gt; <span class="string">"Quit"</span>,
+                Action::TextEdit =&gt; <span class="string">"TextEdit"</span>,
+                Action::ScrollUp =&gt; <span class="string">"ScrollUp"</span>,
+                Action::ScrollDown =&gt; <span class="string">"ScrollDown"</span>,
+                Action::BackCommit =&gt; <span class="string">"BackCommit"</span>,
+                Action::ForwardCommit =&gt; <span class="string">"ForwardCommit"</span>,
+                Action::BackFile =&gt; <span class="string">"BackFile"</span>,
+                Action::ForwardFile =&gt; <span class="string">"ForwardFile"</span>,
             }
         )
     }
@@ -208,7 +208,7 @@
 <span class="kw">impl </span>Actions {
     <span class="doccomment">/// Given a key, find the corresponding action
     </span><span class="kw">pub fn </span>find(<span class="kw-2">&amp;</span><span class="self">self</span>, key: Key) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Action&gt; {
-        <span class="macro">log::debug!</span>(<span class="string">&quot;{}&quot;</span>, key);
+        <span class="macro">log::debug!</span>(<span class="string">"{}"</span>, key);
         Action::iterator()
             .filter(|action| <span class="self">self</span>.<span class="number">0</span>.contains(action))
             .find(|action| action.keys().contains(<span class="kw-2">&amp;</span>key))
@@ -248,12 +248,12 @@
                     .iter()
                     .map(Action::to_string)
                     .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-                    .join(<span class="string">&quot;, &quot;</span>);
-                <span class="macro">format!</span>(<span class="string">&quot;Conflict key {key} with actions {actions}&quot;</span>)
+                    .join(<span class="string">", "</span>);
+                <span class="macro">format!</span>(<span class="string">"Conflict key {key} with actions {actions}"</span>)
             })
             .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
         <span class="kw">if </span>!errors.is_empty() {
-            <span class="macro">panic!</span>(<span class="string">&quot;{}&quot;</span>, errors.join(<span class="string">&quot;; &quot;</span>))
+            <span class="macro">panic!</span>(<span class="string">"{}"</span>, errors.join(<span class="string">"; "</span>))
         }
 
         <span class="comment">// Ok, we can create contextual actions

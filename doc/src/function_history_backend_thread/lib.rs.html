@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function_history_backend_thread/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_history_backend_thread" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function_history_backend_thread/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_history_backend_thread" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -197,12 +197,12 @@
             <span class="prelude-val">Err</span>(a) =&gt; <span class="kw">match </span>a {
                 RecvTimeoutError::Timeout =&gt; {
                     <span class="kw">if </span>log {
-                        <span class="macro">log::trace!</span>(<span class="string">&quot;thread timeout&quot;</span>);
+                        <span class="macro">log::trace!</span>(<span class="string">"thread timeout"</span>);
                     }
                 }
                 RecvTimeoutError::Disconnected =&gt; {
                     <span class="kw">if </span>log {
-                        <span class="macro">log::warn!</span>(<span class="string">&quot;thread disconnected&quot;</span>);
+                        <span class="macro">log::warn!</span>(<span class="string">"thread disconnected"</span>);
                     }
                     <span class="kw">break</span>;
                 }
@@ -212,20 +212,20 @@
                 <span class="kw">let </span>msg = <span class="kw">match </span>msg {
                     FullCommand::List(list_type) =&gt; {
                         <span class="kw">if </span>log {
-                            <span class="macro">log::info!</span>(<span class="string">&quot;list&quot;</span>);
+                            <span class="macro">log::info!</span>(<span class="string">"list"</span>);
                         }
                         <span class="kw">match </span>list_type {
                             ListType::Commits =&gt; <span class="kw">match </span>git_function_history::get_git_info() {
                                 <span class="prelude-val">Ok</span>(commits) =&gt; {
                                     <span class="kw">if </span>log {
-                                        <span class="macro">log::info!</span>(<span class="string">&quot;found {} commits&quot;</span>, commits.len());
+                                        <span class="macro">log::info!</span>(<span class="string">"found {} commits"</span>, commits.len());
                                     }
                                     <span class="kw">let </span>commits =
                                         commits.iter().map(|c| c.hash.to_string()).collect();
                                     (
                                         CommandResult::String(commits),
                                         Status::Ok(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                                            <span class="string">&quot;Found commits dates took {}s&quot;</span>,
+                                            <span class="string">"Found commits dates took {}s"</span>,
                                             now.elapsed().as_secs()
                                         ))),
                                     )
@@ -233,7 +233,7 @@
                                 <span class="prelude-val">Err</span>(err) =&gt; (
                                     CommandResult::None,
                                     Status::Error(<span class="macro">format!</span>(
-                                        <span class="string">&quot;Error getting commits: {} took {}s&quot;</span>,
+                                        <span class="string">"Error getting commits: {} took {}s"</span>,
                                         err,
                                         now.elapsed().as_secs()
                                     )),
@@ -242,13 +242,13 @@
                             ListType::Dates =&gt; <span class="kw">match </span>git_function_history::get_git_info() {
                                 <span class="prelude-val">Ok</span>(dates) =&gt; {
                                     <span class="kw">if </span>log {
-                                        <span class="macro">log::info!</span>(<span class="string">&quot;found {} dates&quot;</span>, dates.len());
+                                        <span class="macro">log::info!</span>(<span class="string">"found {} dates"</span>, dates.len());
                                     }
                                     <span class="kw">let </span>dates = dates.iter().map(|d| d.date.to_rfc2822()).collect();
                                     (
                                         CommandResult::String(dates),
                                         Status::Ok(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                                            <span class="string">&quot;Found dates took {}s&quot;</span>,
+                                            <span class="string">"Found dates took {}s"</span>,
                                             now.elapsed().as_secs()
                                         ))),
                                     )
@@ -256,7 +256,7 @@
                                 <span class="prelude-val">Err</span>(err) =&gt; (
                                     CommandResult::None,
                                     Status::Error(<span class="macro">format!</span>(
-                                        <span class="string">&quot;Error getting dates: {} took {}s&quot;</span>,
+                                        <span class="string">"Error getting dates: {} took {}s"</span>,
                                         err,
                                         now.elapsed().as_secs()
                                     )),
@@ -272,7 +272,7 @@
                     }) =&gt; {
                         <span class="kw">if </span>log {
                             <span class="macro">log::info!</span>(
-                                <span class="string">&quot;Searching for {} in {:?} with language {} and filter {:?}&quot;</span>,
+                                <span class="string">"Searching for {} in {:?} with language {} and filter {:?}"</span>,
                                 name,
                                 file,
                                 lang,
@@ -282,12 +282,12 @@
                         <span class="kw">match </span>get_function_history(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;</span>file, <span class="kw-2">&amp;</span>filter, <span class="kw-2">&amp;</span>lang) {
                             <span class="prelude-val">Ok</span>(functions) =&gt; {
                                 <span class="kw">if </span>log {
-                                    <span class="macro">log::info!</span>(<span class="string">&quot;Found functions&quot;</span>);
+                                    <span class="macro">log::info!</span>(<span class="string">"Found functions"</span>);
                                 }
                                 (
                                     CommandResult::History(functions),
                                     Status::Ok(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                                        <span class="string">&quot;Found functions took {}s&quot;</span>,
+                                        <span class="string">"Found functions took {}s"</span>,
                                         now.elapsed().as_secs()
                                     ))),
                                 )
@@ -295,7 +295,7 @@
                             <span class="prelude-val">Err</span>(err) =&gt; (
                                 CommandResult::None,
                                 Status::Error(<span class="macro">format!</span>(
-                                    <span class="string">&quot;Error getting functions: {} took {}s&quot;</span>,
+                                    <span class="string">"Error getting functions: {} took {}s"</span>,
                                     err,
                                     now.elapsed().as_secs()
                                 )),
@@ -305,17 +305,17 @@
                     FullCommand::Filter(filter) =&gt; {
                         <span class="kw">if let </span>CommandResult::History(hist) = filter.thing {
                             <span class="kw">if </span>log {
-                                <span class="macro">log::info!</span>(<span class="string">&quot;Filtering history with filter {:?}&quot;</span>, filter.filter);
+                                <span class="macro">log::info!</span>(<span class="string">"Filtering history with filter {:?}"</span>, filter.filter);
                             }
                             <span class="kw">match </span>hist.filter_by(<span class="kw-2">&amp;</span>filter.filter) {
                                 <span class="prelude-val">Ok</span>(hist) =&gt; {
                                     <span class="kw">if </span>log {
-                                        <span class="macro">log::info!</span>(<span class="string">&quot;Filtered history&quot;</span>);
+                                        <span class="macro">log::info!</span>(<span class="string">"Filtered history"</span>);
                                     }
                                     (
                                         CommandResult::History(hist),
                                         Status::Ok(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                                            <span class="string">&quot;Filtered history took {}s&quot;</span>,
+                                            <span class="string">"Filtered history took {}s"</span>,
                                             now.elapsed().as_secs()
                                         ))),
                                     )
@@ -323,7 +323,7 @@
                                 <span class="prelude-val">Err</span>(err) =&gt; (
                                     CommandResult::None,
                                     Status::Error(<span class="macro">format!</span>(
-                                        <span class="string">&quot;Error filtering history: {} took {}s&quot;</span>,
+                                        <span class="string">"Error filtering history: {} took {}s"</span>,
                                         err,
                                         now.elapsed().as_secs()
                                     )),
@@ -333,7 +333,7 @@
                             (
                                 CommandResult::None,
                                 Status::Error(<span class="macro">format!</span>(
-                                    <span class="string">&quot;Can&#39;t filter this took {}s&quot;</span>,
+                                    <span class="string">"Can't filter this took {}s"</span>,
                                     now.elapsed().as_secs()
                                 )),
                             )
@@ -341,9 +341,9 @@
                     }
                 };
                 <span class="kw">if </span>log {
-                    <span class="macro">log::info!</span>(<span class="string">&quot;thread finished in {}s&quot;</span>, now.elapsed().as_secs());
+                    <span class="macro">log::info!</span>(<span class="string">"thread finished in {}s"</span>, now.elapsed().as_secs());
                 }
-                tx_t.send(msg).expect(<span class="string">&quot;could not send message in thread&quot;</span>)
+                tx_t.send(msg).expect(<span class="string">"could not send message in thread"</span>)
             }
         }
     });

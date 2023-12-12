@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/rust.rs`."><title>rust.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/rust.rs`."><title>rust.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -683,23 +683,23 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>RustFunction {
-    <span class="doccomment">/// don&#39;t use this for anything other than debugging the output is not guaranteed to be in the right order
+    <span class="doccomment">/// don't use this for anything other than debugging the output is not guaranteed to be in the right order
     /// use `fmt::Display` for `RustFile` instead
-    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.block {
             <span class="prelude-val">None </span>=&gt; {}
-            <span class="prelude-val">Some</span>(block) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}\n...\n&quot;</span>, block.top)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(block) =&gt; <span class="macro">write!</span>(f, <span class="string">"{}\n...\n"</span>, block.top)<span class="question-mark">?</span>,
         };
         <span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.function {
-            <span class="macro">write!</span>(f, <span class="string">&quot;{}\n...\n&quot;</span>, i.top)<span class="question-mark">?</span>;
+            <span class="macro">write!</span>(f, <span class="string">"{}\n...\n"</span>, i.top)<span class="question-mark">?</span>;
         }
-        <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.body)<span class="question-mark">?</span>;
+        <span class="macro">write!</span>(f, <span class="string">"{}"</span>, <span class="self">self</span>.body)<span class="question-mark">?</span>;
         <span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.function {
-            <span class="macro">write!</span>(f, <span class="string">&quot;\n...\n{}&quot;</span>, i.bottom)<span class="question-mark">?</span>;
+            <span class="macro">write!</span>(f, <span class="string">"\n...\n{}"</span>, i.bottom)<span class="question-mark">?</span>;
         }
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.block {
             <span class="prelude-val">None </span>=&gt; {}
-            <span class="prelude-val">Some</span>(block) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;\n...\n{}&quot;</span>, block.bottom)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(block) =&gt; <span class="macro">write!</span>(f, <span class="string">"\n...\n{}"</span>, block.bottom)<span class="question-mark">?</span>,
         };
         <span class="prelude-val">Ok</span>(())
     }
@@ -735,24 +735,24 @@
     <span class="doccomment">/// get the metadata for this block ie the name of the block, the type of block, the line number the block starts and ends
     </span><span class="kw">pub fn </span>get_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; HashMap&lt;String, String&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>map = HashMap::new();
-        map.insert(<span class="string">&quot;name&quot;</span>.to_string(), <span class="self">self</span>.name.clone());
-        map.insert(<span class="string">&quot;lines&quot;</span>.to_string(), <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>.lines));
-        map.insert(<span class="string">&quot;signature&quot;</span>.to_string(), <span class="self">self</span>.top.clone());
-        map.insert(<span class="string">&quot;bottom&quot;</span>.to_string(), <span class="self">self</span>.bottom.clone());
-        map.insert(<span class="string">&quot;generics&quot;</span>.to_string(), <span class="self">self</span>.generics.join(<span class="string">&quot;,&quot;</span>));
+        map.insert(<span class="string">"name"</span>.to_string(), <span class="self">self</span>.name.clone());
+        map.insert(<span class="string">"lines"</span>.to_string(), <span class="macro">format!</span>(<span class="string">"{:?}"</span>, <span class="self">self</span>.lines));
+        map.insert(<span class="string">"signature"</span>.to_string(), <span class="self">self</span>.top.clone());
+        map.insert(<span class="string">"bottom"</span>.to_string(), <span class="self">self</span>.bottom.clone());
+        map.insert(<span class="string">"generics"</span>.to_string(), <span class="self">self</span>.generics.join(<span class="string">","</span>));
         map.insert(
-            <span class="string">&quot;arguments&quot;</span>.to_string(),
+            <span class="string">"arguments"</span>.to_string(),
             <span class="self">self</span>.arguments
                 .iter()
-                .map(|(k, v)| <span class="macro">format!</span>(<span class="string">&quot;{k}: {v}&quot;</span>))
+                .map(|(k, v)| <span class="macro">format!</span>(<span class="string">"{k}: {v}"</span>))
                 .collect::&lt;Vec&lt;String&gt;&gt;()
-                .join(<span class="string">&quot;,&quot;</span>),
+                .join(<span class="string">","</span>),
         );
-        map.insert(<span class="string">&quot;lifetime generics&quot;</span>.to_string(), <span class="self">self</span>.lifetime.join(<span class="string">&quot;,&quot;</span>));
-        map.insert(<span class="string">&quot;attributes&quot;</span>.to_string(), <span class="self">self</span>.attributes.join(<span class="string">&quot;,&quot;</span>));
-        map.insert(<span class="string">&quot;doc comments&quot;</span>.to_string(), <span class="self">self</span>.doc_comments.join(<span class="string">&quot;,&quot;</span>));
+        map.insert(<span class="string">"lifetime generics"</span>.to_string(), <span class="self">self</span>.lifetime.join(<span class="string">","</span>));
+        map.insert(<span class="string">"attributes"</span>.to_string(), <span class="self">self</span>.attributes.join(<span class="string">","</span>));
+        map.insert(<span class="string">"doc comments"</span>.to_string(), <span class="self">self</span>.doc_comments.join(<span class="string">","</span>));
         <span class="kw">if let </span><span class="prelude-val">Some</span>(return_type) = <span class="kw-2">&amp;</span><span class="self">self</span>.return_type {
-            map.insert(<span class="string">&quot;return type&quot;</span>.to_string(), return_type.clone());
+            map.insert(<span class="string">"return type"</span>.to_string(), return_type.clone());
         }
         map
     }
@@ -787,16 +787,16 @@
     </span><span class="kw">pub fn </span>get_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; HashMap&lt;String, String&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>map = HashMap::new();
         <span class="kw">if let </span><span class="prelude-val">Some</span>(name) = <span class="kw-2">&amp;</span><span class="self">self</span>.name {
-            map.insert(<span class="string">&quot;name&quot;</span>.to_string(), name.to_string());
+            map.insert(<span class="string">"name"</span>.to_string(), name.to_string());
         }
-        map.insert(<span class="string">&quot;block&quot;</span>.to_string(), <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.block_type));
-        map.insert(<span class="string">&quot;lines&quot;</span>.to_string(), <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>.lines));
-        map.insert(<span class="string">&quot;signature&quot;</span>.to_string(), <span class="self">self</span>.top.clone());
-        map.insert(<span class="string">&quot;bottom&quot;</span>.to_string(), <span class="self">self</span>.bottom.clone());
-        map.insert(<span class="string">&quot;generics&quot;</span>.to_string(), <span class="self">self</span>.generics.join(<span class="string">&quot;,&quot;</span>));
-        map.insert(<span class="string">&quot;lifetime generics&quot;</span>.to_string(), <span class="self">self</span>.lifetime.join(<span class="string">&quot;,&quot;</span>));
-        map.insert(<span class="string">&quot;attributes&quot;</span>.to_string(), <span class="self">self</span>.attributes.join(<span class="string">&quot;,&quot;</span>));
-        map.insert(<span class="string">&quot;doc comments&quot;</span>.to_string(), <span class="self">self</span>.doc_comments.join(<span class="string">&quot;,&quot;</span>));
+        map.insert(<span class="string">"block"</span>.to_string(), <span class="macro">format!</span>(<span class="string">"{}"</span>, <span class="self">self</span>.block_type));
+        map.insert(<span class="string">"lines"</span>.to_string(), <span class="macro">format!</span>(<span class="string">"{:?}"</span>, <span class="self">self</span>.lines));
+        map.insert(<span class="string">"signature"</span>.to_string(), <span class="self">self</span>.top.clone());
+        map.insert(<span class="string">"bottom"</span>.to_string(), <span class="self">self</span>.bottom.clone());
+        map.insert(<span class="string">"generics"</span>.to_string(), <span class="self">self</span>.generics.join(<span class="string">","</span>));
+        map.insert(<span class="string">"lifetime generics"</span>.to_string(), <span class="self">self</span>.lifetime.join(<span class="string">","</span>));
+        map.insert(<span class="string">"attributes"</span>.to_string(), <span class="self">self</span>.attributes.join(<span class="string">","</span>));
+        map.insert(<span class="string">"doc comments"</span>.to_string(), <span class="self">self</span>.doc_comments.join(<span class="string">","</span>));
         map
     }
 }
@@ -805,21 +805,21 @@
     <span class="doccomment">/// This is used to get the name of the block type from a string
     </span><span class="kw">pub fn </span>from_string(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="self">Self </span>{
         <span class="kw">match </span>s {
-            <span class="string">&quot;impl&quot; </span>=&gt; <span class="self">Self</span>::Impl,
-            <span class="string">&quot;extern&quot; </span>=&gt; <span class="self">Self</span>::Extern,
-            <span class="string">&quot;trait&quot; </span>=&gt; <span class="self">Self</span>::Trait,
+            <span class="string">"impl" </span>=&gt; <span class="self">Self</span>::Impl,
+            <span class="string">"extern" </span>=&gt; <span class="self">Self</span>::Extern,
+            <span class="string">"trait" </span>=&gt; <span class="self">Self</span>::Trait,
             <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
         }
     }
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>BlockType {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::Impl =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;impl&quot;</span>),
-            <span class="self">Self</span>::Extern =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;extern&quot;</span>),
-            <span class="self">Self</span>::Trait =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;trait&quot;</span>),
-            <span class="self">Self</span>::Unknown =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;unknown&quot;</span>),
+            <span class="self">Self</span>::Impl =&gt; <span class="macro">write!</span>(f, <span class="string">"impl"</span>),
+            <span class="self">Self</span>::Extern =&gt; <span class="macro">write!</span>(f, <span class="string">"extern"</span>),
+            <span class="self">Self</span>::Trait =&gt; <span class="macro">write!</span>(f, <span class="string">"trait"</span>),
+            <span class="self">Self</span>::Unknown =&gt; <span class="macro">write!</span>(f, <span class="string">"unknown"</span>),
         }
     }
 }
@@ -832,7 +832,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>functions = Vec::new();
     get_function_asts(name, file_contents, <span class="kw-2">&amp;mut </span>functions);
     <span class="kw">let </span><span class="kw-2">mut </span>starts = file_contents
-        .match_indices(<span class="string">&#39;\n&#39;</span>)
+        .match_indices(<span class="string">'\n'</span>)
         .map(|x| x.<span class="number">0</span>)
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     starts.push(<span class="number">0</span>);
@@ -843,7 +843,7 @@
         .collect::&lt;HashMap&lt;usize, <span class="kw-2">&amp;</span>usize&gt;&gt;();
     <span class="kw">let </span><span class="kw-2">mut </span>hist = Vec::new();
     <span class="kw">for </span>f <span class="kw">in </span><span class="kw-2">&amp;</span>functions {
-        <span class="kw">let </span>stuff = get_stuff(f, file_contents, <span class="kw-2">&amp;</span>map).unwrap_to_error(<span class="string">&quot;could not get endline&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>stuff = get_stuff(f, file_contents, <span class="kw-2">&amp;</span>map).unwrap_to_error(<span class="string">"could not get endline"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>generics = get_genrerics_and_lifetime(f);
         <span class="kw">let </span><span class="kw-2">mut </span>parent = f.syntax().parent();
         <span class="kw">let </span><span class="kw-2">mut </span>parent_fn: Vec&lt;RustParentFunction&gt; = Vec::new();
@@ -928,7 +928,7 @@
                             args.params()
                                 .filter_map(|arg| {
                                     arg.to_string()
-                                        .rsplit_once(<span class="string">&quot;: &quot;</span>)
+                                        .rsplit_once(<span class="string">": "</span>)
                                         .map(|x| (x.<span class="number">0</span>.to_string(), x.<span class="number">1</span>.to_string()))
                                 })
                                 .collect::&lt;HashMap&lt;String, String&gt;&gt;()
@@ -944,14 +944,14 @@
         <span class="kw">let </span>start_line = stuff.<span class="number">0 </span>.<span class="number">0</span>;
         <span class="kw">let </span>start_idx = <span class="kw">match </span>map
             .get(<span class="kw-2">&amp;</span>(start_line - <span class="number">1</span>))
-            .unwrap_to_error(<span class="string">&quot;could not get start index for function based off line number&quot;</span>)<span class="question-mark">?
+            .unwrap_to_error(<span class="string">"could not get start index for function based off line number"</span>)<span class="question-mark">?
         </span>{
             <span class="number">0 </span>=&gt; <span class="number">0</span>,
             x =&gt; <span class="kw-2">*</span>x + <span class="number">1</span>,
         };
         <span class="kw">let </span>contents: String = file_contents
             .get(start_idx..f.syntax().text_range().end().into())
-            .unwrap_to_error(<span class="string">&quot;could not function text based off of start and stop indexes&quot;</span>)<span class="question-mark">?
+            .unwrap_to_error(<span class="string">"could not function text based off of start and stop indexes"</span>)<span class="question-mark">?
             </span>.to_string();
         <span class="kw">let </span>body = <span class="kw">super</span>::make_lined(<span class="kw-2">&amp;</span>contents, start_line);
         <span class="kw">let </span>function = RustFunction {
@@ -967,7 +967,7 @@
                 args.params()
                     .filter_map(|arg| {
                         arg.to_string()
-                            .rsplit_once(<span class="string">&quot;: &quot;</span>)
+                            .rsplit_once(<span class="string">": "</span>)
                             .map(|x| (x.<span class="number">0</span>.to_string(), x.<span class="number">1</span>.to_string()))
                     })
                     .collect::&lt;HashMap&lt;String, String&gt;&gt;()
@@ -981,7 +981,7 @@
         hist.push(function);
     }
     <span class="kw">if </span>hist.is_empty() {
-        <span class="prelude-val">Err</span>(<span class="string">&quot;no function found&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Err</span>(<span class="string">"no function found"</span>)<span class="question-mark">?</span>;
     }
     <span class="prelude-val">Ok</span>(hist)
 }
@@ -995,7 +995,7 @@
     </span>Extern,
     <span class="doccomment">/// This is for `extern` blocks
     </span>Trait,
-    <span class="doccomment">/// This is for code that gets labeled as a block but `get_function_history` can&#39;t find a block type
+    <span class="doccomment">/// This is for code that gets labeled as a block but `get_function_history` can't find a block type
     </span>Unknown,
 }
 
@@ -1023,7 +1023,7 @@
     <span class="kw">let </span>end_line = <span class="kw">super</span>::get_from_index(<span class="kw-2">&amp;</span>index, end - <span class="number">1</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>start_line = <span class="kw">super</span>::get_from_index(<span class="kw-2">&amp;</span>index, start.into())<span class="question-mark">?</span>;
     <span class="kw">for </span>(i, line) <span class="kw">in </span>file.chars().enumerate() {
-        <span class="kw">if </span>line == <span class="string">&#39;{&#39; </span>&amp;&amp; found_start_brace == <span class="number">0 </span>&amp;&amp; usize::from(start) &lt; i {
+        <span class="kw">if </span>line == <span class="string">'{' </span>&amp;&amp; found_start_brace == <span class="number">0 </span>&amp;&amp; usize::from(start) &lt; i {
             found_start_brace = i;
             <span class="kw">break</span>;
         }
@@ -1034,14 +1034,14 @@
     <span class="kw">let </span>start_idx = map.get(<span class="kw-2">&amp;</span>(start_line - <span class="number">1</span>))<span class="question-mark">?</span>;
     <span class="kw">let </span>start_lines = start_line;
     <span class="kw">let </span><span class="kw-2">mut </span>content: String = file.get((<span class="kw-2">**</span>start_idx)..=found_start_brace)<span class="question-mark">?</span>.to_string();
-    <span class="kw">if </span>content.get(..<span class="number">1</span>)<span class="question-mark">? </span>== <span class="string">&quot;\n&quot; </span>{
+    <span class="kw">if </span>content.get(..<span class="number">1</span>)<span class="question-mark">? </span>== <span class="string">"\n" </span>{
         content = content.get(<span class="number">1</span>..)<span class="question-mark">?</span>.to_string();
     }
     <span class="prelude-val">Some</span>((
         (start_line, end_line),
         (
             <span class="kw">super</span>::make_lined(<span class="kw-2">&amp;</span>content, start_lines),
-            <span class="kw">super</span>::make_lined(file.lines().nth(end_line - <span class="number">1</span>).unwrap_or(<span class="string">&quot;}&quot;</span>), end_line),
+            <span class="kw">super</span>::make_lined(file.lines().nth(end_line - <span class="number">1</span>).unwrap_or(<span class="string">"}"</span>), end_line),
         ),
     ))
 }
@@ -1107,27 +1107,27 @@
     </span>HasAttribute(String),
     <span class="doccomment">/// when you want to filter by a function that has or contains a specific doc comment
     </span>HasDocComment(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s block has a specific attribute
+    <span class="doccomment">/// when you want to filter by a function that's block has a specific attribute
     </span>BlockHasAttribute(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s block has a specific doc comment
+    <span class="doccomment">/// when you want to filter by a function that's block has a specific doc comment
     </span>BlockHasDocComment(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s block has a specific lifetime
+    <span class="doccomment">/// when you want to filter by a function that's block has a specific lifetime
     </span>BlockHasLifetime(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s block has a specific generic with name
+    <span class="doccomment">/// when you want to filter by a function that's block has a specific generic with name
     </span>BlockHasGeneric(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific attribute
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific attribute
     </span>ParentFunctionHasAttribute(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific doc comment
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific doc comment
     </span>ParentFunctionHasDocComment(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific lifetime
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific lifetime
     </span>ParentFunctionHasLifetime(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific generic with name
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific generic with name
     </span>ParentFunctionHasGeneric(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific return type
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific return type
     </span>ParentFunctionHasReturnType(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific parameter type
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific parameter type
     </span>ParentFunctionHasParameterType(String),
-    <span class="doccomment">/// when you want to filter by a function that&#39;s parent function has a specific parameter name
+    <span class="doccomment">/// when you want to filter by a function that's parent function has a specific parameter name
     </span>ParentFunctionHasParameterName(String),
 }
 

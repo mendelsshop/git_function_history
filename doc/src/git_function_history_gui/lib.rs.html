@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -841,7 +841,7 @@
 
 <span class="kw">impl </span>MyEguiApp {
     <span class="kw">pub fn </span>new(
-        _cc: <span class="kw-2">&amp;</span>eframe::CreationContext&lt;<span class="lifetime">&#39;_</span>&gt;,
+        _cc: <span class="kw-2">&amp;</span>eframe::CreationContext&lt;<span class="lifetime">'_</span>&gt;,
         channels: (
             mpsc::Sender&lt;FullCommand&gt;,
             mpsc::Receiver&lt;(CommandResult, Status)&gt;,
@@ -865,10 +865,10 @@
     }
 
     <span class="kw">fn </span>draw_config_window(<span class="kw-2">&amp;mut </span><span class="self">self</span>, ctx: <span class="kw-2">&amp;</span>egui::Context) {
-        egui::Window::new(<span class="string">&quot;My Window&quot;</span>)
+        egui::Window::new(<span class="string">"My Window"</span>)
             .open(<span class="kw-2">&amp;mut </span><span class="bool-val">true</span>)
             .show(ctx, |ui| {
-                <span class="kw">if </span>ui.button(<span class="string">&quot;cancel&quot;</span>).clicked() {
+                <span class="kw">if </span>ui.button(<span class="string">"cancel"</span>).clicked() {
                     <span class="self">self</span>.current_commit = String::new();
                 }
             });
@@ -876,24 +876,24 @@
 
     <span class="kw">fn </span>draw_commit(commit: <span class="kw-2">&amp;mut </span>Commit, ctx: <span class="kw-2">&amp;</span>egui::Context, show: bool) {
         <span class="kw">if </span>show {
-            TopBottomPanel::top(<span class="string">&quot;date_id&quot;</span>).show(ctx, |ui| {
+            TopBottomPanel::top(<span class="string">"date_id"</span>).show(ctx, |ui| {
                 ui.add(Label::new(<span class="macro">format!</span>(
-                    <span class="string">&quot;Commit: {}&quot;</span>,
-                    commit.get_metadata()[<span class="string">&quot;commit hash&quot;</span>]
+                    <span class="string">"Commit: {}"</span>,
+                    commit.get_metadata()[<span class="string">"commit hash"</span>]
                 )));
                 ui.add(Label::new(<span class="macro">format!</span>(
-                    <span class="string">&quot;Date: {}&quot;</span>,
-                    commit.get_metadata()[<span class="string">&quot;date&quot;</span>]
+                    <span class="string">"Date: {}"</span>,
+                    commit.get_metadata()[<span class="string">"date"</span>]
                 )));
             });
         }
-        TopBottomPanel::top(<span class="string">&quot;file_name&quot;</span>).show(ctx, |ui| {
+        TopBottomPanel::top(<span class="string">"file_name"</span>).show(ctx, |ui| {
             ui.add(Label::new(<span class="macro">format!</span>(
-                <span class="string">&quot;File {}&quot;</span>,
-                commit.get_metadata()[<span class="string">&quot;file&quot;</span>]
+                <span class="string">"File {}"</span>,
+                commit.get_metadata()[<span class="string">"file"</span>]
             )));
         });
-        <span class="kw">let </span>file = commit.get_file().map(|x| x.to_string()).unwrap_or_else(|| <span class="string">&quot;error occured could not retrieve file please file a bug report  to https://github.com/mendelsshop/git_function_history/issues&quot;</span>.to_string());
+        <span class="kw">let </span>file = commit.get_file().map(|x| x.to_string()).unwrap_or_else(|| <span class="string">"error occured could not retrieve file please file a bug report  to https://github.com/mendelsshop/git_function_history/issues"</span>.to_string());
         <span class="kw">match </span>commit.get_move_direction() {
             Directions::None =&gt; {
                 egui::CentralPanel::default().show(ctx, |ui| {
@@ -908,13 +908,13 @@
             }
             Directions::Forward =&gt; {
                 <span class="comment">// split the screen in two parts, most of it is for the content, the and leave a small part for the right arrow
-                </span><span class="macro">log::debug!</span>(<span class="string">&quot;found at least one file index beginning&quot;</span>);
-                <span class="kw">let </span>resp = egui::SidePanel::right(<span class="string">&quot;right_arrow&quot;</span>)
+                </span><span class="macro">log::debug!</span>(<span class="string">"found at least one file index beginning"</span>);
+                <span class="kw">let </span>resp = egui::SidePanel::right(<span class="string">"right_arrow"</span>)
                     .show(ctx, |ui| {
                         ui.set_width(<span class="number">0.5</span>);
                         ui.add_sized(
                             Vec2::new(ui.available_width(), ui.available_height()),
-                            Button::new(<span class="string">&quot;-&gt;&quot;</span>),
+                            Button::new(<span class="string">"-&gt;"</span>),
                         )
                     })
                     .inner;
@@ -930,14 +930,14 @@
                 }
             }
             Directions::Back =&gt; {
-                <span class="macro">log::debug!</span>(<span class="string">&quot;found at least one file index end&quot;</span>);
+                <span class="macro">log::debug!</span>(<span class="string">"found at least one file index end"</span>);
                 <span class="comment">// split the screen in two parts, leave a small part for the left arrow and the rest for the content
-                </span><span class="kw">let </span>resp = SidePanel::left(<span class="string">&quot;right_button&quot;</span>)
+                </span><span class="kw">let </span>resp = SidePanel::left(<span class="string">"right_button"</span>)
                     .show(ctx, |ui| {
                         ui.set_width(<span class="number">1.0</span>);
                         ui.add_sized(
                             Vec2::new(ui.available_width(), ui.available_height()),
-                            Button::new(<span class="string">&quot;&lt;-&quot;</span>),
+                            Button::new(<span class="string">"&lt;-"</span>),
                         )
                     })
                     .inner;
@@ -955,23 +955,23 @@
                 }
             }
             Directions::Both =&gt; {
-                <span class="macro">log::debug!</span>(<span class="string">&quot;found at least one file index middle&quot;</span>);
+                <span class="macro">log::debug!</span>(<span class="string">"found at least one file index middle"</span>);
                 <span class="comment">// split screen into 3 parts, leave a small part for the left arrow, the middle part for the content and leave a small part for the right arrow
-                </span><span class="kw">let </span>l_resp = SidePanel::left(<span class="string">&quot;left_arrow&quot;</span>)
+                </span><span class="kw">let </span>l_resp = SidePanel::left(<span class="string">"left_arrow"</span>)
                     .show(ctx, |ui| {
                         ui.set_width(<span class="number">1.0</span>);
                         ui.add_sized(
                             Vec2::new(ui.available_width(), ui.available_height()),
-                            Button::new(<span class="string">&quot;&lt;-&quot;</span>),
+                            Button::new(<span class="string">"&lt;-"</span>),
                         )
                     })
                     .inner;
-                <span class="kw">let </span>r_resp = egui::SidePanel::right(<span class="string">&quot;right_arrows&quot;</span>)
+                <span class="kw">let </span>r_resp = egui::SidePanel::right(<span class="string">"right_arrows"</span>)
                     .show(ctx, |ui| {
                         ui.set_width(<span class="number">1.0</span>);
                         ui.add_sized(
                             Vec2::new(ui.available_width(), ui.available_height()),
-                            Button::new(<span class="string">&quot;-&gt;&quot;</span>),
+                            Button::new(<span class="string">"-&gt;"</span>),
                         )
                     })
                     .inner;
@@ -996,44 +996,44 @@
     <span class="kw">fn </span>draw_history(history: <span class="kw-2">&amp;mut </span>FunctionHistory, ctx: <span class="kw-2">&amp;</span>egui::Context) {
         <span class="comment">// split the screen top and bottom into two parts, leave small part for the left arrow commit hash and right arrow and the rest for the content
         // create a 3 line header
-        </span>TopBottomPanel::top(<span class="string">&quot;control history&quot;</span>).show(ctx, |ui| {
+        </span>TopBottomPanel::top(<span class="string">"control history"</span>).show(ctx, |ui| {
             ui.set_height(<span class="number">2.0</span>);
             ui.horizontal(|ui| {
                 <span class="kw">let </span><span class="kw-2">mut </span>max = ui.available_width();
                 <span class="kw">let </span>l_resp = <span class="kw">match </span>history.get_move_direction() {
                     Directions::Forward =&gt; {
-                        ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">&quot;&lt;-&quot;</span>).sense(Sense::hover()));
+                        ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">"&lt;-"</span>).sense(Sense::hover()));
                         <span class="prelude-val">None
                     </span>}
                     <span class="kw">_ </span>=&gt; <span class="prelude-val">Some</span>(
                         <span class="comment">// add a left arrow button that is disabled
-                        </span>ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">&quot;&lt;-&quot;</span>)),
+                        </span>ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">"&lt;-"</span>)),
                     ),
                 };
                 max -= ui.available_width();
                 ui.add_sized(
                     Vec2::new(ui.available_width() - max, <span class="number">2.0</span>),
                     Label::new(<span class="macro">format!</span>(
-                        <span class="string">&quot;{}\n{}&quot;</span>,
+                        <span class="string">"{}\n{}"</span>,
                         history
                             .get_metadata()
-                            .get(<span class="string">&quot;commit hash&quot;</span>)
-                            .map_or(<span class="string">&quot;could not retrieve commit hash&quot;</span>, |x| x.as_str()),
+                            .get(<span class="string">"commit hash"</span>)
+                            .map_or(<span class="string">"could not retrieve commit hash"</span>, |x| x.as_str()),
                         history
                             .get_metadata()
-                            .get(<span class="string">&quot;date&quot;</span>)
-                            .map_or(<span class="string">&quot;could not retieve date&quot;</span>, |x| x.as_str()),
+                            .get(<span class="string">"date"</span>)
+                            .map_or(<span class="string">"could not retieve date"</span>, |x| x.as_str()),
                     )),
                 );
 
                 <span class="kw">let </span>r_resp = <span class="kw">match </span>history.get_move_direction() {
                     Directions::Back =&gt; {
-                        ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">&quot;-&gt;&quot;</span>).sense(Sense::hover()));
+                        ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">"-&gt;"</span>).sense(Sense::hover()));
                         <span class="prelude-val">None
                     </span>}
                     <span class="kw">_ </span>=&gt; {
                         <span class="comment">// add a right arrow button that is disabled
-                        </span><span class="prelude-val">Some</span>(ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">&quot;-&gt;&quot;</span>)))
+                        </span><span class="prelude-val">Some</span>(ui.add_sized(Vec2::new(<span class="number">2.0</span>, <span class="number">2.0</span>), Button::new(<span class="string">"-&gt;"</span>)))
                     }
                 };
 
@@ -1052,8 +1052,8 @@
         <span class="kw">if let </span><span class="prelude-val">Some</span>(x) = history.get_mut_commit() {
             <span class="self">Self</span>::draw_commit(x, ctx, <span class="bool-val">false</span>)
         } <span class="kw">else </span>{
-            TopBottomPanel::top(<span class="string">&quot;no_commit_found&quot;</span>).show(ctx, |ui| {
-                ui.add(Label::new(<span class="string">&quot;no commit found&quot;</span>));
+            TopBottomPanel::top(<span class="string">"no_commit_found"</span>).show(ctx, |ui| {
+                ui.add(Label::new(<span class="string">"no commit found"</span>));
             });
         }
     }
@@ -1073,27 +1073,27 @@
                 <span class="self">self</span>.do_commit = <span class="bool-val">false</span>;
             }
         } <span class="kw">else </span>{
-            egui::TopBottomPanel::bottom(<span class="string">&quot;status_bar&quot;</span>).show(ctx, |ui| {
+            egui::TopBottomPanel::bottom(<span class="string">"status_bar"</span>).show(ctx, |ui| {
                 ui.add_space(<span class="number">20.</span>);
                 egui::menu::bar(ui, |ui| {
                     ui.with_layout(Layout::left_to_right(eframe::emath::Align::Center), |ui| {
                         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.status {
                             Status::Loading =&gt; {
-                                ui.colored_label(Color32::BLUE, <span class="string">&quot;Loading...&quot;</span>);
+                                ui.colored_label(Color32::BLUE, <span class="string">"Loading..."</span>);
                             }
                             Status::Ok(a) =&gt; <span class="kw">match </span>a {
                                 <span class="prelude-val">Some</span>(a) =&gt; {
-                                    ui.colored_label(Color32::LIGHT_GREEN, <span class="macro">format!</span>(<span class="string">&quot;Ok: {a}&quot;</span>));
+                                    ui.colored_label(Color32::LIGHT_GREEN, <span class="macro">format!</span>(<span class="string">"Ok: {a}"</span>));
                                 }
                                 <span class="prelude-val">None </span>=&gt; {
-                                    ui.colored_label(Color32::GREEN, <span class="string">&quot;Ready&quot;</span>);
+                                    ui.colored_label(Color32::GREEN, <span class="string">"Ready"</span>);
                                 }
                             },
                             Status::Warning(a) =&gt; {
-                                ui.colored_label(Color32::LIGHT_RED, <span class="macro">format!</span>(<span class="string">&quot;Warn: {a}&quot;</span>));
+                                ui.colored_label(Color32::LIGHT_RED, <span class="macro">format!</span>(<span class="string">"Warn: {a}"</span>));
                             }
                             Status::Error(a) =&gt; {
-                                ui.colored_label(Color32::LIGHT_RED, <span class="macro">format!</span>(<span class="string">&quot;Error: {a}&quot;</span>));
+                                ui.colored_label(Color32::LIGHT_RED, <span class="macro">format!</span>(<span class="string">"Error: {a}"</span>));
                             }
                         }
                     });
@@ -1101,9 +1101,9 @@
                     </span>ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                         <span class="kw">let </span>theme_btn = ui.add(Button::new({
                             <span class="kw">if </span><span class="self">self</span>.dark_theme {
-                                <span class="string">&quot;🌞&quot;
+                                <span class="string">"🌞"
                             </span>} <span class="kw">else </span>{
-                                <span class="string">&quot;🌙&quot;
+                                <span class="string">"🌙"
                             </span>}
                         }));
                         <span class="kw">if </span>theme_btn.clicked() {
@@ -1114,7 +1114,7 @@
 
                 ui.add_space(<span class="number">20.</span>);
             });
-            egui::TopBottomPanel::bottom(<span class="string">&quot;commnad_builder&quot;</span>).show(ctx, |ui| {
+            egui::TopBottomPanel::bottom(<span class="string">"commnad_builder"</span>).show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
                     egui::ScrollArea::horizontal()
                         .max_height(f32::INFINITY)
@@ -1122,20 +1122,20 @@
                         .auto_shrink([<span class="bool-val">false</span>, <span class="bool-val">false</span>])
                         .show(ui, |ui| {
                             <span class="kw">let </span>max = ui.available_width() / <span class="number">6.0</span>;
-                            egui::ComboBox::from_id_source(<span class="string">&quot;command_combo_box&quot;</span>)
+                            egui::ComboBox::from_id_source(<span class="string">"command_combo_box"</span>)
                                 .selected_text(<span class="self">self</span>.command.to_string())
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.command,
                                         Command::Filter,
-                                        <span class="string">&quot;filter&quot;</span>,
+                                        <span class="string">"filter"</span>,
                                     );
                                     ui.selectable_value(
                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.command,
                                         Command::Search,
-                                        <span class="string">&quot;search&quot;</span>,
+                                        <span class="string">"search"</span>,
                                     );
-                                    ui.selectable_value(<span class="kw-2">&amp;mut </span><span class="self">self</span>.command, Command::List, <span class="string">&quot;list&quot;</span>);
+                                    ui.selectable_value(<span class="kw-2">&amp;mut </span><span class="self">self</span>.command, Command::List, <span class="string">"list"</span>);
                                 });
                             <span class="kw">match </span><span class="self">self</span>.command {
                                 Command::Filter =&gt; {
@@ -1144,22 +1144,22 @@
                                             <span class="comment">// Options 1. by date 2. by commit hash 3. in date range 4. function in block 5. function in lines 6. function in function
                                             </span><span class="kw">let </span>text = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.history_filter_type {
                                                 HistoryFilterType::None =&gt; {
-                                                    <span class="string">&quot;filter type&quot;</span>.to_string()
+                                                    <span class="string">"filter type"</span>.to_string()
                                                 }
                                                 a =&gt; a.to_string(),
                                             };
-                                            egui::ComboBox::from_id_source(<span class="string">&quot;history_combo_box&quot;</span>)
+                                            egui::ComboBox::from_id_source(<span class="string">"history_combo_box"</span>)
                                                 .selected_text(text)
                                                 .show_ui(ui, |ui| {
                                                     ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::Date(String::new()),
-                                                        <span class="string">&quot;by date&quot;</span>,
+                                                        <span class="string">"by date"</span>,
                                                     );
                                                     ui.selectable_value(
                                                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                     HistoryFilterType::CommitHash(String::new()),
-                                                    <span class="string">&quot;by commit hash&quot;</span>,
+                                                    <span class="string">"by commit hash"</span>,
                                                 );
                                                     ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
@@ -1167,14 +1167,14 @@
                                                             String::new(),
                                                             String::new(),
                                                         ),
-                                                        <span class="string">&quot;in date range&quot;</span>,
+                                                        <span class="string">"in date range"</span>,
                                                     );
                                                     <span class="comment">// ui.selectable_value(
                                                     //     &amp;mut self.history_filter_type,
                                                     //     HistoryFilterType::FunctionInBlock(
                                                     //         String::new(),
                                                     //     ),
-                                                    //     &quot;function in block&quot;,
+                                                    //     "function in block",
                                                     // );
                                                     </span>ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
@@ -1182,38 +1182,38 @@
                                                             String::new(),
                                                             String::new(),
                                                         ),
-                                                        <span class="string">&quot;function in lines&quot;</span>,
+                                                        <span class="string">"function in lines"</span>,
                                                     );
                                                     <span class="comment">// ui.selectable_value(
                                                     //     &amp;mut self.history_filter_type,
                                                     //     HistoryFilterType::FunctionInFunction(
                                                     //         String::new(),
                                                     //     ),
-                                                    //     &quot;function in function&quot;,
+                                                    //     "function in function",
                                                     // );
                                                     </span>ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::FileAbsolute(
                                                             String::new(),
                                                         ),
-                                                        <span class="string">&quot;file absolute&quot;</span>,
+                                                        <span class="string">"file absolute"</span>,
                                                     );
                                                     ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::FileRelative(
                                                             String::new(),
                                                         ),
-                                                        <span class="string">&quot;file relative&quot;</span>,
+                                                        <span class="string">"file relative"</span>,
                                                     );
                                                     ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::Directory(String::new()),
-                                                        <span class="string">&quot;directory&quot;</span>,
+                                                        <span class="string">"directory"</span>,
                                                     );
                                                     ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::None,
-                                                        <span class="string">&quot;none&quot;</span>,
+                                                        <span class="string">"none"</span>,
                                                     );
                                                 });
                                             <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type {
@@ -1254,7 +1254,7 @@
                                                 </span>}
                                                 HistoryFilterType::PL(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
                                             }
-                                            <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">&quot;Go&quot;</span>));
+                                            <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                             <span class="kw">if </span>resp.clicked() {
                                                 <span class="self">self</span>.status = Status::Loading;
                                                 <span class="kw">let </span>filter = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.history_filter_type {
@@ -1287,7 +1287,7 @@
                                                                 <span class="prelude-val">Ok</span>(x) =&gt; x,
                                                                 <span class="prelude-val">Err</span>(e) =&gt; {
                                                                     <span class="self">self</span>.status = Status::Error(
-                                                                        <span class="macro">format!</span>(<span class="string">&quot;{e}&quot;</span>),
+                                                                        <span class="macro">format!</span>(<span class="string">"{e}"</span>),
                                                                     );
                                                                     <span class="kw">return</span>;
                                                                 }
@@ -1296,7 +1296,7 @@
                                                                 <span class="prelude-val">Ok</span>(x) =&gt; x,
                                                                 <span class="prelude-val">Err</span>(e) =&gt; {
                                                                     <span class="self">self</span>.status = Status::Error(
-                                                                        <span class="macro">format!</span>(<span class="string">&quot;{e}&quot;</span>),
+                                                                        <span class="macro">format!</span>(<span class="string">"{e}"</span>),
                                                                     );
                                                                     <span class="kw">return</span>;
                                                                 }
@@ -1335,18 +1335,18 @@
                                                             thing: <span class="self">self</span>.cmd_output.clone(),
                                                             filter,
                                                         }))
-                                                        .expect(<span class="string">&quot;could not send message in thread&quot;</span>);
+                                                        .expect(<span class="string">"could not send message in thread"</span>);
                                                 }
                                             }
                                         }
 
                                         <span class="kw">_ </span>=&gt; {
-                                            ui.add(Label::new(<span class="string">&quot;No filters available&quot;</span>));
+                                            ui.add(Label::new(<span class="string">"No filters available"</span>));
                                         }
                                     }
                                 }
                                 Command::Search =&gt; {
-                                    ui.add(Label::new(<span class="string">&quot;Function Name:&quot;</span>));
+                                    ui.add(Label::new(<span class="string">"Function Name:"</span>));
                                     ui.horizontal(|ui| {
                                         <span class="comment">// set the width of the input field
                                         </span>ui.set_min_width(<span class="number">4.0</span>);
@@ -1355,33 +1355,33 @@
                                     });
 
                                     <span class="kw">let </span>text = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.file_type {
-                                        FileFilterType::Directory(<span class="kw">_</span>) =&gt; <span class="string">&quot;directory&quot;</span>,
-                                        FileFilterType::Absolute(<span class="kw">_</span>) =&gt; <span class="string">&quot;absolute&quot;</span>,
-                                        FileFilterType::Relative(<span class="kw">_</span>) =&gt; <span class="string">&quot;relative&quot;</span>,
-                                        <span class="kw">_ </span>=&gt; <span class="string">&quot;file type&quot;</span>,
+                                        FileFilterType::Directory(<span class="kw">_</span>) =&gt; <span class="string">"directory"</span>,
+                                        FileFilterType::Absolute(<span class="kw">_</span>) =&gt; <span class="string">"absolute"</span>,
+                                        FileFilterType::Relative(<span class="kw">_</span>) =&gt; <span class="string">"relative"</span>,
+                                        <span class="kw">_ </span>=&gt; <span class="string">"file type"</span>,
                                     };
-                                    egui::ComboBox::from_id_source(<span class="string">&quot;search_file_combo_box&quot;</span>)
+                                    egui::ComboBox::from_id_source(<span class="string">"search_file_combo_box"</span>)
                                         .selected_text(text)
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.file_type,
                                                 FileFilterType::None,
-                                                <span class="string">&quot;None&quot;</span>,
+                                                <span class="string">"None"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.file_type,
                                                 FileFilterType::Relative(String::new()),
-                                                <span class="string">&quot;Relative&quot;</span>,
+                                                <span class="string">"Relative"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.file_type,
                                                 FileFilterType::Absolute(String::new()),
-                                                <span class="string">&quot;Absolute&quot;</span>,
+                                                <span class="string">"Absolute"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.file_type,
                                                 FileFilterType::Directory(String::new()),
-                                                <span class="string">&quot;Directory&quot;</span>,
+                                                <span class="string">"Directory"</span>,
                                             );
                                         });
                                     <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.file_type {
@@ -1399,31 +1399,31 @@
                                     }
                                     <span class="comment">// get filters if any
                                     </span><span class="kw">let </span>text = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.filter {
-                                        Filter::CommitHash(<span class="kw">_</span>) =&gt; <span class="string">&quot;commit hash&quot;</span>.to_string(),
-                                        Filter::DateRange(..) =&gt; <span class="string">&quot;date range&quot;</span>.to_string(),
-                                        Filter::Date(<span class="kw">_</span>) =&gt; <span class="string">&quot;date&quot;</span>.to_string(),
-                                        <span class="kw">_ </span>=&gt; <span class="string">&quot;filter type&quot;</span>.to_string(),
+                                        Filter::CommitHash(<span class="kw">_</span>) =&gt; <span class="string">"commit hash"</span>.to_string(),
+                                        Filter::DateRange(..) =&gt; <span class="string">"date range"</span>.to_string(),
+                                        Filter::Date(<span class="kw">_</span>) =&gt; <span class="string">"date"</span>.to_string(),
+                                        <span class="kw">_ </span>=&gt; <span class="string">"filter type"</span>.to_string(),
                                     };
                                     egui::ComboBox::from_id_source(
-                                        <span class="string">&quot;search_search_filter_combo_box&quot;</span>,
+                                        <span class="string">"search_search_filter_combo_box"</span>,
                                     )
                                     .selected_text(text)
                                     .show_ui(ui, |ui| {
-                                        ui.selectable_value(<span class="kw-2">&amp;mut </span><span class="self">self</span>.filter, Filter::None, <span class="string">&quot;None&quot;</span>);
+                                        ui.selectable_value(<span class="kw-2">&amp;mut </span><span class="self">self</span>.filter, Filter::None, <span class="string">"None"</span>);
                                         ui.selectable_value(
                                             <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
                                             Filter::CommitHash(String::new()),
-                                            <span class="string">&quot;Commit Hash&quot;</span>,
+                                            <span class="string">"Commit Hash"</span>,
                                         );
                                         ui.selectable_value(
                                             <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
                                             Filter::Date(String::new()),
-                                            <span class="string">&quot;Date&quot;</span>,
+                                            <span class="string">"Date"</span>,
                                         );
                                         ui.selectable_value(
                                             <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
                                             Filter::DateRange(String::new(), String::new()),
-                                            <span class="string">&quot;Date Range&quot;</span>,
+                                            <span class="string">"Date Range"</span>,
                                         );
                                     });
 
@@ -1445,7 +1445,7 @@
                                                 ui.set_max_width(max);
                                                 ui.add(TextEdit::singleline(start));
                                             });
-                                            ui.add(Label::new(<span class="string">&quot;-&quot;</span>));
+                                            ui.add(Label::new(<span class="string">"-"</span>));
                                             ui.horizontal(|ui| {
                                                 <span class="comment">// set the width of the input field
                                                 </span>ui.set_min_width(<span class="number">4.0</span>);
@@ -1456,32 +1456,32 @@
                                         <span class="kw">_ </span>=&gt; {}
                                     }
                                     <span class="kw">let </span>text = <span class="self">self</span>.language.to_string();
-                                    egui::ComboBox::from_id_source(<span class="string">&quot;search_language_combo_box&quot;</span>)
+                                    egui::ComboBox::from_id_source(<span class="string">"search_language_combo_box"</span>)
                                         .selected_text(text)
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
                                                 Language::Rust,
-                                                <span class="string">&quot;Rust&quot;</span>,
+                                                <span class="string">"Rust"</span>,
                                             );
-                                            <span class="attr">#[cfg(feature = <span class="string">&quot;c_lang&quot;</span>)]
+                                            <span class="attr">#[cfg(feature = <span class="string">"c_lang"</span>)]
                                             </span>ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
                                                 Language::C,
-                                                <span class="string">&quot;C&quot;</span>,
+                                                <span class="string">"C"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
                                                 Language::Python,
-                                                <span class="string">&quot;Python&quot;</span>,
+                                                <span class="string">"Python"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
                                                 Language::All,
-                                                <span class="string">&quot;All&quot;</span>,
+                                                <span class="string">"All"</span>,
                                             );
                                         });
-                                    <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">&quot;Go&quot;</span>));
+                                    <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                     <span class="kw">if </span>resp.clicked() {
                                         <span class="self">self</span>.status = Status::Loading;
                                         <span class="self">self</span>.channels
@@ -1492,31 +1492,31 @@
                                                 <span class="self">self</span>.filter.clone(),
                                                 <span class="self">self</span>.language,
                                             )))
-                                            .expect(<span class="string">&quot;could not send message in thread&quot;</span>);
+                                            .expect(<span class="string">"could not send message in thread"</span>);
                                     }
                                 }
                                 Command::List =&gt; {
-                                    egui::ComboBox::from_id_source(<span class="string">&quot;list_type&quot;</span>)
+                                    egui::ComboBox::from_id_source(<span class="string">"list_type"</span>)
                                         .selected_text(<span class="self">self</span>.list_type.to_string())
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.list_type,
                                                 ListType::Dates,
-                                                <span class="string">&quot;dates&quot;</span>,
+                                                <span class="string">"dates"</span>,
                                             );
                                             ui.selectable_value(
                                                 <span class="kw-2">&amp;mut </span><span class="self">self</span>.list_type,
                                                 ListType::Commits,
-                                                <span class="string">&quot;commits&quot;</span>,
+                                                <span class="string">"commits"</span>,
                                             );
                                         });
-                                    <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">&quot;Go&quot;</span>));
+                                    <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                     <span class="kw">if </span>resp.clicked() {
                                         <span class="self">self</span>.status = Status::Loading;
                                         <span class="self">self</span>.channels
                                             .<span class="number">0
                                             </span>.send(FullCommand::List(<span class="self">self</span>.list_type))
-                                            .expect(<span class="string">&quot;could not send message in thread&quot;</span>);
+                                            .expect(<span class="string">"could not send message in thread"</span>);
                                     }
                                 }
                             }
@@ -1529,17 +1529,17 @@
                 </span><span class="kw">match </span><span class="self">self</span>.channels.<span class="number">1</span>.recv_timeout(Duration::from_millis(<span class="number">100</span>)) {
                     <span class="prelude-val">Ok</span>(timeout) =&gt; <span class="kw">match </span>timeout {
                         (<span class="kw">_</span>, Status::Error(e)) =&gt; {
-                            <span class="kw">let </span>e = e.split_once(<span class="string">&quot;why&quot;</span>).unwrap_or((<span class="kw-2">&amp;</span>e, <span class="string">&quot;&quot;</span>));
+                            <span class="kw">let </span>e = e.split_once(<span class="string">"why"</span>).unwrap_or((<span class="kw-2">&amp;</span>e, <span class="string">""</span>));
                             <span class="kw">let </span>e = <span class="macro">format!</span>(
-                                <span class="string">&quot;error recieved last command didn&#39;t work; {}{}&quot;</span>,
+                                <span class="string">"error recieved last command didn't work; {}{}"</span>,
                                 e.<span class="number">0</span>,
-                                e.<span class="number">1</span>.split_once(<span class="string">&quot;why&quot;</span>).unwrap_or((<span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>)).<span class="number">0</span>,
+                                e.<span class="number">1</span>.split_once(<span class="string">"why"</span>).unwrap_or((<span class="string">""</span>, <span class="string">""</span>)).<span class="number">0</span>,
                             );
-                            <span class="macro">log::warn!</span>(<span class="string">&quot;{}&quot;</span>, e);
+                            <span class="macro">log::warn!</span>(<span class="string">"{}"</span>, e);
                             <span class="self">self</span>.status = Status::Error(e);
                         }
                         (t, Status::Ok(msg)) =&gt; {
-                            <span class="macro">log::info!</span>(<span class="string">&quot;got results of last command&quot;</span>);
+                            <span class="macro">log::info!</span>(<span class="string">"got results of last command"</span>);
                             <span class="self">self</span>.status = Status::Ok(msg);
                             <span class="self">self</span>.cmd_output = t;
                         }
@@ -1548,7 +1548,7 @@
                     <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">match </span>e {
                         mpsc::RecvTimeoutError::Timeout =&gt; {}
                         mpsc::RecvTimeoutError::Disconnected =&gt; {
-                            <span class="macro">panic!</span>(<span class="string">&quot;Disconnected&quot;</span>);
+                            <span class="macro">panic!</span>(<span class="string">"Disconnected"</span>);
                         }
                     },
                 }
@@ -1559,7 +1559,7 @@
                     }
 
                     CommandResult::String(t) =&gt; {
-                        <span class="kw">let </span>resp = ui.button(<span class="string">&quot;go&quot;</span>);
+                        <span class="kw">let </span>resp = ui.button(<span class="string">"go"</span>);
                         egui::ScrollArea::vertical()
                             .max_height(f32::INFINITY)
                             .max_width(f32::INFINITY)
@@ -1578,31 +1578,31 @@
                             });
                         <span class="kw">if </span>resp.clicked() {
                             <span class="comment">// show a popup window
-                            // let response = ui.button(&quot;Open popup&quot;);
-                            // let popup_id = ui.make_persistent_id(&quot;my_unique_id&quot;);
+                            // let response = ui.button("Open popup");
+                            // let popup_id = ui.make_persistent_id("my_unique_id");
                             // // if response.clicked() {
                             //     ui.memory().toggle_popup(popup_id);
                             // // }
                             // egui::popup::popup_below_widget(ui, popup_id, &amp;resp, |ui| {
                             //     ui.set_min_width(200.0); // if you want to control the size
-                            //     ui.label(&quot;Some more info, or things you can select:&quot;);
-                            //     ui.label(&quot;…&quot;);
+                            //     ui.label("Some more info, or things you can select:");
+                            //     ui.label("…");
                             // });
-                            // egui::Area::new(&quot;my_area&quot;)
+                            // egui::Area::new("my_area")
                             //     .fixed_pos(egui::pos2(32.0, 32.0))
                             //     .show(ctx, |ui| {
-                            //         ui.label(&quot;Floating text!&quot;);
+                            //         ui.label("Floating text!");
                             //     });
                             </span><span class="self">self</span>.do_commit = <span class="bool-val">true</span>;
                         }
                     }
                     CommandResult::None =&gt; <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.status {
                         Status::Loading =&gt; {
-                            ui.add(Label::new(<span class="string">&quot;Loading...&quot;</span>));
+                            ui.add(Label::new(<span class="string">"Loading..."</span>));
                         }
                         <span class="kw">_ </span>=&gt; {
-                            ui.add(Label::new(<span class="string">&quot;Nothing to show&quot;</span>));
-                            ui.add(Label::new(<span class="string">&quot;Please select a command&quot;</span>));
+                            ui.add(Label::new(<span class="string">"Nothing to show"</span>));
+                            ui.add(Label::new(<span class="string">"Please select a command"</span>));
                         }
                     },
                 };

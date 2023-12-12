@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/ruby.rs`."><title>ruby.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6cf088810 2023-11-26)" data-channel="nightly" data-search-js="search-56a624991a76cfad.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-e1c03aa593074e71.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/languages/ruby.rs`."><title>ruby.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -392,15 +392,15 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>RubyFunction {
-    <span class="doccomment">/// don&#39;t use this for anything other than debugging the output is not guaranteed to be in the right order
+    <span class="doccomment">/// don't use this for anything other than debugging the output is not guaranteed to be in the right order
     /// use `fmt::Display` for `RubyFile` instead
-    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">for </span>class <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.class {
-            <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, class.top)<span class="question-mark">?</span>;
+            <span class="macro">write!</span>(f, <span class="string">"{}"</span>, class.top)<span class="question-mark">?</span>;
         }
-        <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.body)<span class="question-mark">?</span>;
+        <span class="macro">write!</span>(f, <span class="string">"{}"</span>, <span class="self">self</span>.body)<span class="question-mark">?</span>;
         <span class="kw">for </span>class <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.class {
-            <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, class.bottom)<span class="question-mark">?</span>;
+            <span class="macro">write!</span>(f, <span class="string">"{}"</span>, class.bottom)<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(())
     }
@@ -471,7 +471,7 @@
     name: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RubyFunction&gt;, String&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>starts = file_contents
-        .match_indices(<span class="string">&#39;\n&#39;</span>)
+        .match_indices(<span class="string">'\n'</span>)
         .map(|x| x.<span class="number">0</span>)
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     starts.push(<span class="number">0</span>);
@@ -487,7 +487,7 @@
             <span class="kw">return </span><span class="prelude-val">Err</span>(d.message.render());
         }
     }
-    <span class="kw">let </span>ast = parsed.ast.unwrap_to_error(<span class="string">&quot;Failed to parse file&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>ast = parsed.ast.unwrap_to_error(<span class="string">"Failed to parse file"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>fns = get_functions_from_node(<span class="kw-2">&amp;</span>ast, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[], name);
     <span class="kw">let </span>index = <span class="kw">super</span>::turn_into_index(file_contents)<span class="question-mark">?</span>;
     <span class="kw">let </span>fns = fns
@@ -509,7 +509,7 @@
                         ) - <span class="number">1</span>,
                     };
                     <span class="kw">let </span><span class="kw-2">mut </span>top = top.source(<span class="kw-2">&amp;</span>parsed.input)<span class="question-mark">?</span>;
-                    top = top.trim_matches(<span class="string">&#39;\n&#39;</span>).to_string();
+                    top = top.trim_matches(<span class="string">'\n'</span>).to_string();
                     top = <span class="kw">super</span>::make_lined(<span class="kw-2">&amp;</span>top, start_line);
                     <span class="prelude-val">Some</span>(RubyClass {
                         name: parser_class_name(c),
@@ -520,7 +520,7 @@
                             loc_end
                                 .with_begin(<span class="kw-2">**</span>map.get(<span class="kw-2">&amp;</span>(end_line - <span class="number">1</span>))<span class="question-mark">?</span>)
                                 .source(<span class="kw-2">&amp;</span>parsed.input)<span class="question-mark">?
-                                </span>.trim_matches(<span class="string">&#39;\n&#39;</span>),
+                                </span>.trim_matches(<span class="string">'\n'</span>),
                             end_line,
                         ),
                     })
@@ -529,9 +529,9 @@
             <span class="kw">let </span>start = f.expression_l.begin;
             <span class="comment">// get the lines from map using f.expression_l.begin and f.expression_l.end
             </span><span class="kw">let </span>start_line = <span class="kw">super</span>::get_from_index(<span class="kw-2">&amp;</span>index, start)
-                .unwrap_to_error(<span class="string">&quot;Failed to get start lines&quot;</span>)<span class="question-mark">?</span>;
+                .unwrap_to_error(<span class="string">"Failed to get start lines"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>end_line = <span class="kw">super</span>::get_from_index(<span class="kw-2">&amp;</span>index, f.expression_l.end)
-                .unwrap_to_error(<span class="string">&quot;Failed to get end line&quot;</span>)<span class="question-mark">?</span>;
+                .unwrap_to_error(<span class="string">"Failed to get end line"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>starts = start_line + <span class="number">1</span>;
             <span class="prelude-val">Ok</span>::&lt;RubyFunction, String&gt;(RubyFunction {
                 name: f.name.clone(),
@@ -541,8 +541,8 @@
                     f.expression_l
                         .with_begin(<span class="kw-2">**</span>map.get(<span class="kw-2">&amp;</span>(start_line - <span class="number">1</span>)).unwrap_or(&amp;&amp;<span class="number">0</span>))
                         .source(<span class="kw-2">&amp;</span>parsed.input)
-                        .unwrap_to_error(<span class="string">&quot;Failed to get function body from source&quot;</span>)<span class="question-mark">?
-                        </span>.trim_matches(<span class="string">&#39;\n&#39;</span>),
+                        .unwrap_to_error(<span class="string">"Failed to get function body from source"</span>)<span class="question-mark">?
+                        </span>.trim_matches(<span class="string">'\n'</span>),
                     starts - <span class="number">1</span>,
                 ),
                 args: f
@@ -554,7 +554,7 @@
         .filter_map(Result::ok)
         .collect::&lt;Vec&lt;RubyFunction&gt;&gt;();
     <span class="kw">if </span>fns.is_empty() {
-        <span class="prelude-val">Err</span>(<span class="string">&quot;No functions with this name was found in the this file&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Err</span>(<span class="string">"No functions with this name was found in the this file"</span>)<span class="question-mark">?</span>;
     }
     <span class="prelude-val">Ok</span>(fns)
 }
@@ -606,7 +606,7 @@
                     arg.default
                         .expression()
                         .source(parsed_file)
-                        .unwrap_or_else(|| <span class="string">&quot;could not retrieve default value&quot;</span>.to_string()),
+                        .unwrap_or_else(|| <span class="string">"could not retrieve default value"</span>.to_string()),
                 ));
             }
             lib_ruby_parser::Node::Restarg(arg) =&gt; {
