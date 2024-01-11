@@ -7,7 +7,7 @@ repository = "https://github.com/mendelsshop/git_function_history/tree/main/enum
 keywords = ["enum", "proc-macro"]
 categories = ["proc-macro"]
 description = "A proc macro to generate a bunch of stuff for enums - for git_function_history"
-rust-version = "1.56.1"
+rust-version = "1.58.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
