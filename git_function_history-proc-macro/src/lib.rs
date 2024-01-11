@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{quote_spanned, ToTokens};
+use quote::{format_ident, quote_spanned, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
 
 /// Allows the type that derives this macro, to have a method from_str
@@ -47,24 +47,42 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
                 }
                 syn::Fields::Unnamed(v) => {
                     let values = v.unnamed;
-                    let v = values
+                    let (parsers, results): (Vec<_>, Vec<_>) = values
                         .iter()
-                        .map(|v| {
+                        .enumerate()
+                        .map(|(i, v)| {
+                            let var = format_ident!("f{i}");
                             let rest = quote_spanned!(span=>rest);
                             // todo: more base cases
-                            if v.ty.to_token_stream().to_string() == "String" {
-                                quote_spanned!(span=>#rest.join(" "))
+                            let type_str = v.ty.to_token_stream().to_string();
+                            if type_str == "String" {
+                                (
+                                    quote_spanned!(span=>let (#var, rest) = rest.split_first()?;),
+                                    quote_spanned!(span=>#var.to_string()),
+                                )
+                            } else if type_str == "usize" {
+                                (
+                                    quote_spanned!(span=>let (#var, rest) = rest.split_first()?;),
+                                    quote_spanned!(span=>#var.parse().ok()?),
+                                )
                             } else {
                                 let ty = v.ty.to_token_stream();
-                                quote_spanned!(span=>#ty::from_str(#rest)?)
+                                (
+                                    quote_spanned!(span=>let (#var, rest) = #ty::from_str(#rest)?;),
+                                    quote_spanned!(span=>#var),
+                                )
                             }
                         })
-                        .collect::<Vec<_>>();
-                    quote_spanned!(span=>#name => Some(Self::#name_tok(#(#v),*)),)
+                        .unzip();
+                    quote_spanned!(span=>#name => {
+#(#parsers)*
+Some((Self::#name_tok(#(#results),*), rest))
+                    } )
                 }
                 syn::Fields::Unit => {
                     let ident = v.ident.to_token_stream();
-                    quote_spanned!(span=>#name => Some(Self::#ident),)
+                    // let rest = quote_spanned!(span=>rest);
+                    quote_spanned!(span=>#name => Some((Self::#ident, rest)),)
                 }
             })
         })
@@ -76,7 +94,7 @@ pub fn enum_stuff(input: TokenStream) -> TokenStream {
         span=>
         impl #name {
             // we nned to have a list of the types the variant is constructed of so we can create the variant
-            #vis fn from_str(makeup: &[&str]) -> Option<Self> {
+            #vis fn from_str<'a, 'b>(makeup: &'b [&'a str]) -> Option<(Self, &'b [&'a str])> {
                 let (variant, rest) = makeup.split_first()?;
                 match *variant {
                     #(#types)*

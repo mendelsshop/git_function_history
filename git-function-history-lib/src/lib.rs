@@ -88,7 +88,6 @@ pub enum Filter {
     /// When you want to filter only files in a specific directory
     Directory(String),
     /// when you want to filter by function that are in between specific lines
-    #[enumstuff(skip)]
     FunctionInLines(usize, usize),
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
@@ -347,13 +346,13 @@ fn traverse_tree(
     let mut ret = Vec::new();
     for i in treee_iter {
         let i = i.map_err(|_| "failed to get tree entry")?;
-        match &i.mode() {
-            objs::tree::EntryMode::Tree => {
+        match &i.mode().kind() {
+            objs::tree::EntryKind::Tree => {
                 let new = get_item_from!(i.oid(), &repo, try_into_tree);
                 let path_new = format!("{path}/{}", i.filename());
                 ret.extend(traverse_tree(&new, repo, name, &path_new, langs, filetype)?);
             }
-            objs::tree::EntryMode::Blob => {
+            objs::tree::EntryKind::Blob => {
                 let file = format!("{path}/{}", i.filename());
                 match &filetype {
                     FileFilterType::Relative(ref path) => {

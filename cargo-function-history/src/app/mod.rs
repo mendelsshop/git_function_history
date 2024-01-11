@@ -416,7 +416,8 @@ impl App<'_> {
                         self,
                         LanguageFilter::from_str(&rest),
                         &format!("filters of {} could not be parsed properly ", filter_name)
-                    );
+                    )
+                    .0;
                     log::info!("filtering by {:?}", filt);
                     filter = Filter::PLFilter(filt);
                     break;
