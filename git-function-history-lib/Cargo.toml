@@ -37,7 +37,7 @@ gix = { version = "0.57.1", default-features = false, features = [
     "max-performance-safe",
     "revision",
 ] }
-gix-features = { version = "0.37.1", features = [
+gix-features = { version = "0.38.0", features = [
     "zlib",
     "once_cell",
     "walkdir",
