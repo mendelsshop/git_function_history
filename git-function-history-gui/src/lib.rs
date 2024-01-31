@@ -252,7 +252,21 @@ impl MyEguiApp {
         }
     }
 }
-
+macro_rules! draw_text_input {
+    ($ui:expr, $max:expr,  $($field:expr)+) => {{
+        $($ui.horizontal(|ui| {
+            // set the width of the input field
+            ui.set_min_width(4.0);
+            ui.set_max_width($max);
+            ui.add(TextEdit::singleline($field));
+        });)*
+    }};
+}
+macro_rules! draw_selecction {
+    () => {
+        
+    };
+}
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
@@ -416,18 +430,7 @@ impl eframe::App for MyEguiApp {
                                                     line1,
                                                     line2,
                                                 ) => {
-                                                    ui.horizontal(|ui| {
-                                                        // set the width of the input field
-                                                        ui.set_min_width(4.0);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(line1));
-                                                    });
-                                                    ui.horizontal(|ui| {
-                                                        // set the width of the input field
-                                                        ui.set_min_width(4.0);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(line2));
-                                                    });
+                                                        draw_text_input!(ui,max, line1 line2)
                                                 }
                                                 HistoryFilterType::Date(dir)
                                                 | HistoryFilterType::CommitHash(dir)
@@ -436,12 +439,7 @@ impl eframe::App for MyEguiApp {
                                                 | HistoryFilterType::FileAbsolute(dir)
                                                 | HistoryFilterType::FileRelative(dir)
                                                 | HistoryFilterType::Directory(dir) => {
-                                                    ui.horizontal(|ui| {
-                                                        // set the width of the input field
-                                                        ui.set_min_width(4.0);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(dir));
-                                                    });
+                                                        draw_text_input!(ui,max, dir)
                                                 }
                                                 HistoryFilterType::None => {
                                                     // do nothing
@@ -541,13 +539,8 @@ impl eframe::App for MyEguiApp {
                                 }
                                 Command::Search => {
                                     ui.add(Label::new("Function Name:"));
-                                    ui.horizontal(|ui| {
-                                        // set the width of the input field
-                                        ui.set_min_width(4.0);
-                                        ui.set_max_width(max);
-                                        ui.add(TextEdit::singleline(&mut self.input_buffer));
-                                    });
 
+                                    draw_text_input!(ui, max, &mut self.input_buffer);
                                     let text = match &self.file_type {
                                         FileFilterType::Directory(_) => "directory",
                                         FileFilterType::Absolute(_) => "absolute",
@@ -583,12 +576,7 @@ impl eframe::App for MyEguiApp {
                                         FileFilterType::Relative(dir)
                                         | FileFilterType::Absolute(dir)
                                         | FileFilterType::Directory(dir) => {
-                                            ui.horizontal(|ui| {
-                                                // set the width of the input field
-                                                ui.set_min_width(4.0);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(dir));
-                                            });
+                                            draw_text_input!(ui, max, dir)
                                         }
                                     }
                                     // get filters if any
@@ -625,27 +613,12 @@ impl eframe::App for MyEguiApp {
                                     match &mut self.filter {
                                         Filter::None => {}
                                         Filter::CommitHash(thing) | Filter::Date(thing) => {
-                                            ui.horizontal(|ui| {
-                                                // set the width of the input field
-                                                ui.set_min_width(4.0);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(thing));
-                                            });
+                                            draw_text_input!(ui, max, thing)
                                         }
                                         Filter::DateRange(start, end) => {
-                                            ui.horizontal(|ui| {
-                                                // set the width of the input field
-                                                ui.set_min_width(4.0);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(start));
-                                            });
+                                            draw_text_input!(ui, max, start);
                                             ui.add(Label::new("-"));
-                                            ui.horizontal(|ui| {
-                                                // set the width of the input field
-                                                ui.set_min_width(4.0);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(end));
-                                            });
+                                            draw_text_input!(ui, max, end)
                                         }
                                         _ => {}
                                     }
