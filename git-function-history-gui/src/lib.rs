@@ -263,9 +263,7 @@ macro_rules! draw_text_input {
     }};
 }
 macro_rules! draw_selecction {
-    () => {
-        
-    };
+    () => {};
 }
 impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
