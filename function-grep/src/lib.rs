@@ -32,35 +32,34 @@ pub enum Error {
 
 ///
 /// # Errors
-fn get_file_type_from_ext(
+fn get_file_type_from_ext<'a>(
     ext: &str,
-    langs: &[impl SupportedLanguage],
-) -> Result<impl SupportedLanguage, Error> {
+    langs: &'a [&'a dyn SupportedLanguage],
+) -> Result<&'a dyn SupportedLanguage, Error> {
     langs
         .iter()
         .find(|lang| lang.file_exts().contains(&ext))
-        .copied()
-        .ok_or_else(||Error::FileTypeUnkown(ext.to_string()))
+        .map(|lang| *lang)
+        .ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
 }
 
 ///
 /// # Errors
-pub fn get_file_type_from_file(
+pub fn get_file_type_from_file<'a>(
     file: &str,
-    langs: &[impl SupportedLanguage],
-) -> Result<impl SupportedLanguage, Error> {
+    langs: &'a [&'a dyn SupportedLanguage],
+) -> Result<&'a dyn SupportedLanguage, Error> {
     file.rsplit_once('.')
         .ok_or_else(|| Error::FileTypeUnkown(file.to_string()))
         .map(|(_, ext)| ext)
         .and_then(|ext| get_file_type_from_ext(ext, langs))
 }
 
-
 ///
 /// # Errors
 pub fn search_file<'a>(
     code: &'a str,
-    language: impl SupportedLanguage,
+    language: &dyn SupportedLanguage,
     name: &'a str,
 ) -> Result<impl Iterator<Item = (String, Range)> + 'a, Error> {
     let code_bytes = code.as_bytes();

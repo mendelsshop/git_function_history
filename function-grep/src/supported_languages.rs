@@ -1,10 +1,12 @@
 use tree_sitter::Language;
 
+use self::c::C;
 use self::rust::Rust;
 
+pub mod c;
 pub mod rust;
 
-pub trait SupportedLanguage: Clone + Copy {
+pub trait SupportedLanguage {
     /// The name of this language
     fn name(&self) -> &'static str;
     /// The list of file extensions used for this language.
@@ -38,8 +40,7 @@ pub trait SupportedLanguage: Clone + Copy {
     /// ```
     fn query(&self, name: &str) -> String;
 }
-
 #[must_use]
-pub fn predefined_languages() -> &'static [impl SupportedLanguage] {
-    &[Rust]
+pub fn predefined_languages() -> &'static [&'static dyn SupportedLanguage] {
+    &[&Rust, &C]
 }

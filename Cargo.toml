@@ -4,6 +4,7 @@ members = [
     "cargo-function-history",
     "git-function-history-gui",
     "function_history_backend_thread",
-    "git_function_history-proc-macro"
+    "git_function_history-proc-macro",
+    "function-grep",
 ]
 resolver = "2"

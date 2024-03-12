@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.2", features = ["derive"] }
 tree-sitter = "0.20.10"
+tree-sitter-c = "0.20.8"
 tree-sitter-rust = "0.20.4"
