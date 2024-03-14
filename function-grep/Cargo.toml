@@ -9,4 +9,5 @@ edition = "2021"
 clap = { version = "4.5.2", features = ["derive"] }
 tree-sitter = "0.20.10"
 tree-sitter-c = "0.20.8"
+tree-sitter-python = "0.20.4"
 tree-sitter-rust = "0.20.4"
