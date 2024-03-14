@@ -3,6 +3,8 @@
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
+use core::fmt;
+
 use supported_languages::SupportedLanguage;
 use tree_sitter::{Language, LanguageError, Node, QueryError, Range};
 
@@ -55,13 +57,93 @@ pub fn get_file_type_from_file<'a>(
         .and_then(|ext| get_file_type_from_ext(ext, langs))
 }
 
+#[derive(Debug, Clone)]
+pub struct ParsedFile<'a> {
+    file: &'a str,
+    function_name: &'a str,
+    // TODO: maybe each supported language could define filters
+    // if so we would store dyn SupportedLanguage here
+    language_type: &'a str,
+    results: Box<[Range]>,
+}
+
+impl IntoIterator for ParsedFile<'_> {
+    type Item = (Range, String);
+
+    type IntoIter = Box<dyn Iterator<Item = Self::Item>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Box::new(
+            self.results
+                .into_iter()
+                .map(|range| {
+                    (
+                        range.clone(),
+                        self.file[range.start_byte..range.end_byte].to_string(),
+                    )
+                })
+                .collect::<Vec<_>>()
+                .into_iter(),
+        )
+    }
+}
+
+impl fmt::Display for ParsedFile<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let lines = self.file.lines().enumerate();
+        let texts = self
+            .results
+            .into_iter()
+            .map(move |range| {
+                lines
+                    .clone()
+                    .filter_map(move |(line, str)| {
+                        if line >= range.start_point.row && line <= range.end_point.row {
+                            Some(format!("{}: {str}", line + 1))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+            .collect::<Vec<_>>()
+            .join("\n...\n");
+        write!(f, "{}", texts)
+    }
+}
+
+impl<'a> ParsedFile<'a> {
+    pub fn new(
+        file: &'a str,
+        function_name: &'a str,
+        language_type: &'a str,
+        results: Box<[Range]>,
+    ) -> Self {
+        Self {
+            file,
+            function_name,
+            language_type,
+            results,
+        }
+    }
+
+    pub fn language(&self) -> &str {
+        self.language_type
+    }
+
+    pub fn search_name(&self) -> &str {
+        self.function_name
+    }
+}
+
 ///
 /// # Errors
 pub fn search_file<'a>(
     code: &'a str,
     language: &dyn SupportedLanguage,
     name: &'a str,
-) -> Result<impl Iterator<Item = (String, Range)> + 'a, Error> {
+) -> Result<ParsedFile<'a>, Error> {
     let code_bytes = code.as_bytes();
     let mut parser = tree_sitter::Parser::new();
     let ts_lang = language.language();
@@ -77,22 +159,10 @@ pub fn search_file<'a>(
     let command_ranges = run_query(&query_str, ts_lang, &binding, code_bytes)
         .map_err(|query_err| Error::InvalidQuery(language.name(), query_err))?;
 
-    let lines = code.lines().enumerate();
-    let texts = command_ranges.into_iter().map(move |range| {
-        (
-            lines
-                .clone()
-                .filter_map(move |(line, str)| {
-                    if line >= range.start_point.row && line <= range.end_point.row {
-                        Some(format!("{}: {str}", line + 1))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("\n"),
-            range,
-        )
-    });
-    Ok(texts)
+    Ok(ParsedFile::new(
+        code,
+        name,
+        language.name(),
+        command_ranges.into_boxed_slice(),
+    ))
 }

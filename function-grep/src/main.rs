@@ -36,8 +36,6 @@ pub fn main() -> Result<(), Error> {
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
     let found = search_file(&code, file_type, &args.name).map_err(Error::LibraryError)?;
-    for (text, _range) in found {
-        println!("{text}");
-    }
+    println!("{found}");
     Ok(())
 }
