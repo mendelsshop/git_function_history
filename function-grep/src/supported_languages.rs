@@ -103,7 +103,44 @@ construct_language!(Python(tree_sitter_python::language()).[py]?=name->
 (#eq? @method-name {name}))
 "
 );
+
+construct_language!(Java(tree_sitter_java::language()).[java]?=name->
+"((method_declaration
+ name: (identifier) @method-name)
+ @method-definition
+(#eq? @method-name {name}))
+((local_variable_declaration
+ declarator: (variable_declarator
+ name: (identifier) @method-name
+ value: (lambda_expression)))
+ @method-definition
+(#eq? @method-name {name}))
+((field_declaration
+ declarator: (variable_declarator
+ name: (identifier) @method-name
+ value: (lambda_expression)))
+ @method-definition
+(#eq? @method-name {name}))"
+);
+
+construct_language!(OCaml(tree_sitter_ocaml::language_ocaml()).[ml]?=name->
+"((value_definition
+ (let_binding pattern: (value_name) @method-name (parameter)))
+ @method-defintion
+(#eq? @method-name {name}))
+((value_definition
+ (let_binding pattern: (parenthesized_operator) @method-name (parameter)))
+ @method-defintion
+(#eq? @method-name {name}))
+((value_definition
+ (let_binding pattern: (value_name) @method-name body: (function_expression)))
+ @method-defintion
+(#eq? @method-name {name}))
+((value_definition
+ (let_binding pattern: (value_name) @method-name body: (fun_expression)))
+ @method-defintion
+(#eq? @method-name {name}))");
 #[must_use]
 pub fn predefined_languages() -> &'static [&'static dyn SupportedLanguage] {
-    &[&Rust, &C, &Python]
+    &[&Rust, &C, &Python, &Java, &OCaml]
 }
