@@ -6,21 +6,21 @@
 use core::fmt;
 
 use supported_languages::SupportedLanguage;
-use tree_sitter::{Language, LanguageError, Node, QueryError, Range};
+use tree_sitter::{Language, LanguageError, Node, QueryError, Range, Tree};
 
 pub mod supported_languages;
 
-fn run_query(
-    query_str: &str,
+fn run_query<'a>(
+    query_str: &'a str,
     lang: Language,
-    node: &Node<'_>,
-    code: &[u8],
-) -> Result<Vec<Range>, QueryError> {
+    node: Node<'a>,
+    code: &'a [u8],
+) -> Result<Box<[Range]>, QueryError> {
     let query = tree_sitter::Query::new(lang, query_str)?;
     let mut query_cursor = tree_sitter::QueryCursor::new();
-    let matches = query_cursor.matches(&query, *node, code);
+    let matches = query_cursor.matches(&query, node, code);
     let ranges = matches.map(|m| m.captures[0].node.range());
-    Ok(ranges.collect::<Vec<_>>())
+    Ok(ranges.collect())
 }
 
 #[derive(Debug)]
@@ -41,7 +41,7 @@ fn get_file_type_from_ext<'a>(
     langs
         .iter()
         .find(|lang| lang.file_exts().contains(&ext))
-        .map(|lang| *lang)
+        .copied()
         .ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
 }
 
@@ -59,11 +59,15 @@ pub fn get_file_type_from_file<'a>(
 
 #[derive(Debug, Clone)]
 pub struct ParsedFile<'a> {
+    // I believe we cannot store something refernceing the tree, so we cannot directly store the
+    // results of the query, but just their ranges so in the [`filter`] method we use the tree to
+    // obtain the correct nodes from their ranges
     file: &'a str,
     function_name: &'a str,
     // TODO: maybe each supported language could define filters
     // if so we would store dyn SupportedLanguage here
     language_type: &'a str,
+    tree: Tree,
     results: Box<[Range]>,
 }
 
@@ -74,11 +78,10 @@ impl IntoIterator for ParsedFile<'_> {
 
     fn into_iter(self) -> Self::IntoIter {
         Box::new(
-            self.results
-                .into_iter()
+            self.ranges()
                 .map(|range| {
                     (
-                        range.clone(),
+                        *range,
                         self.file[range.start_byte..range.end_byte].to_string(),
                     )
                 })
@@ -92,8 +95,7 @@ impl fmt::Display for ParsedFile<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let lines = self.file.lines().enumerate();
         let texts = self
-            .results
-            .into_iter()
+            .ranges()
             .map(move |range| {
                 lines
                     .clone()
@@ -109,31 +111,66 @@ impl fmt::Display for ParsedFile<'_> {
             })
             .collect::<Vec<_>>()
             .join("\n...\n");
-        write!(f, "{}", texts)
+        write!(f, "{texts}")
     }
 }
 
+#[derive(Debug)]
+pub struct NoResultsForFilter;
+
 impl<'a> ParsedFile<'a> {
+    #[must_use]
     pub fn new(
         file: &'a str,
         function_name: &'a str,
         language_type: &'a str,
+        tree: Tree,
         results: Box<[Range]>,
     ) -> Self {
         Self {
             file,
             function_name,
             language_type,
+            tree,
             results,
         }
     }
 
+    // TODO: maybe only make this hidden and expose a filter method that takes in some sort of
+    // filter trait
+    ///
+    /// # Errors
+    /// If there filter [f] filters out all the results of this file
+    pub fn filter(&self, f: fn(&Node<'_>) -> bool) -> Result<Self, NoResultsForFilter> {
+        let root = self.tree.root_node();
+        let ranges: Box<[Range]> = self
+            .ranges()
+            .filter_map(|range| root.descendant_for_point_range(range.start_point, range.end_point))
+            .filter(f)
+            .map(|n| n.range())
+            .collect();
+        if ranges.is_empty() {
+            return Err(NoResultsForFilter);
+        }
+        let clone = Self {
+            results: ranges,
+            ..self.clone()
+        };
+        Ok(clone)
+    }
+
+    #[must_use]
     pub fn language(&self) -> &str {
         self.language_type
     }
 
+    #[must_use]
     pub fn search_name(&self) -> &str {
         self.function_name
+    }
+
+    fn ranges(&self) -> impl Iterator<Item = &Range> {
+        self.results.iter()
     }
 }
 
@@ -141,7 +178,7 @@ impl<'a> ParsedFile<'a> {
 /// # Errors
 pub fn search_file<'a>(
     code: &'a str,
-    language: &dyn SupportedLanguage,
+    language: &'a dyn SupportedLanguage,
     name: &'a str,
 ) -> Result<ParsedFile<'a>, Error> {
     let code_bytes = code.as_bytes();
@@ -154,15 +191,16 @@ pub fn search_file<'a>(
         .parse(code, None)
         .ok_or_else(|| Error::ParseError(code.to_string()))?;
 
-    let binding = parsed.root_node();
     let query_str = language.query(name);
-    let command_ranges = run_query(&query_str, ts_lang, &binding, code_bytes)
+    let node = parsed.root_node();
+    let command_ranges = run_query(&query_str, ts_lang, node, code_bytes)
         .map_err(|query_err| Error::InvalidQuery(language.name(), query_err))?;
 
     Ok(ParsedFile::new(
         code,
         name,
         language.name(),
-        command_ranges.into_boxed_slice(),
+        parsed,
+        command_ranges,
     ))
 }
