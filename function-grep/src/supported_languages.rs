@@ -44,6 +44,9 @@ pub trait SupportedLanguage: Send + Sync {
 ///
 /// Example:
 /// ```rust
+/// use function_grep::construct_language;
+/// use function_grep::supported_languages::SupportedLanguage;
+/// use tree_sitter::Language;
 /// construct_language!(C(tree_sitter_c::language()).[c h]?=
 ///    name ->  "((function_definition
 ///  declarator:
@@ -60,7 +63,7 @@ macro_rules! construct_language {
     ($name:ident($tslang:expr).[$($ext:ident)+]?=$query_name:ident->$query:literal ) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name;
-        impl $crate::SupportedLanguage for $name {
+        impl SupportedLanguage for $name {
             fn query(&self, $query_name: &str) -> String {
                 format!($query)
             }

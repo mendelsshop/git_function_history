@@ -1,3 +1,4 @@
+#![doc = include_str!("../README.md")]
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
@@ -225,6 +226,12 @@ impl<'a> ParsedFile<'a> {
     /// Get the file name of this file.
     pub const fn file_name(&self) -> Option<&str> {
         self.file_name
+    }
+
+    #[must_use]
+    /// Get the [Range] of each found function.
+    pub fn results(&self) -> &[Range] {
+        &self.results
     }
 }
 
