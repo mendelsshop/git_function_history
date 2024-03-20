@@ -39,7 +39,7 @@ pub enum Error {
     /// If there are no result after filtering.
     NoSuchResultsForFilter,
     /// If there are no result after searching.
-    NoResultsForSearch
+    NoResultsForSearch,
 }
 
 /// Tries to find the appropiate language for the given file extension [`ext`] based on the list of
@@ -186,7 +186,7 @@ impl<'a> ParsedFile<'a> {
             .map_err(|query_err| Error::InvalidQuery(language.name(), query_err))?;
 
         if command_ranges.is_empty() {
-            return  Err(Error::NoResultsForSearch);
+            return Err(Error::NoResultsForSearch);
         }
         Ok(ParsedFile::new(
             code,
