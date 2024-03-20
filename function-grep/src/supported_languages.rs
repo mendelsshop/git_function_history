@@ -1,6 +1,6 @@
 use tree_sitter::Language;
 
-pub trait SupportedLanguage {
+pub trait SupportedLanguage: Send + Sync {
     /// The name of this language
     fn name(&self) -> &'static str;
     /// The list of file extensions used for this language.
@@ -35,6 +35,27 @@ pub trait SupportedLanguage {
     fn query(&self, name: &str) -> String;
 }
 
+#[macro_export]
+/// Use to more easily make new [`SupportedLanguage`]s.
+/// First provide the name (which is used as the type of the language), followed by the tree sitter
+/// languge in parenthesis, next you put the file extensions in brackets with a leading .
+/// to specify the query we use ?= variable -> string literal query.
+/// In the query you when you want use the variable just do {variable}.
+///
+/// Example:
+/// ```rust
+/// construct_language!(C(tree_sitter_c::language()).[c h]?=
+///    name ->  "((function_definition
+///  declarator:
+///  (function_declarator declarator: (identifier) @method-name))
+///  @method-definition
+///  (#eq? @method-name {name}))
+/// ((declaration declarator:
+///  (function_declarator declarator: (identifier) @method-name))
+///  @method-definition
+///  (#eq? @method-name {name}))"
+/// );
+/// ```
 macro_rules! construct_language {
     ($name:ident($tslang:expr).[$($ext:ident)+]?=$query_name:ident->$query:literal ) => {
         #[derive(Debug, Clone, Copy)]
@@ -59,6 +80,7 @@ macro_rules! construct_language {
     };
 }
 
+#[cfg(feature = "c")]
 construct_language!(C(tree_sitter_c::language()).[c h]?=
    name ->  "((function_definition
  declarator:
@@ -71,6 +93,7 @@ construct_language!(C(tree_sitter_c::language()).[c h]?=
  (#eq? @method-name {name}))"
 );
 
+#[cfg(feature = "rust")]
 construct_language!(Rust(tree_sitter_rust::language()).[rs]?=name->
 
             "((function_item
@@ -91,6 +114,7 @@ construct_language!(Rust(tree_sitter_rust::language()).[rs]?=name->
 (#eq? @method-name {name}))"
 );
 
+#[cfg(feature = "python")]
 construct_language!(Python(tree_sitter_python::language()).[py]?=name->
 
             "((function_definition
@@ -104,6 +128,7 @@ construct_language!(Python(tree_sitter_python::language()).[py]?=name->
 "
 );
 
+#[cfg(feature = "java")]
 construct_language!(Java(tree_sitter_java::language()).[java]?=name->
 "((method_declaration
  name: (identifier) @method-name)
@@ -123,6 +148,7 @@ construct_language!(Java(tree_sitter_java::language()).[java]?=name->
 (#eq? @method-name {name}))"
 );
 
+#[cfg(feature = "ocaml")]
 construct_language!(OCaml(tree_sitter_ocaml::language_ocaml()).[ml]?=name->
 "((value_definition
  (let_binding pattern: (value_name) @method-name (parameter)))
@@ -140,7 +166,21 @@ construct_language!(OCaml(tree_sitter_ocaml::language_ocaml()).[ml]?=name->
  (let_binding pattern: (value_name) @method-name body: (fun_expression)))
  @method-defintion
 (#eq? @method-name {name}))");
+
 #[must_use]
+/// Use this to obtain some defualt languages (what languages are presend depend of the features
+/// you allow).
 pub fn predefined_languages() -> &'static [&'static dyn SupportedLanguage] {
-    &[&Rust, &C, &Python, &Java, &OCaml]
+    &[
+        #[cfg(feature = "rust")]
+        &Rust,
+        #[cfg(feature = "c")]
+        &C,
+        #[cfg(feature = "python")]
+        &Python,
+        #[cfg(feature = "java")]
+        &Java,
+        #[cfg(feature = "ocaml")]
+        &OCaml,
+    ]
 }

@@ -3,7 +3,7 @@
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
-use function_grep::{get_file_type_from_file, search_file, supported_languages};
+use function_grep::{supported_languages, ParsedFile};
 
 use clap::Parser;
 use std::{fs::File, io::Read, path::PathBuf};
@@ -27,15 +27,17 @@ pub fn main() -> Result<(), Error> {
     let args = Args::parse();
 
     let mut file = File::open(&args.file).map_err(Error::CouldNotOpenFile)?;
-    let file_type = get_file_type_from_file(
-        &args.file.to_string_lossy(),
-        supported_languages::predefined_languages(),
-    )
-    .map_err(Error::LibraryError)?;
     let mut code = String::new();
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
-    let found = search_file(&code, file_type, &args.name).map_err(Error::LibraryError)?;
+    let file_name = &args.file.to_string_lossy();
+    let found = ParsedFile::search_file_with_name(
+        &args.name,
+        &code,
+        file_name,
+        supported_languages::predefined_languages(),
+    )
+    .map_err(Error::LibraryError)?;
     println!("{found}");
     Ok(())
 }

@@ -5,11 +5,24 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["rust", "python", "c", "ocaml", "java"]
+rust = ["dep:tree-sitter-rust"]
+ocaml = ["dep:tree-sitter-ocaml"]
+c = ["dep:tree-sitter-c"]
+java = ["dep:tree-sitter-java"]
+python = ["dep:tree-sitter-python"]
+
 [dependencies]
-clap = { version = "4.5.2", features = ["derive"] }
 tree-sitter = "0.20.10"
-tree-sitter-c = "0.20.8"
-tree-sitter-java = "0.20.2"
-tree-sitter-ocaml = "0.20.4"
-tree-sitter-python = "0.20.4"
-tree-sitter-rust = "0.20.4"
+tree-sitter-c = { version = "0.20.8", optional = true }
+tree-sitter-java = { version = "0.20.2", optional = true }
+tree-sitter-ocaml = { version = "0.20.4", optional = true }
+tree-sitter-python = { version = "0.20.4", optional = true }
+tree-sitter-rust = { version = "0.20.4", optional = true }
+
+[dev-dependencies]
+clap = { version = "4.5.2", features = ["derive"] }
+
+[[example]]
+name = "main"
