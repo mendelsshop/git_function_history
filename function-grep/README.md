@@ -2,7 +2,17 @@
 # function grep
 Find functions with a given name in a file, powered by tree sitter.
 
-Use the latest [crates.io](https://crates.io/crates/function-grep) by putting `function-grep = "0.1.0"` in your cargo.toml under `[dependencies]` section.
+Use the latest [crates.io](https://crates.io/crates/function-grep) by putting `function-grep = "0.1.1"` in your cargo.toml under `[dependencies]` section.
+
+# cli
+To install this as a cli utility run:
+
+`cargo install function-grep --example=function-grep`.
+
+Then to run it use `function-grep <FILE> <NAME>`.
+
+To see help run `function-grep --help`.
+
 
 # Examples
 ## When you know the language 
@@ -29,6 +39,11 @@ println!("{:?}", results.results());
 assert_eq!(results.results(), &[Range { start_byte: 0, end_byte: 11, start_point: Point { row: 0, column: 0 }, end_point: Point { row: 0, column: 11 } }]);
 assert_eq!(results.to_string(), "1: fn foo() {}".to_string())
 ```
+
+## More Examples
+
+To see a more full blown example, look at the [main](https://github.com/mendelsshop/git_function_history/blob/main/function-grep/examples/main.rs) example.
+To use this as cli utility see [here](#cli)
 
 ## Using a custom language
 ```rust

@@ -8,9 +8,11 @@ use function_grep::{supported_languages, ParsedFile};
 use clap::Parser;
 use std::{fs::File, io::Read, path::PathBuf};
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 pub struct Args {
+    /// The file to search in.
     file: PathBuf,
+    /// The function name you want to search for.
     name: String,
 }
 
@@ -24,13 +26,17 @@ pub enum Error {
 ///
 /// # Errors
 pub fn main() -> Result<(), Error> {
+    // get the cli args
     let args = Args::parse();
 
+    // open the file
     let mut file = File::open(&args.file).map_err(Error::CouldNotOpenFile)?;
+    // read the file in
     let mut code = String::new();
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
     let file_name = &args.file.to_string_lossy();
+    // search the file for function with the given name
     let found = ParsedFile::search_file_with_name(
         &args.name,
         &code,
@@ -38,6 +44,7 @@ pub fn main() -> Result<(), Error> {
         supported_languages::predefined_languages(),
     )
     .map_err(Error::LibraryError)?;
+    // and print the results
     println!("{found}");
     Ok(())
 }

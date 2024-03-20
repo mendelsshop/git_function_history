@@ -1,6 +1,6 @@
 [package]
 name = "function-grep"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 repository = "https://github.com/mendelsshop/git_function_history/tree/main/function-grep"
 keywords = ["tree-sitter", "function"]
@@ -31,4 +31,5 @@ tree-sitter-rust = { version = "0.20.4", optional = true }
 clap = { version = "4.5.2", features = ["derive"] }
 
 [[example]]
-name = "main"
+name = "function-grep"
+path = "examples/main.rs"
