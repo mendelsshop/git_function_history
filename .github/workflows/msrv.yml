@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crates: [git-function-history-lib, cargo-function-history, git-function-history-gui, function_history_backend_thread, git_function_history-proc-macro]
+        crates: [function-grep, git-function-history-lib, cargo-function-history, git-function-history-gui, function_history_backend_thread, git_function_history-proc-macro]
       fail-fast: false
     container: mendelrubin/cargo-msrv:latest
     steps:

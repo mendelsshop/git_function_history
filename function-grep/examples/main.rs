@@ -3,14 +3,16 @@
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
-use function_grep::{get_file_type_from_file, search_file, supported_languages};
+use function_grep::{supported_languages, ParsedFile};
 
 use clap::Parser;
 use std::{fs::File, io::Read, path::PathBuf};
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 pub struct Args {
+    /// The file to search in.
     file: PathBuf,
+    /// The function name you want to search for.
     name: String,
 }
 
@@ -24,18 +26,25 @@ pub enum Error {
 ///
 /// # Errors
 pub fn main() -> Result<(), Error> {
+    // get the cli args
     let args = Args::parse();
 
+    // open the file
     let mut file = File::open(&args.file).map_err(Error::CouldNotOpenFile)?;
-    let file_type = get_file_type_from_file(
-        &args.file.to_string_lossy(),
-        supported_languages::predefined_languages(),
-    )
-    .map_err(Error::LibraryError)?;
+    // read the file in
     let mut code = String::new();
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
-    let found = search_file(&code, file_type, &args.name).map_err(Error::LibraryError)?;
+    let file_name = &args.file.to_string_lossy();
+    // search the file for function with the given name
+    let found = ParsedFile::search_file_with_name(
+        &args.name,
+        &code,
+        file_name,
+        supported_languages::predefined_languages(),
+    )
+    .map_err(Error::LibraryError)?;
+    // and print the results
     println!("{found}");
     Ok(())
 }
