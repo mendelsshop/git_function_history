@@ -5,79 +5,79 @@ use std::{
     fmt::{self},
 };
 // TODO: lisp/scheme js, java?(https://github.com/tanin47/javaparser.rs) php?(https://docs.rs/tagua-parser/0.1.0/tagua_parser/)
-use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl::UMPLFunction};
+// use self::{python::PythonFunction, ruby::RubyFunction, rust::RustFunction, umpl::UMPLFunction};
 
 // #[cfg(feature = "c_lang")]
 // use self::c::CFunction;
 
 use git_function_history_proc_macro::enumstuff;
-use go::GoFunction;
+// use go::GoFunction;
 
-#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
+// #[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
 /// the different filters that can be used to filter the functions for different languages
-pub enum LanguageFilter {
-    /// python filter
-    Python(python::PythonFilter),
-    /// rust filter
-    Rust(rust::RustFilter),
-    // #[cfg(feature = "c_lang")]
-    // /// c filter
-    // C(c::CFilter),
-    /// go filter
-    Go(go::GoFilter),
-    /// ruby filter
-    Ruby(ruby::RubyFilter),
-    /// umpl filter
-    UMPL(umpl::UMPLFilter),
-}
+// pub enum LanguageFilter {
+//     /// python filter
+//     Python(python::PythonFilter),
+//     /// rust filter
+//     Rust(rust::RustFilter),
+//     // #[cfg(feature = "c_lang")]
+//     // /// c filter
+//     // C(c::CFilter),
+//     /// go filter
+//     Go(go::GoFilter),
+//     /// ruby filter
+//     Ruby(ruby::RubyFilter),
+//     /// umpl filter
+//     UMPL(umpl::UMPLFilter),
+// }
 
-impl Language {
-    /// takes string and returns the corresponding language
-    ///
-    /// # Errors
-    ///
-    /// `Err` will be returned if the string is not a valid language
-    pub fn from_string(s: &str) -> Result<Self, String> {
-        match s {
-            "python" => Ok(Self::Python),
-            "rust" => Ok(Self::Rust),
-            // #[cfg(feature = "c_lang")]
-            // "c" => Ok(Self::C),
-            "go" => Ok(Self::Go),
-            "all" => Ok(Self::All),
-            "ruby" => Ok(Self::Ruby),
-            _ => Err(format!("Unknown language: {s}"))?,
-        }
-    }
-
-    /// returns the name of the language(s)
-    pub const fn get_names(&self) -> &str {
-        match self {
-            Self::Python => "python",
-            Self::Rust => "rust",
-            // #[cfg(feature = "c_lang")]
-            // Language::C => "c",
-            Self::Go => "go",
-            Self::Ruby => "ruby",
-            Self::UMPL => "umpl",
-            Self::All => "python, rust, go, ruby, or umpl",
-        }
-    }
-
-    /// returns the file extensions of the language(s)
-    pub const fn get_file_endings(&self) -> &[&str] {
-        match self {
-            Self::Python => &["py", "pyw"],
-            Self::Rust => &["rs"],
-            // #[cfg(feature = "c_lang")]
-            // Language::C => &["c", "h"],
-            Self::Go => &["go"],
-            Self::Ruby => &["rb"],
-            Self::UMPL => &["umpl"],
-            Self::All => &["py", "pyw", "rs", "go", "rb", "umpl"],
-        }
-    }
-}
+// impl Language {
+//     /// takes string and returns the corresponding language
+//     ///
+//     /// # Errors
+//     ///
+//     /// `Err` will be returned if the string is not a valid language
+//     pub fn from_string(s: &str) -> Result<Self, String> {
+//         match s {
+//             "python" => Ok(Self::Python),
+//             "rust" => Ok(Self::Rust),
+//             // #[cfg(feature = "c_lang")]
+//             // "c" => Ok(Self::C),
+//             "go" => Ok(Self::Go),
+//             "all" => Ok(Self::All),
+//             "ruby" => Ok(Self::Ruby),
+//             _ => Err(format!("Unknown language: {s}"))?,
+//         }
+//     }
+//
+//     /// returns the name of the language(s)
+//     pub const fn get_names(&self) -> &str {
+//         match self {
+//             Self::Python => "python",
+//             Self::Rust => "rust",
+//             // #[cfg(feature = "c_lang")]
+//             // Language::C => "c",
+//             Self::Go => "go",
+//             Self::Ruby => "ruby",
+//             Self::UMPL => "umpl",
+//             Self::All => "python, rust, go, ruby, or umpl",
+//         }
+//     }
+//
+//     /// returns the file extensions of the language(s)
+//     pub const fn get_file_endings(&self) -> &[&str] {
+//         match self {
+//             Self::Python => &["py", "pyw"],
+//             Self::Rust => &["rs"],
+//             // #[cfg(feature = "c_lang")]
+//             // Language::C => &["c", "h"],
+//             Self::Go => &["go"],
+//             Self::Ruby => &["rb"],
+//             Self::UMPL => &["umpl"],
+//             Self::All => &["py", "pyw", "rs", "go", "rb", "umpl"],
+//         }
+//     }
+// }
 
 impl fmt::Display for Language {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -95,13 +95,13 @@ impl fmt::Display for Language {
 }
 // #[cfg(feature = "c_lang")]
 // pub mod c;
-pub mod go;
-// #[cfg(feature = "unstable")]
-// pub mod java;
-pub mod python;
-pub mod ruby;
-pub mod rust;
-pub mod umpl;
+// pub mod go;
+// // #[cfg(feature = "unstable")]
+// // pub mod java;
+// pub mod python;
+// pub mod ruby;
+// pub mod rust;
+// pub mod umpl;
 
 /// trait that all languages functions must implement
 pub trait FunctionTrait: fmt::Debug + fmt::Display {
@@ -303,13 +303,13 @@ macro_rules! make_file {
         }
     };
 }
-make_file!(PythonFile, PythonFunction, Python);
-make_file!(RustFile, RustFunction, Rust);
+// make_file!(PythonFile, PythonFunction, Python);
+// make_file!(RustFile, RustFunction, Rust);
 // #[cfg(feature = "c_lang")]
 // make_file!(CFile, CFunction, C);
-make_file!(GoFile, GoFunction, Go);
-make_file!(RubyFile, RubyFunction, Ruby);
-make_file!(UMPLFile, UMPLFunction, UMPL);
+// make_file!(GoFile, GoFunction, Go);
+// make_file!(RubyFile, RubyFunction, Ruby);
+// make_file!(UMPLFile, UMPLFunction, UMPL);
 
 #[cfg(test)]
 mod lang_tests {
@@ -347,15 +347,15 @@ mod lang_tests {
         };
     }
 
-    use super::*;
-    make_file_time_test!(python_parses, py, python, PythonFile, "empty_test");
-    make_file_time_test!(rust_parses, rs, rust, RustFile, "empty_test");
-    // #[cfg(feature = "c_lang")]
-    // make_file_time_test!(c_parses, c, c, CFile, "empty_test");
-    make_file_time_test!(go_parses, go, go, GoFile, "empty_test");
-    make_file_time_test!(ruby_parses, rb, ruby, RubyFile, "empty_test");
-
-    make_file_time_test!(umpl_parses, umpl, umpl, UMPLFile, "😂");
+    // use super::*;
+    // make_file_time_test!(python_parses, py, python, PythonFile, "empty_test");
+    // make_file_time_test!(rust_parses, rs, rust, RustFile, "empty_test");
+    // // #[cfg(feature = "c_lang")]
+    // // make_file_time_test!(c_parses, c, c, CFile, "empty_test");
+    // make_file_time_test!(go_parses, go, go, GoFile, "empty_test");
+    // make_file_time_test!(ruby_parses, rb, ruby, RubyFile, "empty_test");
+    //
+    // make_file_time_test!(umpl_parses, umpl, umpl, UMPLFile, "😂");
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, enumstuff)]
 /// an enum representing the different languages that are supported

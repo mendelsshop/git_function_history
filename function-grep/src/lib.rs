@@ -80,33 +80,33 @@ pub fn get_file_type_from_file<'a>(
 #[derive(Debug, Clone)]
 /// The result of finding function with a given name.
 /// Use [`Self::search_file`] or [`Self::search_file_with_name`] to do the searching.
-pub struct ParsedFile<'a> {
+pub struct ParsedFile {
     // I believe we cannot store something refernceing the tree, so we cannot directly store the
     // results of the query, but just their ranges so in the [`filter`] method we use the tree to
     // obtain the correct nodes from their ranges
-    file: &'a str,
-    file_name: Option<&'a str>,
-    function_name: &'a str,
+    file: Box<str>,
+    file_name: Option<Box<str>>,
+    function_name: Box<str>,
     // TODO: maybe each supported language could define filters
     // if so we would store dyn SupportedLanguage here
-    language_type: &'a str,
+    language_type: Box<str>,
     tree: Tree,
     results: Box<[Range]>,
 }
 
-impl<'a> ParsedFile<'a> {
+impl ParsedFile {
     #[must_use]
     pub fn new(
-        file: &'a str,
-        function_name: &'a str,
-        language_type: &'a str,
+        file: &str,
+        function_name: &str,
+        language_type: &str,
         tree: Tree,
         results: Box<[Range]>,
     ) -> Self {
         Self {
-            file,
-            function_name,
-            language_type,
+            file: file.into(),
+            function_name: function_name.into(),
+            language_type: language_type.into(),
             tree,
             results,
             file_name: None,
@@ -143,13 +143,13 @@ impl<'a> ParsedFile<'a> {
     #[must_use]
     /// Get the name of the language used to parse this file
     pub const fn language(&self) -> &str {
-        self.language_type
+        &self.language_type
     }
 
     #[must_use]
     /// Get the name of the function that was searched for to make this [`ParsedFile`]
     pub const fn search_name(&self) -> &str {
-        self.function_name
+        &self.function_name
     }
 
     fn ranges(&self) -> impl Iterator<Item = &Range> {
@@ -167,9 +167,9 @@ impl<'a> ParsedFile<'a> {
     /// If the code cannot be parsed properly.
     /// If no results are found for this function name.
     pub fn search_file(
-        name: &'a str,
-        code: &'a str,
-        language: &'a dyn SupportedLanguage,
+        name: &str,
+        code: &str,
+        language: &dyn SupportedLanguage,
     ) -> Result<Self, Error> {
         let code_bytes = code.as_bytes();
         let mut parser = tree_sitter::Parser::new();
@@ -207,25 +207,25 @@ impl<'a> ParsedFile<'a> {
     /// If the code cannot be parsed properly,
     /// If no results are found for this function name.
     pub fn search_file_with_name(
-        name: &'a str,
-        code: &'a str,
-        file_name: &'a str,
-        langs: &'a [&'a dyn SupportedLanguage],
+        name: &str,
+        code: &str,
+        file_name: &str,
+        langs: &[&dyn SupportedLanguage],
     ) -> Result<Self, Error> {
         get_file_type_from_file(file_name, langs)
             .and_then(|language| Self::search_file(name, code, language))
             .map(|file| file.set_file_name(file_name))
     }
 
-    fn set_file_name(mut self, file_name: &'a str) -> Self {
-        self.file_name.replace(file_name);
+    fn set_file_name(mut self, file_name: &str) -> Self {
+        self.file_name.replace(file_name.into());
         self
     }
 
     #[must_use]
     /// Get the file name of this file.
-    pub const fn file_name(&self) -> Option<&str> {
-        self.file_name
+    pub fn file_name(&self) -> Option<&str> {
+        self.file_name.as_deref()
     }
 
     #[must_use]
@@ -235,7 +235,7 @@ impl<'a> ParsedFile<'a> {
     }
 }
 
-impl IntoIterator for ParsedFile<'_> {
+impl IntoIterator for ParsedFile {
     type Item = (Range, String);
 
     type IntoIter = Box<dyn Iterator<Item = Self::Item>>;
@@ -255,7 +255,7 @@ impl IntoIterator for ParsedFile<'_> {
     }
 }
 
-impl fmt::Display for ParsedFile<'_> {
+impl fmt::Display for ParsedFile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let lines = self.file.lines().enumerate();
         let texts = self

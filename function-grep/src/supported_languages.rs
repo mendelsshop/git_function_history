@@ -32,6 +32,14 @@ pub trait SupportedLanguage: Send + Sync {
     /// (#eq? @method-name {name}))")
     /// }
     /// ```
+    // TODO: either make at trait creation time the query be the actual tree sitter query not a
+    // string represtion of it, and when we do the actual search we look for capture with
+    // @method-name = name
+    // or we make an instiate method that takes the name creates the query and returns new trait
+    // with query not as string, because after running some tests in git_function_history with
+    // flamegraph I see that a lot of time is spent making queries from string
+    // but we're probably going to need both b/c if we go the instation route the the trait/thing its
+    // returning is basically the other option
     fn query(&self, name: &str) -> String;
 }
 

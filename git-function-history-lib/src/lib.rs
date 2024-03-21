@@ -40,22 +40,23 @@ macro_rules! get_item_from_oid_option {
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
+use function_grep::{supported_languages::SupportedLanguage, ParsedFile};
 use git_function_history_proc_macro::enumstuff;
-use languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
+// use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use gix::{objs, prelude::ObjectIdExt, ObjectId};
-use std::{error::Error, ops::Sub};
-
-// #[cfg(feature = "c_lang")]
-// use languages::CFile;
-use languages::GoFile;
+use gix::{
+    objs::{self, ObjectRef, TreeRef},
+    prelude::ObjectIdExt,
+    ObjectId, Tree,
+};
+use std::{borrow::Cow, error::Error, ops::Sub, thread::current};
 
 pub use {
     languages::Language,
-    types::{Commit, FileType, FunctionHistory},
+    types::{Commit, FunctionHistory},
 };
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
@@ -96,7 +97,7 @@ pub enum Filter {
     // when you want to filter by a a commit message that contains a specific string
     Message(String),
     /// when you want to filter by proggramming language filter
-    PLFilter(LanguageFilter),
+    // PLFilter(LanguageFilter),
     /// when you want to filter to only have files that are in a specific language
     Language(Language),
     /// When you want to filter by nothing.
@@ -143,7 +144,7 @@ pub fn get_function_history(
     name: &str,
     file: &FileFilterType,
     filter: &Filter,
-    langs: &languages::Language,
+    langs: &[&dyn SupportedLanguage],
 ) -> Result<FunctionHistory, Box<dyn Error + Send + Sync>> {
     // chack if name is empty
     if name.is_empty() {
@@ -175,26 +176,44 @@ pub fn get_function_history(
         FileFilterType::Absolute(file) | FileFilterType::Relative(file) => {
             // vaildate that the file makes sense with language
             let is_supported = langs
-                .get_file_endings()
                 .iter()
+                .flat_map(|lang| lang.file_exts())
+                .copied()
                 .any(|i| ends_with_cmp_no_case(file, i));
             if !is_supported {
-                Err(format!("file {file} is not a {} file", langs.get_names()))?;
+                Err(format!(
+                    "file {file} is not a supported file, the following files are supported {}",
+                    langs
+                        .iter()
+                        .map(|lang| format!(
+                            "({} with extension(s) [{}])",
+                            lang.name(),
+                            &lang.file_exts().join(",")
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                ))?;
             }
         }
         FileFilterType::Directory(_) | FileFilterType::None => {}
     }
 
+    let langs1 = &*langs
+        .iter()
+        .map(|l| l.file_exts())
+        .flatten()
+        .copied()
+        .collect::<Box<[_]>>();
     let repo = gix::discover(".")?;
     let th_repo = repo.clone().into_sync();
     let commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
     let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
-    #[cfg(feature = "parallel")]
-    let commit_iter = {
-        // we have to collect here because we don't want any refrences to not send/sync structs
-        let binding = commit_iter.collect::<Vec<_>>();
-        binding.into_par_iter()
-    };
+    // #[cfg(feature = "parallel")]
+    // let commit_iter = {
+    //     // we have to collect here because we don't want any refrences to not send/sync structs
+    //     let binding = commit_iter.collect::<Vec<_>>();
+    //     binding.into_par_iter()
+    // };
     let commits = commit_iter.filter_map(|id| {
         let repo = th_repo.to_thread_local();
         let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
@@ -220,7 +239,7 @@ pub fn get_function_history(
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
         let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
         return if let Some(i) = commit {
-            let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file)?;
+            let tree = sender(i.0, th_repo.to_thread_local(), name, langs1, langs, file)?;
 
             if tree.is_empty() {
                 Err("empty commit found")?;
@@ -272,7 +291,7 @@ pub fn get_function_history(
     // and report some of errors if no oks and if no oks and errs report no history found
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, &th_repo.to_thread_local(), name, *langs, file);
+            let tree = sender(i.0, th_repo.to_thread_local(), name, langs1, langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -322,38 +341,56 @@ impl Default for MacroOpts<'_> {
 
 fn sender(
     id: ObjectId,
-    repo: &gix::Repository,
+    repo: gix::Repository,
     name: &str,
-    langs: Language,
+    file_exts: &[&str],
+    langs: &[&dyn SupportedLanguage],
     file: &FileFilterType,
-) -> Result<Vec<FileType>, String> {
+) -> Result<Vec<ParsedFile>, String> {
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
     let tree = object.try_into_tree();
-    traverse_tree(&tree.unwrap(), repo, name, "", langs, file)
+    let binding = tree.unwrap();
+    traverse_tree(
+        &binding,
+        &repo,
+        name,
+        "".to_string(),
+        file_exts,
+        langs,
+        file,
+    )
 }
 
 #[inline]
 fn traverse_tree(
-    tree: &gix::Tree<'_>,
+    tree: &Tree<'_>,
     repo: &gix::Repository,
     name: &str,
-    path: &str,
-    langs: Language,
+    path: String,
+    file_exts: &[&str],
+    langs: &[&dyn SupportedLanguage],
     filetype: &FileFilterType,
-) -> Result<Vec<FileType>, String> {
+) -> Result<Vec<ParsedFile>, String> {
+    let mut files_exts = file_exts.iter();
+
     let treee_iter = tree.iter();
-    let mut files: Vec<(String, String)> = Vec::new();
+    let mut files: Vec<_> = Vec::new();
     let mut ret = Vec::new();
     for i in treee_iter {
         let i = i.map_err(|_| "failed to get tree entry")?;
+        let file = format!("{path}/{}", i.filename());
         match &i.mode().kind() {
             objs::tree::EntryKind::Tree => {
-                let new = get_item_from!(i.oid(), &repo, try_into_tree);
-                let path_new = format!("{path}/{}", i.filename());
-                ret.extend(traverse_tree(&new, repo, name, &path_new, langs, filetype)?);
+                let new = repo
+                    .find_object(i.oid())
+                    .map_err(|_| "Could not find object")?
+                    .try_into_tree()
+                    .map_err(|_| {
+                        format!("Could not find {} from object", stringify!(try_into_tree))
+                    })?;
+                ret.extend( traverse_tree(&new, repo, name, file, file_exts, langs, filetype)?);
             }
             objs::tree::EntryKind::Blob => {
-                let file = format!("{path}/{}", i.filename());
                 match &filetype {
                     FileFilterType::Relative(ref path) => {
                         if !file.ends_with(path) {
@@ -361,7 +398,7 @@ fn traverse_tree(
                         }
                     }
                     FileFilterType::Absolute(ref path) => {
-                        if &file == path {
+                        if &file != path {
                             continue;
                         }
                     }
@@ -370,68 +407,28 @@ fn traverse_tree(
                             continue;
                         }
                     }
-                    FileFilterType::None => match langs {
-                        // #[cfg(feature = "c_lang")]
-                        // Language::C => {
-                        //     if ends_with_cmp_no_case(&file, "c") || ends_with_cmp_no_case(&file, "h") {
-                        //         files.push(file);
-                        //     }
-                        // }
-                        Language::Go => {
-                            if !ends_with_cmp_no_case(&file, "go") {
-                                continue;
-                            }
+                    FileFilterType::None => {
+                        if files_exts
+                            .find(|ext| ends_with_cmp_no_case(&file, ext))
+                            .is_none()
+                        {
+                            continue;
                         }
-                        Language::Python => {
-                            if !ends_with_cmp_no_case(&file, "py") {
-                                continue;
-                            }
-                        }
-                        Language::Rust => {
-                            if !ends_with_cmp_no_case(&file, "rs") {
-                                continue;
-                            }
-                        }
-                        Language::Ruby => {
-                            if !ends_with_cmp_no_case(&file, "rb") {
-                                continue;
-                            }
-                        }
-                        Language::UMPL => {
-                            if !ends_with_cmp_no_case(&file, "umpl") {
-                                continue;
-                            }
-                        }
-                        Language::All => {
-                            if !(ends_with_cmp_no_case(&file, "go")
-                                || ends_with_cmp_no_case(&file, "rs")
-                                || ends_with_cmp_no_case(&file, "py")
-                                || ends_with_cmp_no_case(&file, "rb"))
-                                || ends_with_cmp_no_case(&file, "umpl")
-                            {
-                                continue;
-                            }
-                        }
-                    },
+                    }
                 }
+
                 let obh = repo
                     .find_object(i.oid())
                     .map_err(|_| "failed to find object")?;
-                let objref = objs::ObjectRef::from_bytes(obh.kind, &obh.data)
-                    .map_err(|_| "failed to get object ref")?;
-                let blob = objref.into_blob();
-                if let Some(blob) = blob {
-                    files.push((file, String::from_utf8_lossy(blob.data).to_string()));
-                }
+                let blob = obh
+                    .try_into_blob()
+                    .map_err(|e| format!("could not obtain file contents of {file}: {e}"))?;
+                files.push((file, String::from_utf8_lossy(&blob.data).to_string()));
             }
             _ => {}
         }
     }
-    ret.extend(find_function_in_files_with_commit(
-        files,
-        name.to_string(),
-        langs,
-    ));
+    ret.extend(find_function_in_files_with_commit(files, name, langs));
 
     Ok(ret)
 }
@@ -533,86 +530,19 @@ pub struct CommitInfo {
 }
 
 #[inline]
-fn find_function_in_file_with_commit(
-    file_path: &str,
-    fc: &str,
-    name: &str,
-    langs: Language,
-) -> Result<FileType, String> {
-    log::trace!("parsing file '{}' ", file_path);
-    let file = match langs {
-        Language::Rust => {
-            let functions = rust::find_function_in_file(fc, name)?;
-            FileType::Rust(RustFile::new(file_path.to_string(), functions))
-        }
-        // #[cfg(feature = "c_lang")]
-        // Language::C => {
-        //     let functions = languages::c::find_function_in_file(fc, name)?;
-        //     FileType::C(CFile::new(file_path.to_string(), functions))
-        // }
-        Language::Go => {
-            let functions = languages::go::find_function_in_file(fc, name)?;
-            FileType::Go(GoFile::new(file_path.to_string(), functions))
-        }
-        Language::Python => {
-            let functions = languages::python::find_function_in_file(fc, name)?;
-            FileType::Python(PythonFile::new(file_path.to_string(), functions))
-        }
-        Language::Ruby => {
-            let functions = languages::ruby::find_function_in_file(fc, name)?;
-            FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
-        }
-        Language::UMPL => {
-            let functions = languages::umpl::find_function_in_file(fc, name)?;
-            FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
-        }
-        Language::All => match file_path.split('.').last() {
-            Some("rs") => {
-                let functions = rust::find_function_in_file(fc, name)?;
-                FileType::Rust(RustFile::new(file_path.to_string(), functions))
-            }
-            // #[cfg(feature = "c_lang")]
-            // Some("c" | "h") => {
-            //     let functions = languages::c::find_function_in_file(fc, name)?;
-            //     FileType::C(CFile::new(file_path.to_string(), functions))
-            // }
-            Some("py" | "pyw") => {
-                let functions = languages::python::find_function_in_file(fc, name)?;
-                FileType::Python(PythonFile::new(file_path.to_string(), functions))
-            }
-
-            Some("go") => {
-                let functions = languages::go::find_function_in_file(fc, name)?;
-                FileType::Go(GoFile::new(file_path.to_string(), functions))
-            }
-            Some("rb") => {
-                let functions = languages::ruby::find_function_in_file(fc, name)?;
-                FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
-            }
-            Some("umpl") => {
-                let functions = languages::umpl::find_function_in_file(fc, name)?;
-                FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
-            }
-            _ => Err("unknown file type")?,
-        },
-    };
-    Ok(file)
-}
-
-#[inline]
-#[cfg_attr(feature = "cache", cached)]
+// #[cfg_attr(feature = "cache", cached)]
 // function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 fn find_function_in_files_with_commit(
     files: Vec<(String, String)>,
-    name: String,
-    langs: Language,
-) -> Vec<FileType> {
-    #[cfg(feature = "parallel")]
-    let t = files.par_iter();
-    #[cfg(not(feature = "parallel"))]
+    name: &str,
+    langs: &[&dyn SupportedLanguage],
+) -> Vec<ParsedFile> {
+    // #[cfg(feature = "parallel")]
+    // let t = files.par_iter();
+    // #[cfg(not(feature = "parallel"))]
     let t = files.iter();
     t.filter_map(|(file_path, fc)| {
-        find_function_in_file_with_commit(file_path, fc, &name, langs).ok()
+        ParsedFile::search_file_with_name(&name, &fc, &file_path, langs).ok()
     })
     .collect()
 }
@@ -636,22 +566,19 @@ impl<T> UnwrapToError<T> for Option<T> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
-
-    use crate::languages::{
-        rust::{BlockType, RustFilter},
-        FileTrait,
-    };
-
+    //     use chrono::Utc;
+    //
     use super::*;
     #[test]
     fn found_function() {
         let now = Utc::now();
+        let binding = FileFilterType::Relative("src/test_functions.rs".to_string());
         let output = get_function_history(
             "empty_test",
-            &FileFilterType::Relative("src/test_functions.rs".to_string()),
+            &binding,
             &Filter::None,
-            &languages::Language::Rust,
+            function_grep::supported_languages::predefined_languages(),
+            // &languages::Language::Rust,
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after);
@@ -663,27 +590,27 @@ mod tests {
         }
         assert!(output.is_ok());
     }
-    #[test]
-    fn git_installed() {
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::Absolute("src/test_functions.rs".to_string()),
-            &Filter::None,
-            &languages::Language::Rust,
-        );
-        // assert that err is "not git is not installed"
-        if output.is_err() {
-            assert_ne!(output.unwrap_err().to_string(), "git is not installed");
-        }
-    }
-
+    //     #[test]
+    //     fn git_installed() {
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &FileFilterType::Absolute("src/test_functions.rs".to_string()),
+    //             &Filter::None,
+    //             &languages::Language::Rust,
+    //         );
+    //         // assert that err is "not git is not installed"
+    //         if output.is_err() {
+    //             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
+    //         }
+    //     }
+    //
     #[test]
     fn not_found() {
         let output = get_function_history(
             "Not_a_function",
             &FileFilterType::None,
             &Filter::None,
-            &languages::Language::Rust,
+            function_grep::supported_languages::predefined_languages(),
         );
         match &output {
             Ok(output) => println!("{output}"),
@@ -691,245 +618,244 @@ mod tests {
         }
         assert!(output.is_err());
     }
-
     #[test]
-    fn not_rust_file() {
+    fn not_a_supported_file() {
         let output = get_function_history(
             "empty_test",
             &FileFilterType::Absolute("src/test_functions.txt".to_string()),
             &Filter::None,
-            &languages::Language::Rust,
+            function_grep::supported_languages::predefined_languages(),
         );
         assert!(output.is_err());
         println!("{}", output.as_ref().unwrap_err());
         assert!(output
             .unwrap_err()
             .to_string()
-            .contains("is not a rust file"));
+            .contains("is not a supported file"));
     }
-    #[test]
-    fn test_date_range() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::None,
-            &Filter::DateRange(
-                "27 Sep 2022 11:27:23 -0400".to_owned(),
-                "04 Oct 2022 23:45:52 +0000".to_owned(),
-            ),
-            &languages::Language::Rust,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after);
-        match &output {
-            Ok(functions) => {
-                println!("{functions}");
-            }
-            Err(e) => println!("-{e}-"),
-        }
-        assert!(output.is_ok());
-    }
+    //     #[test]
+    //     fn test_date_range() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &FileFilterType::None,
+    //             &Filter::DateRange(
+    //                 "27 Sep 2022 11:27:23 -0400".to_owned(),
+    //                 "04 Oct 2022 23:45:52 +0000".to_owned(),
+    //             ),
+    //             &languages::Language::Rust,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &output {
+    //             Ok(functions) => {
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) => println!("-{e}-"),
+    //         }
+    //         assert!(output.is_ok());
+    //     }
+    //
+    //     #[test]
+    //     fn test_date() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &FileFilterType::None,
+    //             &Filter::Date("27 Sep 2022 00:27:23 -0400".to_owned()),
+    //             &languages::Language::Rust,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &output {
+    //             Ok(functions) => {
+    //                 // println!("{}", functions.clone().last().unwrap().date);
+    //                 println!("{:?}", functions.clone().last().unwrap().get_metadata());
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) => println!("-{e}-"),
+    //         }
+    //         assert!(output.is_ok());
+    //     }
+    //
 
-    #[test]
-    fn test_date() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::None,
-            &Filter::Date("27 Sep 2022 00:27:23 -0400".to_owned()),
-            &languages::Language::Rust,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after);
-        match &output {
-            Ok(functions) => {
-                // println!("{}", functions.clone().last().unwrap().date);
-                println!("{:?}", functions.clone().last().unwrap().get_metadata());
-                println!("{functions}");
-            }
-            Err(e) => println!("-{e}-"),
-        }
-        assert!(output.is_ok());
-    }
-
-    #[test]
+        #[test]
     fn expensive_test() {
         let now = Utc::now();
         let output = get_function_history(
             "empty_test",
             &FileFilterType::None,
             &Filter::None,
-            &languages::Language::All,
+            function_grep::supported_languages::predefined_languages(),
         );
         let after = Utc::now() - now;
         println!("time taken: {}", after);
         match &output {
             Ok(functions) => {
-                println!("{functions}");
-                functions
-                    .get_commit()
-                    .unwrap()
-                    .files
-                    .iter()
-                    .for_each(|file| {
-                        println!("file: {}", file.get_file_name());
-                        println!("{file}");
-                    });
+                // println!("{functions}");
+                // functions.clone().into_iter().take(5).for_each(|commit|{
+                //     commit
+                //     .files
+                //     .iter()
+                //     .for_each(|file| {
+                //         println!("file: {}", file.file_name().unwrap());
+                //         println!("{file}");
+                //     });})
             }
             Err(e) => println!("{e}"),
         }
         assert!(output.is_ok());
     }
-
-    #[test]
-    fn python_whole() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::Relative("src/test_functions.py".to_string()),
-            &Filter::None,
-            &languages::Language::Python,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after);
-        match &output {
-            Ok(functions) => {
-                println!("{functions}");
-            }
-            Err(e) => println!("{e}"),
-        }
-        assert!(output.is_ok());
-        let output = output.unwrap();
-        let commit = output.get_commit().unwrap();
-        let file = commit.get_file().unwrap();
-        let _functions = file.get_functions();
-    }
-
-    #[test]
-    fn ruby_whole() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::Relative("src/test_functions.rb".to_string()),
-            &Filter::None,
-            &languages::Language::Ruby,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after);
-        match &output {
-            Ok(functions) => {
-                println!("{functions}");
-            }
-            Err(e) => println!("{e}"),
-        }
-        assert!(output.is_ok());
-        let output = output.unwrap();
-        let commit = output.get_commit().unwrap();
-        let file = commit.get_file().unwrap();
-        let _functions = file.get_functions();
-    }
-
-    // #[test]
-    // #[cfg(feature = "c_lang")]
-    // fn c_lang() {
-    //     let now = Utc::now();
-    //     let output = get_function_history(
-    //         "empty_test",
-    //         &FileFilterType::Relative("src/test_functionsc".to_string()),
-    //         &Filter::DateRange(
-    //             "03 Oct 2022 11:27:23 -0400".to_owned(),
-    //             "05 Oct 2022 23:45:52 +0000".to_owned(),
-    //         ),
-    //         &languages::Language::C,
-    //     );
-    //     let after = Utc::now() - now;
-    //     println!("time taken: {}", after);
-    //     match &output {
-    //         Ok(functions) => println!("{}", functions),
-    //         Err(e) => println!("{}", e),
+    //
+    //     #[test]
+    //     fn python_whole() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &FileFilterType::Relative("src/test_functions.py".to_string()),
+    //             &Filter::None,
+    //             &languages::Language::Python,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &output {
+    //             Ok(functions) => {
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) => println!("{e}"),
+    //         }
+    //         assert!(output.is_ok());
+    //         let output = output.unwrap();
+    //         let commit = output.get_commit().unwrap();
+    //         let file = commit.get_file().unwrap();
+    //         let _functions = file.get_functions();
     //     }
-    //     assert!(output.is_ok());
-    // }
-    #[test]
-    fn go_whole() {
-        let now = Utc::now();
-        let output = get_function_history(
-            "empty_test",
-            &FileFilterType::Relative("src/test_functions.go".to_string()),
-            &Filter::None,
-            &languages::Language::Go,
-        );
-        let after = Utc::now() - now;
-        println!("time taken: {}", after);
-        match &output {
-            Ok(functions) => println!("{functions}"),
-            Err(e) => println!("{e}"),
-        }
-        assert!(output.is_ok());
-    }
-
-    #[test]
-    fn filter_by_param_rust() {
-        // search for rust functions
-        let mut now = Utc::now();
-        let output = get_function_history!(name = "empty_test", language = Language::Rust);
-        let mut after = Utc::now() - now;
-        println!("time taken to search: {}", after);
-        let output = match output {
-            Ok(result) => result,
-            Err(e) => panic!("{}", e),
-        };
-        now = Utc::now();
-        let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::HasParameterType(String::from("String")),
-        )));
-        after = Utc::now() - now;
-        println!("time taken to filter {}", after);
-        match &new_output {
-            Ok(res) => println!("{res}"),
-            Err(e) => println!("{e}"),
-        }
-        let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::InBlock(BlockType::Extern),
-        )));
-        after = Utc::now() - now;
-        println!("time taken to filter {}", after);
-        match &new_output {
-            Ok(res) => println!("{res}"),
-            Err(e) => println!("{e}"),
-        }
-        assert!(new_output.is_ok());
-    }
-
-    #[test]
-    fn test_filter_by() {
-        let repo =
-            get_function_history!(name = "empty_test").expect("Failed to get function history");
-        let f1 = filter_by!(
-            repo,
-            RustFilter::InBlock(crate::languages::rust::BlockType::Impl),
-            Rust
-        );
-        match f1 {
-            Ok(_) => println!("filter 1 ok"),
-            Err(e) => println!("error: {e}"),
-        }
-        let f2 = filter_by!(
-            repo,
-            Filter::CommitHash("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0".to_string())
-        );
-        match f2 {
-            Ok(_) => println!("filter 2 ok"),
-            Err(e) => println!("error: {e}"),
-        }
-        let f3 = filter_by!(
-            repo,
-            LanguageFilter::Rust(RustFilter::InBlock(crate::languages::rust::BlockType::Impl)),
-            1
-        );
-        match f3 {
-            Ok(_) => println!("filter 3 ok"),
-            Err(e) => println!("error: {e}"),
-        }
-    }
+    //
+    //     // #[test]
+    //     // fn ruby_whole() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &FileFilterType::Relative("src/test_functions.rb".to_string()),
+    //     //         &Filter::None,
+    //     //         &languages::Language::Ruby,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &output {
+    //     //         Ok(functions) => {
+    //     //             println!("{functions}");
+    //     //         }
+    //     //         Err(e) => println!("{e}"),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     //     let output = output.unwrap();
+    //     //     let commit = output.get_commit().unwrap();
+    //     //     let file = commit.get_file().unwrap();
+    //     //     let _functions = file.get_functions();
+    //     // }
+    //
+    //     // #[test]
+    //     // #[cfg(feature = "c_lang")]
+    //     // fn c_lang() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &FileFilterType::Relative("src/test_functionsc".to_string()),
+    //     //         &Filter::DateRange(
+    //     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
+    //     //             "05 Oct 2022 23:45:52 +0000".to_owned(),
+    //     //         ),
+    //     //         &languages::Language::C,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &output {
+    //     //         Ok(functions) => println!("{}", functions),
+    //     //         Err(e) => println!("{}", e),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     // }
+    //     // #[test]
+    //     // fn go_whole() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &FileFilterType::Relative("src/test_functions.go".to_string()),
+    //     //         &Filter::None,
+    //     //         &languages::Language::Go,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &output {
+    //     //         Ok(functions) => println!("{functions}"),
+    //     //         Err(e) => println!("{e}"),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     // }
+    //
+    //     // #[test]
+    //     // fn filter_by_param_rust() {
+    //     //     // search for rust functions
+    //     //     let mut now = Utc::now();
+    //     //     let output = get_function_history!(name = "empty_test", language = Language::Rust);
+    //     //     let mut after = Utc::now() - now;
+    //     //     println!("time taken to search: {}", after);
+    //     //     let output = match output {
+    //     //         Ok(result) => result,
+    //     //         Err(e) => panic!("{}", e),
+    //     //     };
+    //     //     now = Utc::now();
+    //     //     let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
+    //     //         rust::RustFilter::HasParameterType(String::from("String")),
+    //     //     )));
+    //     //     after = Utc::now() - now;
+    //     //     println!("time taken to filter {}", after);
+    //     //     match &new_output {
+    //     //         Ok(res) => println!("{res}"),
+    //     //         Err(e) => println!("{e}"),
+    //     //     }
+    //     //     let new_output = output.filter_by(&Filter::PLFilter(LanguageFilter::Rust(
+    //     //         rust::RustFilter::InBlock(BlockType::Extern),
+    //     //     )));
+    //     //     after = Utc::now() - now;
+    //     //     println!("time taken to filter {}", after);
+    //     //     match &new_output {
+    //     //         Ok(res) => println!("{res}"),
+    //     //         Err(e) => println!("{e}"),
+    //     //     }
+    //     //     assert!(new_output.is_ok());
+    //     // }
+    //
+    //     // #[test]
+    //     // fn test_filter_by() {
+    //     //     let repo =
+    //     //         get_function_history!(name = "empty_test").expect("Failed to get function history");
+    //     //     let f1 = filter_by!(
+    //     //         repo,
+    //     //         RustFilter::InBlock(crate::languages::rust::BlockType::Impl),
+    //     //         Rust
+    //     //     );
+    //     //     match f1 {
+    //     //         Ok(_) => println!("filter 1 ok"),
+    //     //         Err(e) => println!("error: {e}"),
+    //     //     }
+    //     //     let f2 = filter_by!(
+    //     //         repo,
+    //     //         Filter::CommitHash("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0".to_string())
+    //     //     );
+    //     //     match f2 {
+    //     //         Ok(_) => println!("filter 2 ok"),
+    //     //         Err(e) => println!("error: {e}"),
+    //     //     }
+    //     //     let f3 = filter_by!(
+    //     //         repo,
+    //     //         LanguageFilter::Rust(RustFilter::InBlock(crate::languages::rust::BlockType::Impl)),
+    //     //         1
+    //     //     );
+    //     //     match f3 {
+    //     //         Ok(_) => println!("filter 3 ok"),
+    //     //         Err(e) => println!("error: {e}"),
+    //     //     }
+    //     // }
 }

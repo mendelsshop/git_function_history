@@ -104,7 +104,7 @@ pub fn command_thread(
                                 filter
                             );
                         }
-                        match get_function_history(&name, &file, &filter, &lang) {
+                        match get_function_history(&name, &file, &filter) {
                             Ok(functions) => {
                                 if log {
                                     log::info!("Found functions");
