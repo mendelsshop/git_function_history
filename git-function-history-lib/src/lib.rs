@@ -40,19 +40,20 @@ macro_rules! get_item_from_oid_option {
 #[cfg(feature = "cache")]
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use function_grep::{supported_languages::SupportedLanguage, ParsedFile};
+use function_grep::{
+    supported_languages::{Instatiate, InstatiatedLanguage, SupportedLanguage},
+    ParsedFile,
+};
 use git_function_history_proc_macro::enumstuff;
 // use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use gix::{
-    objs::{self, ObjectRef, TreeRef},
-    prelude::ObjectIdExt,
-    ObjectId, Tree,
+    objs, prelude::ObjectIdExt, ObjectId, Tree
 };
-use std::{borrow::Cow, error::Error, ops::Sub, thread::current};
+use std::{error::Error, ops::Sub};
 
 pub use {
     languages::Language,
@@ -208,12 +209,12 @@ pub fn get_function_history(
     let th_repo = repo.clone().into_sync();
     let commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
     let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
-    // #[cfg(feature = "parallel")]
-    // let commit_iter = {
-    //     // we have to collect here because we don't want any refrences to not send/sync structs
-    //     let binding = commit_iter.collect::<Vec<_>>();
-    //     binding.into_par_iter()
-    // };
+    #[cfg(feature = "parallel")]
+    let commit_iter = {
+        // we have to collect here because we don't want any refrences to not send/sync structs
+        let binding = commit_iter.collect::<Vec<_>>();
+        binding.into_par_iter()
+    };
     let commits = commit_iter.filter_map(|id| {
         let repo = th_repo.to_thread_local();
         let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
@@ -235,11 +236,13 @@ pub fn get_function_history(
         let metadata = (message, commit, author, email, time);
         Some((tree, metadata))
     });
+    let langs = langs.instatiate_map(name).unwrap();
+    let langs = &*langs.as_slice().iter().map(|l| l).collect::<Box<[_]>>();
     if let Filter::Date(date) = filter {
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
         let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
         return if let Some(i) = commit {
-            let tree = sender(i.0, th_repo.to_thread_local(), name, langs1, langs, file)?;
+            let tree = sender(i.0, th_repo.to_thread_local(),  langs1, langs, file)?;
 
             if tree.is_empty() {
                 Err("empty commit found")?;
@@ -291,7 +294,7 @@ pub fn get_function_history(
     // and report some of errors if no oks and if no oks and errs report no history found
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, th_repo.to_thread_local(), name, langs1, langs, file);
+            let tree = sender(i.0, th_repo.to_thread_local(),  langs1, langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -342,9 +345,8 @@ impl Default for MacroOpts<'_> {
 fn sender(
     id: ObjectId,
     repo: gix::Repository,
-    name: &str,
     file_exts: &[&str],
-    langs: &[&dyn SupportedLanguage],
+    langs: &[&InstatiatedLanguage<'_>],
     file: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
@@ -353,7 +355,6 @@ fn sender(
     traverse_tree(
         &binding,
         &repo,
-        name,
         "".to_string(),
         file_exts,
         langs,
@@ -365,10 +366,9 @@ fn sender(
 fn traverse_tree(
     tree: &Tree<'_>,
     repo: &gix::Repository,
-    name: &str,
     path: String,
     file_exts: &[&str],
-    langs: &[&dyn SupportedLanguage],
+    langs: &[&InstatiatedLanguage<'_>],
     filetype: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
     let mut files_exts = file_exts.iter();
@@ -388,7 +388,9 @@ fn traverse_tree(
                     .map_err(|_| {
                         format!("Could not find {} from object", stringify!(try_into_tree))
                     })?;
-                ret.extend( traverse_tree(&new, repo, name, file, file_exts, langs, filetype)?);
+                ret.extend(traverse_tree(
+                    &new, repo,  file, file_exts, langs, filetype,
+                )?);
             }
             objs::tree::EntryKind::Blob => {
                 match &filetype {
@@ -428,7 +430,7 @@ fn traverse_tree(
             _ => {}
         }
     }
-    ret.extend(find_function_in_files_with_commit(files, name, langs));
+    ret.extend(find_function_in_files_with_commit(files,  langs));
 
     Ok(ret)
 }
@@ -534,15 +536,14 @@ pub struct CommitInfo {
 // function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 fn find_function_in_files_with_commit(
     files: Vec<(String, String)>,
-    name: &str,
-    langs: &[&dyn SupportedLanguage],
+    langs: &[&InstatiatedLanguage<'_>],
 ) -> Vec<ParsedFile> {
     // #[cfg(feature = "parallel")]
     // let t = files.par_iter();
     // #[cfg(not(feature = "parallel"))]
     let t = files.iter();
     t.filter_map(|(file_path, fc)| {
-        ParsedFile::search_file_with_name(&name, &fc, &file_path, langs).ok()
+        ParsedFile::search_file_with_name( &fc, &file_path, langs).ok()
     })
     .collect()
 }
@@ -679,7 +680,7 @@ mod tests {
     //     }
     //
 
-        #[test]
+    #[test]
     fn expensive_test() {
         let now = Utc::now();
         let output = get_function_history(

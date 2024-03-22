@@ -1,4 +1,68 @@
-use tree_sitter::Language;
+use std::ops::Deref;
+
+use tree_sitter::{Language as TsLanguage, Query, QueryError};
+
+#[derive(Debug)]
+pub struct InstatiatedLanguage<'a> {
+    name: &'static str,
+    search_name: &'a str,
+    file_exts: &'static [&'static str],
+    language: TsLanguage,
+    query: Query,
+}
+
+pub trait Instatiate<'a> {
+    fn instatiate_map(self, name: &'a str) -> Result<Vec<InstatiatedLanguage<'a>>, QueryError>;
+}
+
+impl<'a, T, U> Instatiate<'a> for T
+where
+    T: IntoIterator<Item = U>,
+    U: Deref<Target = &'a dyn SupportedLanguage>,
+{
+    fn instatiate_map(self, name: &'a str) -> Result<Vec<InstatiatedLanguage<'a>>, QueryError> {
+        self.into_iter()
+            .map(|l| l.instatiate(name))
+            .collect::<Result<Vec<_>, _>>()
+    }
+}
+impl<'a> InstatiatedLanguage<'a> {
+    pub(crate) fn new(
+        name: &'static str,
+        search_name: &'a str,
+        file_exts: &'static [&'static str],
+        language: TsLanguage,
+        query: Query,
+    ) -> Self {
+        Self {
+            search_name,
+            name,
+            file_exts,
+            language,
+            query,
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    pub fn file_exts(&self) -> &'static [&'static str] {
+        self.file_exts
+    }
+
+    pub fn language(&self) -> TsLanguage {
+        self.language
+    }
+
+    pub fn query(&self) -> &Query {
+        &self.query
+    }
+
+    pub(crate) fn search_name(&self) -> &str {
+        self.search_name
+    }
+}
 
 pub trait SupportedLanguage: Send + Sync {
     /// The name of this language
@@ -6,7 +70,7 @@ pub trait SupportedLanguage: Send + Sync {
     /// The list of file extensions used for this language.
     fn file_exts(&self) -> &'static [&'static str];
     /// The [`tree_sitter::Language`] for this language
-    fn language(&self) -> Language;
+    fn language(&self) -> TsLanguage;
     // TODO: type saftey for query
     /// Given an identifier(name)
     /// this should produce a string that is the sexp of a query
@@ -41,6 +105,12 @@ pub trait SupportedLanguage: Send + Sync {
     // but we're probably going to need both b/c if we go the instation route the the trait/thing its
     // returning is basically the other option
     fn query(&self, name: &str) -> String;
+
+    fn instatiate<'a>(&self, name: &'a str) -> Result<InstatiatedLanguage<'a>, QueryError> {
+        Query::new(self.language(), &self.query(name)).map(|query| {
+            InstatiatedLanguage::new(self.name(), name, self.file_exts(), self.language(), query)
+        })
+    }
 }
 
 #[macro_export]
@@ -84,14 +154,23 @@ macro_rules! construct_language {
                 &[$(stringify!($ext)),+]
             }
 
-            fn language(&self) -> Language {
+            fn language(&self) -> TsLanguage {
                 $tslang
             }
+        }
+
+        impl <'a> std::ops::Deref for $name {
+            type Target = dyn SupportedLanguage;
+
+           fn deref(&self) -> &Self::Target {
+            self
+        }
         }
     };
 }
 
 #[cfg(feature = "c")]
+
 construct_language!(C(tree_sitter_c::language()).[c h]?=
    name ->  "((function_definition
  declarator:

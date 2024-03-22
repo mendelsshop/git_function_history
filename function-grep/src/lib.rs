@@ -6,19 +6,17 @@
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
-use supported_languages::SupportedLanguage;
-use tree_sitter::{Language, LanguageError, Node, QueryError, Range, Tree};
+use supported_languages::InstatiatedLanguage;
+use tree_sitter::{LanguageError, Node, Query, QueryError, Range, Tree};
 
 /// For adding new language support, and some predefined support for certain languages,
 pub mod supported_languages;
 
 fn run_query<'a>(
-    query_str: &'a str,
-    lang: Language,
+    query: &Query,
     node: Node<'a>,
     code: &'a [u8],
 ) -> Result<Box<[Range]>, QueryError> {
-    let query = tree_sitter::Query::new(lang, query_str)?;
     let mut query_cursor = tree_sitter::QueryCursor::new();
     let matches = query_cursor.matches(&query, node, code);
     let ranges = matches.map(|m| m.captures[0].node.range());
@@ -50,8 +48,8 @@ pub enum Error {
 /// If there is no language for this file extension in the provided language list.
 pub fn get_file_type_from_file_ext<'a>(
     ext: &str,
-    langs: &'a [&'a dyn SupportedLanguage],
-) -> Result<&'a dyn SupportedLanguage, Error> {
+    langs: &'a [&'a InstatiatedLanguage<'a>],
+) -> Result<&'a InstatiatedLanguage<'a>, Error> {
     langs
         .iter()
         .find(|lang| lang.file_exts().contains(&ext))
@@ -68,8 +66,8 @@ pub fn get_file_type_from_file_ext<'a>(
 /// If there is no file extension for this file name, or there is no language for this file in the provided language list.
 pub fn get_file_type_from_file<'a>(
     file_name: &str,
-    langs: &'a [&'a dyn SupportedLanguage],
-) -> Result<&'a dyn SupportedLanguage, Error> {
+    langs: &'a [&'a InstatiatedLanguage<'a>],
+) -> Result<&'a InstatiatedLanguage<'a>, Error> {
     file_name
         .rsplit_once('.')
         .ok_or_else(|| Error::FileTypeUnkown(file_name.to_string()))
@@ -88,7 +86,7 @@ pub struct ParsedFile {
     file_name: Option<Box<str>>,
     function_name: Box<str>,
     // TODO: maybe each supported language could define filters
-    // if so we would store dyn SupportedLanguage here
+    // if so we would store InstatiatedLanguage here
     language_type: Box<str>,
     tree: Tree,
     results: Box<[Range]>,
@@ -166,11 +164,7 @@ impl ParsedFile {
     /// If something with tree sitter goes wrong.
     /// If the code cannot be parsed properly.
     /// If no results are found for this function name.
-    pub fn search_file(
-        name: &str,
-        code: &str,
-        language: &dyn SupportedLanguage,
-    ) -> Result<Self, Error> {
+    pub fn search_file(code: &str, language: &InstatiatedLanguage<'_>) -> Result<Self, Error> {
         let code_bytes = code.as_bytes();
         let mut parser = tree_sitter::Parser::new();
         let ts_lang = language.language();
@@ -181,9 +175,8 @@ impl ParsedFile {
             .parse(code, None)
             .ok_or_else(|| Error::ParseError(code.to_string()))?;
 
-        let query_str = language.query(name);
         let node = parsed.root_node();
-        let command_ranges = run_query(&query_str, ts_lang, node, code_bytes)
+        let command_ranges = run_query(language.query(), node, code_bytes)
             .map_err(|query_err| Error::InvalidQuery(language.name(), query_err))?;
 
         if command_ranges.is_empty() {
@@ -191,7 +184,7 @@ impl ParsedFile {
         }
         Ok(ParsedFile::new(
             code,
-            name,
+            language.search_name(),
             language.name(),
             parsed,
             command_ranges,
@@ -207,13 +200,12 @@ impl ParsedFile {
     /// If the code cannot be parsed properly,
     /// If no results are found for this function name.
     pub fn search_file_with_name(
-        name: &str,
         code: &str,
         file_name: &str,
-        langs: &[&dyn SupportedLanguage],
+        langs: &[&InstatiatedLanguage<'_>],
     ) -> Result<Self, Error> {
         get_file_type_from_file(file_name, langs)
-            .and_then(|language| Self::search_file(name, code, language))
+            .and_then(|language| Self::search_file(code, language))
             .map(|file| file.set_file_name(file_name))
     }
 
