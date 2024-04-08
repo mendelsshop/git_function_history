@@ -1,8 +1,13 @@
 #![doc = include_str!("../README.md")]
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
-#![deny(missing_debug_implementations, clippy::missing_panics_doc)]
-#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![deny(clippy::missing_panics_doc)]
+#![warn(
+    missing_debug_implementations,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo
+)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
@@ -14,12 +19,22 @@ pub mod supported_languages;
 
 fn run_query<'a>(
     query: &Query,
+    name: &str,
+    field: u32,
     node: Node<'a>,
     code: &'a [u8],
 ) -> Result<Box<[Range]>, QueryError> {
     let mut query_cursor = tree_sitter::QueryCursor::new();
-    let matches = query_cursor.matches(&query, node, code);
-    let ranges = matches.map(|m| m.captures[0].node.range());
+    let matches = query_cursor.matches(query, node, code);
+    let ranges = matches
+        .filter(|m| {
+            m.captures
+                .iter()
+                .find(|c| c.index == field && c.node.utf8_text(code).unwrap() == name)
+                .is_some()
+        })
+        .map(|m| m.captures[0].node.range());
+
     Ok(ranges.collect())
 }
 
@@ -176,13 +191,12 @@ impl ParsedFile {
             .ok_or_else(|| Error::ParseError(code.to_string()))?;
 
         let node = parsed.root_node();
-        let command_ranges = run_query(language.query(), node, code_bytes)
-            .map_err(|query_err| Error::InvalidQuery(language.name(), query_err))?;
+        let command_ranges = language.run_query(node, code_bytes);
 
         if command_ranges.is_empty() {
             return Err(Error::NoResultsForSearch);
         }
-        Ok(ParsedFile::new(
+        Ok(Self::new(
             code,
             language.search_name(),
             language.name(),

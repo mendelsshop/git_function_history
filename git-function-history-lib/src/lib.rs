@@ -41,7 +41,7 @@ macro_rules! get_item_from_oid_option {
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use function_grep::{
-    supported_languages::{Instatiate, InstatiatedLanguage, SupportedLanguage},
+    supported_languages::{Instatiate,InstatiateMap, InstatiatedLanguage, SupportedLanguage},
     ParsedFile,
 };
 use git_function_history_proc_macro::enumstuff;
