@@ -5,7 +5,7 @@
 #![deny(clippy::use_self, rust_2018_idioms)]
 use function_grep::supported_languages::InstatiateMap;
 use function_grep::{
-    supported_languages::{predefined_languages, Instatiate},
+    supported_languages::{predefined_languages, SupportedLanguage},
     ParsedFile,
 };
 

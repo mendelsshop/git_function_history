@@ -41,14 +41,14 @@ macro_rules! get_item_from_oid_option {
 use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use function_grep::{
-    supported_languages::{Instatiate,InstatiateMap, InstatiatedLanguage, SupportedLanguage},
+    supported_languages::{InstatiateMap, InstatiatedLanguage, SupportedLanguage},
     ParsedFile,
 };
 use git_function_history_proc_macro::enumstuff;
 // use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
 
 use gix::{
     objs, prelude::ObjectIdExt, ObjectId, Tree
@@ -188,7 +188,7 @@ pub fn get_function_history(
                         .iter()
                         .map(|lang| format!(
                             "({} with extension(s) [{}])",
-                            lang.name(),
+                            lang.language_name(),
                             &lang.file_exts().join(",")
                         ))
                         .collect::<Vec<_>>()
@@ -538,9 +538,10 @@ fn find_function_in_files_with_commit(
     files: Vec<(String, String)>,
     langs: &[&InstatiatedLanguage<'_>],
 ) -> Vec<ParsedFile> {
-    // #[cfg(feature = "parallel")]
-    // let t = files.par_iter();
-    // #[cfg(not(feature = "parallel"))]
+    // commenting out this parallelization seems to net a gain in performance with tree sitter
+     //#[cfg(feature = "parallel")]
+     //let t = files.par_iter();
+     //#[cfg(not(feature = "parallel"))]
     let t = files.iter();
     t.filter_map(|(file_path, fc)| {
         ParsedFile::search_file_with_name( &fc, &file_path, langs).ok()
