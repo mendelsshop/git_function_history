@@ -135,7 +135,7 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, f: fn(&Node<'_>) -> bool) -> Result<Self, Error> {
+    pub fn filter(&self, f: impl FnMut(&Node<'_>) -> bool) -> Result<Self, Error> {
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()

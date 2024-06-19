@@ -7,15 +7,7 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
-use crate::{
-    // languages::{FileTrait, FunctionTrait, PythonFile, RubyFile, RustFile, UMPLFile},
-    Filter,
-};
-
-// #[cfg(feature = "c_lang")]
-// use crate::languages::CFile;
-
-// use crate::languages::GoFile;
+use crate::Filter;
 
 #[derive(Debug, Clone)]
 pub enum ErrorReason {
@@ -120,79 +112,82 @@ impl Commit {
         }
     }
 
-    // /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
-    // ///
-    // /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
-    // ///
-    // /// # Errors
-    // ///
-    // /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
-    // pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
-    //     match filter {
-    //         Filter::FileAbsolute(_)
-    //         | Filter::FileRelative(_)
-    //         | Filter::Directory(_)
-    //         | Filter::FunctionInLines(..)
-    //         | Filter::PLFilter(_)
-    //         | Filter::Language(_) => {}
-    //         Filter::None => {
-    //             return Ok(self.clone());
-    //         }
-    //         _ => Err(ErrorReason::Other("Invalid filter".to_string()))?,
-    //     }
-    //     #[cfg(feature = "parallel")]
-    //     let t = self.files.iter();
-    //     #[cfg(not(feature = "parallel"))]
-    //     let t = self.files.iter();
-    //     let vec: Vec<_> = t
-    //         .filter_map(|f| match filter {
-    //             Filter::FileAbsolute(file) => {
-    //                 if f.get_file_name() == *file {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::FileRelative(file) => {
-    //                 if f.get_file_name().ends_with(file) {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::Directory(dir) => {
-    //                 if f.get_file_name().contains(dir) {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::FunctionInLines(..) | Filter::PLFilter(_) => f.filter_by(filter).ok(),
-    //             Filter::Language(lang) => {
-    //                 if f.get_language() == *lang {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             _ => None,
-    //         })
-    //         .collect();
-    //
-    //     if vec.is_empty() {
-    //         return Err(ErrorReason::Other("No files found for filter".to_string()))?;
-    //     }
-    //     Ok(Self {
-    //         commit_hash: self.commit_hash.clone(),
-    //         files: vec,
-    //         date: self.date,
-    //         current_pos: 0,
-    //         current_iter_pos: 0,
-    //         author: self.author.clone(),
-    //         email: self.email.clone(),
-    //         message: self.message.clone(),
-    //     })
-    // }
+    /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
+    ///
+    /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
+    ///
+    /// # Errors
+    ///
+    /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
+        match filter {
+            Filter::FileAbsolute(_)
+            | Filter::FileRelative(_)
+            | Filter::Directory(_)
+            | Filter::FunctionInLines(..)
+            | Filter::Language(_) => {}
+            Filter::None => {
+                return Ok(self.clone());
+            }
+            _ => Err(ErrorReason::Other("Invalid filter".to_string()))?,
+        }
+        #[cfg(feature = "parallel")]
+        let t = self.files.iter();
+        #[cfg(not(feature = "parallel"))]
+        let t = self.files.iter();
+        let vec: Vec<_> = t
+            .filter_map(|f| match filter {
+                Filter::FileAbsolute(file) => {
+                    if f.file_name()? == *file {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::FileRelative(file) => {
+                    if f.file_name()?.ends_with(file) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::Directory(dir) => {
+                    if f.file_name()?.contains(dir) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::FunctionInLines(start, end) => f
+                    .filter(|node| {
+                        node.range().start_point.row >= *start && node.range().end_point.row <= *end
+                    })
+                    .ok(),
+                Filter::Language(lang) => {
+                    if f.language() == *lang {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+
+        if vec.is_empty() {
+            return Err(ErrorReason::Other("No files found for filter".to_string()))?;
+        }
+        Ok(Self {
+            commit_hash: self.commit_hash.clone(),
+            files: vec,
+            date: self.date,
+            current_pos: 0,
+            current_iter_pos: 0,
+            author: self.author.clone(),
+            email: self.email.clone(),
+            message: self.message.clone(),
+        })
+    }
 }
 
 impl Iterator for Commit {
@@ -320,98 +315,99 @@ impl FunctionHistory {
             .get(self.current_pos)
             .map_or(Directions::None, Commit::get_move_direction)
     }
-    // /// returns a new `FunctionHistory` by filtering the current one by the filter specified (does not modify the current one).
-    // /// All filter are valid
-    // ///
-    // /// # examples
-    // /// ```rust
-    // /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
-    // ///
-    // /// let history = get_function_history("new", &FileFilterType::None, &Filter::None, &Language::Rust).unwrap();
-    // ///
-    // /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
-    // /// ```
-    // ///
-    // /// # Errors
-    // ///
-    // /// returns `Err` if no files or commits are match the filter specified
-    // pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
-    //     #[cfg(feature = "parallel")]
-    //     let t = self.commit_history.par_iter();
-    //     #[cfg(not(feature = "parallel"))]
-    //     let t = self.commit_history.iter();
-    //     let vec: Vec<Commit> = t
-    //         .filter_map(|f| match filter {
-    //             Filter::FunctionInLines(..)
-    //             | Filter::Directory(_)
-    //             | Filter::FileAbsolute(_)
-    //             | Filter::PLFilter(_)
-    //             | Filter::FileRelative(_)
-    //             | Filter::Language(_) => f.filter_by(filter).ok(),
-    //             Filter::CommitHash(commit_hash) => {
-    //                 if &f.commit_hash == commit_hash {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //
-    //             Filter::Date(date) => {
-    //                 if &f.date.to_rfc2822() == date {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::DateRange(start, end) => {
-    //                 let Ok(start) = DateTime::parse_from_rfc2822(start) else {
-    //                     return None;
-    //                 };
-    //                 let Ok(end) = DateTime::parse_from_rfc2822(end) else {
-    //                     return None;
-    //                 };
-    //                 if f.date >= start || f.date <= end {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::Author(author) => {
-    //                 if &f.author == author {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::AuthorEmail(email) => {
-    //                 if &f.email == email {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::Message(message) => {
-    //                 if f.message.contains(message) {
-    //                     Some(f.clone())
-    //                 } else {
-    //                     None
-    //                 }
-    //             }
-    //             Filter::None => None,
-    //         })
-    //         .collect();
-    //
-    //     if vec.is_empty() {
-    //         return Err(ErrorReason::NoHistory);
-    //     }
-    //     Ok(Self {
-    //         commit_history: vec,
-    //         name: self.name.clone(),
-    //         current_pos: 0,
-    //         current_iter_pos: 0,
-    //     })
-    // }
+    /// returns a new `FunctionHistory` by filtering the current one by the filter specified (does not modify the current one).
+    /// All filter are valid
+    ///
+    /// # examples
+    /// ```rust
+    /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
+    ///
+    /// let history = get_function_history("new", &FileFilterType::None, &Filter::None, &Language::Rust).unwrap();
+    ///
+    /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// returns `Err` if no files or commits are match the filter specified
+    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
+        #[cfg(feature = "parallel")]
+        let t = self.commit_history.par_iter();
+        #[cfg(not(feature = "parallel"))]
+        let t = self.commit_history.iter();
+        let vec: Vec<Commit> = t
+            .filter_map(|f| match filter {
+                Filter::FunctionInLines(..)
+                | Filter::Directory(_)
+                | Filter::FileAbsolute(_)
+                | Filter::FileRelative(_)
+                | Filter::Language(_) => f.filter_by(filter).ok(),
+                Filter::CommitHash(commit_hash) => {
+                    if &f.commit_hash == commit_hash {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+
+                Filter::Date(date) => {
+                    if &f.date.to_rfc2822() == date {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::DateRange(start, end) => {
+                    let Ok(start) = DateTime::parse_from_rfc2822(start) else {
+                        return None;
+                    };
+                    let Ok(end) = DateTime::parse_from_rfc2822(end) else {
+                        return None;
+                    };
+                    if f.date >= start || f.date <= end {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::Author(author) => {
+                    if &f.author == author {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::AuthorEmail(email) => {
+                    if &f.email == email {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::Message(message) => {
+                    if f.message.contains(message) {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                }
+                Filter::None => None,
+            })
+            .collect();
+
+        if vec.is_empty() {
+            return Err(ErrorReason::NoHistory);
+        }
+        Ok(Self {
+            commit_history: vec,
+            name: self.name.clone(),
+            current_pos: 0,
+            current_iter_pos: 0,
+        })
+    }
 }
+
+// TODO: fix this documentaton (and maybe the whole macro)
 
 /// Macro to filter a the whole git history, a singe commit, or a file.
 ///
@@ -479,14 +475,4 @@ pub enum Directions {
     None,
     /// You can move in both directions
     Both,
-}
-
-trait ErrorToOption<FileType> {
-    fn to_option(self) -> Option<FileType>;
-}
-
-impl<FileType> ErrorToOption<FileType> for Result<FileType, String> {
-    fn to_option(self) -> Option<FileType> {
-        self.map_or(None, |t| Some(t))
-    }
 }

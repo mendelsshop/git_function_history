@@ -48,11 +48,9 @@ use git_function_history_proc_macro::enumstuff;
 // use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use gix::{
-    objs, prelude::ObjectIdExt, ObjectId, Tree
-};
+use gix::{objs, prelude::ObjectIdExt, ObjectId, Tree};
 use std::{error::Error, ops::Sub};
 
 pub use {
@@ -100,7 +98,7 @@ pub enum Filter {
     /// when you want to filter by proggramming language filter
     // PLFilter(LanguageFilter),
     /// when you want to filter to only have files that are in a specific language
-    Language(Language),
+    Language(String),
     /// When you want to filter by nothing.
     None,
 }
@@ -132,7 +130,7 @@ pub enum Filter {
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
-/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, &Language::Rust).unwrap();
+/// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, function_grep::supported_languages::predefined_languages()).unwrap();
 /// ```
 ///
 /// # Errors
@@ -242,7 +240,7 @@ pub fn get_function_history(
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
         let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
         return if let Some(i) = commit {
-            let tree = sender(i.0, th_repo.to_thread_local(),  langs1, langs, file)?;
+            let tree = sender(i.0, th_repo.to_thread_local(), langs1, langs, file)?;
 
             if tree.is_empty() {
                 Err("empty commit found")?;
@@ -294,7 +292,7 @@ pub fn get_function_history(
     // and report some of errors if no oks and if no oks and errs report no history found
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, th_repo.to_thread_local(),  langs1, langs, file);
+            let tree = sender(i.0, th_repo.to_thread_local(), langs1, langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -323,25 +321,6 @@ pub fn get_function_history(
     Ok(fh)
 }
 
-/// used for the `get_function_history` macro internally (you don't have to touch this)
-pub struct MacroOpts<'a> {
-    pub name: &'a str,
-    pub file: FileFilterType,
-    pub filter: Filter,
-    pub language: Language,
-}
-
-impl Default for MacroOpts<'_> {
-    fn default() -> Self {
-        Self {
-            name: "",
-            file: FileFilterType::None,
-            filter: Filter::None,
-            language: Language::All,
-        }
-    }
-}
-
 fn sender(
     id: ObjectId,
     repo: gix::Repository,
@@ -352,14 +331,7 @@ fn sender(
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
     let tree = object.try_into_tree();
     let binding = tree.unwrap();
-    traverse_tree(
-        &binding,
-        &repo,
-        "".to_string(),
-        file_exts,
-        langs,
-        file,
-    )
+    traverse_tree(&binding, &repo, "".to_string(), file_exts, langs, file)
 }
 
 #[inline]
@@ -378,7 +350,8 @@ fn traverse_tree(
     let mut ret = Vec::new();
     for i in treee_iter {
         let i = i.map_err(|_| "failed to get tree entry")?;
-        let file = format!("{path}/{}", i.filename());
+        // TODO: what should the path seperator be?
+        let file = format!("{path}{}{}",if path.is_empty() { "" } else {"/"}, i.filename());
         match &i.mode().kind() {
             objs::tree::EntryKind::Tree => {
                 let new = repo
@@ -388,9 +361,7 @@ fn traverse_tree(
                     .map_err(|_| {
                         format!("Could not find {} from object", stringify!(try_into_tree))
                     })?;
-                ret.extend(traverse_tree(
-                    &new, repo,  file, file_exts, langs, filetype,
-                )?);
+                ret.extend(traverse_tree(&new, repo, file, file_exts, langs, filetype)?);
             }
             objs::tree::EntryKind::Blob => {
                 match &filetype {
@@ -409,16 +380,15 @@ fn traverse_tree(
                             continue;
                         }
                     }
-                    FileFilterType::None => {
-                        if files_exts
-                            .find(|ext| ends_with_cmp_no_case(&file, ext))
-                            .is_none()
-                        {
-                            continue;
-                        }
-                    }
+                    FileFilterType::None => {}
                 }
 
+                if files_exts
+                    .find(|ext| ends_with_cmp_no_case(&file, ext))
+                    .is_none()
+                {
+                    continue;
+                }
                 let obh = repo
                     .find_object(i.oid())
                     .map_err(|_| "failed to find object")?;
@@ -430,18 +400,40 @@ fn traverse_tree(
             _ => {}
         }
     }
-    ret.extend(find_function_in_files_with_commit(files,  langs));
+    ret.extend(find_function_in_files_with_commit(files, langs));
 
     Ok(ret)
 }
 
+/// used for the `get_function_history` macro internally (you don't have to touch this)
+pub struct MacroOpts<'a, 'b> {
+    pub name: &'a str,
+    pub file: FileFilterType,
+    pub filter: Filter,
+    pub supported_languages: Vec<&'b dyn SupportedLanguage>,
+    pub default_languages: bool,
+}
+
+impl Default for MacroOpts<'_, '_> {
+    fn default() -> Self {
+        Self {
+            name: "",
+            file: FileFilterType::None,
+            filter: Filter::None,
+            supported_languages: vec![],
+            default_languages: true,
+        }
+    }
+}
+// TODO: update macro docs
+//
 /// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
 /// # examples
 /// ```rust
 /// use git_function_history::{get_function_history, languages::Language, Filter, FileFilterType};
-/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None, language = Language::Rust);
+/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None,default_languages = false, supported_languages = vec![&function_grep::supported_languages::Rust]);
 /// ```
 ///
 /// everything is optional but the name, and in no particular order
@@ -469,11 +461,13 @@ macro_rules! get_function_history {
         $(
             opts.$variant = $value;
         )*
+        let mut supported = opts.supported_languages;
+        supported.extend(if opts.default_languages { function_grep::supported_languages::predefined_languages() } else { &[] });
         get_function_history(
             opts.name,
             &opts.file,
             &opts.filter,
-            &opts.language
+            &supported
         )
     }};
 }
@@ -539,14 +533,12 @@ fn find_function_in_files_with_commit(
     langs: &[&InstatiatedLanguage<'_>],
 ) -> Vec<ParsedFile> {
     // commenting out this parallelization seems to net a gain in performance with tree sitter
-     //#[cfg(feature = "parallel")]
-     //let t = files.par_iter();
-     //#[cfg(not(feature = "parallel"))]
+    //#[cfg(feature = "parallel")]
+    //let t = files.par_iter();
+    //#[cfg(not(feature = "parallel"))]
     let t = files.iter();
-    t.filter_map(|(file_path, fc)| {
-        ParsedFile::search_file_with_name( &fc, &file_path, langs).ok()
-    })
-    .collect()
+    t.filter_map(|(file_path, fc)| ParsedFile::search_file_with_name(&fc, &file_path, langs).ok())
+        .collect()
 }
 
 fn ends_with_cmp_no_case(filename: &str, file_ext: &str) -> bool {
