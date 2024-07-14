@@ -1,5 +1,4 @@
 use std::ops::Deref;
-
 use tree_sitter::{Language as TsLanguage, Node, Query, QueryError, Range};
 // TODO: better api less boxing and more results
 

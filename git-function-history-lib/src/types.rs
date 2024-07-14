@@ -124,7 +124,7 @@ impl Commit {
             Filter::FileAbsolute(_)
             | Filter::FileRelative(_)
             | Filter::Directory(_)
-            | Filter::FunctionInLines(..)
+            //| Filter::FunctionInLines(..)
             | Filter::Language(_) => {}
             Filter::None => {
                 return Ok(self.clone());
@@ -158,11 +158,11 @@ impl Commit {
                         None
                     }
                 }
-                Filter::FunctionInLines(start, end) => f
-                    .filter(|node| {
-                        node.range().start_point.row >= *start && node.range().end_point.row <= *end
-                    })
-                    .ok(),
+                //Filter::FunctionInLines(start, end) => f
+                //    .filter(|node| {
+                //        node.range().start_point.row >= *start && node.range().end_point.row <= *end
+                //    })
+                //.ok(),
                 Filter::Language(lang) => {
                     if f.language() == *lang {
                         Some(f.clone())
@@ -337,8 +337,8 @@ impl FunctionHistory {
         let t = self.commit_history.iter();
         let vec: Vec<Commit> = t
             .filter_map(|f| match filter {
-                Filter::FunctionInLines(..)
-                | Filter::Directory(_)
+                //Filter::FunctionInLines(..)
+                Filter::Directory(_)
                 | Filter::FileAbsolute(_)
                 | Filter::FileRelative(_)
                 | Filter::Language(_) => f.filter_by(filter).ok(),

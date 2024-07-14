@@ -11,9 +11,17 @@
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
+use filter::Filter;
 use supported_languages::InstatiatedLanguage;
 use tree_sitter::{LanguageError, Node, Query, QueryError, Range, Tree};
+#[allow(missing_debug_implementations)]
+pub enum SupporedLanguges {
+    All,
+    Many(Vec<String>),
+    Single(String),
+}
 
+mod filter;
 /// For adding new language support, and some predefined support for certain languages,
 pub mod supported_languages;
 
@@ -135,12 +143,12 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, f: impl FnMut(&Node<'_>) -> bool) -> Result<Self, Error> {
+    pub fn filter(&self, f: &mut impl Filter) -> Result<Self, Error> {
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()
             .filter_map(|range| root.descendant_for_point_range(range.start_point, range.end_point))
-            .filter(f)
+            .filter(|n| f.filter(n))
             .map(|n| n.range())
             .collect();
         if ranges.is_empty() {

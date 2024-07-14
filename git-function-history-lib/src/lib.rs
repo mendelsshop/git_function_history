@@ -88,7 +88,7 @@ pub enum Filter {
     /// When you want to filter only files in a specific directory
     Directory(String),
     /// when you want to filter by function that are in between specific lines
-    FunctionInLines(usize, usize),
+    //FunctionInLines(usize, usize),
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
@@ -351,7 +351,11 @@ fn traverse_tree(
     for i in treee_iter {
         let i = i.map_err(|_| "failed to get tree entry")?;
         // TODO: what should the path seperator be?
-        let file = format!("{path}{}{}",if path.is_empty() { "" } else {"/"}, i.filename());
+        let file = format!(
+            "{path}{}{}",
+            if path.is_empty() { "" } else { "/" },
+            i.filename()
+        );
         match &i.mode().kind() {
             objs::tree::EntryKind::Tree => {
                 let new = repo
