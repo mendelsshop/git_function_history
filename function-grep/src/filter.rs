@@ -2,21 +2,44 @@ use std::{str::FromStr, usize};
 
 use tree_sitter::Node;
 
-use crate::SupporedLanguges;
-
+use crate::SupportedLanguages;
+pub trait Filter: HasFilterInformation + Into<InstantiatedFilter> + FromStr<Err = String> {}
+pub struct FilterInformation {
+    /// the name of the filter (so users can find the filter)
+    filter_name: String,
+    /// describes what the filter does and how it parses
+    description: String,
+    /// what languages this filter works on
+    supported_languages: SupportedLanguages,
+}
+pub trait HasFilterInformation {
+    /// the name of the filter (so users can find the filter)
+    fn filter_name(&self) -> String;
+    /// describes what the filter does and how it parses
+    fn description(&self) -> String;
+    /// what languages this filter works on
+    fn supported_languages(&self) -> SupportedLanguages;
+    // TODO: have filter creation informaton about types and fields for uis
+    fn filter_info(&self) -> FilterInformation {
+        FilterInformation {
+            filter_name: self.filter_name(),
+            description: self.description(),
+            supported_languages: self.supported_languages(),
+        }
+    }
+}
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
 // communicate to a gui (or tui) that labels, and types of each input
-pub trait Filter: FromStr<Err = String> {
-    /// the name of the filter (so users can find the filter)
-    fn filter_name() -> String;
-    /// describes what the filter does and how it parses
-    fn description() -> String;
-    /// the actual way you want to filter a file
-    /// if the the filter returns false for a node than it will not be kept in the file
-    fn filter(&mut self, node: &Node<'_>) -> bool;
-    /// what languages this filter works on
-    fn supported_langauges() -> SupporedLanguges;
+pub struct InstantiatedFilter {
+    filter_information: FilterInformation,
+    filter_function: Box<dyn FnMut(&Node<'_>) -> bool>,
+}
+
+impl InstantiatedFilter {
+    pub fn filter(&mut self, node: &Node<'_>) -> bool {
+        (self.filter_function)(node)
+    }
 }
 
 pub struct FunctionInLines {
@@ -86,20 +109,14 @@ impl FromStr for FunctionInLines {
     type Err = String;
 }
 
-impl Filter for FunctionInLines {
-    fn filter_name() -> String {
+impl HasFilterInformation for FunctionInLines {
+    fn filter_name(&self) -> String {
         "function_in_lines".to_string()
     }
-
-    fn filter(&mut self, node: &Node<'_>) -> bool {
-        node.range().start_point.row >= self.start && node.range().end_point.row <= self.end
+    fn supported_languages(&self) -> SupportedLanguages {
+        SupportedLanguages::All
     }
-
-    fn supported_langauges() -> SupporedLanguges {
-        SupporedLanguges::All
-    }
-
-    fn description() -> String {
+    fn description(&self) -> String {
         "filter: function_in_lines
 filters to only functions within the specified lines
 format:
@@ -107,5 +124,17 @@ format:
 \tstart: [number] end: [number]
 \tend: [number] start: [number]"
             .to_string()
+    }
+}
+impl From<FunctionInLines> for InstantiatedFilter {
+    fn from(value: FunctionInLines) -> Self {
+        InstantiatedFilter {
+            filter_information: value.filter_info(),
+
+            filter_function: Box::new(move |node| {
+                node.range().start_point.row >= value.start
+                    && node.range().end_point.row <= value.end
+            }),
+        }
     }
 }

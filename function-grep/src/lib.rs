@@ -11,11 +11,11 @@
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
-use filter::Filter;
+use filter::{Filter, InstantiatedFilter};
 use supported_languages::InstatiatedLanguage;
 use tree_sitter::{LanguageError, Node, Query, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
-pub enum SupporedLanguges {
+pub enum SupportedLanguages {
     All,
     Many(Vec<String>),
     Single(String),
@@ -143,7 +143,7 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, f: &mut impl Filter) -> Result<Self, Error> {
+    pub fn filter(&self, mut f: InstantiatedFilter) -> Result<Self, Error> {
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()
