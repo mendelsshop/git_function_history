@@ -16,7 +16,7 @@ pub enum SupportedLanguages {
     Single(String),
 }
 
-mod filter;
+pub mod filter;
 /// For adding new language support, and some predefined support for certain languages,
 pub mod supported_languages;
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use tree_sitter::Node;
 
@@ -13,7 +13,16 @@ pub enum AttributeType {
 pub struct Attribute(String);
 
 use crate::SupportedLanguages;
-pub trait Filter: HasFilterInformation + Into<InstantiatedFilter> + FromStr<Err = String> {}
+pub trait Filter: HasFilterInformation {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String>;
+    fn to_filter(&self, s: &str) -> Result<InstantiatedFilter, String> {
+        let filter = self.parse_filter(s)?;
+        Ok(InstantiatedFilter {
+            filter_information: self.filter_info(),
+            filter_function: filter,
+        })
+    }
+}
 pub struct FilterInformation {
     /// the name of the filter (so users can find the filter)
     filter_name: String,
@@ -60,12 +69,14 @@ pub trait HasFilterInformation {
         }
     }
 }
+type FilterFunction = Box<dyn FnMut(&Node<'_>) -> bool>;
+
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
 // communicate to a gui (or tui) that labels, and types of each input
 pub struct InstantiatedFilter {
     filter_information: FilterInformation,
-    filter_function: Box<dyn FnMut(&Node<'_>) -> bool>,
+    filter_function: FilterFunction,
 }
 
 impl InstantiatedFilter {
@@ -90,10 +101,7 @@ impl InstantiatedFilter {
     }
 }
 
-pub struct FunctionInLines {
-    start: usize,
-    end: usize,
-}
+pub struct FunctionInLines;
 
 fn number<'a>(
     substring: &mut impl Iterator<Item = &'a str>,
@@ -121,8 +129,8 @@ fn label<'a>(
                 }
         )
 }
-impl FromStr for FunctionInLines {
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl FunctionInLines {
+    fn from_str(s: &str) -> Result<(usize, usize), String> {
         let mut substring = s.split(' ').filter(|s| *s != " ");
         let fst = substring.next().ok_or("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]")?;
         match fst {
@@ -132,7 +140,7 @@ impl FromStr for FunctionInLines {
                 label(&mut substring, format, "end:")?;
                 let end = number(&mut substring, format, "end:")?;
                 extra(&mut substring, format)?;
-                Ok(Self { start, end })
+                Ok((start, end))
             }
             "end:" => {
                 let format = "end: [number] start: [number]";
@@ -140,24 +148,29 @@ impl FromStr for FunctionInLines {
                 label(&mut substring, format, "start:")?;
                 let start = number(&mut substring, format, "start:")?;
                 extra(&mut substring, format)?;
-                Ok(Self { start, end })
+                Ok((start, end))
             }
             n => {
                 if let Ok(start) = n.parse() {
                     let end = number(&mut substring, "[number] [number]", "second")?;
-                    //let end = substring.next().ok_or_else(|| "invalid options for function_in_lines filter\nexpected [number]\n missing second [number]")?;
                     extra(&mut substring, "[number] [number]")?;
-                    Ok(Self { start, end })
+                    Ok((start, end))
                 } else {
                     Err(format!("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]\ngiven {n}"))
                 }
             }
         }
     }
-
-    type Err = String;
 }
-impl Filter for FunctionInLines {}
+impl Filter for FunctionInLines {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        let (start, end) = Self::from_str(s)?;
+
+        Ok(Box::new(move |node: &Node<'_>| {
+            node.range().start_point.row >= start && node.range().end_point.row <= end
+        }))
+    }
+}
 impl HasFilterInformation for FunctionInLines {
     fn filter_name(&self) -> String {
         "function_in_lines".to_string()
@@ -176,17 +189,5 @@ format:
     }
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {
         HashMap::from([(Attribute("start".to_string()), AttributeType::Number)])
-    }
-}
-impl From<FunctionInLines> for InstantiatedFilter {
-    fn from(value: FunctionInLines) -> Self {
-        Self {
-            filter_information: value.filter_info(),
-
-            filter_function: Box::new(move |node| {
-                node.range().start_point.row >= value.start
-                    && node.range().end_point.row <= value.end
-            }),
-        }
     }
 }
