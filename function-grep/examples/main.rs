@@ -4,10 +4,7 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 use function_grep::supported_languages::InstatiateMap;
-use function_grep::{
-    supported_languages::{predefined_languages, SupportedLanguage},
-    ParsedFile,
-};
+use function_grep::{supported_languages::predefined_languages, ParsedFile};
 
 use clap::Parser;
 use std::{fs::File, io::Read, path::PathBuf};
@@ -42,7 +39,7 @@ pub fn main() -> Result<(), Error> {
     let languages = predefined_languages()
         .instatiate_map(&args.name)
         .map_err(Error::QueryError)?;
-    let languages = &*languages.as_slice().iter().map(|l| l).collect::<Box<[_]>>();
+    let languages = &*languages.as_slice().iter().collect::<Box<[_]>>();
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
     let file_name = &args.file.to_string_lossy();

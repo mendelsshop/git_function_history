@@ -6,7 +6,7 @@ use tree_sitter::{Language as TsLanguage, Node, Query, QueryError, Range};
 pub struct InstatiatedLanguage<'a> {
     search_name: &'a str,
     language: LanguageInformation,
-    run_query: Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>,
+    run_query: QueryFunction,
 }
 
 pub trait HasLanguageInformation {
@@ -75,10 +75,7 @@ pub struct Identifier;
 pub struct TreeSitter;
 // TODO: hide in docs?
 trait InstantiateHelper<Type> {
-    fn instiate(
-        &self,
-        search: Box<str>,
-    ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>;
+    fn instiate(&self, search: Box<str>) -> QueryFunction;
 }
 
 // TODO: hide in docs?
@@ -102,10 +99,7 @@ impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
                 .filter(move |m| {
                     m.captures
                         .iter()
-                        .find(|c| {
-                            c.index == method_field && c.node.utf8_text(code).unwrap() == name
-                        })
-                        .is_some()
+                        .any(|c| c.index == method_field && c.node.utf8_text(code).unwrap() == name)
                 })
                 .map(|m| m.captures[0].node.range());
 
@@ -120,7 +114,7 @@ impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
     ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
         let query = Query::new(
             &self.language(),
-            &self.query_string_function(&search.to_string()),
+            &self.query_string_function(search.as_ref()),
         )
         .unwrap();
         Box::new(move |node, code| {
@@ -140,11 +134,10 @@ impl<T: Assoc + InstantiateHelper<T::Type> + HasLanguageInformation> SupportedLa
         self.instiate(search)
     }
 }
+type QueryFunction = Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>;
+
 pub trait SupportedLanguage: HasLanguageInformation {
-    fn instiate(
-        &self,
-        search: Box<str>,
-    ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>;
+    fn instiate(&self, search: Box<str>) -> QueryFunction;
 }
 
 pub trait InstatiateMap<'a> {
@@ -166,34 +159,35 @@ impl<'a> InstatiatedLanguage<'a> {
     pub(crate) fn new(
         search_name: &'a str,
         language: LanguageInformation,
-        run_query: Box<dyn Fn(Node<'_>, &'_ [u8]) -> Box<[Range]> + Send + Sync>,
+        run_query: QueryFunction,
     ) -> Self {
         Self {
-            language,
             search_name,
+            language,
             run_query,
         }
     }
 
+    #[must_use]
     pub fn run_query(&self, node: Node<'_>, code: &'_ [u8]) -> Box<[Range]> {
         (self.run_query)(node, code)
     }
     #[must_use]
-    pub fn name(&self) -> &'static str {
+    pub const fn name(&self) -> &'static str {
         self.language.language_name
     }
 
     #[must_use]
-    pub fn file_exts(&self) -> &'static [&'static str] {
+    pub const fn file_exts(&self) -> &'static [&'static str] {
         self.language.file_exts
     }
 
     #[must_use]
-    pub fn language(&self) -> &TsLanguage {
+    pub const fn language(&self) -> &TsLanguage {
         &self.language.language
     }
 
-    pub(crate) fn search_name(&self) -> &str {
+    pub(crate) const fn search_name(&self) -> &str {
         self.search_name
     }
 }

@@ -1,6 +1,16 @@
-use std::{str::FromStr, usize};
+use std::{collections::HashMap, str::FromStr};
 
 use tree_sitter::Node;
+
+pub enum AttributeType {
+    String,
+    Number,
+    Boolean,
+    Other(String),
+}
+
+#[derive(Hash, Eq, PartialEq)]
+pub struct Attribute(String);
 
 use crate::SupportedLanguages;
 pub trait Filter: HasFilterInformation + Into<InstantiatedFilter> + FromStr<Err = String> {}
@@ -11,6 +21,26 @@ pub struct FilterInformation {
     description: String,
     /// what languages this filter works on
     supported_languages: SupportedLanguages,
+
+    attributes: HashMap<Attribute, AttributeType>,
+}
+
+impl FilterInformation {
+    pub const fn supported_languages(&self) -> &SupportedLanguages {
+        &self.supported_languages
+    }
+
+    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+        &self.attributes
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    pub fn filter_name(&self) -> &str {
+        &self.filter_name
+    }
 }
 pub trait HasFilterInformation {
     /// the name of the filter (so users can find the filter)
@@ -19,10 +49,12 @@ pub trait HasFilterInformation {
     fn description(&self) -> String;
     /// what languages this filter works on
     fn supported_languages(&self) -> SupportedLanguages;
+    fn attributes(&self) -> HashMap<Attribute, AttributeType>;
     // TODO: have filter creation informaton about types and fields for uis
     fn filter_info(&self) -> FilterInformation {
         FilterInformation {
             filter_name: self.filter_name(),
+            attributes: self.attributes(),
             description: self.description(),
             supported_languages: self.supported_languages(),
         }
@@ -40,6 +72,22 @@ impl InstantiatedFilter {
     pub fn filter(&mut self, node: &Node<'_>) -> bool {
         (self.filter_function)(node)
     }
+
+    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+        self.filter_information.attributes()
+    }
+
+    pub fn description(&self) -> &str {
+        self.filter_information.description()
+    }
+
+    pub fn filter_name(&self) -> &str {
+        self.filter_information.filter_name()
+    }
+
+    pub const fn supported_languages(&self) -> &SupportedLanguages {
+        self.filter_information.supported_languages()
+    }
 }
 
 pub struct FunctionInLines {
@@ -53,14 +101,10 @@ fn number<'a>(
     position: &str,
 ) -> Result<usize, String> {
     substring.next().ok_or_else(||format! ("invalid options for function_in_lines filter\nexpected {format}\n missing {position} [number]"))
-                .and_then(|end| end.parse().map_err(|e| format! ("invalid options for function_in_lines filter\nexpected {format}\n cannot parse {position} [number]")))
+                .and_then(|end| end.parse().map_err(|_| format! ("invalid options for function_in_lines filter\nexpected {format}\n cannot parse {position} [number]")))
 }
 fn extra<'a>(substring: &mut impl Iterator<Item = &'a str>, format: &str) -> Result<(), String> {
-    if let Some(extra) = substring.next() {
-        Err(format!( "invalid options for function_in_lines filter\nexpected {format}\n, found extra stuff after {format}: {extra}"))
-    } else {
-        Ok(())
-    }
+    substring.next().map_or(Ok(()), |extra| Err(format!( "invalid options for function_in_lines filter\nexpected {format}\n, found extra stuff after {format}: {extra}")))
 }
 fn label<'a>(
     substring: &mut impl Iterator<Item = &'a str>,
@@ -69,13 +113,18 @@ fn label<'a>(
 ) -> Result<(), String> {
     substring.next().ok_or_else(||format! ("invalid options for function_in_lines filter\nexpected {format}\n missing label {label}"))
                 .and_then(|l| {
-                    if label == l {Ok(()) } else
-{ Err(format!("invalid options for function_in_lines filter\n expected {format}\nexpected {label}, found {l}")) }} )
+                    if label == l {
+                        Ok(())
+                    } else {
+                        Err(format!("invalid options for function_in_lines filter\n expected {format}\nexpected {label}, found {l}")) 
+                    }
+                }
+        )
 }
 impl FromStr for FunctionInLines {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut substring = s.split(' ').filter(|s| *s != " ");
-        let fst = substring.next().ok_or_else(|| "invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]")?;
+        let fst = substring.next().ok_or("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]")?;
         match fst {
             "start:" => {
                 let format = "start: [number] end: [number]";
@@ -83,7 +132,7 @@ impl FromStr for FunctionInLines {
                 label(&mut substring, format, "end:")?;
                 let end = number(&mut substring, format, "end:")?;
                 extra(&mut substring, format)?;
-                Ok(FunctionInLines { start, end })
+                Ok(Self { start, end })
             }
             "end:" => {
                 let format = "end: [number] start: [number]";
@@ -91,14 +140,14 @@ impl FromStr for FunctionInLines {
                 label(&mut substring, format, "start:")?;
                 let start = number(&mut substring, format, "start:")?;
                 extra(&mut substring, format)?;
-                Ok(FunctionInLines { start, end })
+                Ok(Self { start, end })
             }
             n => {
                 if let Ok(start) = n.parse() {
                     let end = number(&mut substring, "[number] [number]", "second")?;
                     //let end = substring.next().ok_or_else(|| "invalid options for function_in_lines filter\nexpected [number]\n missing second [number]")?;
                     extra(&mut substring, "[number] [number]")?;
-                    Ok(FunctionInLines { start, end })
+                    Ok(Self { start, end })
                 } else {
                     Err(format!("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]\ngiven {n}"))
                 }
@@ -108,7 +157,7 @@ impl FromStr for FunctionInLines {
 
     type Err = String;
 }
-
+impl Filter for FunctionInLines {}
 impl HasFilterInformation for FunctionInLines {
     fn filter_name(&self) -> String {
         "function_in_lines".to_string()
@@ -125,10 +174,13 @@ format:
 \tend: [number] start: [number]"
             .to_string()
     }
+    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+        HashMap::from([(Attribute("start".to_string()), AttributeType::Number)])
+    }
 }
 impl From<FunctionInLines> for InstantiatedFilter {
     fn from(value: FunctionInLines) -> Self {
-        InstantiatedFilter {
+        Self {
             filter_information: value.filter_info(),
 
             filter_function: Box::new(move |node| {

@@ -2,18 +2,13 @@
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::missing_panics_doc)]
-#![warn(
-    missing_debug_implementations,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo
-)]
+#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
-use filter::{Filter, InstantiatedFilter};
+use filter::InstantiatedFilter;
 use supported_languages::InstatiatedLanguage;
-use tree_sitter::{LanguageError, Node, Query, QueryError, Range, Tree};
+use tree_sitter::{LanguageError, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
 pub enum SupportedLanguages {
     All,
@@ -25,26 +20,25 @@ mod filter;
 /// For adding new language support, and some predefined support for certain languages,
 pub mod supported_languages;
 
-fn run_query<'a>(
-    query: &Query,
-    name: &str,
-    field: u32,
-    node: Node<'a>,
-    code: &'a [u8],
-) -> Result<Box<[Range]>, QueryError> {
-    let mut query_cursor = tree_sitter::QueryCursor::new();
-    let matches = query_cursor.matches(query, node, code);
-    let ranges = matches
-        .filter(|m| {
-            m.captures
-                .iter()
-                .find(|c| c.index == field && c.node.utf8_text(code).unwrap() == name)
-                .is_some()
-        })
-        .map(|m| m.captures[0].node.range());
-
-    Ok(ranges.collect())
-}
+//fn run_query<'a>(
+//    query: &Query,
+//    name: &str,
+//    field: u32,
+//    node: Node<'a>,
+//    code: &'a [u8],
+//) -> Result<Box<[Range]>, QueryError> {
+//    let mut query_cursor = tree_sitter::QueryCursor::new();
+//    let matches = query_cursor.matches(query, node, code);
+//    let ranges = matches
+//        .filter(|m| {
+//            m.captures
+//                .iter()
+//                .any(|c| c.index == field && c.node.utf8_text(code).unwrap() == name)
+//        })
+//        .map(|m| m.captures[0].node.range());
+//
+//    Ok(ranges.collect())
+//}
 
 /// Errors that we may give back.
 #[derive(Debug)]
@@ -56,7 +50,7 @@ pub enum Error {
     ParseError(String),
     /// If tree sitter doesn't like the grammer for given language
     GrammarLoad(&'static str, LanguageError),
-    /// If tree sitter doesn't like the query from a given [SupportedLanguage].
+    /// If tree sitter doesn't like the query from a given [`SupportedLanguage`].
     InvalidQuery(&'static str, QueryError),
     /// If there are no result after filtering.
     NoSuchResultsForFilter,
@@ -244,7 +238,7 @@ impl ParsedFile {
 
     #[must_use]
     /// Get the [Range] of each found function.
-    pub fn results(&self) -> &[Range] {
+    pub const fn results(&self) -> &[Range] {
         &self.results
     }
 }
