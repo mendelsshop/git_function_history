@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use tree_sitter::Node;
 
+#[derive(PartialEq, Eq)]
 pub enum AttributeType {
     String,
     Number,
@@ -23,6 +24,7 @@ pub trait Filter: HasFilterInformation {
         })
     }
 }
+
 pub struct FilterInformation {
     /// the name of the filter (so users can find the filter)
     filter_name: String,
@@ -33,21 +35,35 @@ pub struct FilterInformation {
 
     attributes: HashMap<Attribute, AttributeType>,
 }
-
+impl Hash for FilterInformation {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.filter_name.hash(state);
+        self.description.hash(state);
+        self.supported_languages.hash(state);
+    }
+}
+impl PartialEq for FilterInformation {
+    fn eq(&self, other: &Self) -> bool {
+        self.filter_name == other.filter_name
+            && self.description == other.description
+            && self.supported_languages == other.supported_languages
+    }
+}
+impl Eq for FilterInformation {}
 impl FilterInformation {
-    pub const fn supported_languages(&self) -> &SupportedLanguages {
+    #[must_use] pub const fn supported_languages(&self) -> &SupportedLanguages {
         &self.supported_languages
     }
 
-    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    #[must_use] pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
         &self.attributes
     }
 
-    pub fn description(&self) -> &str {
+    #[must_use] pub fn description(&self) -> &str {
         &self.description
     }
 
-    pub fn filter_name(&self) -> &str {
+    #[must_use] pub fn filter_name(&self) -> &str {
         &self.filter_name
     }
 }
@@ -84,19 +100,19 @@ impl InstantiatedFilter {
         (self.filter_function)(node)
     }
 
-    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    #[must_use] pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
         self.filter_information.attributes()
     }
 
-    pub fn description(&self) -> &str {
+    #[must_use] pub fn description(&self) -> &str {
         self.filter_information.description()
     }
 
-    pub fn filter_name(&self) -> &str {
+    #[must_use] pub fn filter_name(&self) -> &str {
         self.filter_information.filter_name()
     }
 
-    pub const fn supported_languages(&self) -> &SupportedLanguages {
+    #[must_use] pub const fn supported_languages(&self) -> &SupportedLanguages {
         self.filter_information.supported_languages()
     }
 }

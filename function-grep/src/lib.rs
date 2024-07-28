@@ -10,6 +10,7 @@ use filter::InstantiatedFilter;
 use supported_languages::InstatiatedLanguage;
 use tree_sitter::{LanguageError, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
+#[derive(Hash, PartialEq, Eq)]
 pub enum SupportedLanguages {
     All,
     Many(Vec<String>),
