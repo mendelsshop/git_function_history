@@ -37,8 +37,6 @@ macro_rules! get_item_from_oid_option {
             .ok()
     };
 }
-#[cfg(feature = "cache")]
-use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use function_grep::{
     supported_languages::{InstatiateMap, InstatiatedLanguage, SupportedLanguage},
@@ -48,7 +46,7 @@ use git_function_history_proc_macro::enumstuff;
 // use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use gix::{objs, prelude::ObjectIdExt, ObjectId, Tree};
 use std::{error::Error, ops::Sub};
@@ -64,7 +62,7 @@ pub use {
 pub enum FileFilterType {
     /// When you have a absolute path to a file.
     Absolute(String),
-    /// When you have a relative path to a file and or want to find look in all files match a name (aka ends_with).
+    /// When you have a relative path to a file and or want to find look in all files match a name (aka `ends_with`).
     Relative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
@@ -73,7 +71,9 @@ pub enum FileFilterType {
 }
 
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
-#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
+// TODO: what do we actually need to derive
+//#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
+#[derive(enumstuff)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitHash(String),
@@ -87,8 +87,6 @@ pub enum Filter {
     FileRelative(String),
     /// When you want to filter only files in a specific directory
     Directory(String),
-    /// when you want to filter by function that are in between specific lines
-    //FunctionInLines(usize, usize),
     /// when you want to filter by a any commit author name that contains a specific string
     Author(String),
     /// when you want to filter by a any commit author email that contains a specific string
@@ -96,7 +94,8 @@ pub enum Filter {
     // when you want to filter by a a commit message that contains a specific string
     Message(String),
     /// when you want to filter by proggramming language filter
-    // PLFilter(LanguageFilter),
+    #[enumstuff(skip)]
+     PLFilter(function_grep::filter::InstantiatedFilter),
     /// when you want to filter to only have files that are in a specific language
     Language(String),
     /// When you want to filter by nothing.
@@ -199,8 +198,7 @@ pub fn get_function_history(
 
     let langs1 = &*langs
         .iter()
-        .map(|l| l.file_exts())
-        .flatten()
+        .flat_map(|l| l.file_exts())
         .copied()
         .collect::<Box<[_]>>();
     let repo = gix::discover(".")?;
@@ -235,7 +233,7 @@ pub fn get_function_history(
         Some((tree, metadata))
     });
     let langs = langs.instatiate_map(name).unwrap();
-    let langs = &*langs.as_slice().iter().map(|l| l).collect::<Box<[_]>>();
+    let langs = &*langs.as_slice().iter().collect::<Box<[_]>>();
     if let Filter::Date(date) = filter {
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
         let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
@@ -331,7 +329,7 @@ fn sender(
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
     let tree = object.try_into_tree();
     let binding = tree.unwrap();
-    traverse_tree(&binding, &repo, "".to_string(), file_exts, langs, file)
+    traverse_tree(&binding, &repo, String::new(), file_exts, langs, file)
 }
 
 #[inline]
@@ -387,9 +385,7 @@ fn traverse_tree(
                     FileFilterType::None => {}
                 }
 
-                if files_exts
-                    .find(|ext| ends_with_cmp_no_case(&file, ext))
-                    .is_none()
+                if !files_exts.any(|ext| ends_with_cmp_no_case(&file, ext))
                 {
                     continue;
                 }
@@ -541,7 +537,7 @@ fn find_function_in_files_with_commit(
     //let t = files.par_iter();
     //#[cfg(not(feature = "parallel"))]
     let t = files.iter();
-    t.filter_map(|(file_path, fc)| ParsedFile::search_file_with_name(&fc, &file_path, langs).ok())
+    t.filter_map(|(file_path, fc)| ParsedFile::search_file_with_name(fc, file_path, langs).ok())
         .collect()
 }
 
@@ -579,7 +575,7 @@ mod tests {
             // &languages::Language::Rust,
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after);
+        println!("time taken: {after}");
         match &output {
             Ok(functions) => {
                 println!("{functions}");
@@ -687,7 +683,7 @@ mod tests {
             function_grep::supported_languages::predefined_languages(),
         );
         let after = Utc::now() - now;
-        println!("time taken: {}", after);
+        println!("time taken: {after}");
         match &output {
             Ok(functions) => {
                 // println!("{functions}");
