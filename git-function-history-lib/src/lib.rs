@@ -12,7 +12,6 @@
     clippy::too_many_lines
 )]
 /// code and function related language
-pub mod languages;
 
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
@@ -37,7 +36,7 @@ macro_rules! get_item_from_oid_option {
             .ok()
     };
 }
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use function_grep::{
     supported_languages::{InstatiateMap, InstatiatedLanguage, SupportedLanguage},
     ParsedFile,
@@ -51,10 +50,7 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use gix::{objs, prelude::ObjectIdExt, ObjectId, Tree};
 use std::{error::Error, ops::Sub};
 
-pub use {
-    languages::Language,
-    types::{Commit, FunctionHistory},
-};
+pub use types::{Commit, FunctionHistory};
 
 /// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 /// path separator is `/`.
@@ -72,8 +68,8 @@ pub enum FileFilterType {
 
 /// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
 // TODO: what do we actually need to derive
-//#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
-#[derive(enumstuff)]
+// TODO: allow more complex language type filters.
+#[derive(enumstuff, PartialEq, Eq, Debug)]
 pub enum Filter {
     /// When you want to filter by a commit hash.
     CommitHash(String),
@@ -95,7 +91,7 @@ pub enum Filter {
     Message(String),
     /// when you want to filter by proggramming language filter
     #[enumstuff(skip)]
-     PLFilter(function_grep::filter::InstantiatedFilter),
+    PLFilter(function_grep::filter::InstantiatedFilter),
     /// when you want to filter to only have files that are in a specific language
     Language(String),
     /// When you want to filter by nothing.
@@ -138,6 +134,8 @@ pub enum Filter {
 /// Or if it cannot find or read from a git repository
 ///
 // TODO: split this function into smaller functions
+// TODO: allow more complex language type filters.
+// TODO: allow multiple filters.
 pub fn get_function_history(
     name: &str,
     file: &FileFilterType,
@@ -216,10 +214,7 @@ pub fn get_function_history(
         let commit = id.id.attach(&repo).object().ok()?.try_into_commit().ok()?;
         let tree = commit.tree().ok()?.id;
         let time = commit.time().ok()?;
-        let time = DateTime::<Utc>::from_naive_utc_and_offset(
-            NaiveDateTime::from_timestamp_opt(time.seconds, 0)?,
-            Utc,
-        );
+        let time = DateTime::from_timestamp(time.seconds, 0)?;
         let authorinfo = commit.author().ok()?;
         let author = authorinfo.name.to_string();
         let email = authorinfo.email.to_string();
@@ -385,8 +380,7 @@ fn traverse_tree(
                     FileFilterType::None => {}
                 }
 
-                if !files_exts.any(|ext| ends_with_cmp_no_case(&file, ext))
-                {
+                if !files_exts.any(|ext| ends_with_cmp_no_case(&file, ext)) {
                     continue;
                 }
                 let obh = repo
@@ -494,12 +488,7 @@ pub fn get_git_info() -> Result<Vec<CommitInfo>, Box<dyn Error + Send + Sync>> {
             }
 
             Some(CommitInfo {
-                date: match i.time().map(|x| {
-                    Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                        NaiveDateTime::from_timestamp_opt(x.seconds, 0)?,
-                        Utc,
-                    ))
-                }) {
+                date: match i.time().map(|x| DateTime::from_timestamp(x.seconds, 0)) {
                     Ok(Some(i)) => i,
                     _ => return None,
                 },

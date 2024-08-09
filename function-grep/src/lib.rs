@@ -10,7 +10,7 @@ use filter::InstantiatedFilter;
 use supported_languages::InstatiatedLanguage;
 use tree_sitter::{LanguageError, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub enum SupportedLanguages {
     All,
     Many(Vec<String>),
@@ -57,6 +57,8 @@ pub enum Error {
     NoSuchResultsForFilter,
     /// If there are no result after searching.
     NoResultsForSearch,
+    /// If the filter is not valid for this langauge
+    FilterLangaugeMismatch,
 }
 
 /// Tries to find the appropiate language for the given file extension [`ext`] based on the list of
@@ -138,7 +140,20 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, mut f: InstantiatedFilter) -> Result<Self, Error> {
+    pub fn filter(&self, f: &InstantiatedFilter) -> Result<Self, Error> {
+        match f.supported_languages() {
+            SupportedLanguages::Many(supported_languages)
+                if !supported_languages.contains(&self.language().to_string()) =>
+            {
+                Err(Error::FilterLangaugeMismatch)?;
+            }
+            SupportedLanguages::Single(supported_language)
+                if supported_language != self.language() =>
+            {
+                Err(Error::FilterLangaugeMismatch)?;
+            }
+            _ => {}
+        }
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()

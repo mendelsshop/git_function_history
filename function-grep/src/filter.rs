@@ -1,8 +1,9 @@
+use std::fmt;
 use std::{collections::HashMap, hash::Hash};
 
 use tree_sitter::Node;
 
-#[derive(PartialEq, Eq)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AttributeType {
     String,
     Number,
@@ -10,7 +11,7 @@ pub enum AttributeType {
     Other(String),
 }
 
-#[derive(Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Attribute(String);
 
 use crate::SupportedLanguages;
@@ -25,6 +26,7 @@ pub trait Filter: HasFilterInformation {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FilterInformation {
     /// the name of the filter (so users can find the filter)
     filter_name: String,
@@ -35,6 +37,13 @@ pub struct FilterInformation {
 
     attributes: HashMap<Attribute, AttributeType>,
 }
+
+impl fmt::Display for FilterInformation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "filter {}", self.filter_name)
+    }
+}
+
 impl Hash for FilterInformation {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.filter_name.hash(state);
@@ -51,19 +60,23 @@ impl PartialEq for FilterInformation {
 }
 impl Eq for FilterInformation {}
 impl FilterInformation {
-    #[must_use] pub const fn supported_languages(&self) -> &SupportedLanguages {
+    #[must_use]
+    pub const fn supported_languages(&self) -> &SupportedLanguages {
         &self.supported_languages
     }
 
-    #[must_use] pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    #[must_use]
+    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
         &self.attributes
     }
 
-    #[must_use] pub fn description(&self) -> &str {
+    #[must_use]
+    pub fn description(&self) -> &str {
         &self.description
     }
 
-    #[must_use] pub fn filter_name(&self) -> &str {
+    #[must_use]
+    pub fn filter_name(&self) -> &str {
         &self.filter_name
     }
 }
@@ -85,7 +98,7 @@ pub trait HasFilterInformation {
         }
     }
 }
-type FilterFunction = Box<dyn FnMut(&Node<'_>) -> bool>;
+type FilterFunction = Box<dyn Fn(&Node<'_>) -> bool + Send + Sync>;
 
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
@@ -95,24 +108,49 @@ pub struct InstantiatedFilter {
     filter_function: FilterFunction,
 }
 
+impl PartialEq for InstantiatedFilter {
+    fn eq(&self, other: &Self) -> bool {
+        self.filter_information == other.filter_information
+    }
+}
+impl Eq for InstantiatedFilter {}
+
+impl fmt::Display for InstantiatedFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.filter_information)
+    }
+}
+impl std::fmt::Debug for InstantiatedFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InstantiatedFilter")
+            .field("filter_information", &self.filter_information)
+            .finish()
+    }
+}
+
 impl InstantiatedFilter {
-    pub fn filter(&mut self, node: &Node<'_>) -> bool {
+    #[must_use]
+    pub fn filter(&self, node: &Node<'_>) -> bool {
         (self.filter_function)(node)
     }
 
-    #[must_use] pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    #[must_use]
+    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
         self.filter_information.attributes()
     }
 
-    #[must_use] pub fn description(&self) -> &str {
+    #[must_use]
+    pub fn description(&self) -> &str {
         self.filter_information.description()
     }
 
-    #[must_use] pub fn filter_name(&self) -> &str {
+    #[must_use]
+    pub fn filter_name(&self) -> &str {
         self.filter_information.filter_name()
     }
 
-    #[must_use] pub const fn supported_languages(&self) -> &SupportedLanguages {
+    #[must_use]
+    pub const fn supported_languages(&self) -> &SupportedLanguages {
         self.filter_information.supported_languages()
     }
 }
@@ -206,4 +244,24 @@ format:
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {
         HashMap::from([(Attribute("start".to_string()), AttributeType::Number)])
     }
+}
+macro_rules! default_filters_by_info {
+    ($($filter:ident),*) => {
+        HashMap::from([$(($filter.filter_info(), &$filter as &'static dyn Filter)),*])
+    };
+}
+
+macro_rules! default_filters {
+    ($($filter:ident),*) => {
+        HashMap::from([$(($filter.filter_info().filter_name().to_string(), &$filter as &'static dyn Filter)),*])
+    };
+}
+#[must_use]
+// TODO: do we really need more than filter name to find the correct filter
+pub fn builtin_filters_by_info() -> HashMap<FilterInformation, &'static dyn Filter> {
+    default_filters_by_info!(FunctionInLines)
+}
+#[must_use]
+pub fn builtin_filters() -> HashMap<String, &'static dyn Filter> {
+    default_filters!(FunctionInLines)
 }
