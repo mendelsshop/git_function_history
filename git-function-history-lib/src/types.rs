@@ -114,22 +114,20 @@ impl Commit {
 
     /// returns a new `Commit` by filtering the current one by the filter specified (does not modify the current one).
     ///
-    /// valid filters are: `Filter::FunctionInLines`, and `Filter::FileAbsolute`, `Filter::FileRelative`, and `Filter::Directory`.
+    /// valid filters are: `Filter::Language`, `Filter::PLFilter`,  `Filter::FileAbsolute`, `Filter::FileRelative`, `Filter::None`, and `Filter::Directory`.
     ///
     /// # Errors
     ///
-    /// Will result in an `Err` if a non-valid filter is give, or if no results are found for the given filter
+    /// Will result in an `Err` if a non-valid filter is given, or if no results are found for the given filter
     pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
         match filter {
             Filter::FileAbsolute(_)
             | Filter::FileRelative(_)
             | Filter::Directory(_)
-            //| Filter::FunctionInLines(..)
-            | Filter::Language(_) => {}
-            Filter::None => {
-                return Ok(self.clone());
-            }
-            _ => Err(ErrorReason::Other("Invalid filter".to_string()))?,
+            | Filter::PLFilter(_)
+            | Filter::Language(_) 
+            | Filter::None => {}
+            _ => return Err(ErrorReason::Other(format!("Invalid filter {filter:?}"))),
         }
         #[cfg(feature = "parallel")]
         let t = self.files.iter();
@@ -165,7 +163,9 @@ impl Commit {
                         None
                     }
                 }
-                Filter::PLFilter(filter) => f.filter(filter).ok(),
+                Filter::PLFilter(filter) => f
+                    .filter(filter)
+                    .ok(),
                 _ => None,
             })
             .collect();

@@ -1,9 +1,7 @@
 use std::fmt;
 
-use git_function_history::{
-    languages::{Language, LanguageFilter},
-    FileFilterType, Filter, FunctionHistory,
-};
+use function_grep::filter::InstantiatedFilter;
+use git_function_history::{FileFilterType, Filter, FunctionHistory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Command {
@@ -101,53 +99,45 @@ impl Default for Status {
         Status::Ok(None)
     }
 }
-#[derive(Debug, Clone)]
+//#[derive(Debug, Clone)]
 pub enum FullCommand {
     Filter(FilterType),
     List(ListType),
     Search(SearchType),
 }
 
-#[derive(Debug, Clone)]
+//#[derive(Debug)]
 pub struct SearchType {
     pub search: String,
     pub file: FileFilterType,
     pub filter: Filter,
-    pub lang: Language,
 }
 
 impl SearchType {
-    pub fn new(
-        search: String,
-        file_filter: FileFilterType,
-        filter: Filter,
-        language: Language,
-    ) -> Self {
+    pub fn new(search: String, file_filter: FileFilterType, filter: Filter) -> Self {
         SearchType {
             search,
             file: file_filter,
             filter,
-            lang: language,
         }
     }
 
-    pub fn new_from_tuple(tuple: (String, FileFilterType, Filter, Language)) -> Self {
+    pub fn new_from_tuple(tuple: (String, FileFilterType, Filter)) -> Self {
         SearchType {
             search: tuple.0,
             file: tuple.1,
             filter: tuple.2,
-            lang: tuple.3,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+//#[derive(Debug, Clone)]
 pub struct FilterType {
     pub thing: CommandResult,
     pub filter: Filter,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum HistoryFilterType {
     Date(String),
     DateRange(String, String),
@@ -156,7 +146,7 @@ pub enum HistoryFilterType {
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
-    PL(LanguageFilter),
+    PL(InstantiatedFilter),
     None,
 }
 
@@ -170,17 +160,7 @@ impl fmt::Display for HistoryFilterType {
             HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
             HistoryFilterType::FileRelative(_) => write!(f, "file relative"),
             HistoryFilterType::Directory(_) => write!(f, "directory"),
-            HistoryFilterType::PL(pl) => write!(
-                f,
-                "{}",
-                match pl {
-                    LanguageFilter::Python(_) => "python",
-                    LanguageFilter::Rust(_) => "rust",
-                    LanguageFilter::Ruby(_) => "ruby",
-                    LanguageFilter::UMPL(_) => "umpl",
-                    LanguageFilter::Go(_) => "go",
-                }
-            ),
+            HistoryFilterType::PL(pl) => write!(f, "{pl}",),
             HistoryFilterType::None => write!(f, "none"),
         }
     }

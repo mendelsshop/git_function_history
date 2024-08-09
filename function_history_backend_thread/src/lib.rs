@@ -93,18 +93,16 @@ pub fn command_thread(
                         search: name,
                         file,
                         filter,
-                        lang,
                     }) => {
                         if log {
                             log::info!(
-                                "Searching for {} in {:?} with language {} and filter {:?}",
+                                "Searching for {} in {:?} and filter {:?}",
                                 name,
                                 file,
-                                lang,
                                 filter
                             );
                         }
-                        match get_function_history(&name, &file, &filter) {
+                        match get_function_history!(name = &name, file = file, filter = filter) {
                             Ok(functions) => {
                                 if log {
                                     log::info!("Found functions");

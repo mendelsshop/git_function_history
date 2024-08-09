@@ -4,10 +4,7 @@ use crate::{app::actions::Action, keys::Key};
 use function_history_backend_thread::types::{
     CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
-use git_function_history::{
-    languages::{Language, LanguageFilter},
-    FileFilterType, Filter,
-};
+use git_function_history::{FileFilterType, Filter};
 use ratatui::{
     style::Modifier,
     widgets::{Block, Borders, ScrollbarState},
@@ -72,6 +69,7 @@ impl App<'_> {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(false)
             .open(super::get_history_dir().expect("No history path"))
             .expect("Failed to open history file");
         let mut history = String::new();
@@ -238,25 +236,11 @@ impl App<'_> {
         let mut command_iter = command.iter();
         let mut file = FileFilterType::None;
         let mut filter = Filter::None;
-        let mut lang = Language::All;
 
+        // TODO: allow searching with specific langauges
         let name = unwrap_set_error!(self, command_iter.next(), "No function name");
         while let Some(cmd) = command_iter.next() {
             match *cmd {
-                "language" => {
-                    lang = match *unwrap_set_error!(self, command_iter.next(), "No language given")
-                    {
-                        "rust" => Language::Rust,
-                        "python" => Language::Python,
-                        "go" => Language::Go,
-                        "ruby" => Language::Ruby,
-                        "umpl" => Language::UMPL,
-                        _ => {
-                            self.status = Status::Error("Invalid language".to_string());
-                            return None;
-                        }
-                    };
-                }
                 "date" => {
                     filter = match *unwrap_set_error!(self, command_iter.next(), "No date given") {
                         "range" => Filter::DateRange(
@@ -314,7 +298,6 @@ impl App<'_> {
             search: name.to_string(),
             file,
             filter,
-            lang,
         })
     }
 
@@ -324,18 +307,10 @@ impl App<'_> {
         while let Some(cmd) = command_iter.next() {
             match cmd {
                 &"language" => {
+                    // TODO: support specifying many languages
                     filter = Filter::Language(
-                        match *unwrap_set_error!(self, command_iter.next(), "No language given") {
-                            "rust" => Language::Rust,
-                            "python" => Language::Python,
-                            "go" => Language::Go,
-                            "ruby" => Language::Ruby,
-                            "umpl" => Language::UMPL,
-                            _ => {
-                                self.status = Status::Error("Invalid language".to_string());
-                                return None;
-                            }
-                        },
+                        unwrap_set_error!(self, command_iter.next(), "No language given")
+                            .to_string(),
                     );
                 }
                 &"date" => {
@@ -386,49 +361,32 @@ impl App<'_> {
                             .to_string(),
                     )
                 }
-                &"line" => {
-                    unwrap_set_error!(
-                        self,
-                        command_iter.next(),
-                        "only supported argument line is range currently"
-                    );
-                    filter = Filter::FunctionInLines(
-                        unwrap_set_error!(
-                            self,
-                            unwrap_set_error!(self, command_iter.next(), "start line not supplied")
-                                .parse::<usize>()
-                                .ok(),
-                            "could not parse start line"
-                        ),
-                        unwrap_set_error!(
-                            self,
-                            unwrap_set_error!(self, command_iter.next(), "End line not supplied")
-                                .parse::<usize>()
-                                .ok(),
-                            "could not parse end line"
-                        ),
-                    );
-                }
-                filter_name if LanguageFilter::has_variant(filter_name) => {
-                    let mut rest = command_iter.copied().collect::<Vec<_>>();
-                    rest.insert(0, filter_name);
-                    let filt = unwrap_set_error!(
-                        self,
-                        LanguageFilter::from_str(&rest),
-                        &format!("filters of {} could not be parsed properly ", filter_name)
-                    )
-                    .0;
-                    log::info!("filtering by {:?}", filt);
-                    filter = Filter::PLFilter(filt);
-                    break;
-
-                    // let types = LanguageFilter::get_variant_types_from_str(filter);
-                    // TODO: in enum stuff or somewhere else make a macro that returns a type based on the given string
-                    // println!("type: {:?}", types);
-                }
-                _ => {
-                    self.status = Status::Error(format!("Invalid search command filter: {cmd}"));
-                    return None;
+                filter_name => {
+                    if let Some(filters) =
+                        function_grep::filter::builtin_filters().get(*filter_name)
+                    {
+                        let rest = command_iter.copied().collect::<Vec<_>>().join(" ");
+                        let filt = match filters.to_filter(&rest) {
+                            Ok(val) => val,
+                            Err(e) => {
+                                self.status = Status::Error(
+                                    format!(
+                                        "filters of {} could not be parsed properly, reason: {e} ",
+                                        filter_name
+                                    )
+                                    .to_string(),
+                                );
+                                return None;
+                            }
+                        };
+                        log::info!("filtering by {:?}", filt);
+                        filter = Filter::PLFilter(filt);
+                        break;
+                    } else {
+                        self.status =
+                            Status::Error(format!("Invalid search command filter: {cmd}"));
+                        return None;
+                    }
                 }
             }
         }

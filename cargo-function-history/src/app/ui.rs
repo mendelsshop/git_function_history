@@ -14,7 +14,7 @@ use crate::app::App;
 use super::CommandResult;
 
 pub fn draw(rect: &mut Frame, app: &mut App) {
-    let size = rect.size();
+    let size = rect.area();
     // check if we have enough space to draw
     if size.width < 10 || size.height < 10 {
         panic!("Not enough space to draw");
@@ -50,11 +50,11 @@ pub fn draw(rect: &mut Frame, app: &mut App) {
     app.get_result();
     draw_body(
         app,
-        *body_chunks.get(0).expect("could not get area to draw"),
+        *body_chunks.first().expect("could not get area to draw"),
         rect,
     );
     rect.render_widget(
-        app.input_buffer.widget(),
+        &app.input_buffer,
         *body_chunks.get(1).expect("could not get area to draw"),
     );
     let status = draw_status(app.status());

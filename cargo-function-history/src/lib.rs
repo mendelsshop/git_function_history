@@ -23,7 +23,7 @@ pub fn start_ui(app: Rc<RefCell<App>>) -> Result<()> {
         // Render
         terminal.draw(|rect| {
             // check if we have enough space to draw
-            if rect.size().width < 15 || rect.size().height < 15 {
+            if rect.area().width < 15 || rect.area().height < 15 {
                 x = true
             } else {
                 ui::draw(rect, &mut app)
