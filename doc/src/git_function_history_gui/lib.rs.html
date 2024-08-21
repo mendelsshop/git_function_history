@@ -744,6 +744,11 @@
 <a href="#744" id="744">744</a>
 <a href="#745" id="745">745</a>
 <a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>types;
 
 <span class="kw">use </span>std::{sync::mpsc, time::Duration};
@@ -1223,8 +1228,13 @@
                                                         <span class="prelude-val">None
                                                     </span>}
                                                     HistoryFilterType::PL(input, filter) =&gt; {
-                                                        <span class="kw">let </span>filter =
-                                                            filter.to_filter(<span class="kw-2">&amp;</span>input.values().cloned().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;().join(<span class="string">" "</span>));
+                                                        <span class="kw">let </span>filter = filter.to_filter(
+                                                            <span class="kw-2">&amp;</span>input
+                                                                .values()
+                                                                .cloned()
+                                                                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+                                                                .join(<span class="string">" "</span>),
+                                                        );
                                                         filter
                                                             .inspect_err(|e| {
                                                                 <span class="self">self</span>.status =

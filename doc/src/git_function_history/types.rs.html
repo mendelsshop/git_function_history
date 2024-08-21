@@ -470,8 +470,6 @@
 <a href="#470" id="470">470</a>
 <a href="#471" id="471">471</a>
 <a href="#472" id="472">472</a>
-<a href="#473" id="473">473</a>
-<a href="#474" id="474">474</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, FixedOffset};
 <span class="kw">use </span>function_grep::ParsedFile;
 <span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
@@ -599,7 +597,7 @@
             | Filter::FileRelative(<span class="kw">_</span>)
             | Filter::Directory(<span class="kw">_</span>)
             | Filter::PLFilter(<span class="kw">_</span>)
-            | Filter::Language(<span class="kw">_</span>) 
+            | Filter::Language(<span class="kw">_</span>)
             | Filter::None =&gt; {}
             <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(ErrorReason::Other(<span class="macro">format!</span>(<span class="string">"Invalid filter {filter:?}"</span>))),
         }
@@ -637,9 +635,7 @@
                         <span class="prelude-val">None
                     </span>}
                 }
-                Filter::PLFilter(filter) =&gt; f
-                    .filter(filter)
-                    .ok(),
+                Filter::PLFilter(filter) =&gt; f.filter(filter).ok(),
                 <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
             })
             .collect();

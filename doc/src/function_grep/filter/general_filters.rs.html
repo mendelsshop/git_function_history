@@ -71,13 +71,17 @@
 <a href="#71" id="71">71</a>
 <a href="#72" id="72">72</a>
 <a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>tree_sitter::Node;
 
 <span class="kw">use </span><span class="kw">crate</span>::SupportedLanguages;
 
-<span class="kw">use super</span>::{filter_parsers::<span class="kw-2">*</span>, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation};
+<span class="kw">use super</span>::{
+    filter_parsers::<span class="kw-2">*</span>, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation,
+};
 
 <span class="kw">pub struct </span>FunctionInLines;
 <span class="kw">impl </span>FunctionInLines {

@@ -24,6 +24,9 @@
 <a href="#24" id="24">24</a>
 <a href="#25" id="25">25</a>
 <a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
 </pre></div><pre class="rust"><code><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>number&lt;<span class="lifetime">'a</span>&gt;(
     substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
     format: <span class="kw-2">&amp;</span>str,
@@ -32,7 +35,10 @@
     substring.next().ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n missing {position} [number]"</span>))
                 .and_then(|end| end.parse().map_err(|<span class="kw">_</span>| <span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n cannot parse {position} [number]"</span>)))
 }
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>extra&lt;<span class="lifetime">'a</span>&gt;(substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;, format: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>extra&lt;<span class="lifetime">'a</span>&gt;(
+    substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
+    format: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
     substring.next().map_or(<span class="prelude-val">Ok</span>(()), |extra| <span class="prelude-val">Err</span>(<span class="macro">format!</span>( <span class="string">"invalid options for function_in_lines filter\nexpected {format}\n, found extra stuff after {format}: {extra}"</span>)))
 }
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>label&lt;<span class="lifetime">'a</span>&gt;(

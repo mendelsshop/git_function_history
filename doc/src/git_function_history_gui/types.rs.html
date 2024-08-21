@@ -106,7 +106,7 @@
             <span class="self">Self</span>::FileAbsolute(arg0) =&gt; f.debug_tuple(<span class="string">"FileAbsolute"</span>).field(arg0).finish(),
             <span class="self">Self</span>::FileRelative(arg0) =&gt; f.debug_tuple(<span class="string">"FileRelative"</span>).field(arg0).finish(),
             <span class="self">Self</span>::Directory(arg0) =&gt; f.debug_tuple(<span class="string">"Directory"</span>).field(arg0).finish(),
-            <span class="self">Self</span>::PL(arg0, arg1) =&gt;f
+            <span class="self">Self</span>::PL(arg0, arg1) =&gt; f
                 .debug_tuple(<span class="string">"PL"</span>)
                 .field(arg0)
                 .field(<span class="kw-2">&amp;</span>arg1.filter_info())
