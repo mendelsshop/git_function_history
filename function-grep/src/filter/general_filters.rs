@@ -4,7 +4,9 @@ use tree_sitter::Node;
 
 use crate::SupportedLanguages;
 
-use super::{filter_parsers::*, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation};
+use super::{
+    filter_parsers::*, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation,
+};
 
 pub struct FunctionInLines;
 impl FunctionInLines {

@@ -40,7 +40,7 @@ impl fmt::Debug for HistoryFilterType {
             Self::FileAbsolute(arg0) => f.debug_tuple("FileAbsolute").field(arg0).finish(),
             Self::FileRelative(arg0) => f.debug_tuple("FileRelative").field(arg0).finish(),
             Self::Directory(arg0) => f.debug_tuple("Directory").field(arg0).finish(),
-            Self::PL(arg0, arg1) =>f
+            Self::PL(arg0, arg1) => f
                 .debug_tuple("PL")
                 .field(arg0)
                 .field(&arg1.filter_info())

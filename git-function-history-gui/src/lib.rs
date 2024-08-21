@@ -477,8 +477,13 @@ impl eframe::App for MyEguiApp {
                                                         None
                                                     }
                                                     HistoryFilterType::PL(input, filter) => {
-                                                        let filter =
-                                                            filter.to_filter(&input.values().cloned().collect::<Vec<_>>().join(" "));
+                                                        let filter = filter.to_filter(
+                                                            &input
+                                                                .values()
+                                                                .cloned()
+                                                                .collect::<Vec<_>>()
+                                                                .join(" "),
+                                                        );
                                                         filter
                                                             .inspect_err(|e| {
                                                                 self.status =

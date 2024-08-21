@@ -125,7 +125,7 @@ impl Commit {
             | Filter::FileRelative(_)
             | Filter::Directory(_)
             | Filter::PLFilter(_)
-            | Filter::Language(_) 
+            | Filter::Language(_)
             | Filter::None => {}
             _ => return Err(ErrorReason::Other(format!("Invalid filter {filter:?}"))),
         }
@@ -163,9 +163,7 @@ impl Commit {
                         None
                     }
                 }
-                Filter::PLFilter(filter) => f
-                    .filter(filter)
-                    .ok(),
+                Filter::PLFilter(filter) => f.filter(filter).ok(),
                 _ => None,
             })
             .collect();
