@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error","SupportedLanguages"],"fn":["get_file_type_from_file","get_file_type_from_file_ext"],"macro":["construct_language"],"mod":["filter","supported_languages"],"struct":["ParsedFile"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["FileFilterType","Filter"],"fn":["get_function_history","get_git_info"],"macro":["filter_by","get_function_history","impl_function_trait"],"mod":["languages","types"],"struct":["CommitInfo","MacroOpts"]};
+window.SIDEBAR_ITEMS = {"enum":["FileFilterType","Filter"],"fn":["get_function_history","get_git_info"],"macro":["filter_by","get_function_history"],"mod":["types"],"struct":["CommitInfo","MacroOpts"]};

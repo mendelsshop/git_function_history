@@ -1,0 +1,1 @@
+searchState.loadedDescShard("git_function_history_gui", 0, "Returns the argument unchanged.\nCalls <code>U::from(self)</code>.")

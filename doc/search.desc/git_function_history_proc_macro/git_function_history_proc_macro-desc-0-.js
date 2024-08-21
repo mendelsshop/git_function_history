@@ -1,0 +1,1 @@
+searchState.loadedDescShard("git_function_history_proc_macro", 0, "Allows the type that derives this macro, to have a method …")

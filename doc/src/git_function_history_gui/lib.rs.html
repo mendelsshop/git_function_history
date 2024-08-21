@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b25d77b18a16a9a4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (5aea14073 2024-08-20)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-cb0df477c2d67d00.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -744,67 +744,9 @@
 <a href="#744" id="744">744</a>
 <a href="#745" id="745">745</a>
 <a href="#746" id="746">746</a>
-<a href="#747" id="747">747</a>
-<a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
-<a href="#750" id="750">750</a>
-<a href="#751" id="751">751</a>
-<a href="#752" id="752">752</a>
-<a href="#753" id="753">753</a>
-<a href="#754" id="754">754</a>
-<a href="#755" id="755">755</a>
-<a href="#756" id="756">756</a>
-<a href="#757" id="757">757</a>
-<a href="#758" id="758">758</a>
-<a href="#759" id="759">759</a>
-<a href="#760" id="760">760</a>
-<a href="#761" id="761">761</a>
-<a href="#762" id="762">762</a>
-<a href="#763" id="763">763</a>
-<a href="#764" id="764">764</a>
-<a href="#765" id="765">765</a>
-<a href="#766" id="766">766</a>
-<a href="#767" id="767">767</a>
-<a href="#768" id="768">768</a>
-<a href="#769" id="769">769</a>
-<a href="#770" id="770">770</a>
-<a href="#771" id="771">771</a>
-<a href="#772" id="772">772</a>
-<a href="#773" id="773">773</a>
-<a href="#774" id="774">774</a>
-<a href="#775" id="775">775</a>
-<a href="#776" id="776">776</a>
-<a href="#777" id="777">777</a>
-<a href="#778" id="778">778</a>
-<a href="#779" id="779">779</a>
-<a href="#780" id="780">780</a>
-<a href="#781" id="781">781</a>
-<a href="#782" id="782">782</a>
-<a href="#783" id="783">783</a>
-<a href="#784" id="784">784</a>
-<a href="#785" id="785">785</a>
-<a href="#786" id="786">786</a>
-<a href="#787" id="787">787</a>
-<a href="#788" id="788">788</a>
-<a href="#789" id="789">789</a>
-<a href="#790" id="790">790</a>
-<a href="#791" id="791">791</a>
-<a href="#792" id="792">792</a>
-<a href="#793" id="793">793</a>
-<a href="#794" id="794">794</a>
-<a href="#795" id="795">795</a>
-<a href="#796" id="796">796</a>
-<a href="#797" id="797">797</a>
-<a href="#798" id="798">798</a>
-<a href="#799" id="799">799</a>
-<a href="#800" id="800">800</a>
-<a href="#801" id="801">801</a>
-<a href="#802" id="802">802</a>
-<a href="#803" id="803">803</a>
-<a href="#804" id="804">804</a>
-<a href="#805" id="805">805</a>
-<a href="#806" id="806">806</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::{sync::mpsc, time::Duration};
+</pre></div><pre class="rust"><code><span class="kw">mod </span>types;
+
+<span class="kw">use </span>std::{sync::mpsc, time::Duration};
 
 <span class="kw">use </span>eframe::{
     <span class="self">self</span>,
@@ -812,12 +754,10 @@
     epaint::{Color32, Vec2},
 };
 <span class="kw">use </span>function_history_backend_thread::types::{
-    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, SearchType,
-    Status,
+    Command, CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
-<span class="kw">use </span>git_function_history::{
-    languages::Language, types::Directions, Commit, FileFilterType, Filter, FunctionHistory,
-};
+<span class="kw">use </span>git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
+<span class="kw">use </span>types::HistoryFilterType;
 
 <span class="comment">// TODO: stop cloning everyting and use references instead
 </span><span class="kw">pub struct </span>MyEguiApp {
@@ -833,8 +773,7 @@
     ),
     filter: Filter,
     file_type: FileFilterType,
-    history_filter_type: HistoryFilterType,
-    language: Language,
+    history_filter_type: types::HistoryFilterType,
     current_commit: String,
     do_commit: bool,
 }
@@ -857,8 +796,7 @@
             channels,
             file_type: FileFilterType::None,
             filter: Filter::None,
-            history_filter_type: HistoryFilterType::None,
-            language: Language::All,
+            history_filter_type: types::HistoryFilterType::None,
             current_commit: String::new(),
             do_commit: <span class="bool-val">false</span>,
         }
@@ -1058,7 +996,19 @@
         }
     }
 }
-
+<span class="macro">macro_rules!</span> draw_text_input {
+    (<span class="macro-nonterminal">$ui</span>:expr, <span class="macro-nonterminal">$max</span>:expr,  $(<span class="macro-nonterminal">$field</span>:expr)+) =&gt; {{
+        $(<span class="macro-nonterminal">$ui</span>.horizontal(|ui| {
+            <span class="comment">// set the width of the input field
+            </span>ui.set_min_width(<span class="number">4.0</span>);
+            ui.set_max_width(<span class="macro-nonterminal">$max</span>);
+            ui.add(TextEdit::singleline(<span class="macro-nonterminal">$field</span>));
+        });)*
+    }};
+}
+<span class="macro">macro_rules!</span> draw_selecction {
+    () =&gt; {};
+}
 <span class="kw">impl </span>eframe::App <span class="kw">for </span>MyEguiApp {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, ctx: <span class="kw-2">&amp;</span>egui::Context, _frame: <span class="kw-2">&amp;mut </span>eframe::Frame) {
         ctx.request_repaint();
@@ -1169,29 +1119,7 @@
                                                         ),
                                                         <span class="string">"in date range"</span>,
                                                     );
-                                                    <span class="comment">// ui.selectable_value(
-                                                    //     &amp;mut self.history_filter_type,
-                                                    //     HistoryFilterType::FunctionInBlock(
-                                                    //         String::new(),
-                                                    //     ),
-                                                    //     "function in block",
-                                                    // );
-                                                    </span>ui.selectable_value(
-                                                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
-                                                        HistoryFilterType::FunctionInLines(
-                                                            String::new(),
-                                                            String::new(),
-                                                        ),
-                                                        <span class="string">"function in lines"</span>,
-                                                    );
-                                                    <span class="comment">// ui.selectable_value(
-                                                    //     &amp;mut self.history_filter_type,
-                                                    //     HistoryFilterType::FunctionInFunction(
-                                                    //         String::new(),
-                                                    //     ),
-                                                    //     "function in function",
-                                                    // );
-                                                    </span>ui.selectable_value(
+                                                    ui.selectable_value(
                                                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
                                                         HistoryFilterType::FileAbsolute(
                                                             String::new(),
@@ -1215,44 +1143,53 @@
                                                         HistoryFilterType::None,
                                                         <span class="string">"none"</span>,
                                                     );
+                                                    function_grep::filter::builtin_filters()
+                                                        .into_iter()
+                                                        .for_each(|filter| {
+                                                            ui.selectable_value(
+                                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
+                                                                HistoryFilterType::PL(
+                                                                    filter
+                                                                        .<span class="number">1
+                                                                        </span>.attributes()
+                                                                        .into_iter()
+                                                                        .map(|(attr, kind)| {
+                                                                            (
+                                                                                attr.to_string(),
+                                                                                kind.to_string(),
+                                                                            )
+                                                                        })
+                                                                        .collect(),
+                                                                    filter.<span class="number">1</span>,
+                                                                ),
+                                                                filter.<span class="number">0</span>,
+                                                            );
+                                                        })
                                                 });
                                             <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type {
-                                                HistoryFilterType::DateRange(line1, line2)
-                                                | HistoryFilterType::FunctionInLines(
-                                                    line1,
-                                                    line2,
-                                                ) =&gt; {
-                                                    ui.horizontal(|ui| {
-                                                        <span class="comment">// set the width of the input field
-                                                        </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(line1));
-                                                    });
-                                                    ui.horizontal(|ui| {
-                                                        <span class="comment">// set the width of the input field
-                                                        </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(line2));
-                                                    });
+                                                HistoryFilterType::DateRange(line1, line2) =&gt; {
+                                                    <span class="macro">draw_text_input!</span>(ui,max, line1 line2)
                                                 }
                                                 HistoryFilterType::Date(dir)
                                                 | HistoryFilterType::CommitHash(dir)
-                                                <span class="comment">// | HistoryFilterType::FunctionInBlock(dir)
-                                                // | HistoryFilterType::FunctionInFunction(dir)
-                                                </span>| HistoryFilterType::FileAbsolute(dir)
+                                                | HistoryFilterType::FileAbsolute(dir)
                                                 | HistoryFilterType::FileRelative(dir)
                                                 | HistoryFilterType::Directory(dir) =&gt; {
-                                                    ui.horizontal(|ui| {
-                                                        <span class="comment">// set the width of the input field
-                                                        </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                        ui.set_max_width(max);
-                                                        ui.add(TextEdit::singleline(dir));
-                                                    });
+                                                    <span class="macro">draw_text_input!</span>(ui, max, dir)
                                                 }
                                                 HistoryFilterType::None =&gt; {
                                                     <span class="comment">// do nothing
                                                 </span>}
-                                                HistoryFilterType::PL(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
+                                                HistoryFilterType::PL(inputs, filters) =&gt; {
+                                                    inputs.iter_mut().for_each(|(desc, field)| {
+                                                        ui.horizontal(|ui| {
+                                                            ui.set_min_width(<span class="number">4.0</span>);
+                                                            ui.set_max_width(max);
+                                                            ui.label(desc.to_string());
+                                                            ui.add(TextEdit::singleline(field));
+                                                        });
+                                                    })
+                                                }
                                             }
                                             <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                             <span class="kw">if </span>resp.clicked() {
@@ -1272,48 +1209,7 @@
                                                             date2.to_string(),
                                                         ))
                                                     }
-                                                    <span class="comment">// HistoryFilterType::FunctionInBlock(_block) =&gt; {
-                                                    //     None
-                                                    // }
-                                                    // Some(
-                                                    //     Filter::FunctionInBlock(BlockType::from_string(block)),
-                                                    // ),
-                                                    </span>HistoryFilterType::FunctionInLines(
-                                                        line1,
-                                                        line2,
-                                                    ) =&gt; {
-                                                        <span class="kw">let </span>fn_in_lines = (
-                                                            <span class="kw">match </span>line1.parse::&lt;usize&gt;() {
-                                                                <span class="prelude-val">Ok</span>(x) =&gt; x,
-                                                                <span class="prelude-val">Err</span>(e) =&gt; {
-                                                                    <span class="self">self</span>.status = Status::Error(
-                                                                        <span class="macro">format!</span>(<span class="string">"{e}"</span>),
-                                                                    );
-                                                                    <span class="kw">return</span>;
-                                                                }
-                                                            },
-                                                            <span class="kw">match </span>line2.parse::&lt;usize&gt;() {
-                                                                <span class="prelude-val">Ok</span>(x) =&gt; x,
-                                                                <span class="prelude-val">Err</span>(e) =&gt; {
-                                                                    <span class="self">self</span>.status = Status::Error(
-                                                                        <span class="macro">format!</span>(<span class="string">"{e}"</span>),
-                                                                    );
-                                                                    <span class="kw">return</span>;
-                                                                }
-                                                            },
-                                                        );
-                                                        <span class="prelude-val">Some</span>(Filter::FunctionInLines(
-                                                            fn_in_lines.<span class="number">0</span>,
-                                                            fn_in_lines.<span class="number">1</span>,
-                                                        ))
-                                                    }
-                                                    <span class="comment">// HistoryFilterType::FunctionInFunction(
-                                                    //     _function,
-                                                    // ) =&gt; {
-                                                    //     // Some(Filter::FunctionWithParent(function.to_string()))
-                                                    //     None
-                                                    // }
-                                                    </span>HistoryFilterType::FileAbsolute(file) =&gt; {
+                                                    HistoryFilterType::FileAbsolute(file) =&gt; {
                                                         <span class="prelude-val">Some</span>(Filter::FileAbsolute(file.to_string()))
                                                     }
                                                     HistoryFilterType::FileRelative(file) =&gt; {
@@ -1326,7 +1222,17 @@
                                                         <span class="self">self</span>.status = Status::Ok(<span class="prelude-val">None</span>);
                                                         <span class="prelude-val">None
                                                     </span>}
-                                                    HistoryFilterType::PL(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
+                                                    HistoryFilterType::PL(input, filter) =&gt; {
+                                                        <span class="kw">let </span>filter =
+                                                            filter.to_filter(<span class="kw-2">&amp;</span>input.values().cloned().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;().join(<span class="string">" "</span>));
+                                                        filter
+                                                            .inspect_err(|e| {
+                                                                <span class="self">self</span>.status =
+                                                                    Status::Error(e.to_string())
+                                                            })
+                                                            .ok()
+                                                            .map(Filter::PLFilter)
+                                                    }
                                                 };
                                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(filter) = filter {
                                                     <span class="self">self</span>.channels
@@ -1347,13 +1253,8 @@
                                 }
                                 Command::Search =&gt; {
                                     ui.add(Label::new(<span class="string">"Function Name:"</span>));
-                                    ui.horizontal(|ui| {
-                                        <span class="comment">// set the width of the input field
-                                        </span>ui.set_min_width(<span class="number">4.0</span>);
-                                        ui.set_max_width(max);
-                                        ui.add(TextEdit::singleline(<span class="kw-2">&amp;mut </span><span class="self">self</span>.input_buffer));
-                                    });
 
+                                    <span class="macro">draw_text_input!</span>(ui, max, <span class="kw-2">&amp;mut </span><span class="self">self</span>.input_buffer);
                                     <span class="kw">let </span>text = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.file_type {
                                         FileFilterType::Directory(<span class="kw">_</span>) =&gt; <span class="string">"directory"</span>,
                                         FileFilterType::Absolute(<span class="kw">_</span>) =&gt; <span class="string">"absolute"</span>,
@@ -1389,12 +1290,7 @@
                                         FileFilterType::Relative(dir)
                                         | FileFilterType::Absolute(dir)
                                         | FileFilterType::Directory(dir) =&gt; {
-                                            ui.horizontal(|ui| {
-                                                <span class="comment">// set the width of the input field
-                                                </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(dir));
-                                            });
+                                            <span class="macro">draw_text_input!</span>(ui, max, dir)
                                         }
                                     }
                                     <span class="comment">// get filters if any
@@ -1431,57 +1327,42 @@
                                     </span><span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.filter {
                                         Filter::None =&gt; {}
                                         Filter::CommitHash(thing) | Filter::Date(thing) =&gt; {
-                                            ui.horizontal(|ui| {
-                                                <span class="comment">// set the width of the input field
-                                                </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(thing));
-                                            });
+                                            <span class="macro">draw_text_input!</span>(ui, max, thing)
                                         }
                                         Filter::DateRange(start, end) =&gt; {
-                                            ui.horizontal(|ui| {
-                                                <span class="comment">// set the width of the input field
-                                                </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(start));
-                                            });
+                                            <span class="macro">draw_text_input!</span>(ui, max, start);
                                             ui.add(Label::new(<span class="string">"-"</span>));
-                                            ui.horizontal(|ui| {
-                                                <span class="comment">// set the width of the input field
-                                                </span>ui.set_min_width(<span class="number">4.0</span>);
-                                                ui.set_max_width(max);
-                                                ui.add(TextEdit::singleline(end));
-                                            });
+                                            <span class="macro">draw_text_input!</span>(ui, max, end)
                                         }
                                         <span class="kw">_ </span>=&gt; {}
                                     }
-                                    <span class="kw">let </span>text = <span class="self">self</span>.language.to_string();
-                                    egui::ComboBox::from_id_source(<span class="string">"search_language_combo_box"</span>)
-                                        .selected_text(text)
-                                        .show_ui(ui, |ui| {
-                                            ui.selectable_value(
-                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
-                                                Language::Rust,
-                                                <span class="string">"Rust"</span>,
-                                            );
-                                            <span class="attr">#[cfg(feature = <span class="string">"c_lang"</span>)]
-                                            </span>ui.selectable_value(
-                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
-                                                Language::C,
-                                                <span class="string">"C"</span>,
-                                            );
-                                            ui.selectable_value(
-                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
-                                                Language::Python,
-                                                <span class="string">"Python"</span>,
-                                            );
-                                            ui.selectable_value(
-                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.language,
-                                                Language::All,
-                                                <span class="string">"All"</span>,
-                                            );
-                                        });
-                                    <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
+                                    <span class="comment">//let text = self.language.to_string();
+                                    //egui::ComboBox::from_id_source("search_language_combo_box")
+                                    //    .selected_text(text)
+                                    //    .show_ui(ui, |ui| {
+                                    //        ui.selectable_value(
+                                    //            &amp;mut self.language,
+                                    //            Language::Rust,
+                                    //            "Rust",
+                                    //        );
+                                    //        #[cfg(feature = "c_lang")]
+                                    //        ui.selectable_value(
+                                    //            &amp;mut self.language,
+                                    //            Language::C,
+                                    //            "C",
+                                    //        );
+                                    //        ui.selectable_value(
+                                    //            &amp;mut self.language,
+                                    //            Language::Python,
+                                    //            "Python",
+                                    //        );
+                                    //        ui.selectable_value(
+                                    //            &amp;mut self.language,
+                                    //            Language::All,
+                                    //            "All",
+                                    //        );
+                                    //    });
+                                    </span><span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                     <span class="kw">if </span>resp.clicked() {
                                         <span class="self">self</span>.status = Status::Loading;
                                         <span class="self">self</span>.channels
@@ -1489,8 +1370,7 @@
                                             </span>.send(FullCommand::Search(SearchType::new(
                                                 <span class="self">self</span>.input_buffer.clone(),
                                                 <span class="self">self</span>.file_type.clone(),
-                                                <span class="self">self</span>.filter.clone(),
-                                                <span class="self">self</span>.language,
+                                                std::mem::replace(<span class="kw-2">&amp;mut </span><span class="self">self</span>.filter, Filter::None),
                                             )))
                                             .expect(<span class="string">"could not send message in thread"</span>);
                                     }

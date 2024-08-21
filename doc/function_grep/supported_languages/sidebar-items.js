@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["predefined_languages"],"struct":["C","Identifier","InstatiatedLanguage","Java","LanguageInformation","OCaml","Python","Rust","TreeSitter"],"trait":["Assoc","HasLanguageInformation","IdentifierQuery","InstatiateMap","SupportedLanguage","TreeSitterQuery"]};

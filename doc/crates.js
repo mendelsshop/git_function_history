@@ -1,1 +1,2 @@
-window.ALL_CRATES = ["cargo_function_history","function_history_backend_thread","git_function_history","git_function_history_gui","git_function_history_proc_macro"];
+window.ALL_CRATES = ["cargo_function_history","function_grep","function_history_backend_thread","git_function_history","git_function_history_gui","git_function_history_proc_macro"];
+//{"start":21,"fragment_lengths":[24,16,34,23,27,34]}

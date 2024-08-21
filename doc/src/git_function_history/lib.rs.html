@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (21cce21d8 2023-12-11)" data-channel="nightly" data-search-js="search-2da88d4fc6a75ee8.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b25d77b18a16a9a4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (5aea14073 2024-08-20)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-cb0df477c2d67d00.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -842,98 +842,6 @@
 <a href="#842" id="842">842</a>
 <a href="#843" id="843">843</a>
 <a href="#844" id="844">844</a>
-<a href="#845" id="845">845</a>
-<a href="#846" id="846">846</a>
-<a href="#847" id="847">847</a>
-<a href="#848" id="848">848</a>
-<a href="#849" id="849">849</a>
-<a href="#850" id="850">850</a>
-<a href="#851" id="851">851</a>
-<a href="#852" id="852">852</a>
-<a href="#853" id="853">853</a>
-<a href="#854" id="854">854</a>
-<a href="#855" id="855">855</a>
-<a href="#856" id="856">856</a>
-<a href="#857" id="857">857</a>
-<a href="#858" id="858">858</a>
-<a href="#859" id="859">859</a>
-<a href="#860" id="860">860</a>
-<a href="#861" id="861">861</a>
-<a href="#862" id="862">862</a>
-<a href="#863" id="863">863</a>
-<a href="#864" id="864">864</a>
-<a href="#865" id="865">865</a>
-<a href="#866" id="866">866</a>
-<a href="#867" id="867">867</a>
-<a href="#868" id="868">868</a>
-<a href="#869" id="869">869</a>
-<a href="#870" id="870">870</a>
-<a href="#871" id="871">871</a>
-<a href="#872" id="872">872</a>
-<a href="#873" id="873">873</a>
-<a href="#874" id="874">874</a>
-<a href="#875" id="875">875</a>
-<a href="#876" id="876">876</a>
-<a href="#877" id="877">877</a>
-<a href="#878" id="878">878</a>
-<a href="#879" id="879">879</a>
-<a href="#880" id="880">880</a>
-<a href="#881" id="881">881</a>
-<a href="#882" id="882">882</a>
-<a href="#883" id="883">883</a>
-<a href="#884" id="884">884</a>
-<a href="#885" id="885">885</a>
-<a href="#886" id="886">886</a>
-<a href="#887" id="887">887</a>
-<a href="#888" id="888">888</a>
-<a href="#889" id="889">889</a>
-<a href="#890" id="890">890</a>
-<a href="#891" id="891">891</a>
-<a href="#892" id="892">892</a>
-<a href="#893" id="893">893</a>
-<a href="#894" id="894">894</a>
-<a href="#895" id="895">895</a>
-<a href="#896" id="896">896</a>
-<a href="#897" id="897">897</a>
-<a href="#898" id="898">898</a>
-<a href="#899" id="899">899</a>
-<a href="#900" id="900">900</a>
-<a href="#901" id="901">901</a>
-<a href="#902" id="902">902</a>
-<a href="#903" id="903">903</a>
-<a href="#904" id="904">904</a>
-<a href="#905" id="905">905</a>
-<a href="#906" id="906">906</a>
-<a href="#907" id="907">907</a>
-<a href="#908" id="908">908</a>
-<a href="#909" id="909">909</a>
-<a href="#910" id="910">910</a>
-<a href="#911" id="911">911</a>
-<a href="#912" id="912">912</a>
-<a href="#913" id="913">913</a>
-<a href="#914" id="914">914</a>
-<a href="#915" id="915">915</a>
-<a href="#916" id="916">916</a>
-<a href="#917" id="917">917</a>
-<a href="#918" id="918">918</a>
-<a href="#919" id="919">919</a>
-<a href="#920" id="920">920</a>
-<a href="#921" id="921">921</a>
-<a href="#922" id="922">922</a>
-<a href="#923" id="923">923</a>
-<a href="#924" id="924">924</a>
-<a href="#925" id="925">925</a>
-<a href="#926" id="926">926</a>
-<a href="#927" id="927">927</a>
-<a href="#928" id="928">928</a>
-<a href="#929" id="929">929</a>
-<a href="#930" id="930">930</a>
-<a href="#931" id="931">931</a>
-<a href="#932" id="932">932</a>
-<a href="#933" id="933">933</a>
-<a href="#934" id="934">934</a>
-<a href="#935" id="935">935</a>
-<a href="#936" id="936">936</a>
 </pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
@@ -948,11 +856,10 @@
     clippy::too_many_lines
 )]
 </span><span class="doccomment">/// code and function related language
-</span><span class="kw">pub mod </span>languages;
 
-<span class="doccomment">/// Different types that can extracted from the result of `get_function_history`.
+/// Different types that can extracted from the result of `get_function_history`.
 </span><span class="kw">pub mod </span>types;
-<span class="macro">macro_rules! </span>get_item_from {
+<span class="macro">macro_rules!</span> get_item_from {
     (<span class="macro-nonterminal">$oid</span>:expr, <span class="macro-nonterminal">$repo</span>:expr, <span class="macro-nonterminal">$typs</span>:ident) =&gt; {
         gix::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>)
             .attach(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$repo</span>)
@@ -963,7 +870,7 @@
     </span>};
 }
 
-<span class="macro">macro_rules! </span>get_item_from_oid_option {
+<span class="macro">macro_rules!</span> get_item_from_oid_option {
     (<span class="macro-nonterminal">$oid</span>:expr, <span class="macro-nonterminal">$repo</span>:expr, <span class="macro-nonterminal">$typs</span>:ident) =&gt; {
         gix::hash::ObjectId::from(<span class="macro-nonterminal">$oid</span>.id)
             .attach(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$repo</span>)
@@ -973,26 +880,21 @@
             .ok()
     };
 }
-<span class="attr">#[cfg(feature = <span class="string">"cache"</span>)]
-</span><span class="kw">use </span>cached::proc_macro::cached;
-<span class="kw">use </span>chrono::{DateTime, NaiveDateTime, Utc};
+<span class="kw">use </span>chrono::{DateTime, Utc};
+<span class="kw">use </span>function_grep::{
+    supported_languages::{InstatiateMap, InstatiatedLanguage, SupportedLanguage},
+    ParsedFile,
+};
 <span class="kw">use </span>git_function_history_proc_macro::enumstuff;
-<span class="kw">use </span>languages::{rust, LanguageFilter, PythonFile, RubyFile, RustFile, UMPLFile};
+<span class="comment">// use languages::LanguageFilter;
 
-<span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
-</span><span class="kw">use </span>rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+</span><span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
+</span><span class="kw">use </span>rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
-<span class="kw">use </span>gix::{objs, prelude::ObjectIdExt, ObjectId};
+<span class="kw">use </span>gix::{objs, prelude::ObjectIdExt, ObjectId, Tree};
 <span class="kw">use </span>std::{error::Error, ops::Sub};
 
-<span class="comment">// #[cfg(feature = "c_lang")]
-// use languages::CFile;
-</span><span class="kw">use </span>languages::GoFile;
-
-<span class="kw">pub use </span>{
-    languages::Language,
-    types::{Commit, FileType, FunctionHistory},
-};
+<span class="kw">pub use </span>types::{Commit, FunctionHistory};
 
 <span class="doccomment">/// Different filetypes that can be used to ease the process of finding functions using `get_function_history`.
 /// path separator is `/`.
@@ -1000,7 +902,7 @@
 </span><span class="kw">pub enum </span>FileFilterType {
     <span class="doccomment">/// When you have a absolute path to a file.
     </span>Absolute(String),
-    <span class="doccomment">/// When you have a relative path to a file and or want to find look in all files match a name (aka ends_with).
+    <span class="doccomment">/// When you have a relative path to a file and or want to find look in all files match a name (aka `ends_with`).
     </span>Relative(String),
     <span class="doccomment">/// When you want to filter only files in a specific directory
     </span>Directory(String),
@@ -1009,7 +911,9 @@
 }
 
 <span class="doccomment">/// This is filter enum is used when you want to lookup a function with the filter of filter a previous lookup.
-</span><span class="attr">#[derive(Debug, Clone, PartialEq, Eq, enumstuff)]
+</span><span class="comment">// TODO: what do we actually need to derive
+// TODO: allow more complex language type filters.
+</span><span class="attr">#[derive(enumstuff, PartialEq, Eq, Debug)]
 </span><span class="kw">pub enum </span>Filter {
     <span class="doccomment">/// When you want to filter by a commit hash.
     </span>CommitHash(String),
@@ -1023,9 +927,6 @@
     </span>FileRelative(String),
     <span class="doccomment">/// When you want to filter only files in a specific directory
     </span>Directory(String),
-    <span class="doccomment">/// when you want to filter by function that are in between specific lines
-    </span><span class="attr">#[enumstuff(skip)]
-    </span>FunctionInLines(usize, usize),
     <span class="doccomment">/// when you want to filter by a any commit author name that contains a specific string
     </span>Author(String),
     <span class="doccomment">/// when you want to filter by a any commit author email that contains a specific string
@@ -1033,9 +934,10 @@
     <span class="comment">// when you want to filter by a a commit message that contains a specific string
     </span>Message(String),
     <span class="doccomment">/// when you want to filter by proggramming language filter
-    </span>PLFilter(LanguageFilter),
+    </span><span class="attr">#[enumstuff(skip)]
+    </span>PLFilter(function_grep::filter::InstantiatedFilter),
     <span class="doccomment">/// when you want to filter to only have files that are in a specific language
-    </span>Language(Language),
+    </span>Language(String),
     <span class="doccomment">/// When you want to filter by nothing.
     </span><span class="prelude-val">None</span>,
 }
@@ -1067,7 +969,7 @@
 ///
 /// ```
 /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
-/// let t = get_function_history("empty_test", &amp;FileFilterType::Absolute("src/test_functions.rs".to_string()), &amp;Filter::None, &amp;Language::Rust).unwrap();
+/// let t = get_function_history("empty_test", &amp;FileFilterType::Absolute("src/test_functions.rs".to_string()), &amp;Filter::None, function_grep::supported_languages::predefined_languages()).unwrap();
 /// ```
 ///
 /// # Errors
@@ -1076,11 +978,13 @@
 /// Or if it cannot find or read from a git repository
 ///
 </span><span class="comment">// TODO: split this function into smaller functions
+// TODO: allow more complex language type filters.
+// TODO: allow multiple filters.
 </span><span class="kw">pub fn </span>get_function_history(
     name: <span class="kw-2">&amp;</span>str,
     file: <span class="kw-2">&amp;</span>FileFilterType,
     filter: <span class="kw-2">&amp;</span>Filter,
-    langs: <span class="kw-2">&amp;</span>languages::Language,
+    langs: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>SupportedLanguage],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;FunctionHistory, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
     <span class="comment">// chack if name is empty
     </span><span class="kw">if </span>name.is_empty() {
@@ -1112,16 +1016,33 @@
         FileFilterType::Absolute(file) | FileFilterType::Relative(file) =&gt; {
             <span class="comment">// vaildate that the file makes sense with language
             </span><span class="kw">let </span>is_supported = langs
-                .get_file_endings()
                 .iter()
+                .flat_map(|lang| lang.file_exts())
+                .copied()
                 .any(|i| ends_with_cmp_no_case(file, i));
             <span class="kw">if </span>!is_supported {
-                <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"file {file} is not a {} file"</span>, langs.get_names()))<span class="question-mark">?</span>;
+                <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+                    <span class="string">"file {file} is not a supported file, the following files are supported {}"</span>,
+                    langs
+                        .iter()
+                        .map(|lang| <span class="macro">format!</span>(
+                            <span class="string">"({} with extension(s) [{}])"</span>,
+                            lang.language_name(),
+                            <span class="kw-2">&amp;</span>lang.file_exts().join(<span class="string">","</span>)
+                        ))
+                        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+                        .join(<span class="string">" "</span>)
+                ))<span class="question-mark">?</span>;
             }
         }
         FileFilterType::Directory(<span class="kw">_</span>) | FileFilterType::None =&gt; {}
     }
 
+    <span class="kw">let </span>langs1 = <span class="kw-2">&amp;*</span>langs
+        .iter()
+        .flat_map(|l| l.file_exts())
+        .copied()
+        .collect::&lt;Box&lt;[<span class="kw">_</span>]&gt;&gt;();
     <span class="kw">let </span>repo = gix::discover(<span class="string">"."</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>th_repo = repo.clone().into_sync();
     <span class="kw">let </span>commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
@@ -1137,10 +1058,7 @@
         <span class="kw">let </span>commit = id.id.attach(<span class="kw-2">&amp;</span>repo).object().ok()<span class="question-mark">?</span>.try_into_commit().ok()<span class="question-mark">?</span>;
         <span class="kw">let </span>tree = commit.tree().ok()<span class="question-mark">?</span>.id;
         <span class="kw">let </span>time = commit.time().ok()<span class="question-mark">?</span>;
-        <span class="kw">let </span>time = DateTime::&lt;Utc&gt;::from_naive_utc_and_offset(
-            NaiveDateTime::from_timestamp_opt(time.seconds, <span class="number">0</span>)<span class="question-mark">?</span>,
-            Utc,
-        );
+        <span class="kw">let </span>time = DateTime::from_timestamp(time.seconds, <span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>authorinfo = commit.author().ok()<span class="question-mark">?</span>;
         <span class="kw">let </span>author = authorinfo.name.to_string();
         <span class="kw">let </span>email = authorinfo.email.to_string();
@@ -1153,11 +1071,13 @@
         <span class="kw">let </span>metadata = (message, commit, author, email, time);
         <span class="prelude-val">Some</span>((tree, metadata))
     });
+    <span class="kw">let </span>langs = langs.instatiate_map(name).unwrap();
+    <span class="kw">let </span>langs = <span class="kw-2">&amp;*</span>langs.as_slice().iter().collect::&lt;Box&lt;[<span class="kw">_</span>]&gt;&gt;();
     <span class="kw">if let </span>Filter::Date(date) = filter {
         <span class="kw">let </span>date = DateTime::parse_from_rfc2822(date)<span class="question-mark">?</span>.with_timezone(<span class="kw-2">&amp;</span>Utc);
         <span class="kw">let </span>commit = commits.min_by_key(|commit| (commit.<span class="number">1 </span>.<span class="number">4</span>.sub(date).num_seconds().abs()));
         <span class="kw">return if let </span><span class="prelude-val">Some</span>(i) = commit {
-            <span class="kw">let </span>tree = sender(i.<span class="number">0</span>, <span class="kw-2">&amp;</span>th_repo.to_thread_local(), name, <span class="kw-2">*</span>langs, file)<span class="question-mark">?</span>;
+            <span class="kw">let </span>tree = sender(i.<span class="number">0</span>, th_repo.to_thread_local(), langs1, langs, file)<span class="question-mark">?</span>;
 
             <span class="kw">if </span>tree.is_empty() {
                 <span class="prelude-val">Err</span>(<span class="string">"empty commit found"</span>)<span class="question-mark">?</span>;
@@ -1209,7 +1129,7 @@
     // and report some of errors if no oks and if no oks and errs report no history found
     </span><span class="kw">let </span>commits = commits
         .filter_map(|i| {
-            <span class="kw">let </span>tree = sender(i.<span class="number">0</span>, <span class="kw-2">&amp;</span>th_repo.to_thread_local(), name, <span class="kw-2">*</span>langs, file);
+            <span class="kw">let </span>tree = sender(i.<span class="number">0</span>, th_repo.to_thread_local(), langs1, langs, file);
             <span class="kw">match </span>tree {
                 <span class="prelude-val">Ok</span>(tree) =&gt; {
                     <span class="kw">if </span>tree.is_empty() {
@@ -1238,59 +1158,53 @@
     <span class="prelude-val">Ok</span>(fh)
 }
 
-<span class="doccomment">/// used for the `get_function_history` macro internally (you don't have to touch this)
-</span><span class="kw">pub struct </span>MacroOpts&lt;<span class="lifetime">'a</span>&gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
-    <span class="kw">pub </span>file: FileFilterType,
-    <span class="kw">pub </span>filter: Filter,
-    <span class="kw">pub </span>language: Language,
-}
-
-<span class="kw">impl </span>Default <span class="kw">for </span>MacroOpts&lt;<span class="lifetime">'_</span>&gt; {
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            name: <span class="string">""</span>,
-            file: FileFilterType::None,
-            filter: Filter::None,
-            language: Language::All,
-        }
-    }
-}
-
 <span class="kw">fn </span>sender(
     id: ObjectId,
-    repo: <span class="kw-2">&amp;</span>gix::Repository,
-    name: <span class="kw-2">&amp;</span>str,
-    langs: Language,
+    repo: gix::Repository,
+    file_exts: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str],
+    langs: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>InstatiatedLanguage&lt;<span class="lifetime">'_</span>&gt;],
     file: <span class="kw-2">&amp;</span>FileFilterType,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;FileType&gt;, String&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;ParsedFile&gt;, String&gt; {
     <span class="kw">let </span>object = repo.find_object(id).map_err(|<span class="kw">_</span>| <span class="string">"failed to find object"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>tree = object.try_into_tree();
-    traverse_tree(<span class="kw-2">&amp;</span>tree.unwrap(), repo, name, <span class="string">""</span>, langs, file)
+    <span class="kw">let </span>binding = tree.unwrap();
+    traverse_tree(<span class="kw-2">&amp;</span>binding, <span class="kw-2">&amp;</span>repo, String::new(), file_exts, langs, file)
 }
 
 <span class="attr">#[inline]
 </span><span class="kw">fn </span>traverse_tree(
-    tree: <span class="kw-2">&amp;</span>gix::Tree&lt;<span class="lifetime">'_</span>&gt;,
+    tree: <span class="kw-2">&amp;</span>Tree&lt;<span class="lifetime">'_</span>&gt;,
     repo: <span class="kw-2">&amp;</span>gix::Repository,
-    name: <span class="kw-2">&amp;</span>str,
-    path: <span class="kw-2">&amp;</span>str,
-    langs: Language,
+    path: String,
+    file_exts: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str],
+    langs: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>InstatiatedLanguage&lt;<span class="lifetime">'_</span>&gt;],
     filetype: <span class="kw-2">&amp;</span>FileFilterType,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;FileType&gt;, String&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;ParsedFile&gt;, String&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>files_exts = file_exts.iter();
+
     <span class="kw">let </span>treee_iter = tree.iter();
-    <span class="kw">let </span><span class="kw-2">mut </span>files: Vec&lt;(String, String)&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>files: Vec&lt;<span class="kw">_</span>&gt; = Vec::new();
     <span class="kw">let </span><span class="kw-2">mut </span>ret = Vec::new();
     <span class="kw">for </span>i <span class="kw">in </span>treee_iter {
         <span class="kw">let </span>i = i.map_err(|<span class="kw">_</span>| <span class="string">"failed to get tree entry"</span>)<span class="question-mark">?</span>;
-        <span class="kw">match </span><span class="kw-2">&amp;</span>i.mode() {
-            objs::tree::EntryMode::Tree =&gt; {
-                <span class="kw">let </span>new = <span class="macro">get_item_from!</span>(i.oid(), <span class="kw-2">&amp;</span>repo, try_into_tree);
-                <span class="kw">let </span>path_new = <span class="macro">format!</span>(<span class="string">"{path}/{}"</span>, i.filename());
-                ret.extend(traverse_tree(<span class="kw-2">&amp;</span>new, repo, name, <span class="kw-2">&amp;</span>path_new, langs, filetype)<span class="question-mark">?</span>);
+        <span class="comment">// TODO: what should the path seperator be?
+        </span><span class="kw">let </span>file = <span class="macro">format!</span>(
+            <span class="string">"{path}{}{}"</span>,
+            <span class="kw">if </span>path.is_empty() { <span class="string">"" </span>} <span class="kw">else </span>{ <span class="string">"/" </span>},
+            i.filename()
+        );
+        <span class="kw">match </span><span class="kw-2">&amp;</span>i.mode().kind() {
+            objs::tree::EntryKind::Tree =&gt; {
+                <span class="kw">let </span>new = repo
+                    .find_object(i.oid())
+                    .map_err(|<span class="kw">_</span>| <span class="string">"Could not find object"</span>)<span class="question-mark">?
+                    </span>.try_into_tree()
+                    .map_err(|<span class="kw">_</span>| {
+                        <span class="macro">format!</span>(<span class="string">"Could not find {} from object"</span>, <span class="macro">stringify!</span>(try_into_tree))
+                    })<span class="question-mark">?</span>;
+                ret.extend(traverse_tree(<span class="kw-2">&amp;</span>new, repo, file, file_exts, langs, filetype)<span class="question-mark">?</span>);
             }
-            objs::tree::EntryMode::Blob =&gt; {
-                <span class="kw">let </span>file = <span class="macro">format!</span>(<span class="string">"{path}/{}"</span>, i.filename());
+            objs::tree::EntryKind::Blob =&gt; {
                 <span class="kw">match </span><span class="kw-2">&amp;</span>filetype {
                     FileFilterType::Relative(<span class="kw-2">ref </span>path) =&gt; {
                         <span class="kw">if </span>!file.ends_with(path) {
@@ -1298,7 +1212,7 @@
                         }
                     }
                     FileFilterType::Absolute(<span class="kw-2">ref </span>path) =&gt; {
-                        <span class="kw">if </span><span class="kw-2">&amp;</span>file == path {
+                        <span class="kw">if </span><span class="kw-2">&amp;</span>file != path {
                             <span class="kw">continue</span>;
                         }
                     }
@@ -1307,79 +1221,57 @@
                             <span class="kw">continue</span>;
                         }
                     }
-                    FileFilterType::None =&gt; <span class="kw">match </span>langs {
-                        <span class="comment">// #[cfg(feature = "c_lang")]
-                        // Language::C =&gt; {
-                        //     if ends_with_cmp_no_case(&amp;file, "c") || ends_with_cmp_no_case(&amp;file, "h") {
-                        //         files.push(file);
-                        //     }
-                        // }
-                        </span>Language::Go =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"go"</span>) {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                        Language::Python =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"py"</span>) {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                        Language::Rust =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"rs"</span>) {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                        Language::Ruby =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"rb"</span>) {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                        Language::UMPL =&gt; {
-                            <span class="kw">if </span>!ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"umpl"</span>) {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                        Language::All =&gt; {
-                            <span class="kw">if </span>!(ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"go"</span>)
-                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"rs"</span>)
-                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"py"</span>)
-                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"rb"</span>))
-                                || ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, <span class="string">"umpl"</span>)
-                            {
-                                <span class="kw">continue</span>;
-                            }
-                        }
-                    },
+                    FileFilterType::None =&gt; {}
+                }
+
+                <span class="kw">if </span>!files_exts.any(|ext| ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, ext)) {
+                    <span class="kw">continue</span>;
                 }
                 <span class="kw">let </span>obh = repo
                     .find_object(i.oid())
                     .map_err(|<span class="kw">_</span>| <span class="string">"failed to find object"</span>)<span class="question-mark">?</span>;
-                <span class="kw">let </span>objref = objs::ObjectRef::from_bytes(obh.kind, <span class="kw-2">&amp;</span>obh.data)
-                    .map_err(|<span class="kw">_</span>| <span class="string">"failed to get object ref"</span>)<span class="question-mark">?</span>;
-                <span class="kw">let </span>blob = objref.into_blob();
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(blob) = blob {
-                    files.push((file, String::from_utf8_lossy(blob.data).to_string()));
-                }
+                <span class="kw">let </span>blob = obh
+                    .try_into_blob()
+                    .map_err(|e| <span class="macro">format!</span>(<span class="string">"could not obtain file contents of {file}: {e}"</span>))<span class="question-mark">?</span>;
+                files.push((file, String::from_utf8_lossy(<span class="kw-2">&amp;</span>blob.data).to_string()));
             }
             <span class="kw">_ </span>=&gt; {}
         }
     }
-    ret.extend(find_function_in_files_with_commit(
-        files,
-        name.to_string(),
-        langs,
-    ));
+    ret.extend(find_function_in_files_with_commit(files, langs));
 
     <span class="prelude-val">Ok</span>(ret)
 }
 
-<span class="doccomment">/// macro to get the history of a function
+<span class="doccomment">/// used for the `get_function_history` macro internally (you don't have to touch this)
+</span><span class="kw">pub struct </span>MacroOpts&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt; {
+    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="kw">pub </span>file: FileFilterType,
+    <span class="kw">pub </span>filter: Filter,
+    <span class="kw">pub </span>supported_languages: Vec&lt;<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="kw">dyn </span>SupportedLanguage&gt;,
+    <span class="kw">pub </span>default_languages: bool,
+}
+
+<span class="kw">impl </span>Default <span class="kw">for </span>MacroOpts&lt;<span class="lifetime">'_</span>, <span class="lifetime">'_</span>&gt; {
+    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            name: <span class="string">""</span>,
+            file: FileFilterType::None,
+            filter: Filter::None,
+            supported_languages: <span class="macro">vec!</span>[],
+            default_languages: <span class="bool-val">true</span>,
+        }
+    }
+}
+<span class="comment">// TODO: update macro docs
+//
+</span><span class="doccomment">/// macro to get the history of a function
 /// wrapper around the `get_function_history` function
 ///
 /// # examples
 /// ```rust
 /// use git_function_history::{get_function_history, languages::Language, Filter, FileFilterType};
-/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None, language = Language::Rust);
+/// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None,default_languages = false, supported_languages = vec![&amp;function_grep::supported_languages::Rust]);
 /// ```
 ///
 /// everything is optional but the name, and in no particular order
@@ -1401,17 +1293,19 @@
 /// - filter: `Filter::None`
 /// - language: `Language::All`
 </span><span class="attr">#[macro_export]
-</span><span class="macro">macro_rules! </span>get_function_history {
+</span><span class="macro">macro_rules!</span> get_function_history {
     ($(<span class="macro-nonterminal">$variant</span>:ident = <span class="macro-nonterminal">$value</span>:expr),<span class="kw-2">*</span>) =&gt; {{
         <span class="kw">let </span><span class="kw-2">mut </span>opts = <span class="macro-nonterminal">$crate::MacroOpts::default</span>();
         $(
             opts.<span class="macro-nonterminal">$variant </span>= <span class="macro-nonterminal">$value</span>;
         )*
+        <span class="kw">let </span><span class="kw-2">mut </span>supported = opts.supported_languages;
+        supported.extend(<span class="kw">if </span>opts.default_languages { function_grep::supported_languages::predefined_languages() } <span class="kw">else </span>{ <span class="kw-2">&amp;</span>[] });
         get_function_history(
             opts.name,
             <span class="kw-2">&amp;</span>opts.file,
             <span class="kw-2">&amp;</span>opts.filter,
-            <span class="kw-2">&amp;</span>opts.language
+            <span class="kw-2">&amp;</span>supported
         )
     }};
 }
@@ -1438,12 +1332,7 @@
             }
 
             <span class="prelude-val">Some</span>(CommitInfo {
-                date: <span class="kw">match </span>i.time().map(|x| {
-                    <span class="prelude-val">Some</span>(DateTime::&lt;Utc&gt;::from_naive_utc_and_offset(
-                        NaiveDateTime::from_timestamp_opt(x.seconds, <span class="number">0</span>)<span class="question-mark">?</span>,
-                        Utc,
-                    ))
-                }) {
+                date: <span class="kw">match </span>i.time().map(|x| DateTime::from_timestamp(x.seconds, <span class="number">0</span>)) {
                     <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(i)) =&gt; i,
                     <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
                 },
@@ -1470,88 +1359,19 @@
 }
 
 <span class="attr">#[inline]
-</span><span class="kw">fn </span>find_function_in_file_with_commit(
-    file_path: <span class="kw-2">&amp;</span>str,
-    fc: <span class="kw-2">&amp;</span>str,
-    name: <span class="kw-2">&amp;</span>str,
-    langs: Language,
-) -&gt; <span class="prelude-ty">Result</span>&lt;FileType, String&gt; {
-    <span class="macro">log::trace!</span>(<span class="string">"parsing file '{}' "</span>, file_path);
-    <span class="kw">let </span>file = <span class="kw">match </span>langs {
-        Language::Rust =&gt; {
-            <span class="kw">let </span>functions = rust::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-            FileType::Rust(RustFile::new(file_path.to_string(), functions))
-        }
-        <span class="comment">// #[cfg(feature = "c_lang")]
-        // Language::C =&gt; {
-        //     let functions = languages::c::find_function_in_file(fc, name)?;
-        //     FileType::C(CFile::new(file_path.to_string(), functions))
-        // }
-        </span>Language::Go =&gt; {
-            <span class="kw">let </span>functions = languages::go::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-            FileType::Go(GoFile::new(file_path.to_string(), functions))
-        }
-        Language::Python =&gt; {
-            <span class="kw">let </span>functions = languages::python::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-            FileType::Python(PythonFile::new(file_path.to_string(), functions))
-        }
-        Language::Ruby =&gt; {
-            <span class="kw">let </span>functions = languages::ruby::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-            FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
-        }
-        Language::UMPL =&gt; {
-            <span class="kw">let </span>functions = languages::umpl::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-            FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
-        }
-        Language::All =&gt; <span class="kw">match </span>file_path.split(<span class="string">'.'</span>).last() {
-            <span class="prelude-val">Some</span>(<span class="string">"rs"</span>) =&gt; {
-                <span class="kw">let </span>functions = rust::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-                FileType::Rust(RustFile::new(file_path.to_string(), functions))
-            }
-            <span class="comment">// #[cfg(feature = "c_lang")]
-            // Some("c" | "h") =&gt; {
-            //     let functions = languages::c::find_function_in_file(fc, name)?;
-            //     FileType::C(CFile::new(file_path.to_string(), functions))
-            // }
-            </span><span class="prelude-val">Some</span>(<span class="string">"py" </span>| <span class="string">"pyw"</span>) =&gt; {
-                <span class="kw">let </span>functions = languages::python::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-                FileType::Python(PythonFile::new(file_path.to_string(), functions))
-            }
-
-            <span class="prelude-val">Some</span>(<span class="string">"go"</span>) =&gt; {
-                <span class="kw">let </span>functions = languages::go::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-                FileType::Go(GoFile::new(file_path.to_string(), functions))
-            }
-            <span class="prelude-val">Some</span>(<span class="string">"rb"</span>) =&gt; {
-                <span class="kw">let </span>functions = languages::ruby::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-                FileType::Ruby(RubyFile::new(file_path.to_string(), functions))
-            }
-            <span class="prelude-val">Some</span>(<span class="string">"umpl"</span>) =&gt; {
-                <span class="kw">let </span>functions = languages::umpl::find_function_in_file(fc, name)<span class="question-mark">?</span>;
-                FileType::UMPL(UMPLFile::new(file_path.to_string(), functions))
-            }
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="string">"unknown file type"</span>)<span class="question-mark">?</span>,
-        },
-    };
-    <span class="prelude-val">Ok</span>(file)
-}
-
-<span class="attr">#[inline]
-#[cfg_attr(feature = <span class="string">"cache"</span>, cached)]
-</span><span class="comment">// function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
+</span><span class="comment">// #[cfg_attr(feature = "cache", cached)]
+// function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 </span><span class="kw">fn </span>find_function_in_files_with_commit(
     files: Vec&lt;(String, String)&gt;,
-    name: String,
-    langs: Language,
-) -&gt; Vec&lt;FileType&gt; {
-    <span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
-    </span><span class="kw">let </span>t = files.par_iter();
-    <span class="attr">#[cfg(not(feature = <span class="string">"parallel"</span>))]
+    langs: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>InstatiatedLanguage&lt;<span class="lifetime">'_</span>&gt;],
+) -&gt; Vec&lt;ParsedFile&gt; {
+    <span class="comment">// commenting out this parallelization seems to net a gain in performance with tree sitter
+    //#[cfg(feature = "parallel")]
+    //let t = files.par_iter();
+    //#[cfg(not(feature = "parallel"))]
     </span><span class="kw">let </span>t = files.iter();
-    t.filter_map(|(file_path, fc)| {
-        find_function_in_file_with_commit(file_path, fc, <span class="kw-2">&amp;</span>name, langs).ok()
-    })
-    .collect()
+    t.filter_map(|(file_path, fc)| ParsedFile::search_file_with_name(fc, file_path, langs).ok())
+        .collect()
 }
 
 <span class="kw">fn </span>ends_with_cmp_no_case(filename: <span class="kw-2">&amp;</span>str, file_ext: <span class="kw-2">&amp;</span>str) -&gt; bool {
@@ -1573,25 +1393,22 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>chrono::Utc;
-
-    <span class="kw">use </span><span class="kw">crate</span>::languages::{
-        rust::{BlockType, RustFilter},
-        FileTrait,
-    };
-
-    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+    <span class="comment">//     use chrono::Utc;
+    //
+    </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
     <span class="attr">#[test]
     </span><span class="kw">fn </span>found_function() {
         <span class="kw">let </span>now = Utc::now();
+        <span class="kw">let </span>binding = FileFilterType::Relative(<span class="string">"src/test_functions.rs"</span>.to_string());
         <span class="kw">let </span>output = get_function_history(
             <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::Relative(<span class="string">"src/test_functions.rs"</span>.to_string()),
+            <span class="kw-2">&amp;</span>binding,
             <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
-        );
+            function_grep::supported_languages::predefined_languages(),
+            <span class="comment">// &amp;languages::Language::Rust,
+        </span>);
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
+        <span class="macro">println!</span>(<span class="string">"time taken: {after}"</span>);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
@@ -1600,27 +1417,27 @@
         }
         <span class="macro">assert!</span>(output.is_ok());
     }
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>git_installed() {
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::Absolute(<span class="string">"src/test_functions.rs"</span>.to_string()),
-            <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
-        );
-        <span class="comment">// assert that err is "not git is not installed"
-        </span><span class="kw">if </span>output.is_err() {
-            <span class="macro">assert_ne!</span>(output.unwrap_err().to_string(), <span class="string">"git is not installed"</span>);
-        }
-    }
-
-    <span class="attr">#[test]
+    <span class="comment">//     #[test]
+    //     fn git_installed() {
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &amp;FileFilterType::Absolute("src/test_functions.rs".to_string()),
+    //             &amp;Filter::None,
+    //             &amp;languages::Language::Rust,
+    //         );
+    //         // assert that err is "not git is not installed"
+    //         if output.is_err() {
+    //             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
+    //         }
+    //     }
+    //
+    </span><span class="attr">#[test]
     </span><span class="kw">fn </span>not_found() {
         <span class="kw">let </span>output = get_function_history(
             <span class="string">"Not_a_function"</span>,
             <span class="kw-2">&amp;</span>FileFilterType::None,
             <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
+            function_grep::supported_languages::predefined_languages(),
         );
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(output) =&gt; <span class="macro">println!</span>(<span class="string">"{output}"</span>),
@@ -1628,246 +1445,245 @@
         }
         <span class="macro">assert!</span>(output.is_err());
     }
-
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>not_rust_file() {
+    </span><span class="kw">fn </span>not_a_supported_file() {
         <span class="kw">let </span>output = get_function_history(
             <span class="string">"empty_test"</span>,
             <span class="kw-2">&amp;</span>FileFilterType::Absolute(<span class="string">"src/test_functions.txt"</span>.to_string()),
             <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
+            function_grep::supported_languages::predefined_languages(),
         );
         <span class="macro">assert!</span>(output.is_err());
         <span class="macro">println!</span>(<span class="string">"{}"</span>, output.as_ref().unwrap_err());
         <span class="macro">assert!</span>(output
             .unwrap_err()
             .to_string()
-            .contains(<span class="string">"is not a rust file"</span>));
+            .contains(<span class="string">"is not a supported file"</span>));
     }
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_date_range() {
-        <span class="kw">let </span>now = Utc::now();
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::None,
-            <span class="kw-2">&amp;</span>Filter::DateRange(
-                <span class="string">"27 Sep 2022 11:27:23 -0400"</span>.to_owned(),
-                <span class="string">"04 Oct 2022 23:45:52 +0000"</span>.to_owned(),
-            ),
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
-        );
-        <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>output {
-            <span class="prelude-val">Ok</span>(functions) =&gt; {
-                <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
-            }
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"-{e}-"</span>),
-        }
-        <span class="macro">assert!</span>(output.is_ok());
-    }
+    <span class="comment">//     #[test]
+    //     fn test_date_range() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &amp;FileFilterType::None,
+    //             &amp;Filter::DateRange(
+    //                 "27 Sep 2022 11:27:23 -0400".to_owned(),
+    //                 "04 Oct 2022 23:45:52 +0000".to_owned(),
+    //             ),
+    //             &amp;languages::Language::Rust,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &amp;output {
+    //             Ok(functions) =&gt; {
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) =&gt; println!("-{e}-"),
+    //         }
+    //         assert!(output.is_ok());
+    //     }
+    //
+    //     #[test]
+    //     fn test_date() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &amp;FileFilterType::None,
+    //             &amp;Filter::Date("27 Sep 2022 00:27:23 -0400".to_owned()),
+    //             &amp;languages::Language::Rust,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &amp;output {
+    //             Ok(functions) =&gt; {
+    //                 // println!("{}", functions.clone().last().unwrap().date);
+    //                 println!("{:?}", functions.clone().last().unwrap().get_metadata());
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) =&gt; println!("-{e}-"),
+    //         }
+    //         assert!(output.is_ok());
+    //     }
+    //
 
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_date() {
-        <span class="kw">let </span>now = Utc::now();
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::None,
-            <span class="kw-2">&amp;</span>Filter::Date(<span class="string">"27 Sep 2022 00:27:23 -0400"</span>.to_owned()),
-            <span class="kw-2">&amp;</span>languages::Language::Rust,
-        );
-        <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>output {
-            <span class="prelude-val">Ok</span>(functions) =&gt; {
-                <span class="comment">// println!("{}", functions.clone().last().unwrap().date);
-                </span><span class="macro">println!</span>(<span class="string">"{:?}"</span>, functions.clone().last().unwrap().get_metadata());
-                <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
-            }
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"-{e}-"</span>),
-        }
-        <span class="macro">assert!</span>(output.is_ok());
-    }
-
-    <span class="attr">#[test]
+    </span><span class="attr">#[test]
     </span><span class="kw">fn </span>expensive_test() {
         <span class="kw">let </span>now = Utc::now();
         <span class="kw">let </span>output = get_function_history(
             <span class="string">"empty_test"</span>,
             <span class="kw-2">&amp;</span>FileFilterType::None,
             <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::All,
+            function_grep::supported_languages::predefined_languages(),
         );
         <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
+        <span class="macro">println!</span>(<span class="string">"time taken: {after}"</span>);
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
-                <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
-                functions
-                    .get_commit()
-                    .unwrap()
-                    .files
-                    .iter()
-                    .for_each(|file| {
-                        <span class="macro">println!</span>(<span class="string">"file: {}"</span>, file.get_file_name());
-                        <span class="macro">println!</span>(<span class="string">"{file}"</span>);
-                    });
-            }
+                <span class="comment">// println!("{functions}");
+                // functions.clone().into_iter().take(5).for_each(|commit|{
+                //     commit
+                //     .files
+                //     .iter()
+                //     .for_each(|file| {
+                //         println!("file: {}", file.file_name().unwrap());
+                //         println!("{file}");
+                //     });})
+            </span>}
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
         }
         <span class="macro">assert!</span>(output.is_ok());
     }
-
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>python_whole() {
-        <span class="kw">let </span>now = Utc::now();
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::Relative(<span class="string">"src/test_functions.py"</span>.to_string()),
-            <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Python,
-        );
-        <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>output {
-            <span class="prelude-val">Ok</span>(functions) =&gt; {
-                <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
-            }
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
-        }
-        <span class="macro">assert!</span>(output.is_ok());
-        <span class="kw">let </span>output = output.unwrap();
-        <span class="kw">let </span>commit = output.get_commit().unwrap();
-        <span class="kw">let </span>file = commit.get_file().unwrap();
-        <span class="kw">let </span>_functions = file.get_functions();
-    }
-
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>ruby_whole() {
-        <span class="kw">let </span>now = Utc::now();
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::Relative(<span class="string">"src/test_functions.rb"</span>.to_string()),
-            <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Ruby,
-        );
-        <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>output {
-            <span class="prelude-val">Ok</span>(functions) =&gt; {
-                <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
-            }
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
-        }
-        <span class="macro">assert!</span>(output.is_ok());
-        <span class="kw">let </span>output = output.unwrap();
-        <span class="kw">let </span>commit = output.get_commit().unwrap();
-        <span class="kw">let </span>file = commit.get_file().unwrap();
-        <span class="kw">let </span>_functions = file.get_functions();
-    }
-
-    <span class="comment">// #[test]
-    // #[cfg(feature = "c_lang")]
-    // fn c_lang() {
-    //     let now = Utc::now();
-    //     let output = get_function_history(
-    //         "empty_test",
-    //         &amp;FileFilterType::Relative("src/test_functionsc".to_string()),
-    //         &amp;Filter::DateRange(
-    //             "03 Oct 2022 11:27:23 -0400".to_owned(),
-    //             "05 Oct 2022 23:45:52 +0000".to_owned(),
-    //         ),
-    //         &amp;languages::Language::C,
-    //     );
-    //     let after = Utc::now() - now;
-    //     println!("time taken: {}", after);
-    //     match &amp;output {
-    //         Ok(functions) =&gt; println!("{}", functions),
-    //         Err(e) =&gt; println!("{}", e),
+    <span class="comment">//
+    //     #[test]
+    //     fn python_whole() {
+    //         let now = Utc::now();
+    //         let output = get_function_history(
+    //             "empty_test",
+    //             &amp;FileFilterType::Relative("src/test_functions.py".to_string()),
+    //             &amp;Filter::None,
+    //             &amp;languages::Language::Python,
+    //         );
+    //         let after = Utc::now() - now;
+    //         println!("time taken: {}", after);
+    //         match &amp;output {
+    //             Ok(functions) =&gt; {
+    //                 println!("{functions}");
+    //             }
+    //             Err(e) =&gt; println!("{e}"),
+    //         }
+    //         assert!(output.is_ok());
+    //         let output = output.unwrap();
+    //         let commit = output.get_commit().unwrap();
+    //         let file = commit.get_file().unwrap();
+    //         let _functions = file.get_functions();
     //     }
-    //     assert!(output.is_ok());
-    // }
-    </span><span class="attr">#[test]
-    </span><span class="kw">fn </span>go_whole() {
-        <span class="kw">let </span>now = Utc::now();
-        <span class="kw">let </span>output = get_function_history(
-            <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>FileFilterType::Relative(<span class="string">"src/test_functions.go"</span>.to_string()),
-            <span class="kw-2">&amp;</span>Filter::None,
-            <span class="kw-2">&amp;</span>languages::Language::Go,
-        );
-        <span class="kw">let </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken: {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>output {
-            <span class="prelude-val">Ok</span>(functions) =&gt; <span class="macro">println!</span>(<span class="string">"{functions}"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
-        }
-        <span class="macro">assert!</span>(output.is_ok());
-    }
-
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>filter_by_param_rust() {
-        <span class="comment">// search for rust functions
-        </span><span class="kw">let </span><span class="kw-2">mut </span>now = Utc::now();
-        <span class="kw">let </span>output = <span class="macro">get_function_history!</span>(name = <span class="string">"empty_test"</span>, language = Language::Rust);
-        <span class="kw">let </span><span class="kw-2">mut </span>after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken to search: {}"</span>, after);
-        <span class="kw">let </span>output = <span class="kw">match </span>output {
-            <span class="prelude-val">Ok</span>(result) =&gt; result,
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">panic!</span>(<span class="string">"{}"</span>, e),
-        };
-        now = Utc::now();
-        <span class="kw">let </span>new_output = output.filter_by(<span class="kw-2">&amp;</span>Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::HasParameterType(String::from(<span class="string">"String"</span>)),
-        )));
-        after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken to filter {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>new_output {
-            <span class="prelude-val">Ok</span>(res) =&gt; <span class="macro">println!</span>(<span class="string">"{res}"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
-        }
-        <span class="kw">let </span>new_output = output.filter_by(<span class="kw-2">&amp;</span>Filter::PLFilter(LanguageFilter::Rust(
-            rust::RustFilter::InBlock(BlockType::Extern),
-        )));
-        after = Utc::now() - now;
-        <span class="macro">println!</span>(<span class="string">"time taken to filter {}"</span>, after);
-        <span class="kw">match </span><span class="kw-2">&amp;</span>new_output {
-            <span class="prelude-val">Ok</span>(res) =&gt; <span class="macro">println!</span>(<span class="string">"{res}"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
-        }
-        <span class="macro">assert!</span>(new_output.is_ok());
-    }
-
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_filter_by() {
-        <span class="kw">let </span>repo =
-            <span class="macro">get_function_history!</span>(name = <span class="string">"empty_test"</span>).expect(<span class="string">"Failed to get function history"</span>);
-        <span class="kw">let </span>f1 = <span class="macro">filter_by!</span>(
-            repo,
-            RustFilter::InBlock(<span class="kw">crate</span>::languages::rust::BlockType::Impl),
-            Rust
-        );
-        <span class="kw">match </span>f1 {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"filter 1 ok"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"error: {e}"</span>),
-        }
-        <span class="kw">let </span>f2 = <span class="macro">filter_by!</span>(
-            repo,
-            Filter::CommitHash(<span class="string">"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"</span>.to_string())
-        );
-        <span class="kw">match </span>f2 {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"filter 2 ok"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"error: {e}"</span>),
-        }
-        <span class="kw">let </span>f3 = <span class="macro">filter_by!</span>(
-            repo,
-            LanguageFilter::Rust(RustFilter::InBlock(<span class="kw">crate</span>::languages::rust::BlockType::Impl)),
-            <span class="number">1
-        </span>);
-        <span class="kw">match </span>f3 {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"filter 3 ok"</span>),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"error: {e}"</span>),
-        }
-    }
-}
+    //
+    //     // #[test]
+    //     // fn ruby_whole() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &amp;FileFilterType::Relative("src/test_functions.rb".to_string()),
+    //     //         &amp;Filter::None,
+    //     //         &amp;languages::Language::Ruby,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &amp;output {
+    //     //         Ok(functions) =&gt; {
+    //     //             println!("{functions}");
+    //     //         }
+    //     //         Err(e) =&gt; println!("{e}"),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     //     let output = output.unwrap();
+    //     //     let commit = output.get_commit().unwrap();
+    //     //     let file = commit.get_file().unwrap();
+    //     //     let _functions = file.get_functions();
+    //     // }
+    //
+    //     // #[test]
+    //     // #[cfg(feature = "c_lang")]
+    //     // fn c_lang() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &amp;FileFilterType::Relative("src/test_functionsc".to_string()),
+    //     //         &amp;Filter::DateRange(
+    //     //             "03 Oct 2022 11:27:23 -0400".to_owned(),
+    //     //             "05 Oct 2022 23:45:52 +0000".to_owned(),
+    //     //         ),
+    //     //         &amp;languages::Language::C,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &amp;output {
+    //     //         Ok(functions) =&gt; println!("{}", functions),
+    //     //         Err(e) =&gt; println!("{}", e),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     // }
+    //     // #[test]
+    //     // fn go_whole() {
+    //     //     let now = Utc::now();
+    //     //     let output = get_function_history(
+    //     //         "empty_test",
+    //     //         &amp;FileFilterType::Relative("src/test_functions.go".to_string()),
+    //     //         &amp;Filter::None,
+    //     //         &amp;languages::Language::Go,
+    //     //     );
+    //     //     let after = Utc::now() - now;
+    //     //     println!("time taken: {}", after);
+    //     //     match &amp;output {
+    //     //         Ok(functions) =&gt; println!("{functions}"),
+    //     //         Err(e) =&gt; println!("{e}"),
+    //     //     }
+    //     //     assert!(output.is_ok());
+    //     // }
+    //
+    //     // #[test]
+    //     // fn filter_by_param_rust() {
+    //     //     // search for rust functions
+    //     //     let mut now = Utc::now();
+    //     //     let output = get_function_history!(name = "empty_test", language = Language::Rust);
+    //     //     let mut after = Utc::now() - now;
+    //     //     println!("time taken to search: {}", after);
+    //     //     let output = match output {
+    //     //         Ok(result) =&gt; result,
+    //     //         Err(e) =&gt; panic!("{}", e),
+    //     //     };
+    //     //     now = Utc::now();
+    //     //     let new_output = output.filter_by(&amp;Filter::PLFilter(LanguageFilter::Rust(
+    //     //         rust::RustFilter::HasParameterType(String::from("String")),
+    //     //     )));
+    //     //     after = Utc::now() - now;
+    //     //     println!("time taken to filter {}", after);
+    //     //     match &amp;new_output {
+    //     //         Ok(res) =&gt; println!("{res}"),
+    //     //         Err(e) =&gt; println!("{e}"),
+    //     //     }
+    //     //     let new_output = output.filter_by(&amp;Filter::PLFilter(LanguageFilter::Rust(
+    //     //         rust::RustFilter::InBlock(BlockType::Extern),
+    //     //     )));
+    //     //     after = Utc::now() - now;
+    //     //     println!("time taken to filter {}", after);
+    //     //     match &amp;new_output {
+    //     //         Ok(res) =&gt; println!("{res}"),
+    //     //         Err(e) =&gt; println!("{e}"),
+    //     //     }
+    //     //     assert!(new_output.is_ok());
+    //     // }
+    //
+    //     // #[test]
+    //     // fn test_filter_by() {
+    //     //     let repo =
+    //     //         get_function_history!(name = "empty_test").expect("Failed to get function history");
+    //     //     let f1 = filter_by!(
+    //     //         repo,
+    //     //         RustFilter::InBlock(crate::languages::rust::BlockType::Impl),
+    //     //         Rust
+    //     //     );
+    //     //     match f1 {
+    //     //         Ok(_) =&gt; println!("filter 1 ok"),
+    //     //         Err(e) =&gt; println!("error: {e}"),
+    //     //     }
+    //     //     let f2 = filter_by!(
+    //     //         repo,
+    //     //         Filter::CommitHash("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0".to_string())
+    //     //     );
+    //     //     match f2 {
+    //     //         Ok(_) =&gt; println!("filter 2 ok"),
+    //     //         Err(e) =&gt; println!("error: {e}"),
+    //     //     }
+    //     //     let f3 = filter_by!(
+    //     //         repo,
+    //     //         LanguageFilter::Rust(RustFilter::InBlock(crate::languages::rust::BlockType::Impl)),
+    //     //         1
+    //     //     );
+    //     //     match f3 {
+    //     //         Ok(_) =&gt; println!("filter 3 ok"),
+    //     //         Err(e) =&gt; println!("error: {e}"),
+    //     //     }
+    //     // }
+</span>}
 </code></pre></div></section></main></body></html>
