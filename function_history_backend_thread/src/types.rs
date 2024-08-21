@@ -141,7 +141,6 @@ pub struct FilterType {
 pub enum HistoryFilterType {
     Date(String),
     DateRange(String, String),
-    FunctionInLines(String, String),
     CommitHash(String),
     FileAbsolute(String),
     FileRelative(String),
@@ -155,7 +154,6 @@ impl fmt::Display for HistoryFilterType {
         match self {
             HistoryFilterType::Date(_) => write!(f, "date"),
             HistoryFilterType::DateRange(_, _) => write!(f, "date range"),
-            HistoryFilterType::FunctionInLines(_, _) => write!(f, "function in lines"),
             HistoryFilterType::CommitHash(_) => write!(f, "commit hash"),
             HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
             HistoryFilterType::FileRelative(_) => write!(f, "file relative"),

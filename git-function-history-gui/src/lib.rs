@@ -9,9 +9,7 @@ use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, SearchType,
     Status,
 };
-use git_function_history::{
-    languages::Language, types::Directions, Commit, FileFilterType, Filter, FunctionHistory,
-};
+use git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
 
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -28,7 +26,6 @@ pub struct MyEguiApp {
     filter: Filter,
     file_type: FileFilterType,
     history_filter_type: HistoryFilterType,
-    language: Language,
     current_commit: String,
     do_commit: bool,
 }
@@ -52,7 +49,6 @@ impl MyEguiApp {
             file_type: FileFilterType::None,
             filter: Filter::None,
             history_filter_type: HistoryFilterType::None,
-            language: Language::All,
             current_commit: String::new(),
             do_commit: false,
         }
@@ -375,28 +371,6 @@ impl eframe::App for MyEguiApp {
                                                         ),
                                                         "in date range",
                                                     );
-                                                    // ui.selectable_value(
-                                                    //     &mut self.history_filter_type,
-                                                    //     HistoryFilterType::FunctionInBlock(
-                                                    //         String::new(),
-                                                    //     ),
-                                                    //     "function in block",
-                                                    // );
-                                                    ui.selectable_value(
-                                                        &mut self.history_filter_type,
-                                                        HistoryFilterType::FunctionInLines(
-                                                            String::new(),
-                                                            String::new(),
-                                                        ),
-                                                        "function in lines",
-                                                    );
-                                                    // ui.selectable_value(
-                                                    //     &mut self.history_filter_type,
-                                                    //     HistoryFilterType::FunctionInFunction(
-                                                    //         String::new(),
-                                                    //     ),
-                                                    //     "function in function",
-                                                    // );
                                                     ui.selectable_value(
                                                         &mut self.history_filter_type,
                                                         HistoryFilterType::FileAbsolute(
@@ -423,21 +397,15 @@ impl eframe::App for MyEguiApp {
                                                     );
                                                 });
                                             match &mut self.history_filter_type {
-                                                HistoryFilterType::DateRange(line1, line2)
-                                                | HistoryFilterType::FunctionInLines(
-                                                    line1,
-                                                    line2,
-                                                ) => {
-                                                        draw_text_input!(ui,max, line1 line2)
+                                                HistoryFilterType::DateRange(line1, line2) => {
+                                                    draw_text_input!(ui,max, line1 line2)
                                                 }
                                                 HistoryFilterType::Date(dir)
                                                 | HistoryFilterType::CommitHash(dir)
-                                                // | HistoryFilterType::FunctionInBlock(dir)
-                                                // | HistoryFilterType::FunctionInFunction(dir)
                                                 | HistoryFilterType::FileAbsolute(dir)
                                                 | HistoryFilterType::FileRelative(dir)
                                                 | HistoryFilterType::Directory(dir) => {
-                                                        draw_text_input!(ui,max, dir)
+                                                    draw_text_input!(ui, max, dir)
                                                 }
                                                 HistoryFilterType::None => {
                                                     // do nothing
@@ -462,47 +430,6 @@ impl eframe::App for MyEguiApp {
                                                             date2.to_string(),
                                                         ))
                                                     }
-                                                    // HistoryFilterType::FunctionInBlock(_block) => {
-                                                    //     None
-                                                    // }
-                                                    // Some(
-                                                    //     Filter::FunctionInBlock(BlockType::from_string(block)),
-                                                    // ),
-                                                    HistoryFilterType::FunctionInLines(
-                                                        line1,
-                                                        line2,
-                                                    ) => {
-                                                        let fn_in_lines = (
-                                                            match line1.parse::<usize>() {
-                                                                Ok(x) => x,
-                                                                Err(e) => {
-                                                                    self.status = Status::Error(
-                                                                        format!("{e}"),
-                                                                    );
-                                                                    return;
-                                                                }
-                                                            },
-                                                            match line2.parse::<usize>() {
-                                                                Ok(x) => x,
-                                                                Err(e) => {
-                                                                    self.status = Status::Error(
-                                                                        format!("{e}"),
-                                                                    );
-                                                                    return;
-                                                                }
-                                                            },
-                                                        );
-                                                        Some(Filter::FunctionInLines(
-                                                            fn_in_lines.0,
-                                                            fn_in_lines.1,
-                                                        ))
-                                                    }
-                                                    // HistoryFilterType::FunctionInFunction(
-                                                    //     _function,
-                                                    // ) => {
-                                                    //     // Some(Filter::FunctionWithParent(function.to_string()))
-                                                    //     None
-                                                    // }
                                                     HistoryFilterType::FileAbsolute(file) => {
                                                         Some(Filter::FileAbsolute(file.to_string()))
                                                     }
@@ -620,32 +547,32 @@ impl eframe::App for MyEguiApp {
                                         }
                                         _ => {}
                                     }
-                                    let text = self.language.to_string();
-                                    egui::ComboBox::from_id_source("search_language_combo_box")
-                                        .selected_text(text)
-                                        .show_ui(ui, |ui| {
-                                            ui.selectable_value(
-                                                &mut self.language,
-                                                Language::Rust,
-                                                "Rust",
-                                            );
-                                            #[cfg(feature = "c_lang")]
-                                            ui.selectable_value(
-                                                &mut self.language,
-                                                Language::C,
-                                                "C",
-                                            );
-                                            ui.selectable_value(
-                                                &mut self.language,
-                                                Language::Python,
-                                                "Python",
-                                            );
-                                            ui.selectable_value(
-                                                &mut self.language,
-                                                Language::All,
-                                                "All",
-                                            );
-                                        });
+                                    //let text = self.language.to_string();
+                                    //egui::ComboBox::from_id_source("search_language_combo_box")
+                                    //    .selected_text(text)
+                                    //    .show_ui(ui, |ui| {
+                                    //        ui.selectable_value(
+                                    //            &mut self.language,
+                                    //            Language::Rust,
+                                    //            "Rust",
+                                    //        );
+                                    //        #[cfg(feature = "c_lang")]
+                                    //        ui.selectable_value(
+                                    //            &mut self.language,
+                                    //            Language::C,
+                                    //            "C",
+                                    //        );
+                                    //        ui.selectable_value(
+                                    //            &mut self.language,
+                                    //            Language::Python,
+                                    //            "Python",
+                                    //        );
+                                    //        ui.selectable_value(
+                                    //            &mut self.language,
+                                    //            Language::All,
+                                    //            "All",
+                                    //        );
+                                    //    });
                                     let resp = ui.add(Button::new("Go"));
                                     if resp.clicked() {
                                         self.status = Status::Loading;
@@ -654,8 +581,7 @@ impl eframe::App for MyEguiApp {
                                             .send(FullCommand::Search(SearchType::new(
                                                 self.input_buffer.clone(),
                                                 self.file_type.clone(),
-                                                self.filter.clone(),
-                                                self.language,
+                                                std::mem::replace(&mut self.filter, Filter::None),
                                             )))
                                             .expect("could not send message in thread");
                                     }
