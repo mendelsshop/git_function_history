@@ -1,8 +1,8 @@
 use general_filters::FunctionInLines;
 use std::{collections::HashMap, fmt, hash::Hash};
 
-mod general_filters;
 mod filter_parsers;
+mod general_filters;
 use tree_sitter::Node;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
@@ -13,12 +13,29 @@ pub enum AttributeType {
     Other(String),
 }
 
+impl fmt::Display for AttributeType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::String => write!(f, "String"),
+            Self::Number => write!(f, "Number"),
+            Self::Boolean => write!(f, "Boolean"),
+            Self::Other(arg0) => write!(f, "{arg0}"),
+        }
+    }
+}
+
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Attribute(String);
+impl fmt::Display for Attribute {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 use crate::SupportedLanguages;
 pub trait Filter: HasFilterInformation {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String>;
+    // TODO: make way to parse from hashmap of attribute to string
     fn to_filter(&self, s: &str) -> Result<InstantiatedFilter, String> {
         let filter = self.parse_filter(s)?;
         Ok(InstantiatedFilter {
@@ -156,9 +173,6 @@ impl InstantiatedFilter {
         self.filter_information.supported_languages()
     }
 }
-
-
-
 
 macro_rules! default_filters_by_info {
     ($($filter:ident),*) => {

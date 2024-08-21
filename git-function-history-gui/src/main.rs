@@ -29,6 +29,6 @@ fn main() -> eframe::Result<()> {
     run_native(
         "Git Function History",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc, (tx_m, rx_m)))),
+        Box::new(|cc| Ok(Box::new(MyEguiApp::new(cc, (tx_m, rx_m))))),
     )
 }

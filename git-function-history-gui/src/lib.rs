@@ -1,3 +1,5 @@
+mod types;
+
 use std::{sync::mpsc, time::Duration};
 
 use eframe::{
@@ -6,10 +8,10 @@ use eframe::{
     epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
-    Command, CommandResult, FilterType, FullCommand, HistoryFilterType, ListType, SearchType,
-    Status,
+    Command, CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
 use git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
+use types::HistoryFilterType;
 
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -25,7 +27,7 @@ pub struct MyEguiApp {
     ),
     filter: Filter,
     file_type: FileFilterType,
-    history_filter_type: HistoryFilterType,
+    history_filter_type: types::HistoryFilterType,
     current_commit: String,
     do_commit: bool,
 }
@@ -48,7 +50,7 @@ impl MyEguiApp {
             channels,
             file_type: FileFilterType::None,
             filter: Filter::None,
-            history_filter_type: HistoryFilterType::None,
+            history_filter_type: types::HistoryFilterType::None,
             current_commit: String::new(),
             do_commit: false,
         }
@@ -395,6 +397,28 @@ impl eframe::App for MyEguiApp {
                                                         HistoryFilterType::None,
                                                         "none",
                                                     );
+                                                    function_grep::filter::builtin_filters()
+                                                        .into_iter()
+                                                        .for_each(|filter| {
+                                                            ui.selectable_value(
+                                                                &mut self.history_filter_type,
+                                                                HistoryFilterType::PL(
+                                                                    filter
+                                                                        .1
+                                                                        .attributes()
+                                                                        .into_iter()
+                                                                        .map(|(attr, kind)| {
+                                                                            (
+                                                                                attr.to_string(),
+                                                                                kind.to_string(),
+                                                                            )
+                                                                        })
+                                                                        .collect(),
+                                                                    filter.1,
+                                                                ),
+                                                                filter.0,
+                                                            );
+                                                        })
                                                 });
                                             match &mut self.history_filter_type {
                                                 HistoryFilterType::DateRange(line1, line2) => {
@@ -410,7 +434,16 @@ impl eframe::App for MyEguiApp {
                                                 HistoryFilterType::None => {
                                                     // do nothing
                                                 }
-                                                HistoryFilterType::PL(_) => todo!(),
+                                                HistoryFilterType::PL(inputs, filters) => {
+                                                    inputs.iter_mut().for_each(|(desc, field)| {
+                                                        ui.horizontal(|ui| {
+                                                            ui.set_min_width(4.0);
+                                                            ui.set_max_width(max);
+                                                            ui.label(desc.to_string());
+                                                            ui.add(TextEdit::singleline(field));
+                                                        });
+                                                    })
+                                                }
                                             }
                                             let resp = ui.add(Button::new("Go"));
                                             if resp.clicked() {
@@ -443,7 +476,17 @@ impl eframe::App for MyEguiApp {
                                                         self.status = Status::Ok(None);
                                                         None
                                                     }
-                                                    HistoryFilterType::PL(_) => todo!(),
+                                                    HistoryFilterType::PL(input, filter) => {
+                                                        let filter =
+                                                            filter.to_filter(&input.values().cloned().collect::<Vec<_>>().join(" "));
+                                                        filter
+                                                            .inspect_err(|e| {
+                                                                self.status =
+                                                                    Status::Error(e.to_string())
+                                                            })
+                                                            .ok()
+                                                            .map(Filter::PLFilter)
+                                                    }
                                                 };
                                                 if let Some(filter) = filter {
                                                     self.channels
