@@ -83,8 +83,11 @@ impl Filter for FunctionInImpl {
         }
 
         Ok(Box::new(move |node: &Node<'_>| {
-            node.parent()
-                .is_some_and(|parent| parent.grammar_name() == "impl_item")
+            node.parent().is_some_and(|parent| {
+                parent
+                    .parent()
+                    .is_some_and(|parent| parent.grammar_name() == "impl_item")
+            })
         }))
     }
 }
@@ -99,7 +102,7 @@ impl HasFilterInformation for FunctionInImpl {
     }
 
     fn supported_languages(&self) -> SupportedLanguages {
-        SupportedLanguages::Single("rust".to_string())
+        SupportedLanguages::Single("Rust".to_string())
     }
 
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {

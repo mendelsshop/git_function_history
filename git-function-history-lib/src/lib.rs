@@ -42,7 +42,6 @@ use function_grep::{
     ParsedFile,
 };
 use git_function_history_proc_macro::enumstuff;
-// use languages::LanguageFilter;
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
@@ -201,7 +200,9 @@ pub fn get_function_history(
         .collect::<Box<[_]>>();
     let repo = gix::discover(".")?;
     let th_repo = repo.clone().into_sync();
-    let commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
+    let commit_iter = repo
+        .rev_walk(repo.head_id().map(gix::Id::detach))
+        .sorting(gix::traverse::commit::simple::Sorting::ByCommitTimeNewestFirst);
     let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
     #[cfg(feature = "parallel")]
     let commit_iter = {
@@ -337,7 +338,6 @@ fn traverse_tree(
     filetype: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
     let mut files_exts = file_exts.iter();
-
     let treee_iter = tree.iter();
     let mut files: Vec<_> = Vec::new();
     let mut ret = Vec::new();
@@ -383,6 +383,7 @@ fn traverse_tree(
                 if !files_exts.any(|ext| ends_with_cmp_no_case(&file, ext)) {
                     continue;
                 }
+
                 let obh = repo
                     .find_object(i.oid())
                     .map_err(|_| "failed to find object")?;
@@ -549,8 +550,6 @@ impl<T> UnwrapToError<T> for Option<T> {
 
 #[cfg(test)]
 mod tests {
-    //     use chrono::Utc;
-    //
     use super::*;
     #[test]
     fn found_function() {
@@ -558,7 +557,7 @@ mod tests {
         let binding = FileFilterType::Relative("src/test_functions.rs".to_string());
         let output = get_function_history(
             "empty_test",
-            &binding,
+            &FileFilterType::None,
             &Filter::None,
             function_grep::supported_languages::predefined_languages(),
             // &languages::Language::Rust,
@@ -568,6 +567,7 @@ mod tests {
         match &output {
             Ok(functions) => {
                 println!("{functions}");
+                println!("{:?}", functions.get_metadata())
             }
             Err(e) => println!("{e}"),
         }

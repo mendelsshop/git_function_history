@@ -143,14 +143,19 @@ pub fn command_thread(
                                         ))),
                                     )
                                 }
-                                Err(err) => (
-                                    CommandResult::None,
-                                    Status::Error(format!(
-                                        "Error filtering history: {} took {}s",
-                                        err,
-                                        now.elapsed().as_secs()
-                                    )),
-                                ),
+                                Err(err) => {
+                                    if log {
+                                        log::warn!("Filtered history failed {err}");
+                                    }
+                                    (
+                                        CommandResult::None,
+                                        Status::Error(format!(
+                                            "Error filtering history: {} took {}s",
+                                            err,
+                                            now.elapsed().as_secs()
+                                        )),
+                                    )
+                                }
                             }
                         } else {
                             (
