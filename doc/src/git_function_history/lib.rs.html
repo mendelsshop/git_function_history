@@ -886,9 +886,8 @@
     ParsedFile,
 };
 <span class="kw">use </span>git_function_history_proc_macro::enumstuff;
-<span class="comment">// use languages::LanguageFilter;
 
-</span><span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
 </span><span class="kw">use </span>rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 <span class="kw">use </span>gix::{objs, prelude::ObjectIdExt, ObjectId, Tree};
@@ -1045,7 +1044,9 @@
         .collect::&lt;Box&lt;[<span class="kw">_</span>]&gt;&gt;();
     <span class="kw">let </span>repo = gix::discover(<span class="string">"."</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>th_repo = repo.clone().into_sync();
-    <span class="kw">let </span>commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach));
+    <span class="kw">let </span>commit_iter = repo
+        .rev_walk(repo.head_id().map(gix::Id::detach))
+        .sorting(gix::traverse::commit::simple::Sorting::ByCommitTimeNewestFirst);
     <span class="kw">let </span>commit_iter = commit_iter.all()<span class="question-mark">?</span>.filter_map(|id| <span class="prelude-val">Some</span>(id.ok()<span class="question-mark">?</span>.detach()));
     <span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
     </span><span class="kw">let </span>commit_iter = {
@@ -1181,7 +1182,6 @@
     filetype: <span class="kw-2">&amp;</span>FileFilterType,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;ParsedFile&gt;, String&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>files_exts = file_exts.iter();
-
     <span class="kw">let </span>treee_iter = tree.iter();
     <span class="kw">let </span><span class="kw-2">mut </span>files: Vec&lt;<span class="kw">_</span>&gt; = Vec::new();
     <span class="kw">let </span><span class="kw-2">mut </span>ret = Vec::new();
@@ -1227,6 +1227,7 @@
                 <span class="kw">if </span>!files_exts.any(|ext| ends_with_cmp_no_case(<span class="kw-2">&amp;</span>file, ext)) {
                     <span class="kw">continue</span>;
                 }
+
                 <span class="kw">let </span>obh = repo
                     .find_object(i.oid())
                     .map_err(|<span class="kw">_</span>| <span class="string">"failed to find object"</span>)<span class="question-mark">?</span>;
@@ -1393,16 +1394,14 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="comment">//     use chrono::Utc;
-    //
-    </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
     <span class="attr">#[test]
     </span><span class="kw">fn </span>found_function() {
         <span class="kw">let </span>now = Utc::now();
         <span class="kw">let </span>binding = FileFilterType::Relative(<span class="string">"src/test_functions.rs"</span>.to_string());
         <span class="kw">let </span>output = get_function_history(
             <span class="string">"empty_test"</span>,
-            <span class="kw-2">&amp;</span>binding,
+            <span class="kw-2">&amp;</span>FileFilterType::None,
             <span class="kw-2">&amp;</span>Filter::None,
             function_grep::supported_languages::predefined_languages(),
             <span class="comment">// &amp;languages::Language::Rust,
@@ -1412,6 +1411,7 @@
         <span class="kw">match </span><span class="kw-2">&amp;</span>output {
             <span class="prelude-val">Ok</span>(functions) =&gt; {
                 <span class="macro">println!</span>(<span class="string">"{functions}"</span>);
+                <span class="macro">println!</span>(<span class="string">"{:?}"</span>, functions.get_metadata())
             }
             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"{e}"</span>),
         }

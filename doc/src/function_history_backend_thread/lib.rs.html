@@ -171,6 +171,11 @@
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{
     sync::mpsc::{Receiver, RecvTimeoutError, Sender},
     thread,
@@ -316,14 +321,19 @@
                                         ))),
                                     )
                                 }
-                                <span class="prelude-val">Err</span>(err) =&gt; (
-                                    CommandResult::None,
-                                    Status::Error(<span class="macro">format!</span>(
-                                        <span class="string">"Error filtering history: {} took {}s"</span>,
-                                        err,
-                                        now.elapsed().as_secs()
-                                    )),
-                                ),
+                                <span class="prelude-val">Err</span>(err) =&gt; {
+                                    <span class="kw">if </span>log {
+                                        <span class="macro">log::warn!</span>(<span class="string">"Filtered history failed {err}"</span>);
+                                    }
+                                    (
+                                        CommandResult::None,
+                                        Status::Error(<span class="macro">format!</span>(
+                                            <span class="string">"Error filtering history: {} took {}s"</span>,
+                                            err,
+                                            now.elapsed().as_secs()
+                                        )),
+                                    )
+                                }
                             }
                         } <span class="kw">else </span>{
                             (
