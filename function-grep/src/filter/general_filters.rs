@@ -73,3 +73,36 @@ format:
         ])
     }
 }
+
+pub struct FunctionInImpl;
+
+impl Filter for FunctionInImpl {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        if !s.is_empty() {
+            return Err(format!("invalid options for function_in_impl, this filter accepts not options, but got {s}"));
+        }
+
+        Ok(Box::new(move |node: &Node<'_>| {
+            node.parent()
+                .is_some_and(|parent| parent.grammar_name() == "impl_item")
+        }))
+    }
+}
+
+impl HasFilterInformation for FunctionInImpl {
+    fn filter_name(&self) -> String {
+        "function_in_impl".to_string()
+    }
+
+    fn description(&self) -> String {
+        "find if any functions are in an impl block".to_string()
+    }
+
+    fn supported_languages(&self) -> SupportedLanguages {
+        SupportedLanguages::Single("rust".to_string())
+    }
+
+    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+        HashMap::new()
+    }
+}

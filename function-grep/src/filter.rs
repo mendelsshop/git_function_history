@@ -1,4 +1,4 @@
-use general_filters::FunctionInLines;
+use general_filters::{FunctionInImpl, FunctionInLines};
 use std::{collections::HashMap, fmt, hash::Hash};
 
 mod filter_parsers;
@@ -188,9 +188,9 @@ macro_rules! default_filters {
 #[must_use]
 // TODO: do we really need more than filter name to find the correct filter
 pub fn builtin_filters_by_info() -> HashMap<FilterInformation, &'static dyn Filter> {
-    default_filters_by_info!(FunctionInLines)
+    default_filters_by_info!(FunctionInLines, FunctionInImpl)
 }
 #[must_use]
 pub fn builtin_filters() -> HashMap<String, &'static dyn Filter> {
-    default_filters!(FunctionInLines)
+    default_filters!(FunctionInLines, FunctionInImpl)
 }

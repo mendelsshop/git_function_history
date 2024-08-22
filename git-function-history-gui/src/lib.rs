@@ -11,6 +11,7 @@ use function_history_backend_thread::types::{
     Command, CommandResult, FilterType, FullCommand, ListType, SearchType, Status,
 };
 use git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
+use itertools::Itertools;
 use types::HistoryFilterType;
 
 // TODO: stop cloning everyting and use references instead
@@ -399,6 +400,9 @@ impl eframe::App for MyEguiApp {
                                                     );
                                                     function_grep::filter::builtin_filters()
                                                         .into_iter()
+                                                        .sorted_by_cached_key(|(key, _)| {
+                                                            key.clone()
+                                                        })
                                                         .for_each(|filter| {
                                                             ui.selectable_value(
                                                                 &mut self.history_filter_type,
