@@ -43,6 +43,7 @@ use function_grep::{
 };
 use git_function_history_proc_macro::enumstuff;
 
+use log::{info, warn};
 #[cfg(feature = "parallel")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
@@ -337,7 +338,7 @@ fn traverse_tree(
     langs: &[&InstatiatedLanguage<'_>],
     filetype: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
-    let mut files_exts = file_exts.iter();
+    let mut files_exts_iter = file_exts.iter();
     let treee_iter = tree.iter();
     let mut files: Vec<_> = Vec::new();
     let mut ret = Vec::new();
@@ -364,32 +365,45 @@ fn traverse_tree(
                 match &filetype {
                     FileFilterType::Relative(ref path) => {
                         if !file.ends_with(path) {
+                            info!("{file} was skipped because it was not in path {path}");
                             continue;
                         }
                     }
                     FileFilterType::Absolute(ref path) => {
                         if &file != path {
+                            info!("{file} was skipped because it was not the same as path {path}");
                             continue;
                         }
                     }
                     FileFilterType::Directory(ref path) => {
                         if !file.contains(path) {
+                            info!("{file} was skipped because it was not in dir {path}");
                             continue;
                         }
                     }
                     FileFilterType::None => {}
                 }
 
-                if !files_exts.any(|ext| ends_with_cmp_no_case(&file, ext)) {
+                // we have to clone because any abosrbs elements
+                // TODO: better solution then clone each time
+                if !files_exts_iter
+                    .clone()
+                    .any(|ext| ends_with_cmp_no_case(&file, ext))
+                {
+                    info!(
+                        "{file} was skipped because it was not supported supported {file_exts:?}"
+                    );
                     continue;
                 }
 
                 let obh = repo
                     .find_object(i.oid())
-                    .map_err(|_| "failed to find object")?;
+                    .map_err(|e| format!("failed to find object for file {file}: {e}"))
+                    .inspect_err(|e| warn!("{e}"))?;
                 let blob = obh
                     .try_into_blob()
-                    .map_err(|e| format!("could not obtain file contents of {file}: {e}"))?;
+                    .map_err(|e| format!("could not obtain file contents of {file}: {e}"))
+                    .inspect_err(|e| warn!("{e}"))?;
                 files.push((file, String::from_utf8_lossy(&blob.data).to_string()));
             }
             _ => {}
