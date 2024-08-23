@@ -24,3 +24,6 @@ void test_function(void)
     printf("Hello World!");
 }
 
+int empty_test()
+{f}
+

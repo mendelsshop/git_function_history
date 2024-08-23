@@ -1,6 +1,10 @@
 use std::ops::Deref;
 use tree_sitter::{Language as TsLanguage, Node, Query, QueryError, Range};
 // TODO: better api less boxing and more results
+// TODO: better way to do variable assigned to function or just abondon it? (the problem is with
+// languages that allow mutliple assignments how do you match up only the identifiers that
+// corespond to functions)
+// TODO: we could probably use tree sitter tags?
 
 #[allow(missing_debug_implementations)]
 pub struct InstatiatedLanguage<'a> {
@@ -290,6 +294,41 @@ construct_language!(C(tree_sitter_c::language()).[c h]?=
  (#eq? @method-name {name}))"
 );
 
+#[cfg(feature = "ruby")]
+// TODO: also query for anonymous functions assigned to variables
+construct_language!(Ruby(tree_sitter_ruby::language()).[rb] ?= "method-name" =>
+"((method name: (identifier) @method-name) @method-definition)");
+
+#[cfg(feature = "c-sharp")]
+// TODO: also query for anonymous functions assigned to variables
+construct_language!(CSharp(tree_sitter_c_sharp::language()).[cs] ?= "method-name" =>
+"((local_function_statement name: (identifier) @method-name) @method)
+((method_declaration name: (identifier) @method-name) @method)"
+
+);
+#[cfg(feature = "go")]
+// TODO: also query for anonymous functions assigned to variables
+//  var f,y  integer  = func(x int) int {
+// 	return x * x
+// }, y
+// x, y := 5
+// fmt.Println(foo(10))
+// const f f =  5;
+// func main() {
+// 	empty_test(1, 2, "3")
+// 	fmt.Println("Hello World!")
+// }
+//
+// // doc comment
+//
+// func empty_test(c, a int, b string) {
+// 	fmt.Println("Hello World!")
+// }
+// ((var_declaration (var_spec name: (identifier) @method-name )))
+// ((const_declaration))
+// ((short_var_declaration))
+construct_language!(Go(tree_sitter_go::language()).[go] ?= "method-name" =>
+"((function_declaration name: (identifier) @method-name) @method-definition)");
 #[cfg(feature = "rust")]
 construct_language!(Rust(tree_sitter_rust::language()).[rs] ?= "method-name" =>
 
@@ -379,5 +418,11 @@ pub fn predefined_languages() -> &'static [&'static dyn SupportedLanguage] {
         &Java,
         #[cfg(feature = "ocaml")]
         &OCaml,
+        #[cfg(feature = "c-sharp")]
+        &CSharp,
+        #[cfg(feature = "go")]
+        &Go,
+        #[cfg(feature = "ruby")]
+        &Ruby,
     ]
 }
