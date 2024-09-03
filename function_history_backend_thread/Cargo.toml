@@ -15,7 +15,6 @@ rust-version = "1.76.0"
 [features]
 default = ["parallel"]
 parallel = ["git_function_history/parallel"]
-# c_lang = ["git_function_history/c_lang"]
 
 [dependencies]
 git_function_history = { path = "../git-function-history-lib", version = "0.7.1", default-features = false}

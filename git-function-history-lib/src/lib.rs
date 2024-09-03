@@ -338,7 +338,7 @@ fn traverse_tree(
     langs: &[&InstatiatedLanguage<'_>],
     filetype: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
-    let mut files_exts_iter = file_exts.iter();
+    let files_exts_iter = file_exts.iter();
     let treee_iter = tree.iter();
     let mut files: Vec<_> = Vec::new();
     let mut ret = Vec::new();
@@ -581,7 +581,7 @@ mod tests {
         match &output {
             Ok(functions) => {
                 println!("{functions}");
-                println!("{:?}", functions.get_metadata())
+                println!("{:?}", functions.get_metadata());
             }
             Err(e) => println!("{e}"),
         }

@@ -14,7 +14,6 @@ rust-version = "1.79.0"
 [features]
 default = ["parallel"]
 parallel = ["git_function_history/parallel", "function_history_backend_thread/parallel"]
-# c_lang = ["git_function_history/c_lang", "function_history_backend_thread/c_lang"]
 
 [dependencies]
 eframe = {version = "0.28.1"}

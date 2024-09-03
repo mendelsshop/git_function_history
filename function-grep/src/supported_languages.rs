@@ -235,7 +235,7 @@ macro_rules! construct_language {
             }
 
             fn language(&self) -> TsLanguage {
-                $tslang
+                $tslang.into()
             }
         }
         impl Assoc for $name {
@@ -266,7 +266,7 @@ macro_rules! construct_language {
             }
 
             fn language(&self) -> TsLanguage {
-                $tslang
+                $tslang.into()
             }
         }
         impl Assoc for $name {
@@ -282,7 +282,7 @@ macro_rules! construct_language {
 
 #[cfg(feature = "c")]
 
-construct_language!(C(tree_sitter_c::language()).[c h]?=
+construct_language!(C(tree_sitter_c::LANGUAGE).[c h]?=
    name ->  "((function_definition
  declarator:
  (function_declarator declarator: (identifier) @method-name))
@@ -296,12 +296,12 @@ construct_language!(C(tree_sitter_c::language()).[c h]?=
 
 #[cfg(feature = "ruby")]
 // TODO: also query for anonymous functions assigned to variables
-construct_language!(Ruby(tree_sitter_ruby::language()).[rb] ?= "method-name" =>
+construct_language!(Ruby(tree_sitter_ruby::LANGUAGE).[rb] ?= "method-name" =>
 "((method name: (identifier) @method-name) @method-definition)");
 
 #[cfg(feature = "c-sharp")]
 // TODO: also query for anonymous functions assigned to variables
-construct_language!(CSharp(tree_sitter_c_sharp::language()).[cs] ?= "method-name" =>
+construct_language!(CSharp(tree_sitter_c_sharp::LANGUAGE).[cs] ?= "method-name" =>
 "((local_function_statement name: (identifier) @method-name) @method)
 ((method_declaration name: (identifier) @method-name) @method)"
 
@@ -327,10 +327,10 @@ construct_language!(CSharp(tree_sitter_c_sharp::language()).[cs] ?= "method-name
 // ((var_declaration (var_spec name: (identifier) @method-name )))
 // ((const_declaration))
 // ((short_var_declaration))
-construct_language!(Go(tree_sitter_go::language()).[go] ?= "method-name" =>
+construct_language!(Go(tree_sitter_go::LANGUAGE).[go] ?= "method-name" =>
 "((function_declaration name: (identifier) @method-name) @method-definition)");
 #[cfg(feature = "rust")]
-construct_language!(Rust(tree_sitter_rust::language()).[rs] ?= "method-name" =>
+construct_language!(Rust(tree_sitter_rust::LANGUAGE).[rs] ?= "method-name" =>
 
             "((function_item
   name: (identifier) @method-name)
@@ -351,7 +351,7 @@ construct_language!(Rust(tree_sitter_rust::language()).[rs] ?= "method-name" =>
 );
 
 #[cfg(feature = "python")]
-construct_language!(Python(tree_sitter_python::language()).[py]?= "method-name" =>
+construct_language!(Python(tree_sitter_python::LANGUAGE).[py]?= "method-name" =>
 
             "((function_definition
  name: (identifier) @method-name)
@@ -365,7 +365,7 @@ construct_language!(Python(tree_sitter_python::language()).[py]?= "method-name" 
 );
 
 #[cfg(feature = "java")]
-construct_language!(Java(tree_sitter_java::language()).[java]?="method-name" =>
+construct_language!(Java(tree_sitter_java::LANGUAGE).[java]?="method-name" =>
 "((method_declaration
  name: (identifier) @method-name)
  @method-definition
