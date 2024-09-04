@@ -86,7 +86,7 @@ pub fn get_file_type_from_file_ext<'a>(
 /// If there is no file extension for this file name, or there is no language for this file in the provided language list.
 pub fn get_file_type_from_file<'a>(
     file_name: &str,
-    langs: &'a [ InstantiatedLanguage<'a>],
+    langs: &'a [InstantiatedLanguage<'a>],
 ) -> Result<&'a InstantiatedLanguage<'a>, Error> {
     file_name
         .rsplit_once('.')
