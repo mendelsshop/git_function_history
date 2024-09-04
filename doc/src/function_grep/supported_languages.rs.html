@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/supported_languages.rs`."><title>supported_languages.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (94885bc69 2024-09-01)" data-channel="nightly" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/supported_languages.rs`."><title>supported_languages.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fecee23daa4e8a6d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (d6c8169c1 2024-09-03)" data-channel="nightly" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -426,6 +426,13 @@
 <a href="#426" id="426">426</a>
 <a href="#427" id="427">427</a>
 <a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Deref;
 <span class="kw">use </span>tree_sitter::{Language <span class="kw">as </span>TsLanguage, Node, Query, QueryError, Range};
 <span class="comment">// TODO: better api less boxing and more results
@@ -435,7 +442,7 @@
 // TODO: we could probably use tree sitter tags?
 
 </span><span class="attr">#[allow(missing_debug_implementations)]
-</span><span class="kw">pub struct </span>InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt; {
+</span><span class="kw">pub struct </span>InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt; {
     search_name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
     language: LanguageInformation,
     run_query: QueryFunction,
@@ -507,7 +514,7 @@
 </span><span class="kw">pub struct </span>TreeSitter;
 <span class="comment">// TODO: hide in docs?
 </span><span class="kw">trait </span>InstantiateHelper&lt;Type&gt; {
-    <span class="kw">fn </span>instiate(<span class="kw-2">&amp;</span><span class="self">self</span>, search: Box&lt;str&gt;) -&gt; QueryFunction;
+    <span class="kw">fn </span>instantiate(<span class="kw-2">&amp;</span><span class="self">self</span>, search: Box&lt;str&gt;) -&gt; QueryFunction;
 }
 
 <span class="comment">// TODO: hide in docs?
@@ -515,7 +522,7 @@
     <span class="kw">type </span>Type;
 }
 <span class="kw">impl</span>&lt;T: IdentifierQuery&gt; InstantiateHelper&lt;Identifier&gt; <span class="kw">for </span>T {
-    <span class="kw">fn </span>instiate(
+    <span class="kw">fn </span>instantiate(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         search: Box&lt;str&gt;,
     ) -&gt; Box&lt;<span class="kw">dyn for</span>&lt;<span class="lifetime">'x</span>, <span class="lifetime">'y</span>&gt; Fn(Node&lt;<span class="lifetime">'x</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'y </span>[u8]) -&gt; Box&lt;[Range]&gt; + Send + Sync&gt; {
@@ -540,7 +547,7 @@
     }
 }
 <span class="kw">impl</span>&lt;T: TreeSitterQuery&gt; InstantiateHelper&lt;TreeSitter&gt; <span class="kw">for </span>T {
-    <span class="kw">fn </span>instiate(
+    <span class="kw">fn </span>instantiate(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         search: Box&lt;str&gt;,
     ) -&gt; Box&lt;<span class="kw">dyn for</span>&lt;<span class="lifetime">'x</span>, <span class="lifetime">'y</span>&gt; Fn(Node&lt;<span class="lifetime">'x</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'y </span>[u8]) -&gt; Box&lt;[Range]&gt; + Send + Sync&gt; {
@@ -559,35 +566,42 @@
 }
 
 <span class="kw">impl</span>&lt;T: Assoc + InstantiateHelper&lt;T::Type&gt; + HasLanguageInformation&gt; SupportedLanguage <span class="kw">for </span>T {
-    <span class="kw">fn </span>instiate(
+    <span class="kw">fn </span>instantiate(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         search: Box&lt;str&gt;,
     ) -&gt; Box&lt;<span class="kw">dyn for</span>&lt;<span class="lifetime">'x</span>, <span class="lifetime">'y</span>&gt; Fn(Node&lt;<span class="lifetime">'x</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'y </span>[u8]) -&gt; Box&lt;[Range]&gt; + Send + Sync&gt; {
-        <span class="self">self</span>.instiate(search)
+        <span class="self">self</span>.instantiate(search)
     }
 }
 <span class="kw">type </span>QueryFunction = Box&lt;<span class="kw">dyn for</span>&lt;<span class="lifetime">'x</span>, <span class="lifetime">'y</span>&gt; Fn(Node&lt;<span class="lifetime">'x</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'y </span>[u8]) -&gt; Box&lt;[Range]&gt; + Send + Sync&gt;;
 
 <span class="kw">pub trait </span>SupportedLanguage: HasLanguageInformation {
-    <span class="kw">fn </span>instiate(<span class="kw-2">&amp;</span><span class="self">self</span>, search: Box&lt;str&gt;) -&gt; QueryFunction;
+    <span class="kw">fn </span>instantiate(<span class="kw-2">&amp;</span><span class="self">self</span>, search: Box&lt;str&gt;) -&gt; QueryFunction;
+    <span class="kw">fn </span>to_language&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, search: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str) -&gt; InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt; {
+        InstantiatedLanguage::new(
+            search,
+            <span class="self">self</span>.language_info(),
+            <span class="self">self</span>.instantiate(search.into()),
+        )
+    }
 }
 
-<span class="kw">pub trait </span>InstatiateMap&lt;<span class="lifetime">'a</span>&gt; {
-    <span class="kw">fn </span>instatiate_map(<span class="self">self</span>, name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;&gt;, QueryError&gt;;
+<span class="kw">pub trait </span>InstantiateMap&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">fn </span>instantiate_map(<span class="self">self</span>, name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;&gt;, QueryError&gt;;
 }
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, U&gt; InstatiateMap&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>T
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, U&gt; InstantiateMap&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>T
 <span class="kw">where
     </span>T: IntoIterator&lt;Item = U&gt;,
     U: Deref&lt;Target = <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw">dyn </span>SupportedLanguage&gt;,
 {
-    <span class="kw">fn </span>instatiate_map(<span class="self">self</span>, name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;&gt;, QueryError&gt; {
+    <span class="kw">fn </span>instantiate_map(<span class="self">self</span>, name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;&gt;, QueryError&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">self
             </span>.into_iter()
-            .map(|l| InstatiatedLanguage::new(name, l.language_info(), l.instiate(name.into())))
+            .map(|l| InstantiatedLanguage::new(name, l.language_info(), l.instantiate(name.into())))
             .collect())
     }
 }
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt; {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
         search_name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         language: LanguageInformation,
@@ -636,7 +650,7 @@
 /// use function_grep::construct_language;
 /// use function_grep::supported_languages::SupportedLanguage;
 /// use tree_sitter::Language;
-/// construct_language!(C(tree_sitter_c::language()).[c h]?=
+/// construct_language!(C(tree_sitter_c::LANGUAGE).[c h]?=
 ///    name -&gt;  "((function_definition
 ///  declarator:
 ///  (function_declarator declarator: (identifier) @method-name))
@@ -652,7 +666,7 @@
     (<span class="macro-nonterminal">$name</span>:ident(<span class="macro-nonterminal">$tslang</span>:expr).[$(<span class="macro-nonterminal">$ext</span>:ident)+]<span class="question-mark">?</span>=<span class="macro-nonterminal">$query_name</span>:literal=&gt;<span class="macro-nonterminal">$query</span>:literal ) =&gt; {
         <span class="attr">#[derive(Debug, Clone, Copy)]
         </span><span class="kw">pub struct </span><span class="macro-nonterminal">$name</span>;
-        <span class="kw">impl </span>HasLanguageInformation <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::HasLanguageInformation </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
 
             <span class="kw">fn </span>language_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
                 <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>)
@@ -662,14 +676,14 @@
                 <span class="kw-2">&amp;</span>[$(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$ext</span>)),+]
             }
 
-            <span class="kw">fn </span>language(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TsLanguage {
+            <span class="kw">fn </span>language(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; tree_sitter::Language {
                 <span class="macro-nonterminal">$tslang</span>.into()
             }
         }
-        <span class="kw">impl </span>Assoc <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
-            <span class="kw">type </span>Type = Identifier;
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::Assoc </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+            <span class="kw">type </span>Type = <span class="macro-nonterminal">$crate::supported_languages::Identifier</span>;
         }
-        <span class="kw">impl </span>IdentifierQuery <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::IdentifierQuery </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
             <span class="kw">fn </span>query_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>ToString {
                 <span class="macro-nonterminal">$query_name
             </span>}
@@ -683,7 +697,7 @@
         <span class="attr">#[derive(Debug, Clone, Copy)]
         </span><span class="kw">pub struct </span><span class="macro-nonterminal">$name</span>;
 
-        <span class="kw">impl </span>HasLanguageInformation <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::HasLanguageInformation </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
 
             <span class="kw">fn </span>language_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
                 <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>)
@@ -693,14 +707,14 @@
                 <span class="kw-2">&amp;</span>[$(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$ext</span>)),+]
             }
 
-            <span class="kw">fn </span>language(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TsLanguage {
+            <span class="kw">fn </span>language(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; tree_sitter::Language {
                 <span class="macro-nonterminal">$tslang</span>.into()
             }
         }
-        <span class="kw">impl </span>Assoc <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
-            <span class="kw">type </span>Type = TreeSitter;
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::Assoc </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+            <span class="kw">type </span>Type = <span class="macro-nonterminal">$crate::supported_languages::TreeSitter</span>;
         }
-        <span class="kw">impl </span>TreeSitterQuery <span class="kw">for </span><span class="macro-nonterminal">$name </span>{
+        <span class="kw">impl </span><span class="macro-nonterminal">$crate::supported_languages::TreeSitterQuery </span><span class="kw">for </span><span class="macro-nonterminal">$name </span>{
             <span class="kw">fn </span>query_string_function(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="macro-nonterminal">$query_name</span>: <span class="kw-2">&amp;</span>str) -&gt; String {
                 <span class="macro">format!</span>(<span class="macro-nonterminal">$query</span>)
             }

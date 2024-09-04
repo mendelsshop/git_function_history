@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (94885bc69 2024-09-01)" data-channel="nightly" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fecee23daa4e8a6d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (d6c8169c1 2024-09-03)" data-channel="nightly" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -311,7 +311,7 @@
 </span><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span>filter::InstantiatedFilter;
-<span class="kw">use </span>supported_languages::InstatiatedLanguage;
+<span class="kw">use </span>supported_languages::InstantiatedLanguage;
 <span class="kw">use </span>tree_sitter::{LanguageError, QueryError, Range, Tree};
 <span class="attr">#[allow(missing_debug_implementations)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
@@ -372,13 +372,13 @@
 /// If there is no language for this file extension in the provided language list.
 </span><span class="kw">pub fn </span>get_file_type_from_file_ext&lt;<span class="lifetime">'a</span>&gt;(
     ext: <span class="kw-2">&amp;</span>str,
-    langs: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;],
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;, Error&gt; {
+    langs: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;],
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;, Error&gt; {
     langs
         .iter()
         .find(|lang| lang.file_exts().contains(<span class="kw-2">&amp;</span>ext))
-        .copied()
-        .ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
+        <span class="comment">//.copied()
+        </span>.ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
 }
 
 <span class="doccomment">/// Tries to find the appropiate language for the given file [`file_name`] based on the list of
@@ -390,8 +390,8 @@
 /// If there is no file extension for this file name, or there is no language for this file in the provided language list.
 </span><span class="kw">pub fn </span>get_file_type_from_file&lt;<span class="lifetime">'a</span>&gt;(
     file_name: <span class="kw-2">&amp;</span>str,
-    langs: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;],
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstatiatedLanguage&lt;<span class="lifetime">'a</span>&gt;, Error&gt; {
+    langs: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;],
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InstantiatedLanguage&lt;<span class="lifetime">'a</span>&gt;, Error&gt; {
     file_name
         .rsplit_once(<span class="string">'.'</span>)
         .ok_or_else(|| Error::FileTypeUnkown(file_name.to_string()))
@@ -410,7 +410,7 @@
     file_name: <span class="prelude-ty">Option</span>&lt;Box&lt;str&gt;&gt;,
     function_name: Box&lt;str&gt;,
     <span class="comment">// TODO: maybe each supported language could define filters
-    // if so we would store InstatiatedLanguage here
+    // if so we would store InstantiatedLanguage here
     </span>language_type: Box&lt;str&gt;,
     tree: Tree,
     results: Box&lt;[Range]&gt;,
@@ -501,7 +501,7 @@
     /// If something with tree sitter goes wrong.
     /// If the code cannot be parsed properly.
     /// If no results are found for this function name.
-    </span><span class="kw">pub fn </span>search_file(code: <span class="kw-2">&amp;</span>str, language: <span class="kw-2">&amp;</span>InstatiatedLanguage&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+    </span><span class="kw">pub fn </span>search_file(code: <span class="kw-2">&amp;</span>str, language: <span class="kw-2">&amp;</span>InstantiatedLanguage&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="kw">let </span>code_bytes = code.as_bytes();
         <span class="kw">let </span><span class="kw-2">mut </span>parser = tree_sitter::Parser::new();
         <span class="kw">let </span>ts_lang = language.language();
@@ -538,7 +538,7 @@
     </span><span class="kw">pub fn </span>search_file_with_name(
         code: <span class="kw-2">&amp;</span>str,
         file_name: <span class="kw-2">&amp;</span>str,
-        langs: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>InstatiatedLanguage&lt;<span class="lifetime">'_</span>&gt;],
+        langs: <span class="kw-2">&amp;</span>[InstantiatedLanguage&lt;<span class="lifetime">'_</span>&gt;],
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         get_file_type_from_file(file_name, langs)
             .and_then(|language| <span class="self">Self</span>::search_file(code, language))
