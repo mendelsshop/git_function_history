@@ -7,7 +7,7 @@ use tree_sitter::{Language as TsLanguage, Node, Query, QueryError, Range};
 // TODO: we could probably use tree sitter tags?
 
 #[allow(missing_debug_implementations)]
-pub struct InstatiatedLanguage<'a> {
+pub struct InstantiatedLanguage<'a> {
     search_name: &'a str,
     language: LanguageInformation,
     run_query: QueryFunction,
@@ -79,7 +79,7 @@ pub struct Identifier;
 pub struct TreeSitter;
 // TODO: hide in docs?
 trait InstantiateHelper<Type> {
-    fn instiate(&self, search: Box<str>) -> QueryFunction;
+    fn instantiate(&self, search: Box<str>) -> QueryFunction;
 }
 
 // TODO: hide in docs?
@@ -87,7 +87,7 @@ pub trait Assoc {
     type Type;
 }
 impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
-    fn instiate(
+    fn instantiate(
         &self,
         search: Box<str>,
     ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
@@ -112,7 +112,7 @@ impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
     }
 }
 impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
-    fn instiate(
+    fn instantiate(
         &self,
         search: Box<str>,
     ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
@@ -131,35 +131,42 @@ impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
 }
 
 impl<T: Assoc + InstantiateHelper<T::Type> + HasLanguageInformation> SupportedLanguage for T {
-    fn instiate(
+    fn instantiate(
         &self,
         search: Box<str>,
     ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
-        self.instiate(search)
+        self.instantiate(search)
     }
 }
 type QueryFunction = Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>;
 
 pub trait SupportedLanguage: HasLanguageInformation {
-    fn instiate(&self, search: Box<str>) -> QueryFunction;
+    fn instantiate(&self, search: Box<str>) -> QueryFunction;
+    fn to_language<'a>(&self, search: &'a str) -> InstantiatedLanguage<'a> {
+        InstantiatedLanguage::new(
+            search,
+            self.language_info(),
+            self.instantiate(search.into()),
+        )
+    }
 }
 
-pub trait InstatiateMap<'a> {
-    fn instatiate_map(self, name: &'a str) -> Result<Vec<InstatiatedLanguage<'a>>, QueryError>;
+pub trait InstantiateMap<'a> {
+    fn instantiate_map(self, name: &'a str) -> Result<Vec<InstantiatedLanguage<'a>>, QueryError>;
 }
-impl<'a, T, U> InstatiateMap<'a> for T
+impl<'a, T, U> InstantiateMap<'a> for T
 where
     T: IntoIterator<Item = U>,
     U: Deref<Target = &'a dyn SupportedLanguage>,
 {
-    fn instatiate_map(self, name: &'a str) -> Result<Vec<InstatiatedLanguage<'a>>, QueryError> {
+    fn instantiate_map(self, name: &'a str) -> Result<Vec<InstantiatedLanguage<'a>>, QueryError> {
         Ok(self
             .into_iter()
-            .map(|l| InstatiatedLanguage::new(name, l.language_info(), l.instiate(name.into())))
+            .map(|l| InstantiatedLanguage::new(name, l.language_info(), l.instantiate(name.into())))
             .collect())
     }
 }
-impl<'a> InstatiatedLanguage<'a> {
+impl<'a> InstantiatedLanguage<'a> {
     pub(crate) fn new(
         search_name: &'a str,
         language: LanguageInformation,
@@ -208,7 +215,7 @@ impl<'a> InstatiatedLanguage<'a> {
 /// use function_grep::construct_language;
 /// use function_grep::supported_languages::SupportedLanguage;
 /// use tree_sitter::Language;
-/// construct_language!(C(tree_sitter_c::language()).[c h]?=
+/// construct_language!(C(tree_sitter_c::LANGUAGE).[c h]?=
 ///    name ->  "((function_definition
 ///  declarator:
 ///  (function_declarator declarator: (identifier) @method-name))
@@ -224,7 +231,7 @@ macro_rules! construct_language {
     ($name:ident($tslang:expr).[$($ext:ident)+]?=$query_name:literal=>$query:literal ) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name;
-        impl HasLanguageInformation for $name {
+        impl $crate::supported_languages::HasLanguageInformation for $name {
 
             fn language_name(&self) -> &'static str {
                 stringify!($name)
@@ -234,14 +241,14 @@ macro_rules! construct_language {
                 &[$(stringify!($ext)),+]
             }
 
-            fn language(&self) -> TsLanguage {
+            fn language(&self) -> tree_sitter::Language {
                 $tslang.into()
             }
         }
-        impl Assoc for $name {
-            type Type = Identifier;
+        impl $crate::supported_languages::Assoc for $name {
+            type Type = $crate::supported_languages::Identifier;
         }
-        impl IdentifierQuery for $name {
+        impl $crate::supported_languages::IdentifierQuery for $name {
             fn query_name(&self) -> impl ToString {
                 $query_name
             }
@@ -255,7 +262,7 @@ macro_rules! construct_language {
         #[derive(Debug, Clone, Copy)]
         pub struct $name;
 
-        impl HasLanguageInformation for $name {
+        impl $crate::supported_languages::HasLanguageInformation for $name {
 
             fn language_name(&self) -> &'static str {
                 stringify!($name)
@@ -265,14 +272,14 @@ macro_rules! construct_language {
                 &[$(stringify!($ext)),+]
             }
 
-            fn language(&self) -> TsLanguage {
+            fn language(&self) -> tree_sitter::Language {
                 $tslang.into()
             }
         }
-        impl Assoc for $name {
-            type Type = TreeSitter;
+        impl $crate::supported_languages::Assoc for $name {
+            type Type = $crate::supported_languages::TreeSitter;
         }
-        impl TreeSitterQuery for $name {
+        impl $crate::supported_languages::TreeSitterQuery for $name {
             fn query_string_function(&self, $query_name: &str) -> String {
                 format!($query)
             }

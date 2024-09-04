@@ -3,7 +3,7 @@
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
-use function_grep::supported_languages::InstatiateMap;
+use function_grep::supported_languages::InstantiateMap;
 use function_grep::{supported_languages::predefined_languages, ParsedFile};
 
 use clap::Parser;
@@ -37,14 +37,13 @@ pub fn main() -> Result<(), Error> {
     // read the file in
     let mut code = String::new();
     let languages = predefined_languages()
-        .instatiate_map(&args.name)
+        .instantiate_map(&args.name)
         .map_err(Error::QueryError)?;
-    let languages = &*languages.as_slice().iter().collect::<Box<[_]>>();
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
     let file_name = &args.file.to_string_lossy();
     // search the file for function with the given name
-    let found = ParsedFile::search_file_with_name(&code, file_name, languages)
+    let found = ParsedFile::search_file_with_name(&code, file_name, &languages)
         .map_err(Error::LibraryError)?;
     // and print the results
     println!("{found}");

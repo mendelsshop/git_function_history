@@ -38,7 +38,7 @@ macro_rules! get_item_from_oid_option {
 }
 use chrono::{DateTime, Utc};
 use function_grep::{
-    supported_languages::{InstatiateMap, InstatiatedLanguage, SupportedLanguage},
+    supported_languages::{InstantiateMap, InstantiatedLanguage, SupportedLanguage},
     ParsedFile,
 };
 use git_function_history_proc_macro::enumstuff;
@@ -229,8 +229,8 @@ pub fn get_function_history(
         let metadata = (message, commit, author, email, time);
         Some((tree, metadata))
     });
-    let langs = langs.instatiate_map(name).unwrap();
-    let langs = &*langs.as_slice().iter().collect::<Box<[_]>>();
+    let langs = langs.instantiate_map(name).unwrap();
+    let langs = langs.as_slice();
     if let Filter::Date(date) = filter {
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
         let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
@@ -320,7 +320,7 @@ fn sender(
     id: ObjectId,
     repo: gix::Repository,
     file_exts: &[&str],
-    langs: &[&InstatiatedLanguage<'_>],
+    langs: &[InstantiatedLanguage<'_>],
     file: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
@@ -335,7 +335,7 @@ fn traverse_tree(
     repo: &gix::Repository,
     path: String,
     file_exts: &[&str],
-    langs: &[&InstatiatedLanguage<'_>],
+    langs: &[InstantiatedLanguage<'_>],
     filetype: &FileFilterType,
 ) -> Result<Vec<ParsedFile>, String> {
     let files_exts_iter = file_exts.iter();
@@ -534,7 +534,7 @@ pub struct CommitInfo {
 // function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 fn find_function_in_files_with_commit(
     files: Vec<(String, String)>,
-    langs: &[&InstatiatedLanguage<'_>],
+    langs: &[InstantiatedLanguage<'_>],
 ) -> Vec<ParsedFile> {
     // commenting out this parallelization seems to net a gain in performance with tree sitter
     //#[cfg(feature = "parallel")]

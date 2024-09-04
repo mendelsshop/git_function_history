@@ -17,11 +17,11 @@ To see help run `function-grep --help`.
 # Examples
 ## When you know the language 
 ```rust
-use function_grep::{supported_languages::Rust, ParsedFile};
+use function_grep::{supported_languages::{Rust, SupportedLanguage}, ParsedFile};
 use tree_sitter::Point;
 use tree_sitter::Range;
 
-let results = ParsedFile::search_file("foo", "fn foo() {}\n fn bar()\n", &Rust).unwrap();
+let results = ParsedFile::search_file( "fn foo() {}\n fn bar()\n", &Rust.to_language("foo")).unwrap();
 println!("{:?}", results.results());
 assert_eq!(results.results(), &[Range { start_byte: 0, end_byte: 11, start_point: Point { row: 0, column: 0 }, end_point: Point { row: 0, column: 11 } }]);
 assert_eq!(results.to_string(), "1: fn foo() {}".to_string())
@@ -30,14 +30,26 @@ assert_eq!(results.to_string(), "1: fn foo() {}".to_string())
 ## When you don't know the language 
 
 ```rust
-use function_grep::{supported_languages, ParsedFile};
+use function_grep::{supported_languages::*, ParsedFile};
 use tree_sitter::Point;
 use tree_sitter::Range;
-
-let results = ParsedFile::search_file_with_name("foo", "fn foo() {}\n fn bar()\n", "test.rs",  supported_languages::predefined_languages()).unwrap();
+let results = ParsedFile::search_file_with_name(
+    "fn foo() {}\n fn bar()\n",
+    "test.rs",
+    &predefined_languages().instantiate_map("foo").unwrap(),
+)
+.unwrap();
 println!("{:?}", results.results());
-assert_eq!(results.results(), &[Range { start_byte: 0, end_byte: 11, start_point: Point { row: 0, column: 0 }, end_point: Point { row: 0, column: 11 } }]);
-assert_eq!(results.to_string(), "1: fn foo() {}".to_string())
+
+assert_eq!(
+    results.results(),
+    &[Range {
+        start_byte: 0,
+        end_byte: 11,
+        start_point: Point { row: 0, column: 0 },
+        end_point: Point { row: 0, column: 11 }
+    }]
+);
 ```
 
 ## More Examples
@@ -54,7 +66,7 @@ use tree_sitter::Language;
 
 
 #[cfg(feature = "rust")]
-construct_language!(Rust(tree_sitter_rust::language()).[rs]?=name->
+construct_language!(Rust(tree_sitter_rust::LANGUAGE).[rs]?=name->
 
             "((function_item
   name: (identifier) @method-name)
@@ -73,7 +85,7 @@ construct_language!(Rust(tree_sitter_rust::language()).[rs]?=name->
   value: (closure_expression)) @method-definition
 (#eq? @method-name {name}))"
 );
-let results = ParsedFile::search_file("foo", "fn foo() {}\n fn bar()\n", &Rust).unwrap();
+let results = ParsedFile::search_file( "fn foo() {}\n fn bar()\n", &Rust.to_language("foo")).unwrap();
 println!("{:?}", results.results());
 assert_eq!(results.results(), &[Range { start_byte: 0, end_byte: 11, start_point: Point { row: 0, column: 0 }, end_point: Point { row: 0, column: 11 } }]);
 assert_eq!(results.to_string(), "1: fn foo() {}".to_string())

@@ -7,7 +7,7 @@
 use core::fmt;
 
 use filter::InstantiatedFilter;
-use supported_languages::InstatiatedLanguage;
+use supported_languages::InstantiatedLanguage;
 use tree_sitter::{LanguageError, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
@@ -68,12 +68,12 @@ pub enum Error {
 /// If there is no language for this file extension in the provided language list.
 pub fn get_file_type_from_file_ext<'a>(
     ext: &str,
-    langs: &'a [&'a InstatiatedLanguage<'a>],
-) -> Result<&'a InstatiatedLanguage<'a>, Error> {
+    langs: &'a [InstantiatedLanguage<'a>],
+) -> Result<&'a InstantiatedLanguage<'a>, Error> {
     langs
         .iter()
         .find(|lang| lang.file_exts().contains(&ext))
-        .copied()
+        //.copied()
         .ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
 }
 
@@ -86,8 +86,8 @@ pub fn get_file_type_from_file_ext<'a>(
 /// If there is no file extension for this file name, or there is no language for this file in the provided language list.
 pub fn get_file_type_from_file<'a>(
     file_name: &str,
-    langs: &'a [&'a InstatiatedLanguage<'a>],
-) -> Result<&'a InstatiatedLanguage<'a>, Error> {
+    langs: &'a [ InstantiatedLanguage<'a>],
+) -> Result<&'a InstantiatedLanguage<'a>, Error> {
     file_name
         .rsplit_once('.')
         .ok_or_else(|| Error::FileTypeUnkown(file_name.to_string()))
@@ -106,7 +106,7 @@ pub struct ParsedFile {
     file_name: Option<Box<str>>,
     function_name: Box<str>,
     // TODO: maybe each supported language could define filters
-    // if so we would store InstatiatedLanguage here
+    // if so we would store InstantiatedLanguage here
     language_type: Box<str>,
     tree: Tree,
     results: Box<[Range]>,
@@ -197,7 +197,7 @@ impl ParsedFile {
     /// If something with tree sitter goes wrong.
     /// If the code cannot be parsed properly.
     /// If no results are found for this function name.
-    pub fn search_file(code: &str, language: &InstatiatedLanguage<'_>) -> Result<Self, Error> {
+    pub fn search_file(code: &str, language: &InstantiatedLanguage<'_>) -> Result<Self, Error> {
         let code_bytes = code.as_bytes();
         let mut parser = tree_sitter::Parser::new();
         let ts_lang = language.language();
@@ -234,7 +234,7 @@ impl ParsedFile {
     pub fn search_file_with_name(
         code: &str,
         file_name: &str,
-        langs: &[&InstatiatedLanguage<'_>],
+        langs: &[InstantiatedLanguage<'_>],
     ) -> Result<Self, Error> {
         get_file_type_from_file(file_name, langs)
             .and_then(|language| Self::search_file(code, language))
