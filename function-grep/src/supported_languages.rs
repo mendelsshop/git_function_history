@@ -1,5 +1,6 @@
-use std::ops::Deref;
+use std::{ops::Deref, str, sync::atomic::AtomicUsize};
 use tree_sitter::{Language as TsLanguage, Node, Query, QueryError, Range};
+use tree_sitter_tags::{Tag, TagsConfiguration, TagsContext};
 // TODO: better api less boxing and more results
 // TODO: better way to do variable assigned to function or just abondon it? (the problem is with
 // languages that allow mutliple assignments how do you match up only the identifiers that
@@ -34,6 +35,12 @@ pub struct LanguageInformation {
     language_name: &'static str,
     file_exts: &'static [&'static str],
     language: TsLanguage,
+}
+#[allow(missing_debug_implementations)]
+// TODO: find cleaner (no double parse) way to use this, "fork" tree sitter tags, or make your own
+// standard
+pub trait TreeSitterTags: Assoc<Type = Tags> + HasLanguageInformation {
+    fn tag_query(&self) -> impl ToString;
 }
 #[allow(missing_debug_implementations)]
 pub trait TreeSitterQuery: Assoc<Type = TreeSitter> + HasLanguageInformation {
@@ -77,6 +84,8 @@ pub struct Identifier;
 // TODO: hide in docs?
 #[allow(missing_debug_implementations)]
 pub struct TreeSitter;
+#[allow(missing_debug_implementations)]
+pub struct Tags;
 // TODO: hide in docs?
 trait InstantiateHelper<Type> {
     fn instantiate(&self, search: Box<str>) -> QueryFunction;
@@ -87,10 +96,7 @@ pub trait Assoc {
     type Type;
 }
 impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
-    fn instantiate(
-        &self,
-        search: Box<str>,
-    ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
+    fn instantiate(&self, search: Box<str>) -> QueryFunction {
         let query = Query::new(&self.language(), &self.query_string().to_string()).unwrap();
         let method_field = query
             .capture_index_for_name(&self.query_name().to_string())
@@ -112,10 +118,7 @@ impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
     }
 }
 impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
-    fn instantiate(
-        &self,
-        search: Box<str>,
-    ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
+    fn instantiate(&self, search: Box<str>) -> QueryFunction {
         let query = Query::new(
             &self.language(),
             &self.query_string_function(search.as_ref()),
@@ -124,17 +127,64 @@ impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
         Box::new(move |node, code| {
             let mut query_cursor = tree_sitter::QueryCursor::new();
             let matches = query_cursor.matches(&query, node, code);
+
             let ranges = matches.map(|m| m.captures[0].node.range());
             ranges.collect()
         })
     }
 }
-
+struct TagsConfigurationThreadSafe(TagsConfiguration);
+unsafe impl Send for TagsConfigurationThreadSafe {}
+unsafe impl Sync for TagsConfigurationThreadSafe {}
+impl TagsConfigurationThreadSafe {
+    pub fn generate_tags<'a>(
+        &'a self,
+        context: &'a mut TagsContext,
+        source: &'a [u8],
+        cancellation_flag: Option<&'a AtomicUsize>,
+    ) -> Result<
+        (
+            impl Iterator<Item = Result<Tag, tree_sitter_tags::Error>> + 'a,
+            bool,
+        ),
+        tree_sitter_tags::Error,
+    > {
+        context.generate_tags(&self.0, source, cancellation_flag)
+    }
+    pub fn syntax_type_name(&self, id: u32) -> &str {
+        self.0.syntax_type_name(id)
+    }
+}
+impl<T: TreeSitterTags> InstantiateHelper<Tags> for T {
+    fn instantiate(&self, search: Box<str>) -> QueryFunction {
+        let tag_config = TagsConfigurationThreadSafe(
+            TagsConfiguration::new(self.language(), &self.tag_query().to_string(), "").unwrap(),
+        );
+        Box::new(move |node, code| {
+            let mut tag_context = TagsContext::new();
+            let name = &*search;
+            // TODO: don't double parse
+            let tags = tag_config
+                .generate_tags(&mut tag_context, code, None)
+                .unwrap()
+                .0;
+            let ranges = tags
+                .filter_map(Result::ok)
+                .filter(|tag| {
+                    ["method", "function"]
+                        .contains(&tag_config.syntax_type_name(tag.syntax_type_id))
+                        && str::from_utf8(&code[tag.name_range.clone()]).unwrap_or("") == name
+                })
+                .filter_map(|tag| {
+                    node.descendant_for_byte_range(tag.range.start, tag.range.end)
+                        .map(|node| node.range())
+                });
+            ranges.collect()
+        })
+    }
+}
 impl<T: Assoc + InstantiateHelper<T::Type> + HasLanguageInformation> SupportedLanguage for T {
-    fn instantiate(
-        &self,
-        search: Box<str>,
-    ) -> Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync> {
+    fn instantiate(&self, search: Box<str>) -> QueryFunction {
         self.instantiate(search)
     }
 }
@@ -254,6 +304,33 @@ macro_rules! construct_language {
             }
             fn query_string(&self) -> impl ToString {
                 $query
+            }
+        }
+
+    };
+($name:ident($tslang:expr).[$($ext:ident)+]?=$tags:expr ) => {
+        #[derive(Debug, Clone, Copy)]
+        pub struct $name;
+        impl $crate::supported_languages::HasLanguageInformation for $name {
+
+            fn language_name(&self) -> &'static str {
+                stringify!($name)
+            }
+
+            fn file_exts(&self) -> &'static [&'static str] {
+                &[$(stringify!($ext)),+]
+            }
+
+            fn language(&self) -> tree_sitter::Language {
+                $tslang.into()
+            }
+        }
+        impl $crate::supported_languages::Assoc for $name {
+            type Type = $crate::supported_languages::Tags;
+        }
+        impl $crate::supported_languages::TreeSitterTags for $name {
+            fn tag_query(&self) -> impl ToString {
+                $tags
             }
         }
 
@@ -410,6 +487,8 @@ construct_language!(OCaml(tree_sitter_ocaml::language_ocaml()).[ml]?="method-nam
  @method-defintion
 )");
 
+#[cfg(feature = "javascript")]
+construct_language!(JavaScript(tree_sitter_javascript::LANGUAGE).[js]?=tree_sitter_javascript::TAGS_QUERY);
 #[must_use]
 /// Use this to obtain some defualt languages (what languages are presend depend of the features
 /// you allow).
@@ -431,5 +510,7 @@ pub fn predefined_languages() -> &'static [&'static dyn SupportedLanguage] {
         &Go,
         #[cfg(feature = "ruby")]
         &Ruby,
+        #[cfg(feature = "javascript")]
+        &JavaScript,
     ]
 }
