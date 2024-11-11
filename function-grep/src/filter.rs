@@ -1,4 +1,4 @@
-use general_filters::{FunctionInImpl, FunctionInLines};
+use general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameter};
 use std::{collections::HashMap, fmt, hash::Hash};
 
 mod filter_parsers;
@@ -174,23 +174,86 @@ impl InstantiatedFilter {
     }
 }
 
-macro_rules! default_filters_by_info {
-    ($($filter:ident),*) => {
-        HashMap::from([$(($filter.filter_info(), &$filter as &'static dyn Filter)),*])
-    };
-}
-
 macro_rules! default_filters {
     ($($filter:ident),*) => {
         HashMap::from([$(($filter.filter_info().filter_name().to_string(), &$filter as &'static dyn Filter)),*])
     };
 }
-#[must_use]
-// TODO: do we really need more than filter name to find the correct filter
-pub fn builtin_filters_by_info() -> HashMap<FilterInformation, &'static dyn Filter> {
-    default_filters_by_info!(FunctionInLines, FunctionInImpl)
+pub enum FilterType<'a> {
+    All(&'a dyn Filter),
+    Many(HashMap<String, &'a dyn Filter>),
 }
-#[must_use]
-pub fn builtin_filters() -> HashMap<String, &'static dyn Filter> {
-    default_filters!(FunctionInLines, FunctionInImpl)
+pub struct Filters<'a> {
+    filters: HashMap<String, FilterType<'a>>,
+}
+
+impl Filters<'static> {
+    pub fn default() -> Self {
+        Self {
+            filters: HashMap::from([
+                (
+                    FunctionInLines.filter_info().filter_name().to_string(),
+                    FilterType::All(&FunctionInLines as &'static dyn Filter),
+                ),
+                (
+                    FunctionInImpl.filter_info().filter_name().to_string(),
+                    FilterType::Many(HashMap::from([(
+                        "Rust".to_string(),
+                        &FunctionInImpl as &'static dyn Filter,
+                    )])),
+                ),
+                (
+                    FunctionWithParameter
+                        .filter_info()
+                        .filter_name()
+                        .to_string(),
+                    FilterType::Many(
+                        match FunctionWithParameter.filter_info().supported_languages() {
+                            SupportedLanguages::All => unreachable!(),
+                            SupportedLanguages::Many(vec) => {
+                                HashMap::from_iter(vec.into_iter().map(|lang| {
+                                    (
+                                        lang.to_string(),
+                                        &FunctionWithParameter as &'static dyn Filter,
+                                    )
+                                }))
+                            }
+                            SupportedLanguages::Single(_) => unreachable!(),
+                        },
+                    ),
+                ),
+            ]),
+        }
+    }
+}
+impl<'a> Filters<'a> {
+    pub fn add_filter(&mut self, filter: &'a dyn Filter) -> Result<(), String> {
+        let result = self
+            .filters
+            .get_mut(&filter.filter_name())
+            .map(|filters| match filters {
+                FilterType::All(_) => Err("cannot add to an all filter".to_string()),
+                FilterType::Many(hash_map) => merge_filters(hash_map, filter),
+            })
+            .or_else(|| {
+                self.filters
+                    .insert(filter.filter_name(), to_filter_type(filter));
+                Some(Ok(()))
+            });
+        match result {
+            Some(res) => res,
+            None => Ok(()),
+        }
+    }
+}
+
+fn merge_filters<'a>(
+    hash_map: &mut HashMap<String, &'a dyn Filter>,
+    filter: &'a dyn Filter,
+) -> Result<(), String> {
+    todo!()
+}
+
+fn to_filter_type<'a>(filter: &'a dyn Filter) -> FilterType<'a> {
+    todo!()
 }

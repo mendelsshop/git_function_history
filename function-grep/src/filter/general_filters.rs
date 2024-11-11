@@ -110,3 +110,29 @@ impl HasFilterInformation for FunctionInImpl {
         HashMap::new()
     }
 }
+
+pub struct FunctionWithParameter;
+
+impl HasFilterInformation for FunctionWithParameter {
+    fn filter_name(&self) -> String {
+        todo!()
+    }
+
+    fn description(&self) -> String {
+        todo!()
+    }
+
+    fn supported_languages(&self) -> SupportedLanguages {
+        todo!()
+    }
+
+    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+        todo!()
+    }
+}
+
+impl Filter for FunctionWithParameter {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        todo!()
+    }
+}
