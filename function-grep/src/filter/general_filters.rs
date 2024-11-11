@@ -6,7 +6,7 @@ use crate::SupportedLanguages;
 
 use super::{
     filter_parsers::{extra, label, number},
-    Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation,
+    All, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation, Language,
 };
 
 pub struct FunctionInLines;
@@ -52,11 +52,12 @@ impl Filter for FunctionInLines {
     }
 }
 impl HasFilterInformation for FunctionInLines {
+    type Supports = All;
     fn filter_name(&self) -> String {
         "function_in_lines".to_string()
     }
-    fn supported_languages(&self) -> SupportedLanguages {
-        SupportedLanguages::All
+    fn supports(&self) -> Self::Supports {
+        All
     }
     fn description(&self) -> String {
         "filter: function_in_lines
@@ -94,6 +95,7 @@ impl Filter for FunctionInImpl {
 }
 
 impl HasFilterInformation for FunctionInImpl {
+    type Supports = Language;
     fn filter_name(&self) -> String {
         "function_in_impl".to_string()
     }
@@ -102,8 +104,8 @@ impl HasFilterInformation for FunctionInImpl {
         "find if any functions are in an impl block".to_string()
     }
 
-    fn supported_languages(&self) -> SupportedLanguages {
-        SupportedLanguages::Single("Rust".to_string())
+    fn supports(&self) -> Self::Supports {
+        Language("Rust".to_string())
     }
 
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {
@@ -111,9 +113,9 @@ impl HasFilterInformation for FunctionInImpl {
     }
 }
 
-pub struct FunctionWithParameter;
+pub struct FunctionWithParameterRust;
 
-impl HasFilterInformation for FunctionWithParameter {
+impl HasFilterInformation for FunctionWithParameterRust {
     fn filter_name(&self) -> String {
         todo!()
     }
@@ -122,16 +124,18 @@ impl HasFilterInformation for FunctionWithParameter {
         todo!()
     }
 
-    fn supported_languages(&self) -> SupportedLanguages {
+    fn supports(&self) -> Self::Supports {
         todo!()
     }
 
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {
         todo!()
     }
+
+    type Supports = Language;
 }
 
-impl Filter for FunctionWithParameter {
+impl Filter for FunctionWithParameterRust {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
         todo!()
     }

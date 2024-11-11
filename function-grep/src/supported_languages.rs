@@ -469,7 +469,7 @@ construct_language!(Java(tree_sitter_java::LANGUAGE).[java]?="method-name" =>
 );
 
 #[cfg(feature = "ocaml")]
-construct_language!(OCaml(tree_sitter_ocaml::language_ocaml()).[ml]?="method-name" =>
+construct_language!(OCaml(tree_sitter_ocaml::LANGUAGE_OCAML).[ml]?="method-name" =>
 "((value_definition
  (let_binding pattern: (value_name) @method-name (parameter)))
  @method-defintion
