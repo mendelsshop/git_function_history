@@ -363,7 +363,7 @@ impl App<'_> {
                 }
                 filter_name => {
                     if let Some(filters) =
-                        function_grep::filter::builtin_filters().get(*filter_name)
+                        function_grep::filter::Filters::default().get_filter(*filter_name)
                     {
                         let rest = command_iter.copied().collect::<Vec<_>>().join(" ");
                         let filt = match filters.to_filter(&rest) {

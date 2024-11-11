@@ -6,7 +6,7 @@
 #![deny(clippy::use_self, rust_2018_idioms)]
 use core::fmt;
 
-use filter::InstantiatedFilter;
+use filter::{InstantiatedFilter, InstantiatedFilterType};
 use supported_languages::InstantiatedLanguage;
 use tree_sitter::{LanguageError, QueryError, Range, Tree};
 #[allow(missing_debug_implementations)]
@@ -140,20 +140,19 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, f: &InstantiatedFilter) -> Result<Self, Error> {
-        match f.supported_languages() {
-            SupportedLanguages::Many(supported_languages)
-                if !supported_languages.contains(&self.language().to_string()) =>
-            {
-                Err(Error::FilterLangaugeMismatch)?;
+    pub fn filter(&self, f: &InstantiatedFilterType) -> Result<Self, Error> {
+        match f {
+            InstantiatedFilterType::Many(supported_language) => {
+                let lang = self.language();
+                let filter = supported_language.filters.get(lang);
+                let filter = filter.ok_or(Error::FilterLangaugeMismatch);
+                filter.and_then(|f| self.filter_inner(f))
             }
-            SupportedLanguages::Single(supported_language)
-                if supported_language != self.language() =>
-            {
-                Err(Error::FilterLangaugeMismatch)?;
-            }
-            _ => {}
+            InstantiatedFilterType::All(f) => self.filter_inner(f),
         }
+    }
+
+    fn filter_inner<T>(&self, f: &InstantiatedFilter<T>) -> Result<Self, Error> {
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()

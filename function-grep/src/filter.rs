@@ -1,5 +1,9 @@
 use general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
-use std::{collections::HashMap, fmt, hash::Hash};
+use std::{
+    collections::{hash_map, HashMap},
+    fmt,
+    hash::Hash,
+};
 
 mod filter_parsers;
 mod general_filters;
@@ -36,15 +40,9 @@ use crate::SupportedLanguages;
 pub trait Filter: HasFilterInformation {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String>;
     // TODO: make way to parse from hashmap of attribute to string
-    fn to_filter(&self, s: &str) -> Result<InstantiatedFilter, String> {
+    fn to_filter(&self, s: &str) -> Result<InstantiatedFilter<Self::Supports>, String> {
         let filter = self.parse_filter(s)?;
         let info = self.filter_info();
-        let info = FilterInformation {
-            supported_languages: info.supported_languages.into(),
-            description: info.description,
-            attributes: info.attributes,
-            filter_name: info.filter_name,
-        };
         Ok(InstantiatedFilter {
             filter_information: info,
             filter_function: filter,
@@ -130,24 +128,29 @@ type FilterFunction = Box<dyn Fn(&Node<'_>) -> bool + Send + Sync>;
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
 // communicate to a gui (or tui) that labels, and types of each input
-pub struct InstantiatedFilter {
-    filter_information: FilterInformation<SupportedLanguages>,
+// TODO: make something that builds on this like FilterType
+pub struct InstantiatedFilter<Supports> {
+    filter_information: FilterInformation<Supports>,
     filter_function: FilterFunction,
 }
 
-impl PartialEq for InstantiatedFilter {
+impl<Supports: PartialEq> PartialEq for InstantiatedFilter<Supports> {
     fn eq(&self, other: &Self) -> bool {
         self.filter_information == other.filter_information
     }
-}
-impl Eq for InstantiatedFilter {}
 
-impl fmt::Display for InstantiatedFilter {
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+impl<Supports: PartialEq> Eq for InstantiatedFilter<Supports> {}
+
+impl<Supports> fmt::Display for InstantiatedFilter<Supports> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.filter_information)
     }
 }
-impl std::fmt::Debug for InstantiatedFilter {
+impl<Supports: std::fmt::Debug> std::fmt::Debug for InstantiatedFilter<Supports> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("InstantiatedFilter")
             .field("filter_information", &self.filter_information)
@@ -155,7 +158,7 @@ impl std::fmt::Debug for InstantiatedFilter {
     }
 }
 
-impl InstantiatedFilter {
+impl<Supports> InstantiatedFilter<Supports> {
     #[must_use]
     pub fn filter(&self, node: &Node<'_>) -> bool {
         (self.filter_function)(node)
@@ -177,7 +180,7 @@ impl InstantiatedFilter {
     }
 
     #[must_use]
-    pub const fn supported_languages(&self) -> &SupportedLanguages {
+    pub const fn supported_languages(&self) -> &Supports {
         self.filter_information.supported_languages()
     }
 }
@@ -196,46 +199,95 @@ impl From<Language> for SupportedLanguages {
     }
 }
 // impl Language for
+// TODO: rework macro to work with the new language per filter system
 macro_rules! default_filters {
     ($($filter:ident),*) => {S
         HashMap::from([$(($filter.filter_info().filter_name().to_string(), &$filter as &'static dyn Filter)),*])
     };
 }
-pub struct Many<'a> {
+pub struct Many<T: Info<Supported = Language>> {
     pub name: String,
-    pub filters: HashMap<String, &'a dyn Filter<Supports = Language>>,
+    pub filters: HashMap<String, T>,
 }
 
-pub enum FilterType<'a> {
-    All(&'a dyn Filter<Supports = All>),
-    Many(Many<'a>),
+trait Info {
+    type Supported;
+    fn filter_name(&self) -> String;
 }
-impl<'a> FilterType<'a> {
-    fn filter_name(&self) -> String {
-        todo!()
+// TODO: parameterize over something that is hkt might not work
+
+pub type FilterType<'a> =
+    SingleOrMany<&'a dyn Filter<Supports = All>, &'a dyn Filter<Supports = Language>>;
+pub type InstantiatedFilterType =
+    SingleOrMany<InstantiatedFilter<All>, InstantiatedFilter<Language>>;
+pub enum SingleOrMany<A: Info<Supported = All>, M: Info<Supported = Language>> {
+    All(A),
+    Many(Many<M>),
+}
+impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M> {
+    #[must_use]
+    pub fn filter_name(&self) -> String {
+        match self {
+            SingleOrMany::All(f) => f.filter_name(),
+            SingleOrMany::Many(many) => many.name.clone(),
+        }
     }
 
-    fn supports(&self) -> SupportedLanguages {
-        todo!()
+    #[must_use]
+    pub fn supports(&self) -> SupportedLanguages {
+        match self {
+            SingleOrMany::All(_) => SupportedLanguages::All,
+            SingleOrMany::Many(many) => {
+                SupportedLanguages::Many(many.filters.keys().cloned().collect())
+            }
+        }
     }
-
-    // add code here
 }
 pub struct Filters<'a> {
     filters: HashMap<String, FilterType<'a>>,
 }
+impl<T> Info for &dyn Filter<Supports = T>
+where
+    SupportedLanguages: From<T>,
+{
+    type Supported = T;
+
+    fn filter_name(&self) -> String {
+        self.filter_info().filter_name().to_string()
+    }
+}
+impl<T> Info for InstantiatedFilter< T>
+where
+    SupportedLanguages: From<T>,
+{
+    type Supported = T;
+
+    fn filter_name(&self) -> String {
+        self.filter_name().to_string()
+    }
+}
+impl<'a> IntoIterator for Filters<'a> {
+    type Item = (String, FilterType<'a>);
+
+    type IntoIter = hash_map::IntoIter<String, FilterType<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.filters.into_iter()
+    }
+}
 
 impl Filters<'static> {
+    #[must_use]
     pub fn default() -> Self {
         Self {
             filters: HashMap::from([
                 (
                     FunctionInLines.filter_info().filter_name().to_string(),
-                    FilterType::All(&FunctionInLines as &'static dyn Filter<Supports = All>),
+                    SingleOrMany::All(&FunctionInLines as &'static dyn Filter<Supports = All>),
                 ),
                 (
                     FunctionInImpl.filter_info().filter_name().to_string(),
-                    FilterType::Many(Many {
+                    SingleOrMany::Many(Many {
                         name: "function_in_impl".to_string(),
                         filters: HashMap::from([(
                             "Rust".to_string(),
@@ -248,7 +300,7 @@ impl Filters<'static> {
                         .filter_info()
                         .filter_name()
                         .to_string(),
-                    FilterType::Many(Many {
+                    SingleOrMany::Many(Many {
                         name: "function_with_parameter".to_string(),
                         filters: HashMap::from([(
                             FunctionWithParameterRust.supports().0,
@@ -264,20 +316,20 @@ impl Filters<'static> {
 impl<'a> Filters<'a> {
     pub fn add_filter(&mut self, filter: impl Into<FilterType<'a>>) -> Result<(), String> {
         let filter = filter.into();
-        let name = filter.filter_name().clone();
-        {
-            let this = self.filters.get_mut(&name);
-            match this {
-                Some(filters) => match filters {
-                    FilterType::All(_) => Err("cannot add to an all filter".to_string()),
-                    FilterType::Many(Many { filters, .. }) => merge_filters(filters, filter),
-                },
-                None => {
-                    self.filters.insert(name, filter);
-                    Ok(())
-                }
+        let name = filter.filter_name();
+        if let Some(filters) = self.filters.get_mut(&name) {
+            match filters {
+                SingleOrMany::All(_) => Err("cannot add to an all filter".to_string()),
+                SingleOrMany::Many(Many { filters, .. }) => merge_filters(filters, filter),
             }
+        } else {
+            self.filters.insert(name, filter);
+            Ok(())
         }
+    }
+    #[must_use]
+    pub fn get_filter(&self, name: &str) -> Option<&FilterType<'a>> {
+        self.filters.get(name)
     }
 }
 

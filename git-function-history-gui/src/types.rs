@@ -1,4 +1,4 @@
-use function_grep::filter::Filter;
+use function_grep::filter::SingleOrMany;
 use std::{collections::HashMap, fmt};
 
 pub enum HistoryFilterType {
@@ -8,7 +8,7 @@ pub enum HistoryFilterType {
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
-    PL(HashMap<String, String>, &'static dyn Filter),
+    PL(HashMap<String, String>, SingleOrMany<'static>),
     None,
 }
 
@@ -21,7 +21,7 @@ impl PartialEq for HistoryFilterType {
             (Self::FileAbsolute(l0), Self::FileAbsolute(r0)) => l0 == r0,
             (Self::FileRelative(l0), Self::FileRelative(r0)) => l0 == r0,
             (Self::Directory(l0), Self::Directory(r0)) => l0 == r0,
-            (Self::PL(_, l1), Self::PL(_, r1)) => l1.filter_info() == r1.filter_info(),
+            (Self::PL(_, l1), Self::PL(_, r1)) => l1.filter_name() == r1.filter_name(),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }
@@ -43,7 +43,7 @@ impl fmt::Debug for HistoryFilterType {
             Self::PL(arg0, arg1) => f
                 .debug_tuple("PL")
                 .field(arg0)
-                .field(&arg1.filter_info())
+                .field(&arg1.filter_name())
                 .finish(),
             Self::None => write!(f, "None"),
         }
@@ -59,7 +59,7 @@ impl fmt::Display for HistoryFilterType {
             HistoryFilterType::FileAbsolute(_) => write!(f, "file absolute"),
             HistoryFilterType::FileRelative(_) => write!(f, "file relative"),
             HistoryFilterType::Directory(_) => write!(f, "directory"),
-            HistoryFilterType::PL(_, pl) => write!(f, "{}", pl.filter_info()),
+            HistoryFilterType::PL(_, pl) => write!(f, "{}", pl.filter_name()),
             HistoryFilterType::None => write!(f, "none"),
         }
     }

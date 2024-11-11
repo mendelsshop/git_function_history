@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use tree_sitter::Node;
 
-use crate::SupportedLanguages;
-
 use super::{
     filter_parsers::{extra, label, number},
     All, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation, Language,
@@ -117,7 +115,7 @@ pub struct FunctionWithParameterRust;
 
 impl HasFilterInformation for FunctionWithParameterRust {
     fn filter_name(&self) -> String {
-        todo!()
+        "function_with_parameter".to_string()
     }
 
     fn description(&self) -> String {
@@ -125,7 +123,7 @@ impl HasFilterInformation for FunctionWithParameterRust {
     }
 
     fn supports(&self) -> Self::Supports {
-        todo!()
+        Language("Rust".to_owned())
     }
 
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {

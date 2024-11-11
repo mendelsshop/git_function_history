@@ -398,7 +398,7 @@ impl eframe::App for MyEguiApp {
                                                         HistoryFilterType::None,
                                                         "none",
                                                     );
-                                                    function_grep::filter::builtin_filters()
+                                                    function_grep::filter::Filters::default()
                                                         .into_iter()
                                                         .sorted_by_cached_key(|(key, _)| {
                                                             key.clone()
