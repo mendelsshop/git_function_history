@@ -240,9 +240,7 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M>
     pub fn supports(&self) -> SupportedLanguages {
         match self {
             Self::All(_) => SupportedLanguages::All,
-            Self::Many(many) => {
-                SupportedLanguages::Many(many.filters.keys().cloned().collect())
-            }
+            Self::Many(many) => SupportedLanguages::Many(many.filters.keys().cloned().collect()),
         }
     }
 }
