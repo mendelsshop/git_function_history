@@ -201,9 +201,11 @@ pub fn get_function_history(
         .collect::<Box<[_]>>();
     let repo = gix::discover(".")?;
     let th_repo = repo.clone().into_sync();
-    let commit_iter = repo
-        .rev_walk(repo.head_id().map(gix::Id::detach))
-        .sorting(gix::traverse::commit::simple::Sorting::ByCommitTimeNewestFirst);
+    let commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach)).sorting(
+        gix::revision::walk::Sorting::ByCommitTime(
+            gix::traverse::commit::simple::CommitTimeOrder::NewestFirst,
+        ),
+    );
     let commit_iter = commit_iter.all()?.filter_map(|id| Some(id.ok()?.detach()));
     #[cfg(feature = "parallel")]
     let commit_iter = {
