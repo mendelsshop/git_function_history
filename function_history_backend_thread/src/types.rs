@@ -1,6 +1,6 @@
 use std::fmt;
 
-use function_grep::filter::InstantiatedFilter;
+use function_grep::filter::InstantiatedFilterType;
 use git_function_history::{FileFilterType, Filter, FunctionHistory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -145,7 +145,7 @@ pub enum HistoryFilterType {
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
-    PL(InstantiatedFilter),
+    PL(InstantiatedFilterType),
     None,
 }
 

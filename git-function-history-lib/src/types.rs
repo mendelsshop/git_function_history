@@ -219,7 +219,7 @@ pub struct FunctionHistory {
 
 impl FunctionHistory {
     // creates a new `FunctionHistory` from a list of commits
-    pub fn new(name: String, commit_history: Vec<Commit>) -> Self {
+    pub const fn new(name: String, commit_history: Vec<Commit>) -> Self {
         Self {
             name,
             commit_history,
@@ -451,9 +451,8 @@ impl Iterator for FunctionHistory {
         self.commit_history
             .get(self.current_iter_pos)
             .cloned()
-            .map(|c| {
+            .inspect(|c| {
                 self.current_iter_pos += 1;
-                c
             })
     }
 }

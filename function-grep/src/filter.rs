@@ -1,7 +1,7 @@
 use general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
 use std::{
     collections::{hash_map, HashMap},
-    fmt,
+    fmt::{self, Display},
     hash::Hash,
 };
 
@@ -185,13 +185,14 @@ impl<Supports> InstantiatedFilter<Supports> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct All;
 impl From<All> for SupportedLanguages {
     fn from(_: All) -> Self {
         Self::All
     }
-    // add code here
 }
+#[derive(Debug, PartialEq, Eq)]
 pub struct Language(String);
 impl From<Language> for SupportedLanguages {
     fn from(value: Language) -> Self {
@@ -205,12 +206,13 @@ macro_rules! default_filters {
         HashMap::from([$(($filter.filter_info().filter_name().to_string(), &$filter as &'static dyn Filter)),*])
     };
 }
+#[derive(Debug, PartialEq, Eq)]
 pub struct Many<T: Info<Supported = Language>> {
     pub name: String,
     pub filters: HashMap<String, T>,
 }
 
-trait Info {
+pub trait Info {
     type Supported;
     fn filter_name(&self) -> String;
 }
@@ -220,6 +222,7 @@ pub type FilterType<'a> =
     SingleOrMany<&'a dyn Filter<Supports = All>, &'a dyn Filter<Supports = Language>>;
 pub type InstantiatedFilterType =
     SingleOrMany<InstantiatedFilter<All>, InstantiatedFilter<Language>>;
+#[derive(Debug, PartialEq, Eq)]
 pub enum SingleOrMany<A: Info<Supported = All>, M: Info<Supported = Language>> {
     All(A),
     Many(Many<M>),
@@ -228,18 +231,40 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M>
     #[must_use]
     pub fn filter_name(&self) -> String {
         match self {
-            SingleOrMany::All(f) => f.filter_name(),
-            SingleOrMany::Many(many) => many.name.clone(),
+            Self::All(f) => f.filter_name(),
+            Self::Many(many) => many.name.clone(),
         }
     }
 
     #[must_use]
     pub fn supports(&self) -> SupportedLanguages {
         match self {
-            SingleOrMany::All(_) => SupportedLanguages::All,
-            SingleOrMany::Many(many) => {
+            Self::All(_) => SupportedLanguages::All,
+            Self::Many(many) => {
                 SupportedLanguages::Many(many.filters.keys().cloned().collect())
             }
+        }
+    }
+}
+impl<A: Info<Supported = All>, M: Info<Supported = Language>> Display for SingleOrMany<A, M> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.filter_name())
+    }
+}
+impl<'a> FilterType<'a> {
+    pub fn to_filter(&self, s: &str) -> Result<InstantiatedFilterType, String> {
+        match self {
+            SingleOrMany::All(a) => a.to_filter(s).map(SingleOrMany::All),
+            SingleOrMany::Many(Many { name, filters }) => filters
+                .iter()
+                .map(|(name, f)| f.to_filter(s).map(|f| (name.clone(), f)))
+                .collect::<Result<HashMap<_, _>, _>>()
+                .map(|filters| {
+                    SingleOrMany::Many(Many {
+                        name: name.to_string(),
+                        filters,
+                    })
+                }),
         }
     }
 }
@@ -256,7 +281,7 @@ where
         self.filter_info().filter_name().to_string()
     }
 }
-impl<T> Info for InstantiatedFilter< T>
+impl<T> Info for InstantiatedFilter<T>
 where
     SupportedLanguages: From<T>,
 {

@@ -1,4 +1,4 @@
-use function_grep::filter::SingleOrMany;
+use function_grep::filter::FilterType;
 use std::{collections::HashMap, fmt};
 
 pub enum HistoryFilterType {
@@ -8,7 +8,7 @@ pub enum HistoryFilterType {
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
-    PL(HashMap<String, String>, SingleOrMany<'static>),
+    PL(HashMap<String, String>, FilterType<'static>),
     None,
 }
 
