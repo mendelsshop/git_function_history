@@ -856,7 +856,9 @@
 <a href="#855" id="855">855</a>
 <a href="#856" id="856">856</a>
 <a href="#857" id="857">857</a>
-<a href="#858" id="858">858</a></pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a></pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
 #![allow(
     clippy::must_use_candidate,
@@ -1059,9 +1061,11 @@
         .collect::&lt;Box&lt;[<span class="kw">_</span>]&gt;&gt;();
     <span class="kw">let </span>repo = gix::discover(<span class="string">"."</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>th_repo = repo.clone().into_sync();
-    <span class="kw">let </span>commit_iter = repo
-        .rev_walk(repo.head_id().map(gix::Id::detach))
-        .sorting(gix::traverse::commit::simple::Sorting::ByCommitTimeNewestFirst);
+    <span class="kw">let </span>commit_iter = repo.rev_walk(repo.head_id().map(gix::Id::detach)).sorting(
+        gix::revision::walk::Sorting::ByCommitTime(
+            gix::traverse::commit::simple::CommitTimeOrder::NewestFirst,
+        ),
+    );
     <span class="kw">let </span>commit_iter = commit_iter.all()<span class="question-mark">?</span>.filter_map(|id| <span class="prelude-val">Some</span>(id.ok()<span class="question-mark">?</span>.detach()));
     <span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
     </span><span class="kw">let </span>commit_iter = {
