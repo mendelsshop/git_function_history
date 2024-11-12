@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["AttributeType"],"fn":["builtin_filters","builtin_filters_by_info"],"struct":["Attribute","FilterInformation","InstantiatedFilter"],"trait":["Filter","HasFilterInformation"]};
+window.SIDEBAR_ITEMS = {"enum":["AttributeType","SingleOrMany"],"struct":["All","Attribute","FilterInformation","Filters","InstantiatedFilter","Language","Many"],"trait":["Filter","HasFilterInformation","Info"],"type":["FilterType","InstantiatedFilterType"]};
