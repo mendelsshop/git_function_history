@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.1.0] - 2023-10-17
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
 - Update changelog
 - Update changelog
@@ -42,15 +42,15 @@ All notable changes to this project will be documented in this file.
 
 ## [2.1.0] - 2022-09-28
 
-### Miscellaneous Tasks
-
-- Decide paarlel
-
 ### Library
 
 - More parllesim
 - Trying to optimize threading realizng the problem is not with the trreading but with something else
 - Added parelel as optinal (but default feature
+
+### Todo
+
+- Decide paarlel
 
 ### Tui
 
