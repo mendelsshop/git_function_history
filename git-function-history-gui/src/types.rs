@@ -8,6 +8,9 @@ pub enum HistoryFilterType {
     FileAbsolute(String),
     FileRelative(String),
     Directory(String),
+    // TODO: if filter type is a many and it has more than on filter
+    // 1. if you can pick which language to use
+    // 2. or you can add or remove a field to apply to the filter
     PL(HashMap<String, String>, FilterType<'static>),
     None,
 }

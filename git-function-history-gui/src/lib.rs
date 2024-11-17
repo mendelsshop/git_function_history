@@ -1,6 +1,6 @@
 mod types;
 
-use std::{sync::mpsc, time::Duration};
+use std::{collections::HashMap, sync::mpsc, time::Duration};
 
 use eframe::{
     self,
@@ -407,17 +407,24 @@ impl eframe::App for MyEguiApp {
                                                             ui.selectable_value(
                                                                 &mut self.history_filter_type,
                                                                 HistoryFilterType::PL(
-                                                                    filter
-                                                                        .1
-                                                                        .attributes()
-                                                                        .into_iter()
-                                                                        .map(|(attr, kind)| {
-                                                                            (
-                                                                                attr.to_string(),
-                                                                                kind.to_string(),
-                                                                            )
-                                                                        })
-                                                                        .collect(),
+                                                                    if let function_grep::filter::FilterType::All(filter) =
+                                                                        filter.1
+                                                                    {
+                                                                        filter
+                                                                            .attributes()
+                                                                            .into_iter()
+                                                                            .map(|(attr, kind)| {
+                                                                                (
+                                                                                    attr.to_string(
+                                                                                    ),
+                                                                                    kind.to_string(
+                                                                                    ),
+                                                                                )
+                                                                            })
+                                                                            .collect()
+                                                                    } else {
+                                                                        HashMap::new()
+                                                                    },
                                                                     filter.1,
                                                                 ),
                                                                 filter.0,
@@ -446,7 +453,23 @@ impl eframe::App for MyEguiApp {
                                                             ui.label(desc.to_string());
                                                             ui.add(TextEdit::singleline(field));
                                                         });
-                                                    })
+                                                    if let function_grep::filter::FilterType::Many(_) = filters {
+
+                                                            // TODO: update history filter type
+                                                            // hashmap to keep track of if a field
+                                                            // is removed
+                                            let resp = ui.add(Button::new("-"));
+                                            if resp.clicked() {
+                                                            }
+                                                        }
+                                                    });
+                                                    if let function_grep::filter::FilterType::Many(_) = filters {
+                                            let resp = ui.add(Button::new("add field"));
+                                            if resp.clicked() {
+                                                            let total = inputs.len()+ 1;
+                                                            inputs.insert(format!("field{total}"), String::new());
+                                                        }
+                                                    }
                                                 }
                                             }
                                             let resp = ui.add(Button::new("Go"));

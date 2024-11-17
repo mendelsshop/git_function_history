@@ -119,7 +119,7 @@ impl HasFilterInformation for FunctionWithParameterRust {
     }
 
     fn description(&self) -> String {
-        todo!()
+        "Find a function with a given parameter".to_string()
     }
 
     fn supports(&self) -> Self::Supports {
@@ -127,7 +127,7 @@ impl HasFilterInformation for FunctionWithParameterRust {
     }
 
     fn attributes(&self) -> HashMap<Attribute, AttributeType> {
-        todo!()
+        HashMap::from([(Attribute("Name".to_string()), AttributeType::String)])
     }
 
     type Supports = Language;
