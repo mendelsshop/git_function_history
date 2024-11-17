@@ -362,7 +362,8 @@
 <a href="#361" id="361">361</a>
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a></pre></div><pre class="rust"><code><span class="kw">use </span>general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a></pre></div><pre class="rust"><code><span class="kw">use </span>general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
 <span class="kw">use </span>std::{
     collections::{hash_map, HashMap},
     fmt::{<span class="self">self</span>, Display},
@@ -399,7 +400,8 @@
         <span class="macro">write!</span>(f, <span class="string">"{}"</span>, <span class="self">self</span>.<span class="number">0</span>)
     }
 }
-
+<span class="comment">// TODO: should we have way to specify an attribute as being optional
+</span><span class="kw">pub type </span>Attributes = HashMap&lt;Attribute, AttributeType&gt;;
 <span class="kw">use </span><span class="kw">crate</span>::SupportedLanguages;
 <span class="kw">pub trait </span>Filter: HasFilterInformation {
     <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt;;
@@ -423,7 +425,7 @@
     <span class="doccomment">/// what languages this filter works on
     </span>supported_languages: Supports,
 
-    attributes: HashMap&lt;Attribute, AttributeType&gt;,
+    attributes: Attributes,
 }
 
 <span class="kw">impl</span>&lt;Supports&gt; fmt::Display <span class="kw">for </span>FilterInformation&lt;Supports&gt; {
@@ -454,7 +456,7 @@
     }
 
     <span class="attr">#[must_use]
-    </span><span class="kw">pub const fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>HashMap&lt;Attribute, AttributeType&gt; {
+    </span><span class="kw">pub const fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Attributes {
         <span class="kw-2">&amp;</span><span class="self">self</span>.attributes
     }
 
@@ -476,7 +478,7 @@
     </span><span class="kw">fn </span>description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
     <span class="doccomment">/// what languages this filter works on
     </span><span class="kw">fn </span>supports(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Supports;
-    <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; HashMap&lt;Attribute, AttributeType&gt;;
+    <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Attributes;
     <span class="comment">// TODO: have filter creation informaton about types and fields for uis
     </span><span class="kw">fn </span>filter_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; FilterInformation&lt;<span class="self">Self</span>::Supports&gt; {
         FilterInformation {
@@ -529,7 +531,7 @@
     }
 
     <span class="attr">#[must_use]
-    </span><span class="kw">pub const fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>HashMap&lt;Attribute, AttributeType&gt; {
+    </span><span class="kw">pub const fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Attributes {
         <span class="self">self</span>.filter_information.attributes()
     }
 
