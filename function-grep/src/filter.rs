@@ -35,7 +35,8 @@ impl fmt::Display for Attribute {
         write!(f, "{}", self.0)
     }
 }
-
+// TODO: should we have way to specify an attribute as being optional
+pub type Attributes = HashMap<Attribute, AttributeType>;
 use crate::SupportedLanguages;
 pub trait Filter: HasFilterInformation {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String>;
@@ -59,7 +60,7 @@ pub struct FilterInformation<Supports> {
     /// what languages this filter works on
     supported_languages: Supports,
 
-    attributes: HashMap<Attribute, AttributeType>,
+    attributes: Attributes,
 }
 
 impl<Supports> fmt::Display for FilterInformation<Supports> {
@@ -90,7 +91,7 @@ impl<Supports> FilterInformation<Supports> {
     }
 
     #[must_use]
-    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    pub const fn attributes(&self) -> &Attributes {
         &self.attributes
     }
 
@@ -112,7 +113,7 @@ pub trait HasFilterInformation {
     fn description(&self) -> String;
     /// what languages this filter works on
     fn supports(&self) -> Self::Supports;
-    fn attributes(&self) -> HashMap<Attribute, AttributeType>;
+    fn attributes(&self) -> Attributes;
     // TODO: have filter creation informaton about types and fields for uis
     fn filter_info(&self) -> FilterInformation<Self::Supports> {
         FilterInformation {
@@ -165,7 +166,7 @@ impl<Supports> InstantiatedFilter<Supports> {
     }
 
     #[must_use]
-    pub const fn attributes(&self) -> &HashMap<Attribute, AttributeType> {
+    pub const fn attributes(&self) -> &Attributes {
         self.filter_information.attributes()
     }
 

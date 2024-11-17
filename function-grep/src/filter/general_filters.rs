@@ -4,7 +4,8 @@ use tree_sitter::Node;
 
 use super::{
     filter_parsers::{extra, label, number},
-    All, Attribute, AttributeType, Filter, FilterFunction, HasFilterInformation, Language,
+    All, Attribute, AttributeType, Attributes, Filter, FilterFunction, HasFilterInformation,
+    Language,
 };
 
 pub struct FunctionInLines;
@@ -66,7 +67,7 @@ format:
 \tend: [number] start: [number]"
             .to_string()
     }
-    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+    fn attributes(&self) -> Attributes {
         HashMap::from([
             (Attribute("start".to_string()), AttributeType::Number),
             (Attribute("end".to_string()), AttributeType::Number),
@@ -106,7 +107,7 @@ impl HasFilterInformation for FunctionInImpl {
         Language("Rust".to_string())
     }
 
-    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+    fn attributes(&self) -> Attributes {
         HashMap::new()
     }
 }
@@ -126,7 +127,7 @@ impl HasFilterInformation for FunctionWithParameterRust {
         Language("Rust".to_owned())
     }
 
-    fn attributes(&self) -> HashMap<Attribute, AttributeType> {
+    fn attributes(&self) -> Attributes {
         HashMap::from([(Attribute("Name".to_string()), AttributeType::String)])
     }
 
