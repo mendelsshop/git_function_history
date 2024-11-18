@@ -149,6 +149,7 @@ impl ParsedFile {
                 filter.and_then(|f| self.filter_inner(f))
             }
             InstantiatedFilterType::All(f) => self.filter_inner(f),
+            InstantiatedFilterType::Single(f) => self.filter_inner(f),
         }
     }
 

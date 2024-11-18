@@ -227,6 +227,7 @@ pub type InstantiatedFilterType =
 pub enum SingleOrMany<A: Info<Supported = All>, M: Info<Supported = Language>> {
     All(A),
     Many(Many<M>),
+    Single(M),
 }
 impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M> {
     #[must_use]
@@ -234,14 +235,17 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M>
         match self {
             Self::All(f) => f.filter_name(),
             Self::Many(many) => many.name.clone(),
+            Self::Single(s) => s.filter_name(),
         }
     }
 
     #[must_use]
     pub fn supports(&self) -> SupportedLanguages {
         match self {
+            // Self::Single(s) => SupportedLanguages::Single(s.)
             Self::All(_) => SupportedLanguages::All,
             Self::Many(many) => SupportedLanguages::Many(many.filters.keys().cloned().collect()),
+            SingleOrMany::Single(_) => todo!(),
         }
     }
 }
@@ -251,9 +255,17 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> Display for Single
     }
 }
 impl<'a> FilterType<'a> {
+    pub fn specific(&self, s: &str) -> Option<Self> {
+        match self {
+            Self::All(_) | Self::Single(_) => None,
+            Self::Many(m) => m.filters.get(s).map(|x| Self::Single(*x)),
+        }
+    }
+
     pub fn to_filter(&self, s: &str) -> Result<InstantiatedFilterType, String> {
         match self {
             SingleOrMany::All(a) => a.to_filter(s).map(SingleOrMany::All),
+            SingleOrMany::Single(a) => a.to_filter(s).map(SingleOrMany::Single),
             SingleOrMany::Many(Many { name, filters }) => filters
                 .iter()
                 .map(|(name, f)| f.to_filter(s).map(|f| (name.clone(), f)))
@@ -345,6 +357,13 @@ impl<'a> Filters<'a> {
             match filters {
                 SingleOrMany::All(_) => Err("cannot add to an all filter".to_string()),
                 SingleOrMany::Many(Many { filters, .. }) => merge_filters(filters, filter),
+                SingleOrMany::Single(s) => {
+                    *filters = SingleOrMany::Many(Many {
+                        name: "".to_string(),
+                        filters: HashMap::from([(s.filter_name(), *s)]),
+                    });
+                    Ok(())
+                }
             }
         } else {
             self.filters.insert(name, filter);
