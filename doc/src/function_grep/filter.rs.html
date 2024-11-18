@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/filter.rs`."><title>filter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (f2a35426b 2024-11-16)" data-channel="nightly" data-search-js="search-b6b1fcd2.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">function_grep/</div>filter.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/filter.rs`."><title>filter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (5ec7d6eee 2024-11-17)" data-channel="nightly" data-search-js="search-53f21e11.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">function_grep/</div>filter.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -363,7 +363,26 @@
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
 <a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a></pre></div><pre class="rust"><code><span class="kw">use </span>general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a></pre></div><pre class="rust"><code><span class="kw">use </span>general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
 <span class="kw">use </span>std::{
     collections::{hash_map, HashMap},
     fmt::{<span class="self">self</span>, Display},
@@ -592,6 +611,7 @@
 </span><span class="kw">pub enum </span>SingleOrMany&lt;A: Info&lt;Supported = All&gt;, M: Info&lt;Supported = Language&gt;&gt; {
     All(A),
     Many(Many&lt;M&gt;),
+    Single(M),
 }
 <span class="kw">impl</span>&lt;A: Info&lt;Supported = All&gt;, M: Info&lt;Supported = Language&gt;&gt; SingleOrMany&lt;A, M&gt; {
     <span class="attr">#[must_use]
@@ -599,14 +619,17 @@
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::All(f) =&gt; f.filter_name(),
             <span class="self">Self</span>::Many(many) =&gt; many.name.clone(),
+            <span class="self">Self</span>::Single(s) =&gt; s.filter_name(),
         }
     }
 
     <span class="attr">#[must_use]
     </span><span class="kw">pub fn </span>supports(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; SupportedLanguages {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::All(<span class="kw">_</span>) =&gt; SupportedLanguages::All,
+            <span class="comment">// Self::Single(s) =&gt; SupportedLanguages::Single(s.)
+            </span><span class="self">Self</span>::All(<span class="kw">_</span>) =&gt; SupportedLanguages::All,
             <span class="self">Self</span>::Many(many) =&gt; SupportedLanguages::Many(many.filters.keys().cloned().collect()),
+            SingleOrMany::Single(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
         }
     }
 }
@@ -616,9 +639,17 @@
     }
 }
 <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; FilterType&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub fn </span>specific(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::All(<span class="kw">_</span>) | <span class="self">Self</span>::Single(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
+            <span class="self">Self</span>::Many(m) =&gt; m.filters.get(s).map(|x| <span class="self">Self</span>::Single(<span class="kw-2">*</span>x)),
+        }
+    }
+
     <span class="kw">pub fn </span>to_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;InstantiatedFilterType, String&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             SingleOrMany::All(a) =&gt; a.to_filter(s).map(SingleOrMany::All),
+            SingleOrMany::Single(a) =&gt; a.to_filter(s).map(SingleOrMany::Single),
             SingleOrMany::Many(Many { name, filters }) =&gt; filters
                 .iter()
                 .map(|(name, f)| f.to_filter(s).map(|f| (name.clone(), f)))
@@ -710,6 +741,13 @@
             <span class="kw">match </span>filters {
                 SingleOrMany::All(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">"cannot add to an all filter"</span>.to_string()),
                 SingleOrMany::Many(Many { filters, .. }) =&gt; merge_filters(filters, filter),
+                SingleOrMany::Single(s) =&gt; {
+                    <span class="kw-2">*</span>filters = SingleOrMany::Many(Many {
+                        name: <span class="string">""</span>.to_string(),
+                        filters: HashMap::from([(s.filter_name(), <span class="kw-2">*</span>s)]),
+                    });
+                    <span class="prelude-val">Ok</span>(())
+                }
             }
         } <span class="kw">else </span>{
             <span class="self">self</span>.filters.insert(name, filter);
