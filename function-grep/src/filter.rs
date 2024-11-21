@@ -200,6 +200,11 @@ impl From<Language> for SupportedLanguages {
         Self::Single(value.0)
     }
 }
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 // impl Language for
 // TODO: rework macro to work with the new language per filter system
 macro_rules! default_filters {
@@ -213,6 +218,7 @@ pub struct Many<T: Info<Supported = Language>> {
     pub filters: HashMap<String, T>,
 }
 
+// TODO: merge with HasFilterInformation
 pub trait Info {
     type Supported;
     fn filter_name(&self) -> String;
@@ -242,10 +248,10 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M>
     #[must_use]
     pub fn supports(&self) -> SupportedLanguages {
         match self {
-            // Self::Single(s) => SupportedLanguages::Single(s.)
             Self::All(_) => SupportedLanguages::All,
             Self::Many(many) => SupportedLanguages::Many(many.filters.keys().cloned().collect()),
-            SingleOrMany::Single(_) => todo!(),
+            // TODO: make Info carry not just the supported type but also a value for it
+            Self::Single(_s) => todo!(),
         }
     }
 }
@@ -255,6 +261,7 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> Display for Single
     }
 }
 impl<'a> FilterType<'a> {
+    #[must_use]
     pub fn specific(&self, s: &str) -> Option<Self> {
         match self {
             Self::All(_) | Self::Single(_) => None,
@@ -351,19 +358,43 @@ impl Filters<'static> {
 
 impl<'a> Filters<'a> {
     pub fn add_filter(&mut self, filter: impl Into<FilterType<'a>>) -> Result<(), String> {
-        let filter = filter.into();
+        let filter: FilterType<'a> = filter.into();
         let name = filter.filter_name();
         if let Some(filters) = self.filters.get_mut(&name) {
             match filters {
-                SingleOrMany::All(_) => Err("cannot add to an all filter".to_string()),
-                SingleOrMany::Many(Many { filters, .. }) => merge_filters(filters, filter),
-                SingleOrMany::Single(s) => {
-                    *filters = SingleOrMany::Many(Many {
-                        name: "".to_string(),
-                        filters: HashMap::from([(s.filter_name(), *s)]),
-                    });
-                    Ok(())
+                SingleOrMany::All(_) => Err("cannot add with or to an all filter".to_string()),
+                _ if matches!(filter, SingleOrMany::All(_)) => {
+                    Err("cannot add with or to an all filter".to_string())
                 }
+                SingleOrMany::Many(filter1) => match filter {
+                    SingleOrMany::All(_) => unreachable!(),
+                    SingleOrMany::Many(filter2) => try_extend_filter(filter1, filter2),
+                    SingleOrMany::Single(filter2) => try_add_filter(filter1, filter2),
+                },
+                SingleOrMany::Single(filter1) => match filter {
+                    SingleOrMany::All(_) => unreachable!(),
+                    SingleOrMany::Many(mut filter2) => {
+                        try_add_filter(&mut filter2, *filter1)?;
+                        *filters = SingleOrMany::Many(filter2);
+                        Ok(())
+                    }
+                    SingleOrMany::Single(filter2) if filter1.supports() == filter2.supports() => {
+                        Err(format!(
+                            "cannot add duplicate filter {name} for {}",
+                            filter1.supports()
+                        ))
+                    }
+                    SingleOrMany::Single(filter2) => {
+                        *filters = SingleOrMany::Many(Many {
+                            name,
+                            filters: HashMap::from([
+                                (filter1.supports().0, *filter1),
+                                (filter2.supports().0, filter2),
+                            ]),
+                        });
+                        Ok(())
+                    }
+                },
             }
         } else {
             self.filters.insert(name, filter);
@@ -376,9 +407,31 @@ impl<'a> Filters<'a> {
     }
 }
 
-fn merge_filters<'a>(
-    hash_map: &mut HashMap<String, &'a dyn Filter<Supports = Language>>,
-    filter: FilterType<'a>,
+fn try_add_filter<'a>(
+    filters: &mut Many<&'a (dyn Filter<Supports = Language>)>,
+    filter: &'a (dyn Filter<Supports = Language>),
 ) -> Result<(), String> {
-    todo!()
+    let mut status = Ok(());
+    filters
+        .filters
+        .entry(filter.supports().0)
+        .and_modify(|_| {
+            status = Err(format!(
+                "cannot add duplicate filter {} for {}",
+                filter.filter_name(),
+                filter.supports()
+            ));
+        })
+        .or_insert(filter);
+    status
+}
+
+fn try_extend_filter<'a>(
+    filters: &mut Many<&'a (dyn Filter<Supports = Language>)>,
+    new_filters: Many<&'a (dyn Filter<Supports = Language>)>,
+) -> Result<(), String> {
+    new_filters
+        .filters
+        .into_values()
+        .try_for_each(|filter| try_add_filter(filters, filter))
 }
