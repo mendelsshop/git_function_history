@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (3fee0f12e 2024-11-20)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history_gui/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (28fc2ba71 2024-11-24)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history_gui/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -770,13 +770,7 @@
 <a href="#769" id="769">769</a>
 <a href="#770" id="770">770</a>
 <a href="#771" id="771">771</a>
-<a href="#772" id="772">772</a>
-<a href="#773" id="773">773</a>
-<a href="#774" id="774">774</a>
-<a href="#775" id="775">775</a>
-<a href="#776" id="776">776</a>
-<a href="#777" id="777">777</a>
-<a href="#778" id="778">778</a></pre></div><pre class="rust"><code><span class="kw">mod </span>types;
+<a href="#772" id="772">772</a></pre></div><pre class="rust"><code><span class="kw">mod </span>types;
 
 <span class="kw">use </span>std::{collections::HashMap, sync::mpsc, time::Duration};
 
@@ -790,7 +784,7 @@
 };
 <span class="kw">use </span>git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
 <span class="kw">use </span>itertools::Itertools;
-<span class="kw">use </span>types::HistoryFilterType;
+<span class="kw">use </span>types::{HistoryFilterType, PLFilter};
 
 <span class="comment">// TODO: stop cloning everyting and use references instead
 </span><span class="kw">pub struct </span>MyEguiApp {
@@ -1176,37 +1170,13 @@
                                                         HistoryFilterType::None,
                                                         <span class="string">"none"</span>,
                                                     );
-                                                    function_grep::filter::Filters::default()
-                                                        .into_iter()
-                                                        .sorted_by_cached_key(|(key, <span class="kw">_</span>)| {
-                                                            key.clone()
-                                                        })
-                                                        .for_each(|filter| {
-                                                            ui.selectable_value(
-                                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type,
-                                                                HistoryFilterType::PL(
-                                                                    <span class="kw">if let </span>function_grep::filter::FilterType::All(filter) =
-                                                                        filter.<span class="number">1
-                                                                    </span>{
-                                                                        filter
-                                                                            .attributes()
-                                                                            .into_iter()
-                                                                            .map(|(attr, kind)| {
-                                                                                (
-                                                                                    attr.to_string(
-                                                                                    ),
-                                                                                    kind.to_string(
-                                                                                    ),
-                                                                                )
-                                                                            })
-                                                                            .collect()
-                                                                    } <span class="kw">else </span>{
-                                                                        HashMap::new()
-                                                                    },
-                                                                    filter.<span class="number">1</span>,
-                                                                ),
-                                                                filter.<span class="number">0</span>,
-                                                            );
+                                                    function_grep::filter::Filters::default() .into_iter() .sorted_by_cached_key(|(key, <span class="kw">_</span>)| { key.clone() }) .for_each(|filter| { ui.selectable_value( <span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type, <span class="kw">match </span>filter.<span class="number">1 </span>{ function_grep::filter::FilterType::All(allfilter) =&gt; { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.<span class="number">1</span>)) } function_grep::filter::FilterType::Single(allfilter) =&gt; { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.<span class="number">1</span>)) }
+
+
+                                                        function_grep::filter::SingleOrMany::Many(<span class="kw-2">ref </span>filters) =&gt; {
+                                                            <span class="kw">let </span>collect_vec = filters.filters.keys().cloned().collect_vec();
+                                                            HistoryFilterType::PL(types::PLFilter::Many( HashMap::new(), filter.<span class="number">1</span>, collect_vec, <span class="prelude-val">None</span>, String::new() ))
+                                                        } }, filter.<span class="number">0</span>,);
                                                         })
                                                 });
                                             <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.history_filter_type {
@@ -1223,33 +1193,52 @@
                                                 HistoryFilterType::None =&gt; {
                                                     <span class="comment">// do nothing
                                                 </span>}
-                                                HistoryFilterType::PL(inputs, filters) =&gt; {
-                                                    inputs.iter_mut().for_each(|(desc, field)| {
+                                                HistoryFilterType::PL(filter ) =&gt; {
+                                                    <span class="kw">match </span>filter {
+                                        types::PLFilter::Single(inputs, <span class="kw">_</span>) =&gt; {
+                                                    inputs.iter_mut().for_each(|(desc, field                 )| {
                                                         ui.horizontal(|ui| {
                                                             ui.set_min_width(<span class="number">4.0</span>);
                                                             ui.set_max_width(max);
                                                             ui.label(desc.to_string());
                                                             ui.add(TextEdit::singleline(field));
                                                         });
-                                                    <span class="kw">if let </span>function_grep::filter::FilterType::Many(<span class="kw">_</span>) = filters {
+                                            });
+                                        }
+                                        types::PLFilter::Many(inputs,filters, languages, specific, next_field ) =&gt; {
+                                                            <span class="comment">// TODO: cleanup
+                                                   </span>inputs.iter_mut().for_each(|(desc, field                 )| {
+                                                        ui.horizontal(|ui| {
+                                                            ui.set_min_width(<span class="number">4.0</span>);
+                                                            ui.set_max_width(max);
+                                                            ui.label(desc.to_string());
+                                                            ui.add(TextEdit::singleline(<span class="kw-2">&amp;mut </span>field.<span class="number">1</span>));
+                                                                    <span class="comment">// TODO: make - work
+                                            </span>field.<span class="number">0</span>= ui.add(Button::new(<span class="string">"-"</span>)).clicked();
+                                                        });
+                                            });
 
-                                                            <span class="comment">// TODO: update history filter type
-                                                            // hashmap to keep track of if a field
-                                                            // is removed
-                                            </span><span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"-"</span>));
-                                            <span class="kw">if </span>resp.clicked() {
-                                                            }
-                                                        }
-                                                    });
-                                                    <span class="kw">if let </span>function_grep::filter::FilterType::Many(<span class="kw">_</span>) = filters {
+                                                            ui.add(TextEdit::singleline(next_field));
                                             <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"add field"</span>));
                                             <span class="kw">if </span>resp.clicked() {
-                                                            <span class="kw">let </span>total = inputs.len()+ <span class="number">1</span>;
-                                                            inputs.insert(<span class="macro">format!</span>(<span class="string">"field{total}"</span>), String::new());
+                                                            inputs.insert(next_field.to_string(), (<span class="bool-val">false</span>, String::new()));
                                                         }
-                                                    }
+
+                                            egui::ComboBox::from_id_source(<span class="string">"filter_language_chooser"</span>)
+                                                .selected_text(<span class="string">"Language"</span>)
+                                                .show_ui(ui, |ui| {
+                                                    ui.selectable_value(
+                                                         specific, <span class="prelude-val">None</span>, <span class="string">"All"</span>);
+                                                                    languages.iter().for_each(|name| { ui.selectable_value(specific, <span class="prelude-val">Some</span>(name.to_string()), name); });
+                                                        }
+
+                );
+                                                            <span class="kw">if let </span><span class="prelude-val">Some</span>(language) = specific {
+                                                   <span class="kw-2">*</span>filter = PLFilter::Single(HashMap::new(),  filters.specific(language).unwrap());
+                                                            }
+
                                                 }
-                                            }
+                                            }}}
                                             <span class="kw">let </span>resp = ui.add(Button::new(<span class="string">"Go"</span>));
                                             <span class="kw">if </span>resp.clicked() {
                                                 <span class="self">self</span>.status = Status::Loading;
@@ -1281,14 +1270,13 @@
                                                         <span class="self">self</span>.status = Status::Ok(<span class="prelude-val">None</span>);
                                                         <span class="prelude-val">None
                                                     </span>}
-                                                    HistoryFilterType::PL(input, filter) =&gt; {
-                                                        <span class="kw">let </span>filter = filter.to_filter(
-                                                            <span class="kw-2">&amp;</span>input
-                                                                .values()
-                                                                .cloned()
-                                                                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-                                                                .join(<span class="string">" "</span>),
-                                                        );
+                                                    HistoryFilterType::PL(filter) =&gt; {
+                                                        <span class="kw">let </span>filter = <span class="kw">match </span>filter {
+                                                            types::PLFilter::Single(hash_map, single_or_many) =&gt; single_or_many.to_filter(<span class="kw-2">&amp;</span>hash_map.into_iter().map(|v| <span class="macro">format!</span>(<span class="string">"{}: {}"</span>, v.<span class="number">0</span>, v.<span class="number">1</span>)).collect_vec().join(<span class="string">" "</span>)),
+                                                            types::PLFilter::Many(input, filter, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) =&gt;
+                                                                filter.to_filter(<span class="kw-2">&amp;</span>input.into_iter().map(|v| <span class="macro">format!</span>(<span class="string">"{}: {}"</span>, v.<span class="number">0</span>, v.<span class="number">1.1</span>)).collect_vec().join(<span class="string">" "</span>))
+
+                                                        };
                                                         filter
                                                             .inspect_err(|e| {
                                                                 <span class="self">self</span>.status =
