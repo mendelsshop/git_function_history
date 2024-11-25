@@ -255,6 +255,7 @@ impl<'a> InstantiatedLanguage<'a> {
 
 #[macro_export]
 /// Use to more easily make new [`SupportedLanguage`]s.
+///
 /// First provide the name (which is used as the type of the language), followed by the tree sitter
 /// languge in parenthesis, next you put the file extensions in brackets with a leading .
 /// to specify the query we use ?= variable -> string literal query.

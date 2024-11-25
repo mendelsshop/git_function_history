@@ -113,6 +113,7 @@ pub trait HasFilterInformation {
     fn description(&self) -> String;
     /// what languages this filter works on
     fn supports(&self) -> Self::Supports;
+
     fn attributes(&self) -> Attributes;
     // TODO: have filter creation informaton about types and fields for uis
     fn filter_info(&self) -> FilterInformation<Self::Supports> {
@@ -218,7 +219,6 @@ pub struct Many<T: Info<Supported = Language>> {
     pub filters: HashMap<String, T>,
 }
 
-// TODO: merge with HasFilterInformation
 pub trait Info {
     type Supported;
     fn filter_name(&self) -> String;
@@ -242,16 +242,6 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> SingleOrMany<A, M>
             Self::All(f) => f.filter_name(),
             Self::Many(many) => many.name.clone(),
             Self::Single(s) => s.filter_name(),
-        }
-    }
-
-    #[must_use]
-    pub fn supports(&self) -> SupportedLanguages {
-        match self {
-            Self::All(_) => SupportedLanguages::All,
-            Self::Many(many) => SupportedLanguages::Many(many.filters.keys().cloned().collect()),
-            // TODO: make Info carry not just the supported type but also a value for it
-            Self::Single(_s) => todo!(),
         }
     }
 }

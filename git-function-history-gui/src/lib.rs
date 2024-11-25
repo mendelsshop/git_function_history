@@ -12,7 +12,7 @@ use function_history_backend_thread::types::{
 };
 use git_function_history::{types::Directions, Commit, FileFilterType, Filter, FunctionHistory};
 use itertools::Itertools;
-use types::HistoryFilterType;
+use types::{HistoryFilterType, PLFilter};
 
 // TODO: stop cloning everyting and use references instead
 pub struct MyEguiApp {
@@ -398,37 +398,13 @@ impl eframe::App for MyEguiApp {
                                                         HistoryFilterType::None,
                                                         "none",
                                                     );
-                                                    function_grep::filter::Filters::default()
-                                                        .into_iter()
-                                                        .sorted_by_cached_key(|(key, _)| {
-                                                            key.clone()
-                                                        })
-                                                        .for_each(|filter| {
-                                                            ui.selectable_value(
-                                                                &mut self.history_filter_type,
-                                                                HistoryFilterType::PL(
-                                                                    if let function_grep::filter::FilterType::All(filter) =
-                                                                        filter.1
-                                                                    {
-                                                                        filter
-                                                                            .attributes()
-                                                                            .into_iter()
-                                                                            .map(|(attr, kind)| {
-                                                                                (
-                                                                                    attr.to_string(
-                                                                                    ),
-                                                                                    kind.to_string(
-                                                                                    ),
-                                                                                )
-                                                                            })
-                                                                            .collect()
-                                                                    } else {
-                                                                        HashMap::new()
-                                                                    },
-                                                                    filter.1,
-                                                                ),
-                                                                filter.0,
-                                                            );
+                                                    function_grep::filter::Filters::default() .into_iter() .sorted_by_cached_key(|(key, _)| { key.clone() }) .for_each(|filter| { ui.selectable_value( &mut self.history_filter_type, match filter.1 { function_grep::filter::FilterType::All(allfilter) => { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.1)) } function_grep::filter::FilterType::Single(allfilter) => { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.1)) }
+
+
+                                                        function_grep::filter::SingleOrMany::Many(ref filters) => {
+                                                            let collect_vec = filters.filters.keys().cloned().collect_vec();
+                                                            HistoryFilterType::PL(types::PLFilter::Many( HashMap::new(), filter.1, collect_vec, None, String::new() ))
+                                                        } }, filter.0,);
                                                         })
                                                 });
                                             match &mut self.history_filter_type {
@@ -445,33 +421,52 @@ impl eframe::App for MyEguiApp {
                                                 HistoryFilterType::None => {
                                                     // do nothing
                                                 }
-                                                HistoryFilterType::PL(inputs, filters) => {
-                                                    inputs.iter_mut().for_each(|(desc, field)| {
+                                                HistoryFilterType::PL(filter ) => {
+                                                    match filter {
+                                        types::PLFilter::Single(inputs, _) => {
+                                                    inputs.iter_mut().for_each(|(desc, field                 )| {
                                                         ui.horizontal(|ui| {
                                                             ui.set_min_width(4.0);
                                                             ui.set_max_width(max);
                                                             ui.label(desc.to_string());
                                                             ui.add(TextEdit::singleline(field));
                                                         });
-                                                    if let function_grep::filter::FilterType::Many(_) = filters {
+                                            });
+                                        }
+                                        types::PLFilter::Many(inputs,filters, languages, specific, next_field ) => {
+                                                            // TODO: cleanup
+                                                   inputs.iter_mut().for_each(|(desc, field                 )| {
+                                                        ui.horizontal(|ui| {
+                                                            ui.set_min_width(4.0);
+                                                            ui.set_max_width(max);
+                                                            ui.label(desc.to_string());
+                                                            ui.add(TextEdit::singleline(&mut field.1));
+                                                                    // TODO: make - work
+                                            field.0= ui.add(Button::new("-")).clicked();
+                                                        });
+                                            });
 
-                                                            // TODO: update history filter type
-                                                            // hashmap to keep track of if a field
-                                                            // is removed
-                                            let resp = ui.add(Button::new("-"));
-                                            if resp.clicked() {
-                                                            }
-                                                        }
-                                                    });
-                                                    if let function_grep::filter::FilterType::Many(_) = filters {
+                                                            ui.add(TextEdit::singleline(next_field));
                                             let resp = ui.add(Button::new("add field"));
                                             if resp.clicked() {
-                                                            let total = inputs.len()+ 1;
-                                                            inputs.insert(format!("field{total}"), String::new());
+                                                            inputs.insert(next_field.to_string(), (false, String::new()));
                                                         }
-                                                    }
+
+                                            egui::ComboBox::from_id_source("filter_language_chooser")
+                                                .selected_text("Language")
+                                                .show_ui(ui, |ui| {
+                                                    ui.selectable_value(
+                                                         specific, None, "All");
+                                                                    languages.iter().for_each(|name| { ui.selectable_value(specific, Some(name.to_string()), name); });
+                                                        }
+
+                );
+                                                            if let Some(language) = specific {
+                                                   *filter = PLFilter::Single(HashMap::new(),  filters.specific(language).unwrap());
+                                                            }
+
                                                 }
-                                            }
+                                            }}}
                                             let resp = ui.add(Button::new("Go"));
                                             if resp.clicked() {
                                                 self.status = Status::Loading;
@@ -503,14 +498,13 @@ impl eframe::App for MyEguiApp {
                                                         self.status = Status::Ok(None);
                                                         None
                                                     }
-                                                    HistoryFilterType::PL(input, filter) => {
-                                                        let filter = filter.to_filter(
-                                                            &input
-                                                                .values()
-                                                                .cloned()
-                                                                .collect::<Vec<_>>()
-                                                                .join(" "),
-                                                        );
+                                                    HistoryFilterType::PL(filter) => {
+                                                        let filter = match filter {
+                                                            types::PLFilter::Single(hash_map, single_or_many) => single_or_many.to_filter(&hash_map.into_iter().map(|v| format!("{}: {}", v.0, v.1)).collect_vec().join(" ")),
+                                                            types::PLFilter::Many(input, filter, _, _, _) =>
+                                                                filter.to_filter(&input.into_iter().map(|v| format!("{}: {}", v.0, v.1.1)).collect_vec().join(" "))
+
+                                                        };
                                                         filter
                                                             .inspect_err(|e| {
                                                                 self.status =
