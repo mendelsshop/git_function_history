@@ -1,4 +1,4 @@
-use function_grep::filter::{All, Filter, FilterType, Language};
+use function_grep::filter::FilterType;
 use std::{collections::HashMap, fmt};
 
 pub enum HistoryFilterType {

@@ -1,10 +1,13 @@
 mod types;
 
-use std::{collections::HashMap, sync::mpsc, time::Duration};
+use std::{collections::HashMap, fmt, sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{self, Button, Label, Layout, Sense, SidePanel, TextEdit, TopBottomPanel, Visuals},
+    egui::{
+        self, Button, Label, Layout, Sense, SidePanel, TextBuffer, TextEdit, TopBottomPanel,
+        Visuals,
+    },
     epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
@@ -250,6 +253,57 @@ impl MyEguiApp {
             });
         }
     }
+    fn handle_many_filter(
+        inputs: &mut HashMap<String, (bool, String)>,
+        ui: &mut egui::Ui,
+        max: f32,
+        next_field: &mut String,
+        specific: &mut Option<String>,
+        languages: &Vec<String>,
+        filters: &function_grep::filter::FilterType<'static>,
+    ) -> Result<Option<PLFilter>, String> {
+        // TODO: cleanup
+        inputs.iter_mut().for_each(|(desc, field)| {
+            ui.horizontal(|ui| {
+                ui.set_min_width(4.0);
+                ui.set_max_width(max);
+                ui.label(desc.to_string());
+                ui.add(TextEdit::singleline(&mut field.1));
+                // TODO: make - work
+                field.0 = ui.add(Button::new("-")).clicked();
+            });
+        });
+        ui.add(TextEdit::singleline(next_field));
+        let resp = ui.add(Button::new("add field"));
+        if resp.clicked() {
+            inputs.insert(next_field.to_string(), (false, String::new()));
+        }
+        egui::ComboBox::from_id_source("filter_language_chooser")
+            .selected_text("Language")
+            .show_ui(ui, |ui| {
+                ui.selectable_value(specific, None, "All");
+                languages.iter().for_each(|name| {
+                    ui.selectable_value(specific, Some(name.to_string()), name);
+                });
+            });
+        if let Some(language) = specific {
+            {
+                match filters.specific(language) {
+                    Some(filter @ function_grep::filter::SingleOrMany::Single(single_filter)) => {
+                        Ok(Some(instantiate_single_filter_state_inner(
+                            single_filter,
+                            filter,
+                        )))
+                    }
+                    _ => Err(format!(
+                        "Filter {filters} does not support Language {language}."
+                    )),
+                }
+            }
+        } else {
+            Ok(None)
+        }
+    }
 }
 macro_rules! draw_text_input {
     ($ui:expr, $max:expr,  $($field:expr)+) => {{
@@ -398,13 +452,17 @@ impl eframe::App for MyEguiApp {
                                                         HistoryFilterType::None,
                                                         "none",
                                                     );
-                                                    function_grep::filter::Filters::default() .into_iter() .sorted_by_cached_key(|(key, _)| { key.clone() }) .for_each(|filter| { ui.selectable_value( &mut self.history_filter_type, match filter.1 { function_grep::filter::FilterType::All(allfilter) => { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.1)) } function_grep::filter::FilterType::Single(allfilter) => { HistoryFilterType::PL( types::PLFilter::Single( allfilter .attributes() .into_iter() .map(|(attr, kind)| { ( attr.to_string(), kind.to_string(),) }) .collect(), filter.1)) }
-
-
-                                                        function_grep::filter::SingleOrMany::Many(ref filters) => {
-                                                            let collect_vec = filters.filters.keys().cloned().collect_vec();
-                                                            HistoryFilterType::PL(types::PLFilter::Many( HashMap::new(), filter.1, collect_vec, None, String::new() ))
-                                                        } }, filter.0,);
+                                                    function_grep::filter::Filters::default()
+                                                        .into_iter()
+                                                        .sorted_by_cached_key(|(key, _)| {
+                                                            key.clone()
+                                                        })
+                                                        .for_each(|filter| {
+                                                            ui.selectable_value(
+                                                                &mut self.history_filter_type,
+                                                                initialize_filter_state(filter.1),
+                                                                filter.0,
+                                                            );
                                                         })
                                                 });
                                             match &mut self.history_filter_type {
@@ -421,52 +479,33 @@ impl eframe::App for MyEguiApp {
                                                 HistoryFilterType::None => {
                                                     // do nothing
                                                 }
-                                                HistoryFilterType::PL(filter ) => {
-                                                    match filter {
-                                        types::PLFilter::Single(inputs, _) => {
-                                                    inputs.iter_mut().for_each(|(desc, field                 )| {
-                                                        ui.horizontal(|ui| {
-                                                            ui.set_min_width(4.0);
-                                                            ui.set_max_width(max);
-                                                            ui.label(desc.to_string());
-                                                            ui.add(TextEdit::singleline(field));
-                                                        });
-                                            });
-                                        }
-                                        types::PLFilter::Many(inputs,filters, languages, specific, next_field ) => {
-                                                            // TODO: cleanup
-                                                   inputs.iter_mut().for_each(|(desc, field                 )| {
-                                                        ui.horizontal(|ui| {
-                                                            ui.set_min_width(4.0);
-                                                            ui.set_max_width(max);
-                                                            ui.label(desc.to_string());
-                                                            ui.add(TextEdit::singleline(&mut field.1));
-                                                                    // TODO: make - work
-                                            field.0= ui.add(Button::new("-")).clicked();
-                                                        });
-                                            });
-
-                                                            ui.add(TextEdit::singleline(next_field));
-                                            let resp = ui.add(Button::new("add field"));
-                                            if resp.clicked() {
-                                                            inputs.insert(next_field.to_string(), (false, String::new()));
-                                                        }
-
-                                            egui::ComboBox::from_id_source("filter_language_chooser")
-                                                .selected_text("Language")
-                                                .show_ui(ui, |ui| {
-                                                    ui.selectable_value(
-                                                         specific, None, "All");
-                                                                    languages.iter().for_each(|name| { ui.selectable_value(specific, Some(name.to_string()), name); });
-                                                        }
-
-                );
-                                                            if let Some(language) = specific {
-                                                   *filter = PLFilter::Single(HashMap::new(),  filters.specific(language).unwrap());
+                                                HistoryFilterType::PL(filter) => match filter {
+                                                    types::PLFilter::Single(inputs, _) => {
+                                                        handle_single_filter(inputs, ui, max);
+                                                    }
+                                                    types::PLFilter::Many(
+                                                        inputs,
+                                                        filters,
+                                                        languages,
+                                                        specific,
+                                                        next_field,
+                                                    ) => {
+                                                        let result = Self::handle_many_filter(
+                                                            inputs, ui, max, next_field, specific,
+                                                            languages, filters,
+                                                        );
+                                                        match result {
+                                                            Ok(Some(new_filter)) => {
+                                                                *filter = new_filter
                                                             }
-
-                                                }
-                                            }}}
+                                                            Ok(_) => {}
+                                                            Err(e) => {
+                                                                self.status = Status::Error(e)
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                            }
                                             let resp = ui.add(Button::new("Go"));
                                             if resp.clicked() {
                                                 self.status = Status::Loading;
@@ -500,10 +539,26 @@ impl eframe::App for MyEguiApp {
                                                     }
                                                     HistoryFilterType::PL(filter) => {
                                                         let filter = match filter {
-                                                            types::PLFilter::Single(hash_map, single_or_many) => single_or_many.to_filter(&hash_map.into_iter().map(|v| format!("{}: {}", v.0, v.1)).collect_vec().join(" ")),
-                                                            types::PLFilter::Many(input, filter, _, _, _) =>
-                                                                filter.to_filter(&input.into_iter().map(|v| format!("{}: {}", v.0, v.1.1)).collect_vec().join(" "))
+                                                            types::PLFilter::Single(
+                                                                input,
+                                                                filter,
+                                                            ) => instantiate_filter(
+                                                                filter,
+                                                                input.iter(),
+                                                            ),
 
+                                                            types::PLFilter::Many(
+                                                                input,
+                                                                filter,
+                                                                _,
+                                                                _,
+                                                                _,
+                                                            ) => instantiate_filter(
+                                                                filter,
+                                                                input
+                                                                    .iter()
+                                                                    .map(|(k, (_, v))| (k, v)),
+                                                            ),
                                                         };
                                                         filter
                                                             .inspect_err(|e| {
@@ -769,4 +824,92 @@ impl eframe::App for MyEguiApp {
             });
         }
     }
+}
+
+fn instantiate_filter(
+    filter: &function_grep::filter::FilterType<'static>,
+    input: impl Iterator<Item = (impl fmt::Display, impl fmt::Display)>,
+) -> Result<function_grep::filter::InstantiatedFilterType, String> {
+    filter.to_filter(
+        &input
+            .map(|v| format!("{}: {}", v.0, v.1))
+            .collect_vec()
+            .join(" "),
+    )
+}
+
+fn handle_single_filter(inputs: &mut HashMap<String, String>, ui: &mut egui::Ui, max: f32) {
+    inputs.iter_mut().for_each(|(desc, field)| {
+        ui.horizontal(|ui| {
+            ui.set_min_width(4.0);
+            ui.set_max_width(max);
+            ui.label(desc.to_string());
+            ui.add(TextEdit::singleline(field));
+        });
+    });
+}
+
+fn initialize_filter_state(
+    filter: function_grep::filter::FilterType<'static>,
+) -> HistoryFilterType {
+    match filter {
+        function_grep::filter::FilterType::All(all_filter) => {
+            instantiate_single_filter_state(all_filter, filter)
+        }
+        function_grep::filter::FilterType::Single(single_filter) => {
+            instantiate_single_filter_state(single_filter, filter)
+        }
+
+        function_grep::filter::SingleOrMany::Many(ref filters) => {
+            let single_filter = filters
+                .filters
+                .keys()
+                .next()
+                .filter(|_| filters.filters.len() == 1)
+                .and_then(|k| filter.specific(k));
+            match single_filter {
+                Some(filter @ function_grep::filter::SingleOrMany::Single(single_filter)) => {
+                    instantiate_single_filter_state(single_filter, filter)
+                }
+                _ => {
+                    let collect_vec = filters.filters.keys().cloned().collect_vec();
+
+                    HistoryFilterType::PL(types::PLFilter::Many(
+                        HashMap::new(),
+                        filter,
+                        collect_vec,
+                        None,
+                        String::new(),
+                    ))
+                }
+            }
+        }
+    }
+}
+
+fn instantiate_single_filter_state<T>(
+    allfilter: &(dyn function_grep::filter::Filter<Supports = T>),
+    filter: function_grep::filter::FilterType<'static>,
+) -> HistoryFilterType
+where
+    function_grep::SupportedLanguages: From<T>,
+{
+    HistoryFilterType::PL(instantiate_single_filter_state_inner(allfilter, filter))
+}
+
+fn instantiate_single_filter_state_inner<T>(
+    allfilter: &(dyn function_grep::filter::Filter<Supports = T>),
+    filter: function_grep::filter::FilterType<'static>,
+) -> PLFilter
+where
+    function_grep::SupportedLanguages: From<T>,
+{
+    types::PLFilter::Single(
+        allfilter
+            .attributes()
+            .into_iter()
+            .map(|(attr, kind)| (attr.to_string(), kind.to_string()))
+            .collect(),
+        filter,
+    )
 }
