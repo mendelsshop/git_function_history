@@ -277,7 +277,9 @@ impl MyEguiApp {
         let resp = ui.add(Button::new("add field"));
         if resp.clicked() {
             inputs.insert(next_field.to_string(), (false, String::new()));
+            next_field.clear();
         }
+        inputs.retain(|_, input| !input.0);
         egui::ComboBox::from_id_source("filter_language_chooser")
             .selected_text("Language")
             .show_ui(ui, |ui| {

@@ -1,4 +1,6 @@
-use general_filters::{FunctionInImpl, FunctionInLines, FunctionWithParameterRust};
+use general_filters::{
+    FunctionInImpl, FunctionInLines, FunctionWithParameterPython, FunctionWithParameterRust,
+};
 use std::{
     collections::{hash_map, HashMap},
     fmt::{self, Display},
@@ -335,10 +337,18 @@ impl Filters<'static> {
                         .to_string(),
                     SingleOrMany::Many(Many {
                         name: "function_with_parameter".to_string(),
-                        filters: HashMap::from([(
-                            FunctionWithParameterRust.supports().0,
-                            &FunctionWithParameterRust as &'static dyn Filter<Supports = Language>,
-                        )]),
+                        filters: HashMap::from([
+                            (
+                                FunctionWithParameterRust.supports().0,
+                                &FunctionWithParameterRust
+                                    as &'static dyn Filter<Supports = Language>,
+                            ),
+                            (
+                                FunctionWithParameterPython.supports().0,
+                                &FunctionWithParameterPython
+                                    as &'static dyn Filter<Supports = Language>,
+                            ),
+                        ]),
                     }),
                 ),
             ]),

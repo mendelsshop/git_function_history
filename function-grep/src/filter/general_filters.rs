@@ -113,6 +113,7 @@ impl HasFilterInformation for FunctionInImpl {
 }
 
 pub struct FunctionWithParameterRust;
+pub struct FunctionWithParameterPython;
 
 impl HasFilterInformation for FunctionWithParameterRust {
     fn filter_name(&self) -> String {
@@ -135,6 +136,32 @@ impl HasFilterInformation for FunctionWithParameterRust {
 }
 
 impl Filter for FunctionWithParameterRust {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        todo!()
+    }
+}
+
+impl HasFilterInformation for FunctionWithParameterPython {
+    fn filter_name(&self) -> String {
+        "function_with_parameter".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Find a function with a given parameter".to_string()
+    }
+
+    fn supports(&self) -> Self::Supports {
+        Language("Python".to_owned())
+    }
+
+    fn attributes(&self) -> Attributes {
+        HashMap::from([(Attribute("Name".to_string()), AttributeType::String)])
+    }
+
+    type Supports = Language;
+}
+
+impl Filter for FunctionWithParameterPython {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
         todo!()
     }
