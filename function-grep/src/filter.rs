@@ -252,7 +252,7 @@ impl<A: Info<Supported = All>, M: Info<Supported = Language>> Display for Single
         write!(f, "{}", self.filter_name())
     }
 }
-impl<'a> FilterType<'a> {
+impl FilterType<'_> {
     #[must_use]
     pub fn specific(&self, s: &str) -> Option<Self> {
         match self {
