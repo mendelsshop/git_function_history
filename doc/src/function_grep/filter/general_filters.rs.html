@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/filter/general_filters.rs`."><title>general_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dbdb5eec.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (7442931d4 2024-11-30)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">function_grep/filter/</div>general_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `function-grep/src/filter/general_filters.rs`."><title>general_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dbdb5eec.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="function_grep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d49be02cf 2024-12-02)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">function_grep/filter/</div>general_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -166,12 +166,67 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
-<span class="kw">use </span>tree_sitter::Node;
+<span class="kw">use </span>tree_sitter::{Node, Query, QueryCursor};
 
 <span class="kw">use super</span>::{
-    filter_parsers::{extra, label, number},
+    filter_parsers::{extra, label, number, string},
     All, Attribute, AttributeType, Attributes, Filter, FilterFunction, HasFilterInformation,
     Language,
 };
@@ -213,7 +268,7 @@
 <span class="kw">impl </span>Filter <span class="kw">for </span>FunctionInLines {
     <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt; {
         <span class="kw">let </span>(start, end) = <span class="self">Self</span>::from_str(s)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(Box::new(<span class="kw">move </span>|node: <span class="kw-2">&amp;</span>Node&lt;<span class="lifetime">'_</span>&gt;| {
+        <span class="prelude-val">Ok</span>(Box::new(<span class="kw">move </span>|node: <span class="kw-2">&amp;</span>Node&lt;<span class="lifetime">'_</span>&gt;, <span class="kw">_</span>| {
             node.range().start_point.row &gt;= start &amp;&amp; node.range().end_point.row &lt;= end
         }))
     }
@@ -251,7 +306,7 @@ format:
             <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"invalid options for function_in_impl, this filter accepts not options, but got {s}"</span>));
         }
 
-        <span class="prelude-val">Ok</span>(Box::new(<span class="kw">move </span>|node: <span class="kw-2">&amp;</span>Node&lt;<span class="lifetime">'_</span>&gt;| {
+        <span class="prelude-val">Ok</span>(Box::new(<span class="kw">move </span>|node: <span class="kw-2">&amp;</span>Node&lt;<span class="lifetime">'_</span>&gt;, <span class="kw">_</span>| {
             node.parent().is_some_and(|parent| {
                 parent
                     .parent()
@@ -297,7 +352,7 @@ format:
     }
 
     <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Attributes {
-        HashMap::from([(Attribute(<span class="string">"Name"</span>.to_string()), AttributeType::String)])
+        HashMap::from([(Attribute(<span class="string">"name"</span>.to_string()), AttributeType::String)])
     }
 
     <span class="kw">type </span>Supports = Language;
@@ -323,7 +378,7 @@ format:
     }
 
     <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Attributes {
-        HashMap::from([(Attribute(<span class="string">"Name"</span>.to_string()), AttributeType::String)])
+        HashMap::from([(Attribute(<span class="string">"name"</span>.to_string()), AttributeType::String)])
     }
 
     <span class="kw">type </span>Supports = Language;
@@ -331,7 +386,62 @@ format:
 
 <span class="kw">impl </span>Filter <span class="kw">for </span>FunctionWithParameterPython {
     <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt; {
-        <span class="macro">todo!</span>()
+        <span class="kw">let </span>query = Query::new(
+            <span class="kw-2">&amp;</span>tree_sitter_rust::LANGUAGE.into(),
+            <span class="string">"((function_item
+  parameters: (parameters (parameter pattern: (identifier) @param)))
+)
+((let_declaration
+  value: (closure_expression
+  parameters: (closure_parameters [((identifier) @param)
+                                   (parameter pattern: (identifier) @param)])
+  ))
+)
+((const_item
+  value: (closure_expression
+  (closure_parameters [((identifier) @param)
+                                   (parameter pattern: (identifier) @param)])
+  )) 
+)
+((static_item
+  value: (closure_expression
+  (closure_parameters [((identifier) @param)
+                                   (parameter pattern: (identifier) @param)])
+  )) 
+)"</span>,
+        )
+        .map_err(|<span class="kw">_</span>| String::from(<span class="string">"Could not create tree sitter filter"</span>))<span class="question-mark">?</span>;
+        <span class="kw">let </span>name = parse_with_param(s)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(Box::new(<span class="kw">move </span>|node: <span class="kw-2">&amp;</span>Node&lt;<span class="lifetime">'_</span>&gt;, code| {
+            <span class="kw">let </span><span class="kw-2">mut </span>cursor = QueryCursor::new();
+            cursor.set_max_start_depth(<span class="prelude-val">Some</span>(<span class="number">0</span>));
+            <span class="kw">let </span>text_provider = code.as_bytes();
+            cursor.matches(<span class="kw-2">&amp;</span>query, <span class="kw-2">*</span>node, text_provider).any(|c| {
+                c.captures
+                    .iter()
+                    .any(|c| c.node.utf8_text(text_provider).unwrap() == name)
+            })
+        }))
+    }
+}
+
+<span class="kw">fn </span>parse_with_param(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>substring = s.split(<span class="string">' '</span>).filter(|s| <span class="kw-2">*</span>s != <span class="string">" "</span>);
+    <span class="kw">let </span>fst = substring.next().ok_or(
+        <span class="string">"invalid options for function_in_lines filter\nexpected [string] or name: [string]"</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">match </span>fst {
+        <span class="string">"start:" </span>=&gt; {
+            <span class="kw">let </span>format = <span class="string">"name: [string]"</span>;
+            <span class="kw">let </span>name = string(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"name:"</span>)<span class="question-mark">?</span>;
+            extra(<span class="kw-2">&amp;mut </span>substring, format)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(name)
+        }
+
+        name =&gt; {
+            extra(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[string]"</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(name.to_string())
+        }
     }
 }
 </code></pre></div></section></main></body></html>
