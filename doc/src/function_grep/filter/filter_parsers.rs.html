@@ -35,31 +35,38 @@
 <a href="#34" id="34">34</a>
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
-<a href="#37" id="37">37</a></pre></div><pre class="rust"><code><span class="kw">pub fn </span>number&lt;<span class="lifetime">'a</span>&gt;(
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a></pre></div><pre class="rust"><code><span class="kw">pub fn </span>number&lt;<span class="lifetime">'a</span>&gt;(
     substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
     format: <span class="kw-2">&amp;</span>str,
     position: <span class="kw-2">&amp;</span>str,
+    filter: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;usize, String&gt; {
-    substring.next().ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n missing {position} [number]"</span>))
-                .and_then(|end| end.parse().map_err(|<span class="kw">_</span>| <span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n cannot parse {position} [number]"</span>)))
+    substring.next().ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for {filter} filter\nexpected {format}\n missing {position} [number]"</span>))
+                .and_then(|end| end.parse().map_err(|<span class="kw">_</span>| <span class="macro">format!</span> (<span class="string">"invalid options for {filter} filter\nexpected {format}\n cannot parse {position} [number]"</span>)))
 }
 <span class="kw">pub fn </span>extra&lt;<span class="lifetime">'a</span>&gt;(
     substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
     format: <span class="kw-2">&amp;</span>str,
+    filter: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
-    substring.next().map_or(<span class="prelude-val">Ok</span>(()), |extra| <span class="prelude-val">Err</span>(<span class="macro">format!</span>( <span class="string">"invalid options for function_in_lines filter\nexpected {format}\n, found extra stuff after {format}: {extra}"</span>)))
+    substring.next().map_or(<span class="prelude-val">Ok</span>(()), |extra| <span class="prelude-val">Err</span>(<span class="macro">format!</span>( <span class="string">"invalid options for {filter} filter\nexpected {format}\n, found extra stuff after {format}: {extra}"</span>)))
 }
 <span class="kw">pub fn </span>label&lt;<span class="lifetime">'a</span>&gt;(
     substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
     format: <span class="kw-2">&amp;</span>str,
     label: <span class="kw-2">&amp;</span>str,
+    filter: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
-    substring.next().ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n missing label {label}"</span>))
+    substring.next().ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for {filter} filter\nexpected {format}\n missing label {label}"</span>))
                 .and_then(|l| {
                     <span class="kw">if </span>label == l {
                         <span class="prelude-val">Ok</span>(())
                     } <span class="kw">else </span>{
-                        <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"invalid options for function_in_lines filter\n expected {format}\nexpected {label}, found {l}"</span>)) 
+                        <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"invalid options for {filter} filter\n expected {format}\nexpected {label}, found {l}"</span>)) 
                     }
                 }
         )
@@ -69,7 +76,8 @@
     substring: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;,
     format: <span class="kw-2">&amp;</span>str,
     position: <span class="kw-2">&amp;</span>str,
+    filter: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
-    substring.next().map(ToOwned::to_owned).ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for function_in_lines filter\nexpected {format}\n missing {position} [number]"</span>))
+    substring.next().map(ToOwned::to_owned).ok_or_else(||<span class="macro">format!</span> (<span class="string">"invalid options for function_with_parameter filter\nexpected {format}\n missing {position} [number]"</span>))
 }
 </code></pre></div></section></main></body></html>

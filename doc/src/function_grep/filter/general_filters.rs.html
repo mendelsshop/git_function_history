@@ -221,7 +221,9 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>tree_sitter::{Node, Query, QueryCursor};
 
@@ -235,28 +237,29 @@
 <span class="kw">impl </span>FunctionInLines {
     <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(usize, usize), String&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>substring = s.split(<span class="string">' '</span>).filter(|s| <span class="kw-2">*</span>s != <span class="string">" "</span>);
+        <span class="kw">let </span>filter = <span class="string">"function_with_parameters"</span>;
         <span class="kw">let </span>fst = substring.next().ok_or(<span class="string">"invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]"</span>)<span class="question-mark">?</span>;
         <span class="kw">match </span>fst {
             <span class="string">"start:" </span>=&gt; {
                 <span class="kw">let </span>format = <span class="string">"start: [number] end: [number]"</span>;
-                <span class="kw">let </span>start = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>)<span class="question-mark">?</span>;
-                label(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>)<span class="question-mark">?</span>;
-                <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>)<span class="question-mark">?</span>;
-                extra(<span class="kw-2">&amp;mut </span>substring, format)<span class="question-mark">?</span>;
+                <span class="kw">let </span>start = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>, filter)<span class="question-mark">?</span>;
+                label(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>, filter)<span class="question-mark">?</span>;
+                <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>, filter)<span class="question-mark">?</span>;
+                extra(<span class="kw-2">&amp;mut </span>substring, format, filter)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((start, end))
             }
             <span class="string">"end:" </span>=&gt; {
                 <span class="kw">let </span>format = <span class="string">"end: [number] start: [number]"</span>;
-                <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>)<span class="question-mark">?</span>;
-                label(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>)<span class="question-mark">?</span>;
-                <span class="kw">let </span>start = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>)<span class="question-mark">?</span>;
-                extra(<span class="kw-2">&amp;mut </span>substring, format)<span class="question-mark">?</span>;
+                <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"end:"</span>, filter)<span class="question-mark">?</span>;
+                label(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>, filter)<span class="question-mark">?</span>;
+                <span class="kw">let </span>start = number(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"start:"</span>, filter)<span class="question-mark">?</span>;
+                extra(<span class="kw-2">&amp;mut </span>substring, format, filter)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((start, end))
             }
             n =&gt; {
                 <span class="kw">if let </span><span class="prelude-val">Ok</span>(start) = n.parse() {
-                    <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[number] [number]"</span>, <span class="string">"second"</span>)<span class="question-mark">?</span>;
-                    extra(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[number] [number]"</span>)<span class="question-mark">?</span>;
+                    <span class="kw">let </span>end = number(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[number] [number]"</span>, <span class="string">"second"</span>, filter)<span class="question-mark">?</span>;
+                    extra(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[number] [number]"</span>, filter)<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((start, end))
                 } <span class="kw">else </span>{
                     <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]\ngiven {n}"</span>))
@@ -360,32 +363,6 @@ format:
 
 <span class="kw">impl </span>Filter <span class="kw">for </span>FunctionWithParameterRust {
     <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt; {
-        <span class="macro">todo!</span>()
-    }
-}
-
-<span class="kw">impl </span>HasFilterInformation <span class="kw">for </span>FunctionWithParameterPython {
-    <span class="kw">fn </span>filter_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
-        <span class="string">"function_with_parameter"</span>.to_string()
-    }
-
-    <span class="kw">fn </span>description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
-        <span class="string">"Find a function with a given parameter"</span>.to_string()
-    }
-
-    <span class="kw">fn </span>supports(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Supports {
-        Language(<span class="string">"Python"</span>.to_owned())
-    }
-
-    <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Attributes {
-        HashMap::from([(Attribute(<span class="string">"name"</span>.to_string()), AttributeType::String)])
-    }
-
-    <span class="kw">type </span>Supports = Language;
-}
-
-<span class="kw">impl </span>Filter <span class="kw">for </span>FunctionWithParameterPython {
-    <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt; {
         <span class="kw">let </span>query = Query::new(
             <span class="kw-2">&amp;</span>tree_sitter_rust::LANGUAGE.into(),
             <span class="string">"((function_item
@@ -425,21 +402,48 @@ format:
     }
 }
 
+<span class="kw">impl </span>HasFilterInformation <span class="kw">for </span>FunctionWithParameterPython {
+    <span class="kw">fn </span>filter_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="string">"function_with_parameter"</span>.to_string()
+    }
+
+    <span class="kw">fn </span>description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="string">"Find a function with a given parameter"</span>.to_string()
+    }
+
+    <span class="kw">fn </span>supports(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Supports {
+        Language(<span class="string">"Python"</span>.to_owned())
+    }
+
+    <span class="kw">fn </span>attributes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Attributes {
+        HashMap::from([(Attribute(<span class="string">"name"</span>.to_string()), AttributeType::String)])
+    }
+
+    <span class="kw">type </span>Supports = Language;
+}
+
+<span class="kw">impl </span>Filter <span class="kw">for </span>FunctionWithParameterPython {
+    <span class="kw">fn </span>parse_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FilterFunction, String&gt; {
+        <span class="macro">todo!</span>()
+    }
+}
+
 <span class="kw">fn </span>parse_with_param(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>substring = s.split(<span class="string">' '</span>).filter(|s| <span class="kw-2">*</span>s != <span class="string">" "</span>);
     <span class="kw">let </span>fst = substring.next().ok_or(
-        <span class="string">"invalid options for function_in_lines filter\nexpected [string] or name: [string]"</span>,
+        <span class="string">"invalid options for function_with_parameter filter\nexpected [string] or name: [string]"</span>,
     )<span class="question-mark">?</span>;
+    <span class="kw">let </span>filter = <span class="string">"function_with_parameters"</span>;
     <span class="kw">match </span>fst {
-        <span class="string">"start:" </span>=&gt; {
+        <span class="string">"name:" </span>=&gt; {
             <span class="kw">let </span>format = <span class="string">"name: [string]"</span>;
-            <span class="kw">let </span>name = string(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"name:"</span>)<span class="question-mark">?</span>;
-            extra(<span class="kw-2">&amp;mut </span>substring, format)<span class="question-mark">?</span>;
+            <span class="kw">let </span>name = string(<span class="kw-2">&amp;mut </span>substring, format, <span class="string">"name:"</span>, filter)<span class="question-mark">?</span>;
+            extra(<span class="kw-2">&amp;mut </span>substring, format, filter)<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>(name)
         }
 
         name =&gt; {
-            extra(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[string]"</span>)<span class="question-mark">?</span>;
+            extra(<span class="kw-2">&amp;mut </span>substring, <span class="string">"[string]"</span>, filter)<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>(name.to_string())
         }
     }
