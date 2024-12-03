@@ -27,3 +27,11 @@ pub fn label<'a>(
                 }
         )
 }
+
+pub fn string<'a>(
+    substring: &mut impl Iterator<Item = &'a str>,
+    format: &str,
+    position: &str,
+) -> Result<String, String> {
+    substring.next().map(ToOwned::to_owned).ok_or_else(||format! ("invalid options for function_in_lines filter\nexpected {format}\n missing {position} [number]"))
+}

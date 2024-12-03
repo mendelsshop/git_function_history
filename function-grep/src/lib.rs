@@ -158,7 +158,7 @@ impl ParsedFile {
         let ranges: Box<[Range]> = self
             .ranges()
             .filter_map(|range| root.descendant_for_point_range(range.start_point, range.end_point))
-            .filter(|n| f.filter(n))
+            .filter(|n| f.filter(n, &self.file))
             .map(|n| n.range())
             .collect();
         if ranges.is_empty() {

@@ -127,7 +127,7 @@ pub trait HasFilterInformation {
         }
     }
 }
-type FilterFunction = Box<dyn Fn(&Node<'_>) -> bool + Send + Sync>;
+type FilterFunction = Box<dyn Fn(&Node<'_>, &str) -> bool + Send + Sync>;
 
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
@@ -164,8 +164,8 @@ impl<Supports: std::fmt::Debug> std::fmt::Debug for InstantiatedFilter<Supports>
 
 impl<Supports> InstantiatedFilter<Supports> {
     #[must_use]
-    pub fn filter(&self, node: &Node<'_>) -> bool {
-        (self.filter_function)(node)
+    pub fn filter(&self, node: &Node<'_>, code: &str) -> bool {
+        (self.filter_function)(node, code)
     }
 
     #[must_use]
