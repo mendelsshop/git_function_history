@@ -12,28 +12,29 @@ pub struct FunctionInLines;
 impl FunctionInLines {
     fn from_str(s: &str) -> Result<(usize, usize), String> {
         let mut substring = s.split(' ').filter(|s| *s != " ");
+        let filter = "function_with_parameters";
         let fst = substring.next().ok_or("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]")?;
         match fst {
             "start:" => {
                 let format = "start: [number] end: [number]";
-                let start = number(&mut substring, format, "start:")?;
-                label(&mut substring, format, "end:")?;
-                let end = number(&mut substring, format, "end:")?;
-                extra(&mut substring, format)?;
+                let start = number(&mut substring, format, "start:", filter)?;
+                label(&mut substring, format, "end:", filter)?;
+                let end = number(&mut substring, format, "end:", filter)?;
+                extra(&mut substring, format, filter)?;
                 Ok((start, end))
             }
             "end:" => {
                 let format = "end: [number] start: [number]";
-                let end = number(&mut substring, format, "end:")?;
-                label(&mut substring, format, "start:")?;
-                let start = number(&mut substring, format, "start:")?;
-                extra(&mut substring, format)?;
+                let end = number(&mut substring, format, "end:", filter)?;
+                label(&mut substring, format, "start:", filter)?;
+                let start = number(&mut substring, format, "start:", filter)?;
+                extra(&mut substring, format, filter)?;
                 Ok((start, end))
             }
             n => {
                 if let Ok(start) = n.parse() {
-                    let end = number(&mut substring, "[number] [number]", "second")?;
-                    extra(&mut substring, "[number] [number]")?;
+                    let end = number(&mut substring, "[number] [number]", "second", filter)?;
+                    extra(&mut substring, "[number] [number]", filter)?;
                     Ok((start, end))
                 } else {
                     Err(format!("invalid options for function_in_lines filter\nexpected [number] [number], start: [number] end: [number], or end: [number] start: [number]\ngiven {n}"))
@@ -137,32 +138,6 @@ impl HasFilterInformation for FunctionWithParameterRust {
 
 impl Filter for FunctionWithParameterRust {
     fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
-        todo!()
-    }
-}
-
-impl HasFilterInformation for FunctionWithParameterPython {
-    fn filter_name(&self) -> String {
-        "function_with_parameter".to_string()
-    }
-
-    fn description(&self) -> String {
-        "Find a function with a given parameter".to_string()
-    }
-
-    fn supports(&self) -> Self::Supports {
-        Language("Python".to_owned())
-    }
-
-    fn attributes(&self) -> Attributes {
-        HashMap::from([(Attribute("name".to_string()), AttributeType::String)])
-    }
-
-    type Supports = Language;
-}
-
-impl Filter for FunctionWithParameterPython {
-    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
         let query = Query::new(
             &tree_sitter_rust::LANGUAGE.into(),
             "((function_item
@@ -202,21 +177,48 @@ impl Filter for FunctionWithParameterPython {
     }
 }
 
+impl HasFilterInformation for FunctionWithParameterPython {
+    fn filter_name(&self) -> String {
+        "function_with_parameter".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Find a function with a given parameter".to_string()
+    }
+
+    fn supports(&self) -> Self::Supports {
+        Language("Python".to_owned())
+    }
+
+    fn attributes(&self) -> Attributes {
+        HashMap::from([(Attribute("name".to_string()), AttributeType::String)])
+    }
+
+    type Supports = Language;
+}
+
+impl Filter for FunctionWithParameterPython {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        todo!()
+    }
+}
+
 fn parse_with_param(s: &str) -> Result<String, String> {
     let mut substring = s.split(' ').filter(|s| *s != " ");
     let fst = substring.next().ok_or(
-        "invalid options for function_in_lines filter\nexpected [string] or name: [string]",
+        "invalid options for function_with_parameter filter\nexpected [string] or name: [string]",
     )?;
+    let filter = "function_with_parameters";
     match fst {
-        "start:" => {
+        "name:" => {
             let format = "name: [string]";
-            let name = string(&mut substring, format, "name:")?;
-            extra(&mut substring, format)?;
+            let name = string(&mut substring, format, "name:", filter)?;
+            extra(&mut substring, format, filter)?;
             Ok(name)
         }
 
         name => {
-            extra(&mut substring, "[string]")?;
+            extra(&mut substring, "[string]", filter)?;
             Ok(name.to_string())
         }
     }
