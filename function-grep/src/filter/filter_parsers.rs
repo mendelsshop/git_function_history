@@ -37,5 +37,9 @@ pub fn string<'a>(
     position: &str,
     filter: &str,
 ) -> Result<String, String> {
-    substring.next().map(ToOwned::to_owned).ok_or_else(||format! ("invalid options for function_with_parameter filter\nexpected {format}\n missing {position} [number]"))
+    substring.next().map(ToOwned::to_owned).ok_or_else(|| {
+        format!(
+            "invalid options for {filter} filter\nexpected {format}\n missing {position} [string]"
+        )
+    })
 }

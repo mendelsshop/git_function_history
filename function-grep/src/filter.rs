@@ -117,7 +117,6 @@ pub trait HasFilterInformation {
     fn supports(&self) -> Self::Supports;
 
     fn attributes(&self) -> Attributes;
-    // TODO: have filter creation informaton about types and fields for uis
     fn filter_info(&self) -> FilterInformation<Self::Supports> {
         FilterInformation {
             filter_name: self.filter_name(),

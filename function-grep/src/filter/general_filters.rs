@@ -171,7 +171,7 @@ impl Filter for FunctionWithParameterRust {
             cursor.matches(&query, *node, text_provider).any(|c| {
                 c.captures
                     .iter()
-                    .any(|c| c.node.utf8_text(text_provider).unwrap() == name)
+                    .any(|c| c.node.utf8_text(text_provider).unwrap_or("") == name)
             })
         }))
     }
@@ -198,7 +198,7 @@ impl HasFilterInformation for FunctionWithParameterPython {
 }
 
 impl Filter for FunctionWithParameterPython {
-    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+    fn parse_filter(&self, _s: &str) -> Result<FilterFunction, String> {
         todo!()
     }
 }

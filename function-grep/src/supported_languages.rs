@@ -14,6 +14,12 @@ pub struct InstantiatedLanguage<'a> {
     run_query: QueryFunction,
 }
 
+#[derive(Debug)]
+pub enum InstantiationError {
+    NoMatchingField(String),
+    Query(QueryError),
+    Tags(tree_sitter_tags::Error),
+}
 pub trait HasLanguageInformation {
     /// The name of this language
     fn language_name(&self) -> &'static str;
@@ -88,7 +94,7 @@ pub struct TreeSitter;
 pub struct Tags;
 // TODO: hide in docs?
 trait InstantiateHelper<Type> {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction;
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError>;
 }
 
 // TODO: hide in docs?
@@ -96,41 +102,51 @@ pub trait Assoc {
     type Type;
 }
 impl<T: IdentifierQuery> InstantiateHelper<Identifier> for T {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction {
-        let query = Query::new(&self.language(), &self.query_string().to_string()).unwrap();
-        let method_field = query
-            .capture_index_for_name(&self.query_name().to_string())
-            .unwrap();
-        Box::new(move |node, code| {
-            let name = &*search;
-            let mut query_cursor = tree_sitter::QueryCursor::new();
-            let matches = query_cursor.matches(&query, node, code);
-            let ranges = matches
-                .filter(move |m| {
-                    m.captures
-                        .iter()
-                        .any(|c| c.index == method_field && c.node.utf8_text(code).unwrap() == name)
-                })
-                .map(|m| m.captures[0].node.range());
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError> {
+        Query::new(&self.language(), &self.query_string().to_string())
+            .map_err(InstantiationError::Query)
+            .and_then(|query: Query| {
+                query
+                    .capture_index_for_name(&self.query_name().to_string())
+                    .ok_or_else(|| {
+                        InstantiationError::NoMatchingField(self.query_name().to_string())
+                    })
+                    .map(|method_field| -> QueryFunction {
+                        Box::new(move |node, code| {
+                            let name = &*search;
+                            let mut query_cursor = tree_sitter::QueryCursor::new();
+                            let matches = query_cursor.matches(&query, node, code);
+                            let ranges = matches
+                                .filter(move |m| {
+                                    m.captures.iter().any(|c| {
+                                        c.index == method_field
+                                            && c.node.utf8_text(code).unwrap_or("") == name
+                                    })
+                                })
+                                .map(|m| m.captures[0].node.range());
 
-            ranges.collect()
-        })
+                            ranges.collect()
+                        })
+                    })
+            })
     }
 }
 impl<T: TreeSitterQuery> InstantiateHelper<TreeSitter> for T {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction {
-        let query = Query::new(
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError> {
+        Query::new(
             &self.language(),
             &self.query_string_function(search.as_ref()),
         )
-        .unwrap();
-        Box::new(move |node, code| {
-            let mut query_cursor = tree_sitter::QueryCursor::new();
-            let matches = query_cursor.matches(&query, node, code);
+        .map(|query| -> QueryFunction {
+            Box::new(move |node, code| {
+                let mut query_cursor = tree_sitter::QueryCursor::new();
+                let matches = query_cursor.matches(&query, node, code);
 
-            let ranges = matches.map(|m| m.captures[0].node.range());
-            ranges.collect()
+                let ranges = matches.map(|m| m.captures[0].node.range());
+                ranges.collect()
+            })
         })
+        .map_err(InstantiationError::Query)
     }
 }
 struct TagsConfigurationThreadSafe(TagsConfiguration);
@@ -156,64 +172,75 @@ impl TagsConfigurationThreadSafe {
     }
 }
 impl<T: TreeSitterTags> InstantiateHelper<Tags> for T {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction {
-        let tag_config = TagsConfigurationThreadSafe(
-            TagsConfiguration::new(self.language(), &self.tag_query().to_string(), "").unwrap(),
-        );
-        Box::new(move |node, code| {
-            let mut tag_context = TagsContext::new();
-            let name = &*search;
-            // TODO: don't double parse
-            let tags = tag_config
-                .generate_tags(&mut tag_context, code, None)
-                .unwrap()
-                .0;
-            let ranges = tags
-                .filter_map(Result::ok)
-                .filter(|tag| {
-                    ["method", "function"]
-                        .contains(&tag_config.syntax_type_name(tag.syntax_type_id))
-                        && str::from_utf8(&code[tag.name_range.clone()]).unwrap_or("") == name
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError> {
+        TagsConfiguration::new(self.language(), &self.tag_query().to_string(), "")
+            .map_err(InstantiationError::Tags)
+            .map(|tag_config| -> QueryFunction {
+                let tag_config = TagsConfigurationThreadSafe(tag_config);
+                Box::new(move |node, code| {
+                    let mut tag_context = TagsContext::new();
+                    let name = &*search;
+                    // TODO: don't double parse
+                    tag_config
+                        .generate_tags(&mut tag_context, code, None)
+                        .map(|tags| {
+                            let ranges = tags
+                                .0
+                                .filter_map(Result::ok)
+                                .filter(|tag| {
+                                    ["method", "function"]
+                                        .contains(&tag_config.syntax_type_name(tag.syntax_type_id))
+                                        && str::from_utf8(&code[tag.name_range.clone()])
+                                            .unwrap_or("")
+                                            == name
+                                })
+                                .filter_map(|tag| {
+                                    node.descendant_for_byte_range(tag.range.start, tag.range.end)
+                                        .map(|node| node.range())
+                                });
+                            ranges.collect()
+                        })
+                        .unwrap_or_else(|_| vec![].into_boxed_slice())
                 })
-                .filter_map(|tag| {
-                    node.descendant_for_byte_range(tag.range.start, tag.range.end)
-                        .map(|node| node.range())
-                });
-            ranges.collect()
-        })
+            })
     }
 }
+
 impl<T: Assoc + InstantiateHelper<T::Type> + HasLanguageInformation> SupportedLanguage for T {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction {
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError> {
         self.instantiate(search)
     }
 }
+// TODO: maybe make this fallable
 type QueryFunction = Box<dyn for<'x, 'y> Fn(Node<'x>, &'y [u8]) -> Box<[Range]> + Send + Sync>;
 
 pub trait SupportedLanguage: HasLanguageInformation {
-    fn instantiate(&self, search: Box<str>) -> QueryFunction;
-    fn to_language<'a>(&self, search: &'a str) -> InstantiatedLanguage<'a> {
-        InstantiatedLanguage::new(
-            search,
-            self.language_info(),
-            self.instantiate(search.into()),
-        )
+    fn instantiate(&self, search: Box<str>) -> Result<QueryFunction, InstantiationError>;
+    fn to_language<'a>(
+        &self,
+        search: &'a str,
+    ) -> Result<InstantiatedLanguage<'a>, InstantiationError> {
+        self.instantiate(search.into())
+            .map(|f| InstantiatedLanguage::new(search, self.language_info(), f))
     }
 }
 
 pub trait InstantiateMap<'a> {
-    fn instantiate_map(self, name: &'a str) -> Result<Vec<InstantiatedLanguage<'a>>, QueryError>;
+    fn instantiate_map(
+        self,
+        name: &'a str,
+    ) -> Result<Vec<InstantiatedLanguage<'a>>, InstantiationError>;
 }
 impl<'a, T, U> InstantiateMap<'a> for T
 where
     T: IntoIterator<Item = U>,
     U: Deref<Target = &'a dyn SupportedLanguage>,
 {
-    fn instantiate_map(self, name: &'a str) -> Result<Vec<InstantiatedLanguage<'a>>, QueryError> {
-        Ok(self
-            .into_iter()
-            .map(|l| InstantiatedLanguage::new(name, l.language_info(), l.instantiate(name.into())))
-            .collect())
+    fn instantiate_map(
+        self,
+        name: &'a str,
+    ) -> Result<Vec<InstantiatedLanguage<'a>>, InstantiationError> {
+        self.into_iter().map(|l| l.to_language(name)).collect()
     }
 }
 impl<'a> InstantiatedLanguage<'a> {

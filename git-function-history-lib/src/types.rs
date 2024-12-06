@@ -448,12 +448,7 @@ impl Display for FunctionHistory {
 impl Iterator for FunctionHistory {
     type Item = Commit;
     fn next(&mut self) -> Option<Self::Item> {
-        self.commit_history
-            .get(self.current_iter_pos)
-            .cloned()
-            .inspect(|c| {
-                self.current_iter_pos += 1;
-            })
+        self.commit_history.get(self.current_iter_pos).cloned()
     }
 }
 

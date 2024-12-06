@@ -3,12 +3,11 @@
 #![deny(missing_debug_implementations, clippy::missing_panics_doc)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(clippy::use_self, rust_2018_idioms)]
-use function_grep::supported_languages::InstantiateMap;
+use function_grep::supported_languages::{InstantiateMap, InstantiationError};
 use function_grep::{supported_languages::predefined_languages, ParsedFile};
 
 use clap::Parser;
 use std::{fs::File, io::Read, path::PathBuf};
-use tree_sitter::QueryError;
 #[derive(Parser, Debug)]
 #[command(version, about)]
 pub struct Args {
@@ -23,7 +22,7 @@ pub enum Error {
     CouldNotOpenFile(std::io::Error),
     CouldNotReadFile(std::io::Error),
     LibraryError(function_grep::Error),
-    QueryError(QueryError),
+    InstatantiationError(InstantiationError),
 }
 
 ///
@@ -38,7 +37,7 @@ pub fn main() -> Result<(), Error> {
     let mut code = String::new();
     let languages = predefined_languages()
         .instantiate_map(&args.name)
-        .map_err(Error::QueryError)?;
+        .map_err(Error::InstatantiationError)?;
     file.read_to_string(&mut code)
         .map_err(Error::CouldNotReadFile)?;
     let file_name = &args.file.to_string_lossy();

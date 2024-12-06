@@ -4,10 +4,7 @@ use std::{collections::HashMap, fmt, sync::mpsc, time::Duration};
 
 use eframe::{
     self,
-    egui::{
-        self, Button, Label, Layout, Sense, SidePanel, TextBuffer, TextEdit, TopBottomPanel,
-        Visuals,
-    },
+    egui::{self, Button, Label, Layout, Sense, SidePanel, TextEdit, TopBottomPanel, Visuals},
     epaint::{Color32, Vec2},
 };
 use function_history_backend_thread::types::{
@@ -259,7 +256,7 @@ impl MyEguiApp {
         max: f32,
         next_field: &mut String,
         specific: &mut Option<String>,
-        languages: &Vec<String>,
+        languages: &[String],
         filters: &function_grep::filter::FilterType<'static>,
     ) -> Result<Option<PLFilter>, String> {
         // TODO: cleanup
@@ -269,7 +266,6 @@ impl MyEguiApp {
                 ui.set_max_width(max);
                 ui.label(desc.to_string());
                 ui.add(TextEdit::singleline(&mut field.1));
-                // TODO: make - work
                 field.0 = ui.add(Button::new("-")).clicked();
             });
         });
@@ -280,7 +276,7 @@ impl MyEguiApp {
             next_field.clear();
         }
         inputs.retain(|_, input| !input.0);
-        egui::ComboBox::from_id_source("filter_language_chooser")
+        egui::ComboBox::from_id_salt("filter_language_chooser")
             .selected_text("Language")
             .show_ui(ui, |ui| {
                 ui.selectable_value(specific, None, "All");
@@ -383,7 +379,7 @@ impl eframe::App for MyEguiApp {
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
                             let max = ui.available_width() / 6.0;
-                            egui::ComboBox::from_id_source("command_combo_box")
+                            egui::ComboBox::from_id_salt("command_combo_box")
                                 .selected_text(self.command.to_string())
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
@@ -409,7 +405,7 @@ impl eframe::App for MyEguiApp {
                                                 }
                                                 a => a.to_string(),
                                             };
-                                            egui::ComboBox::from_id_source("history_combo_box")
+                                            egui::ComboBox::from_id_salt("history_combo_box")
                                                 .selected_text(text)
                                                 .show_ui(ui, |ui| {
                                                     ui.selectable_value(
@@ -598,7 +594,7 @@ impl eframe::App for MyEguiApp {
                                         FileFilterType::Relative(_) => "relative",
                                         _ => "file type",
                                     };
-                                    egui::ComboBox::from_id_source("search_file_combo_box")
+                                    egui::ComboBox::from_id_salt("search_file_combo_box")
                                         .selected_text(text)
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
@@ -637,28 +633,30 @@ impl eframe::App for MyEguiApp {
                                         Filter::Date(_) => "date".to_string(),
                                         _ => "filter type".to_string(),
                                     };
-                                    egui::ComboBox::from_id_source(
-                                        "search_search_filter_combo_box",
-                                    )
-                                    .selected_text(text)
-                                    .show_ui(ui, |ui| {
-                                        ui.selectable_value(&mut self.filter, Filter::None, "None");
-                                        ui.selectable_value(
-                                            &mut self.filter,
-                                            Filter::CommitHash(String::new()),
-                                            "Commit Hash",
-                                        );
-                                        ui.selectable_value(
-                                            &mut self.filter,
-                                            Filter::Date(String::new()),
-                                            "Date",
-                                        );
-                                        ui.selectable_value(
-                                            &mut self.filter,
-                                            Filter::DateRange(String::new(), String::new()),
-                                            "Date Range",
-                                        );
-                                    });
+                                    egui::ComboBox::from_id_salt("search_search_filter_combo_box")
+                                        .selected_text(text)
+                                        .show_ui(ui, |ui| {
+                                            ui.selectable_value(
+                                                &mut self.filter,
+                                                Filter::None,
+                                                "None",
+                                            );
+                                            ui.selectable_value(
+                                                &mut self.filter,
+                                                Filter::CommitHash(String::new()),
+                                                "Commit Hash",
+                                            );
+                                            ui.selectable_value(
+                                                &mut self.filter,
+                                                Filter::Date(String::new()),
+                                                "Date",
+                                            );
+                                            ui.selectable_value(
+                                                &mut self.filter,
+                                                Filter::DateRange(String::new(), String::new()),
+                                                "Date Range",
+                                            );
+                                        });
 
                                     // let
                                     match &mut self.filter {
@@ -674,7 +672,7 @@ impl eframe::App for MyEguiApp {
                                         _ => {}
                                     }
                                     //let text = self.language.to_string();
-                                    //egui::ComboBox::from_id_source("search_language_combo_box")
+                                    //egui::ComboBox::from_id_salt("search_language_combo_box")
                                     //    .selected_text(text)
                                     //    .show_ui(ui, |ui| {
                                     //        ui.selectable_value(
@@ -713,7 +711,7 @@ impl eframe::App for MyEguiApp {
                                     }
                                 }
                                 Command::List => {
-                                    egui::ComboBox::from_id_source("list_type")
+                                    egui::ComboBox::from_id_salt("list_type")
                                         .selected_text(self.list_type.to_string())
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
