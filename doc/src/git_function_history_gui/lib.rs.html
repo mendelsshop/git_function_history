@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-dbdb5eec.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d49be02cf 2024-12-02)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history_gui/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-gui/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-dbdb5eec.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history_gui" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (c94848c04 2024-12-05)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history_gui/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -913,18 +913,13 @@
 <a href="#912" id="912">912</a>
 <a href="#913" id="913">913</a>
 <a href="#914" id="914">914</a>
-<a href="#915" id="915">915</a>
-<a href="#916" id="916">916</a>
-<a href="#917" id="917">917</a></pre></div><pre class="rust"><code><span class="kw">mod </span>types;
+<a href="#915" id="915">915</a></pre></div><pre class="rust"><code><span class="kw">mod </span>types;
 
 <span class="kw">use </span>std::{collections::HashMap, fmt, sync::mpsc, time::Duration};
 
 <span class="kw">use </span>eframe::{
     <span class="self">self</span>,
-    egui::{
-        <span class="self">self</span>, Button, Label, Layout, Sense, SidePanel, TextBuffer, TextEdit, TopBottomPanel,
-        Visuals,
-    },
+    egui::{<span class="self">self</span>, Button, Label, Layout, Sense, SidePanel, TextEdit, TopBottomPanel, Visuals},
     epaint::{Color32, Vec2},
 };
 <span class="kw">use </span>function_history_backend_thread::types::{
@@ -1176,7 +1171,7 @@
         max: f32,
         next_field: <span class="kw-2">&amp;mut </span>String,
         specific: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;String&gt;,
-        languages: <span class="kw-2">&amp;</span>Vec&lt;String&gt;,
+        languages: <span class="kw-2">&amp;</span>[String],
         filters: <span class="kw-2">&amp;</span>function_grep::filter::FilterType&lt;<span class="lifetime">'static</span>&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;PLFilter&gt;, String&gt; {
         <span class="comment">// TODO: cleanup
@@ -1186,8 +1181,7 @@
                 ui.set_max_width(max);
                 ui.label(desc.to_string());
                 ui.add(TextEdit::singleline(<span class="kw-2">&amp;mut </span>field.<span class="number">1</span>));
-                <span class="comment">// TODO: make - work
-                </span>field.<span class="number">0 </span>= ui.add(Button::new(<span class="string">"-"</span>)).clicked();
+                field.<span class="number">0 </span>= ui.add(Button::new(<span class="string">"-"</span>)).clicked();
             });
         });
         ui.add(TextEdit::singleline(next_field));
@@ -1197,7 +1191,7 @@
             next_field.clear();
         }
         inputs.retain(|<span class="kw">_</span>, input| !input.<span class="number">0</span>);
-        egui::ComboBox::from_id_source(<span class="string">"filter_language_chooser"</span>)
+        egui::ComboBox::from_id_salt(<span class="string">"filter_language_chooser"</span>)
             .selected_text(<span class="string">"Language"</span>)
             .show_ui(ui, |ui| {
                 ui.selectable_value(specific, <span class="prelude-val">None</span>, <span class="string">"All"</span>);
@@ -1300,7 +1294,7 @@
                         .auto_shrink([<span class="bool-val">false</span>, <span class="bool-val">false</span>])
                         .show(ui, |ui| {
                             <span class="kw">let </span>max = ui.available_width() / <span class="number">6.0</span>;
-                            egui::ComboBox::from_id_source(<span class="string">"command_combo_box"</span>)
+                            egui::ComboBox::from_id_salt(<span class="string">"command_combo_box"</span>)
                                 .selected_text(<span class="self">self</span>.command.to_string())
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
@@ -1326,7 +1320,7 @@
                                                 }
                                                 a =&gt; a.to_string(),
                                             };
-                                            egui::ComboBox::from_id_source(<span class="string">"history_combo_box"</span>)
+                                            egui::ComboBox::from_id_salt(<span class="string">"history_combo_box"</span>)
                                                 .selected_text(text)
                                                 .show_ui(ui, |ui| {
                                                     ui.selectable_value(
@@ -1515,7 +1509,7 @@
                                         FileFilterType::Relative(<span class="kw">_</span>) =&gt; <span class="string">"relative"</span>,
                                         <span class="kw">_ </span>=&gt; <span class="string">"file type"</span>,
                                     };
-                                    egui::ComboBox::from_id_source(<span class="string">"search_file_combo_box"</span>)
+                                    egui::ComboBox::from_id_salt(<span class="string">"search_file_combo_box"</span>)
                                         .selected_text(text)
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
@@ -1554,28 +1548,30 @@
                                         Filter::Date(<span class="kw">_</span>) =&gt; <span class="string">"date"</span>.to_string(),
                                         <span class="kw">_ </span>=&gt; <span class="string">"filter type"</span>.to_string(),
                                     };
-                                    egui::ComboBox::from_id_source(
-                                        <span class="string">"search_search_filter_combo_box"</span>,
-                                    )
-                                    .selected_text(text)
-                                    .show_ui(ui, |ui| {
-                                        ui.selectable_value(<span class="kw-2">&amp;mut </span><span class="self">self</span>.filter, Filter::None, <span class="string">"None"</span>);
-                                        ui.selectable_value(
-                                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
-                                            Filter::CommitHash(String::new()),
-                                            <span class="string">"Commit Hash"</span>,
-                                        );
-                                        ui.selectable_value(
-                                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
-                                            Filter::Date(String::new()),
-                                            <span class="string">"Date"</span>,
-                                        );
-                                        ui.selectable_value(
-                                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
-                                            Filter::DateRange(String::new(), String::new()),
-                                            <span class="string">"Date Range"</span>,
-                                        );
-                                    });
+                                    egui::ComboBox::from_id_salt(<span class="string">"search_search_filter_combo_box"</span>)
+                                        .selected_text(text)
+                                        .show_ui(ui, |ui| {
+                                            ui.selectable_value(
+                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
+                                                Filter::None,
+                                                <span class="string">"None"</span>,
+                                            );
+                                            ui.selectable_value(
+                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
+                                                Filter::CommitHash(String::new()),
+                                                <span class="string">"Commit Hash"</span>,
+                                            );
+                                            ui.selectable_value(
+                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
+                                                Filter::Date(String::new()),
+                                                <span class="string">"Date"</span>,
+                                            );
+                                            ui.selectable_value(
+                                                <span class="kw-2">&amp;mut </span><span class="self">self</span>.filter,
+                                                Filter::DateRange(String::new(), String::new()),
+                                                <span class="string">"Date Range"</span>,
+                                            );
+                                        });
 
                                     <span class="comment">// let
                                     </span><span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.filter {
@@ -1591,7 +1587,7 @@
                                         <span class="kw">_ </span>=&gt; {}
                                     }
                                     <span class="comment">//let text = self.language.to_string();
-                                    //egui::ComboBox::from_id_source("search_language_combo_box")
+                                    //egui::ComboBox::from_id_salt("search_language_combo_box")
                                     //    .selected_text(text)
                                     //    .show_ui(ui, |ui| {
                                     //        ui.selectable_value(
@@ -1630,7 +1626,7 @@
                                     }
                                 }
                                 Command::List =&gt; {
-                                    egui::ComboBox::from_id_source(<span class="string">"list_type"</span>)
+                                    egui::ComboBox::from_id_salt(<span class="string">"list_type"</span>)
                                         .selected_text(<span class="self">self</span>.list_type.to_string())
                                         .show_ui(ui, |ui| {
                                             ui.selectable_value(
