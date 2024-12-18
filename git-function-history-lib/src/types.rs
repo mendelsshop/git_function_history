@@ -119,7 +119,7 @@ impl Commit {
     /// # Errors
     ///
     /// Will result in an `Err` if a non-valid filter is given, or if no results are found for the given filter
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
+    pub fn filter_by(&self, filter: &mut Filter) -> Result<Self, ErrorReason> {
         match filter {
             Filter::FileAbsolute(_)
             | Filter::FileRelative(_)
@@ -142,14 +142,14 @@ impl Commit {
                         None
                     }
                 }
-                Filter::FileRelative(file) => {
+                Filter::FileRelative(ref file) => {
                     if f.file_name()?.ends_with(file) {
                         Some(f.clone())
                     } else {
                         None
                     }
                 }
-                Filter::Directory(dir) => {
+                Filter::Directory(ref dir) => {
                     if f.file_name()?.contains(dir) {
                         Some(f.clone())
                     } else {
@@ -324,10 +324,10 @@ impl FunctionHistory {
     /// # Errors
     ///
     /// returns `Err` if no files or commits are match the filter specified
-    pub fn filter_by(&self, filter: &Filter) -> Result<Self, ErrorReason> {
+    pub fn filter_by(&self, filter: &mut Filter) -> Result<Self, ErrorReason> {
         #[cfg(feature = "parallel")]
         let t = self.commit_history.par_iter();
-        #[cfg(not(feature = "parallel"))]
+        // #[cfg(not(feature = "parallel"))]
         let t = self.commit_history.iter();
         let vec: Vec<Commit> = t
             .filter_map(|f| match filter {
@@ -378,7 +378,7 @@ impl FunctionHistory {
                         None
                     }
                 }
-                Filter::Message(message) => {
+                Filter::Message(ref message) => {
                     if f.message.contains(message) {
                         Some(f.clone())
                     } else {

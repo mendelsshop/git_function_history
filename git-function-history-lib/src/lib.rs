@@ -314,8 +314,7 @@ pub fn get_function_history(
     if commits.is_empty() {
         Err("no history found")?;
     }
-    let fh = FunctionHistory::new(name.to_string(), commits);
-    Ok(fh)
+    Ok(FunctionHistory::new(name.to_string(), commits))
 }
 
 fn sender(

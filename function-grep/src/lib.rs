@@ -140,11 +140,11 @@ impl ParsedFile {
     ///
     /// # Errors
     /// If the filter [`f`] filters out all the results of this file
-    pub fn filter(&self, f: &InstantiatedFilterType) -> Result<Self, Error> {
+    pub fn filter(&self, f: &mut InstantiatedFilterType) -> Result<Self, Error> {
         match f {
             InstantiatedFilterType::Many(supported_language) => {
                 let lang = self.language();
-                let filter = supported_language.filters.get(lang);
+                let filter = supported_language.filters.get_mut(lang);
                 let filter = filter.ok_or(Error::FilterLangaugeMismatch);
                 filter.and_then(|f| self.filter_inner(f))
             }
@@ -153,7 +153,7 @@ impl ParsedFile {
         }
     }
 
-    fn filter_inner<T>(&self, f: &InstantiatedFilter<T>) -> Result<Self, Error> {
+    fn filter_inner<T>(&self, f: &mut InstantiatedFilter<T>) -> Result<Self, Error> {
         let root = self.tree.root_node();
         let ranges: Box<[Range]> = self
             .ranges()

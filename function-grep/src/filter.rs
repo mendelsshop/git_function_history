@@ -1,5 +1,6 @@
 use general_filters::{
     FunctionInImpl, FunctionInLines, FunctionWithParameterPython, FunctionWithParameterRust,
+    TreeSitterQueryFilter,
 };
 use std::{
     collections::{hash_map, HashMap},
@@ -126,7 +127,7 @@ pub trait HasFilterInformation {
         }
     }
 }
-type FilterFunction = Box<dyn Fn(&Node<'_>, &str) -> bool + Send + Sync>;
+type FilterFunction = Box<dyn FnMut(&Node<'_>, &str) -> bool + Send + Sync>;
 
 // TODO: make our own FromStr that also requires the proggramer to sepcify that attributes each
 // filter has and their type so that we can make macro that creates parser, and also so that we can
@@ -163,7 +164,7 @@ impl<Supports: std::fmt::Debug> std::fmt::Debug for InstantiatedFilter<Supports>
 
 impl<Supports> InstantiatedFilter<Supports> {
     #[must_use]
-    pub fn filter(&self, node: &Node<'_>, code: &str) -> bool {
+    pub fn filter(&mut self, node: &Node<'_>, code: &str) -> bool {
         (self.filter_function)(node, code)
     }
 
@@ -318,6 +319,15 @@ impl Filters<'static> {
                 (
                     FunctionInLines.filter_info().filter_name().to_string(),
                     SingleOrMany::All(&FunctionInLines as &'static dyn Filter<Supports = All>),
+                ),
+                (
+                    TreeSitterQueryFilter
+                        .filter_info()
+                        .filter_name()
+                        .to_string(),
+                    SingleOrMany::All(
+                        &TreeSitterQueryFilter as &'static dyn Filter<Supports = All>,
+                    ),
                 ),
                 (
                     FunctionInImpl.filter_info().filter_name().to_string(),

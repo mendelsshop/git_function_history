@@ -125,12 +125,12 @@ pub fn command_thread(
                             ),
                         }
                     }
-                    FullCommand::Filter(filter) => {
+                    FullCommand::Filter(mut filter) => {
                         if let CommandResult::History(hist) = filter.thing {
                             if log {
                                 log::info!("Filtering history with filter {:?}", filter.filter);
                             }
-                            match hist.filter_by(&filter.filter) {
+                            match hist.filter_by(&mut filter.filter) {
                                 Ok(hist) => {
                                     if log {
                                         log::info!("Filtered history");

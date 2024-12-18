@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use tree_sitter::{Node, Query, QueryCursor};
 
@@ -113,6 +113,62 @@ impl HasFilterInformation for FunctionInImpl {
     }
 }
 
+pub struct TreeSitterQueryFilter;
+impl HasFilterInformation for TreeSitterQueryFilter {
+    fn filter_name(&self) -> String {
+        "tree_sitter_query".to_string()
+    }
+
+    fn description(&self) -> String {
+        "filter using an arbritrary tree sitter query".to_string()
+    }
+
+    fn supports(&self) -> Self::Supports {
+        All
+    }
+
+    fn attributes(&self) -> Attributes {
+        HashMap::from([(Attribute("query".to_string()), AttributeType::String)])
+    }
+
+    type Supports = All;
+}
+impl Filter for TreeSitterQueryFilter {
+    fn parse_filter(&self, s: &str) -> Result<FilterFunction, String> {
+        let mut languages: HashMap<tree_sitter::Language, Result<Query, ()>> = HashMap::new();
+        let query: String = {
+            let mut substring = s.split(' ').filter(|s| *s != " ").peekable();
+            let fst = substring.peek().ok_or(
+                "invalid options for tree_sitter_query filter\nexpected [string] or name: [string]",
+            )?;
+            match *fst {
+                "query:" => {
+                    substring.next();
+                    substring.collect::<Vec<_>>().join(" ")
+                }
+
+                _ => substring.collect::<Vec<_>>().join(" "),
+            }
+        };
+        Ok(Box::new(move |node: &Node<'_>, code| {
+            let language = node.language();
+            let language: &tree_sitter::Language = &language;
+            let mut cursor = QueryCursor::new();
+            cursor.set_max_start_depth(Some(0));
+            let text_provider = code.as_bytes();
+            match languages
+                .entry(language.clone())
+                .or_insert(Query::new(language, &query).map_err(|_| ()))
+            {
+                Ok(query) => cursor
+                    .matches(&query, *node, text_provider)
+                    .next()
+                    .is_some(),
+                Err(_) => false,
+            }
+        }))
+    }
+}
 pub struct FunctionWithParameterRust;
 pub struct FunctionWithParameterPython;
 
@@ -221,5 +277,52 @@ fn parse_with_param(s: &str) -> Result<String, String> {
             extra(&mut substring, "[string]", filter)?;
             Ok(name.to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        filter::Filter,
+        supported_languages::{Rust, SupportedLanguage},
+        ParsedFile,
+    };
+
+    use super::TreeSitterQueryFilter;
+
+    #[test]
+    fn tree_sitter_query() {
+        let file = ParsedFile::search_file(
+            include_str!("../../../git-function-history-lib/src/test_functions.rs"),
+            &Rust.to_language("empty_test").unwrap(),
+        )
+        .unwrap();
+        println!("original:\n{file}");
+        let mut filter = TreeSitterQueryFilter
+            .to_filter(" (function_item type_parameters: (type_parameters))")
+            .unwrap();
+
+        let filtered = file.filter_inner(&mut filter);
+        assert!(filtered.is_ok());
+        let filtered = filtered.unwrap();
+        println!("filtered:\n{filtered}");
+    }
+    #[test]
+    fn tree_sitter_query_with_predicate() {
+        let file = ParsedFile::search_file(
+            include_str!("../../../git-function-history-lib/src/test_functions.rs"),
+            &Rust.to_language("empty_test").unwrap(),
+        )
+        .unwrap();
+        println!("original:\n{file}");
+        let mut filter = TreeSitterQueryFilter
+            .to_filter(" (function_item type_parameters: (type_parameters (type_identifier) @type)   (#eq? @type \"T\")
+)")
+            .unwrap();
+
+        let filtered = file.filter_inner(&mut filter);
+        assert!(filtered.is_ok());
+        let filtered = filtered.unwrap();
+        println!("filtered:\n{filtered}");
     }
 }
