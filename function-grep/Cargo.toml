@@ -34,7 +34,7 @@ tree-sitter-go = { version = "0.23.4", optional = true }
 tree-sitter-c-sharp = { version = "0.23.1", optional = true }
 tree-sitter-javascript = { version = "0.23.1", optional = true }
 tree-sitter-rust = { version = "0.23.0", optional = true }
-tree-sitter-tags = "0.23"
+tree-sitter-tags = "0.25"
 log = "0.4.22"
 
 
