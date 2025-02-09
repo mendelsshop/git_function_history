@@ -16,12 +16,12 @@ default = ["parallel"]
 parallel = ["git_function_history/parallel", "function_history_backend_thread/parallel"]
 
 [dependencies]
-eframe = {version = "0.29.1"}
+eframe = {version = "0.31.0"}
 egui_extras = { version = "*", features = ["all_loaders"] }
 git_function_history = { path = "../git-function-history-lib", version = "0.7.1", default-features = false}
 function_history_backend_thread = { path = "../function_history_backend_thread", version = "0.3.1", default-features = false}
 simple_file_logger = "0.4.1"
-log = "0.4.22"
-image = "0.25.2"
+log = "0.4.25"
+image = "0.25.5"
 function-grep = { version = "0.1.1", path = "../function-grep" }
-itertools = "0.13.0"
+itertools = "0.14.0"

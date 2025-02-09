@@ -39,7 +39,7 @@ log = "0.4.22"
 
 
 [dev-dependencies]
-clap = { version = "4.5.23", features = ["derive"] }
+clap = { version = "4.5.28", features = ["derive"] }
 
 [[example]]
 name = "function-grep"
