@@ -11,7 +11,7 @@
 <span class="kw">use </span>tree_sitter::Point;
 <span class="kw">use </span>tree_sitter::Range;
 
-<span class="kw">let </span>results = ParsedFile::search_file( <span class="string">"fn foo() {}\n fn bar()\n"</span>, <span class="kw-2">&amp;</span>Rust.to_language(<span class="string">"foo"</span>)).unwrap();
+<span class="kw">let </span>results = ParsedFile::search_file( <span class="string">"fn foo() {}\n fn bar()\n"</span>, <span class="kw-2">&amp;</span>Rust.to_language(<span class="string">"foo"</span>).unwrap()).unwrap();
 <span class="macro">println!</span>(<span class="string">"{:?}"</span>, results.results());
 <span class="macro">assert_eq!</span>(results.results(), <span class="kw-2">&amp;</span>[Range { start_byte: <span class="number">0</span>, end_byte: <span class="number">11</span>, start_point: Point { row: <span class="number">0</span>, column: <span class="number">0 </span>}, end_point: Point { row: <span class="number">0</span>, column: <span class="number">11 </span>} }]);
 <span class="macro">assert_eq!</span>(results.to_string(), <span class="string">"1: fn foo() {}"</span>.to_string())</code></pre></div><h3 id="when-you-dont-know-the-language"><a class="doc-anchor" href="#when-you-dont-know-the-language">§</a>When you don’t know the language</h3>
@@ -64,7 +64,7 @@ To use this as cli utility see <a href="#cli">here</a></p>
   value: (closure_expression)) @method-definition
 (#eq? @method-name {name}))"
 </span>);
-<span class="kw">let </span>results = ParsedFile::search_file( <span class="string">"fn foo() {}\n fn bar()\n"</span>, <span class="kw-2">&amp;</span>Rust.to_language(<span class="string">"foo"</span>)).unwrap();
+<span class="kw">let </span>results = ParsedFile::search_file( <span class="string">"fn foo() {}\n fn bar()\n"</span>, <span class="kw-2">&amp;</span>Rust.to_language(<span class="string">"foo"</span>).unwrap()).unwrap();
 <span class="macro">println!</span>(<span class="string">"{:?}"</span>, results.results());
 <span class="macro">assert_eq!</span>(results.results(), <span class="kw-2">&amp;</span>[Range { start_byte: <span class="number">0</span>, end_byte: <span class="number">11</span>, start_point: Point { row: <span class="number">0</span>, column: <span class="number">0 </span>}, end_point: Point { row: <span class="number">0</span>, column: <span class="number">11 </span>} }]);
 <span class="macro">assert_eq!</span>(results.to_string(), <span class="string">"1: fn foo() {}"</span>.to_string())</code></pre></div><h2 id="predefined-languages"><a class="doc-anchor" href="#predefined-languages">§</a>Predefined Languages</h2>
