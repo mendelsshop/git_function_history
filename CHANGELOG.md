@@ -1,7 +1,3 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
 ## [3.1.0] - 2023-10-17
 
 ### 💼 Other
@@ -24,7 +20,6 @@ All notable changes to this project will be documented in this file.
 
 - Update changelog
 - Update changelog
-
 ## [2.1.0] - 2022-09-28
 
 ### 💼 Other
@@ -34,7 +29,6 @@ All notable changes to this project will be documented in this file.
 - Trying to optimize threading realizng the problem is not with the trreading but with something else
 - Added loading ...
 - Added parelel as optinal (but default feature
-
 ## [1.0.0] - 2022-09-19
 
 ### 💼 Other
@@ -48,4 +42,3 @@ All notable changes to this project will be documented in this file.
 - Edit mode via shift :  or : for maximux um campitiblity
 - Filters are done and dates should work
 - Now using logger instead of println!()s
-
