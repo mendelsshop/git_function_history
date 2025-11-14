@@ -1,3 +1,2 @@
-var srcIndex = new Map(JSON.parse('[["cargo_function_history",["",[["app",[],["actions.rs","mod.rs","state.rs","ui.rs"]]],["keys.rs","lib.rs"]]],["function_grep",["",[["filter",[],["filter_parsers.rs","general_filters.rs"]]],["filter.rs","lib.rs","supported_languages.rs"]]],["function_history_backend_thread",["",[],["lib.rs","types.rs"]]],["git_function_history",["",[],["lib.rs","types.rs"]]],["git_function_history_gui",["",[],["lib.rs","types.rs"]]],["git_function_history_proc_macro",["",[],["lib.rs"]]]]'));
-createSrcSidebar();
-//{"start":36,"fragment_lengths":[108,130,66,55,59,55]}
+createSrcSidebar('[["cargo_function_history",["",[["app",[],["actions.rs","mod.rs","state.rs","ui.rs"]]],["keys.rs","lib.rs"]]],["function_grep",["",[["filter",[],["filter_parsers.rs","general_filters.rs"]]],["filter.rs","lib.rs","supported_languages.rs"]]],["function_history_backend_thread",["",[],["lib.rs","types.rs"]]],["git_function_history",["",[],["lib.rs","types.rs"]]],["git_function_history_gui",["",[],["lib.rs","types.rs"]]],["git_function_history_proc_macro",["",[],["lib.rs"]]]]');
+//{"start":19,"fragment_lengths":[108,130,66,55,59,55]}
