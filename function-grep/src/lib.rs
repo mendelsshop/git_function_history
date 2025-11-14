@@ -77,13 +77,14 @@ pub fn get_file_type_from_file_ext<'a>(
         .ok_or_else(|| Error::FileTypeUnkown(ext.to_string()))
 }
 
-/// Tries to find the appropiate language for the given file [`file_name`] based on the list of
-/// languages [`langs`] provided.
+/// Tries to find the appropiate language for the given file [`file_name`]
+/// based on the list of languages [`langs`] provided.
 /// This works by obtaining the extension from the file path and using
 /// [`get_file_type_from_file_ext`].
 ///
 /// # Errors
-/// If there is no file extension for this file name, or there is no language for this file in the provided language list.
+/// If there is no file extension for this file name,
+/// or there is no language for this file in the provided language list.
 pub fn get_file_type_from_file<'a>(
     file_name: &str,
     langs: &'a [InstantiatedLanguage<'a>],

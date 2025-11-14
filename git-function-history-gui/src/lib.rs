@@ -332,7 +332,7 @@ impl eframe::App for MyEguiApp {
         } else {
             egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
                 ui.add_space(20.);
-                egui::menu::bar(ui, |ui| {
+                egui::MenuBar::new().ui(ui, |ui| {
                     ui.with_layout(Layout::left_to_right(eframe::emath::Align::Center), |ui| {
                         match &self.status {
                             Status::Loading => {
@@ -372,7 +372,7 @@ impl eframe::App for MyEguiApp {
                 ui.add_space(20.);
             });
             egui::TopBottomPanel::bottom("commnad_builder").show(ctx, |ui| {
-                egui::menu::bar(ui, |ui| {
+                egui::MenuBar::new().ui(ui, |ui| {
                     egui::ScrollArea::horizontal()
                         .max_height(f32::INFINITY)
                         .max_width(f32::INFINITY)
@@ -888,7 +888,7 @@ fn initialize_filter_state(
 }
 
 fn instantiate_single_filter_state<T>(
-    allfilter: &(dyn function_grep::filter::Filter<Supports = T>),
+    allfilter: &dyn function_grep::filter::Filter<Supports = T>,
     filter: function_grep::filter::FilterType<'static>,
 ) -> HistoryFilterType
 where
@@ -898,7 +898,7 @@ where
 }
 
 fn instantiate_single_filter_state_inner<T>(
-    allfilter: &(dyn function_grep::filter::Filter<Supports = T>),
+    allfilter: &dyn function_grep::filter::Filter<Supports = T>,
     filter: function_grep::filter::FilterType<'static>,
 ) -> PLFilter
 where

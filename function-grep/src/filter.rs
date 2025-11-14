@@ -141,10 +141,6 @@ impl<Supports: PartialEq> PartialEq for InstantiatedFilter<Supports> {
     fn eq(&self, other: &Self) -> bool {
         self.filter_information == other.filter_information
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
 }
 impl<Supports: PartialEq> Eq for InstantiatedFilter<Supports> {}
 
@@ -270,7 +266,7 @@ impl FilterType<'_> {
                 .collect::<Result<HashMap<_, _>, _>>()
                 .map(|filters| {
                     SingleOrMany::Many(Many {
-                        name: name.to_string(),
+                        name: name.clone(),
                         filters,
                     })
                 }),
@@ -310,9 +306,8 @@ impl<'a> IntoIterator for Filters<'a> {
     }
 }
 
-impl Filters<'static> {
-    #[must_use]
-    pub fn default() -> Self {
+impl Default for Filters<'static> {
+    fn default() -> Self {
         Self {
             filters: HashMap::from([
                 (
@@ -407,8 +402,8 @@ impl<'a> Filters<'a> {
 }
 
 fn try_add_filter<'a>(
-    filters: &mut Many<&'a (dyn Filter<Supports = Language>)>,
-    filter: &'a (dyn Filter<Supports = Language>),
+    filters: &mut Many<&'a dyn Filter<Supports = Language>>,
+    filter: &'a dyn Filter<Supports = Language>,
 ) -> Result<(), String> {
     let mut status = Ok(());
     filters
@@ -426,8 +421,8 @@ fn try_add_filter<'a>(
 }
 
 fn try_extend_filter<'a>(
-    filters: &mut Many<&'a (dyn Filter<Supports = Language>)>,
-    new_filters: Many<&'a (dyn Filter<Supports = Language>)>,
+    filters: &mut Many<&'a dyn Filter<Supports = Language>>,
+    new_filters: Many<&'a dyn Filter<Supports = Language>>,
 ) -> Result<(), String> {
     new_filters
         .filters

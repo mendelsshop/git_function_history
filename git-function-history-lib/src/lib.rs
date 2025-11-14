@@ -12,7 +12,7 @@
     clippy::too_many_lines
 )]
 /// code and function related language
-
+///
 /// Different types that can extracted from the result of `get_function_history`.
 pub mod types;
 macro_rules! get_item_from {
@@ -235,9 +235,9 @@ pub fn get_function_history(
     let langs = langs.as_slice();
     if let Filter::Date(date) = filter {
         let date = DateTime::parse_from_rfc2822(date)?.with_timezone(&Utc);
-        let commit = commits.min_by_key(|commit| (commit.1 .4.sub(date).num_seconds().abs()));
+        let commit = commits.min_by_key(|commit| commit.1 .4.sub(date).num_seconds().abs());
         return if let Some(i) = commit {
-            let tree = sender(i.0, th_repo.to_thread_local(), langs1, langs, file)?;
+            let tree = sender(i.0, &th_repo.to_thread_local(), langs1, langs, file)?;
 
             if tree.is_empty() {
                 Err("empty commit found")?;
@@ -289,7 +289,7 @@ pub fn get_function_history(
     // and report some of errors if no oks and if no oks and errs report no history found
     let commits = commits
         .filter_map(|i| {
-            let tree = sender(i.0, th_repo.to_thread_local(), langs1, langs, file);
+            let tree = sender(i.0, &th_repo.to_thread_local(), langs1, langs, file);
             match tree {
                 Ok(tree) => {
                     if tree.is_empty() {
@@ -320,7 +320,7 @@ pub fn get_function_history(
 
 fn sender(
     id: ObjectId,
-    repo: gix::Repository,
+    repo: &gix::Repository,
     file_exts: &[&str],
     langs: &[InstantiatedLanguage<'_>],
     file: &FileFilterType,
@@ -328,14 +328,14 @@ fn sender(
     let object = repo.find_object(id).map_err(|_| "failed to find object")?;
     let tree = object.try_into_tree();
     let binding = tree.unwrap();
-    traverse_tree(&binding, &repo, String::new(), file_exts, langs, file)
+    traverse_tree(&binding, repo, "", file_exts, langs, file)
 }
 
 #[inline]
 fn traverse_tree(
     tree: &Tree<'_>,
     repo: &gix::Repository,
-    path: String,
+    path: &str,
     file_exts: &[&str],
     langs: &[InstantiatedLanguage<'_>],
     filetype: &FileFilterType,
@@ -361,7 +361,9 @@ fn traverse_tree(
                     .map_err(|_| {
                         format!("Could not find {} from object", stringify!(try_into_tree))
                     })?;
-                ret.extend(traverse_tree(&new, repo, file, file_exts, langs, filetype)?);
+                ret.extend(traverse_tree(
+                    &new, repo, &file, file_exts, langs, filetype,
+                )?);
             }
             objs::tree::EntryKind::Blob => {
                 match &filetype {
@@ -411,7 +413,7 @@ fn traverse_tree(
             _ => {}
         }
     }
-    ret.extend(find_function_in_files_with_commit(files, langs));
+    ret.extend(find_function_in_files_with_commit(&files, langs));
 
     Ok(ret)
 }
@@ -535,7 +537,7 @@ pub struct CommitInfo {
 // #[cfg_attr(feature = "cache", cached)]
 // function that takes a vec of files paths and there contents and a function name and uses find_function_in_file_with_commit to find the function in each file and returns a vec of the functions
 fn find_function_in_files_with_commit(
-    files: Vec<(String, String)>,
+    files: &[(String, String)],
     langs: &[InstantiatedLanguage<'_>],
 ) -> Vec<ParsedFile> {
     // commenting out this parallelization seems to net a gain in performance with tree sitter
@@ -551,7 +553,7 @@ fn ends_with_cmp_no_case(filename: &str, file_ext: &str) -> bool {
     let filename = std::path::Path::new(filename);
     filename
         .extension()
-        .map_or(false, |ext| ext.eq_ignore_ascii_case(file_ext))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case(file_ext))
 }
 
 trait UnwrapToError<T> {
@@ -589,20 +591,7 @@ mod tests {
         }
         assert!(output.is_ok());
     }
-    //     #[test]
-    //     fn git_installed() {
-    //         let output = get_function_history(
-    //             "empty_test",
-    //             &FileFilterType::Absolute("src/test_functions.rs".to_string()),
-    //             &Filter::None,
-    //             &languages::Language::Rust,
-    //         );
-    //         // assert that err is "not git is not installed"
-    //         if output.is_err() {
-    //             assert_ne!(output.unwrap_err().to_string(), "git is not installed");
-    //         }
-    //     }
-    //
+
     #[test]
     fn not_found() {
         let output = get_function_history(

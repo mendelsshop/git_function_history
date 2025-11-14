@@ -183,24 +183,29 @@ impl<T: TreeSitterTags> InstantiateHelper<Tags> for T {
                     // TODO: don't double parse
                     tag_config
                         .generate_tags(&mut tag_context, code, None)
-                        .map(|tags| {
-                            let ranges = tags
-                                .0
-                                .filter_map(Result::ok)
-                                .filter(|tag| {
-                                    ["method", "function"]
-                                        .contains(&tag_config.syntax_type_name(tag.syntax_type_id))
-                                        && str::from_utf8(&code[tag.name_range.clone()])
+                        .map_or_else(
+                            |_| vec![].into_boxed_slice(),
+                            |tags| {
+                                let ranges = tags
+                                    .0
+                                    .filter_map(Result::ok)
+                                    .filter(|tag| {
+                                        ["method", "function"].contains(
+                                            &tag_config.syntax_type_name(tag.syntax_type_id),
+                                        ) && str::from_utf8(&code[tag.name_range.clone()])
                                             .unwrap_or("")
                                             == name
-                                })
-                                .filter_map(|tag| {
-                                    node.descendant_for_byte_range(tag.range.start, tag.range.end)
+                                    })
+                                    .filter_map(|tag| {
+                                        node.descendant_for_byte_range(
+                                            tag.range.start,
+                                            tag.range.end,
+                                        )
                                         .map(|node| node.range())
-                                });
-                            ranges.collect()
-                        })
-                        .unwrap_or_else(|_| vec![].into_boxed_slice())
+                                    });
+                                ranges.collect()
+                            },
+                        )
                 })
             })
     }

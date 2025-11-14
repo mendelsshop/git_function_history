@@ -87,7 +87,7 @@ impl Commit {
         map.insert("date".to_string(), self.date.to_rfc2822());
         map.insert(
             "file".to_string(),
-            self.files.get(self.current_pos).map_or("error occured, could not get filename, no file found\nfile a bug to https://github.com/mendelsshop/git_function_history/issues".to_string(), |file|file.file_name().expect("error ocurred, could not get filename, no filename for current file\nfile a bug to https://github.com/mendelsshop/git_function_history/issues").to_string()),
+            self.files.get(self.current_pos).map_or_else(||"error occured, could not get filename, no file found\nfile a bug to https://github.com/mendelsshop/git_function_history/issues".to_string(), |file|file.file_name().expect("error ocurred, could not get filename, no filename for current file\nfile a bug to https://github.com/mendelsshop/git_function_history/issues").to_string()),
         );
         map
     }
@@ -436,8 +436,8 @@ impl Display for FunctionHistory {
         writeln!(
             f,
             "{}",
-            self.commit_history.get(self.current_pos).map_or(
-                "could not retrieve commit please file a bug".to_string(),
+            self.commit_history.get(self.current_pos).map_or_else(
+                || "could not retrieve commit please file a bug".to_string(),
                 ToString::to_string
             )
         )?;
