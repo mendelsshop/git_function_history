@@ -124,7 +124,7 @@ pub enum Filter {
 /// # examples
 ///
 /// ```
-/// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
+/// use git_function_history::{get_function_history, Filter, FileFilterType};
 /// let t = get_function_history("empty_test", &FileFilterType::Absolute("src/test_functions.rs".to_string()), &Filter::None, function_grep::supported_languages::predefined_languages()).unwrap();
 /// ```
 ///
@@ -445,7 +445,7 @@ impl Default for MacroOpts<'_, '_> {
 ///
 /// # examples
 /// ```rust
-/// use git_function_history::{get_function_history, languages::Language, Filter, FileFilterType};
+/// use git_function_history::{get_function_history,  Filter, FileFilterType};
 /// git_function_history::get_function_history!(name = "main", file = FileFilterType::Relative("src/main.rs".to_string()), filter = Filter::None,default_languages = false, supported_languages = vec![&function_grep::supported_languages::Rust]);
 /// ```
 ///

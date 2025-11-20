@@ -64,7 +64,7 @@ impl Commit {
     }
 
     /// sets the current file to the next file if possible
-    pub fn move_forward(&mut self) {
+    pub const fn move_forward(&mut self) {
         if self.current_pos >= self.files.len() - 1 {
             return;
         }
@@ -72,7 +72,7 @@ impl Commit {
     }
 
     /// sets the current file to the previous file if possible
-    pub fn move_back(&mut self) {
+    pub const fn move_back(&mut self) {
         if self.current_pos == 0 {
             return;
         }
@@ -103,7 +103,7 @@ impl Commit {
     }
 
     /// tells you in which directions you can move through the files in the commit
-    pub fn get_move_direction(&self) -> Directions {
+    pub const fn get_move_direction(&self) -> Directions {
         match self.current_pos {
             0 if self.files.len() == 1 => Directions::None,
             0 => Directions::Forward,
@@ -294,7 +294,7 @@ impl FunctionHistory {
     }
 
     /// returns the directions in which ways you can move through the commit history
-    pub fn get_move_direction(&self) -> Directions {
+    pub const fn get_move_direction(&self) -> Directions {
         match self.current_pos {
             0 if self.commit_history.len() == 1 => Directions::None,
             0 => Directions::Forward,
@@ -314,9 +314,9 @@ impl FunctionHistory {
     ///
     /// # examples
     /// ```rust
-    /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
+    /// use git_function_history::{get_function_history, Filter, FileFilterType};
     ///
-    /// let history = get_function_history("new", &FileFilterType::None, &Filter::None, &Language::Rust).unwrap();
+    /// let history = get_function_history("new", &FileFilterType::None, &Filter::None, function_grep::supported_languages::predefined_languages()).unwrap();
     ///
     /// history.filter_by(&Filter::Directory("app".to_string())).unwrap();
     /// ```
