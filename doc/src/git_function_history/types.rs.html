@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/types.rs`."><title>types.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (01867557c 2025-11-12)" data-channel="nightly" data-search-js="search-8e3fad08.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history/</div>types.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>chrono::{DateTime, FixedOffset};
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `git-function-history-lib/src/types.rs`."><title>types.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="git_function_history" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (07bdbaedc 2025-11-19)" data-channel="nightly" data-search-js="search-680b2199.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">git_function_history/</div>types.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>chrono::{DateTime, FixedOffset};
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>function_grep::ParsedFile;
 <a href=#3 id=3 data-nosnippet>3</a><span class="attr">#[cfg(feature = <span class="string">"parallel"</span>)]
 <a href=#4 id=4 data-nosnippet>4</a></span><span class="kw">use </span>rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
@@ -64,7 +64,7 @@
 <a href=#64 id=64 data-nosnippet>64</a>    }
 <a href=#65 id=65 data-nosnippet>65</a>
 <a href=#66 id=66 data-nosnippet>66</a>    <span class="doccomment">/// sets the current file to the next file if possible
-<a href=#67 id=67 data-nosnippet>67</a>    </span><span class="kw">pub fn </span>move_forward(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#67 id=67 data-nosnippet>67</a>    </span><span class="kw">pub const fn </span>move_forward(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
 <a href=#68 id=68 data-nosnippet>68</a>        <span class="kw">if </span><span class="self">self</span>.current_pos &gt;= <span class="self">self</span>.files.len() - <span class="number">1 </span>{
 <a href=#69 id=69 data-nosnippet>69</a>            <span class="kw">return</span>;
 <a href=#70 id=70 data-nosnippet>70</a>        }
@@ -72,7 +72,7 @@
 <a href=#72 id=72 data-nosnippet>72</a>    }
 <a href=#73 id=73 data-nosnippet>73</a>
 <a href=#74 id=74 data-nosnippet>74</a>    <span class="doccomment">/// sets the current file to the previous file if possible
-<a href=#75 id=75 data-nosnippet>75</a>    </span><span class="kw">pub fn </span>move_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#75 id=75 data-nosnippet>75</a>    </span><span class="kw">pub const fn </span>move_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
 <a href=#76 id=76 data-nosnippet>76</a>        <span class="kw">if </span><span class="self">self</span>.current_pos == <span class="number">0 </span>{
 <a href=#77 id=77 data-nosnippet>77</a>            <span class="kw">return</span>;
 <a href=#78 id=78 data-nosnippet>78</a>        }
@@ -103,7 +103,7 @@
 <a href=#103 id=103 data-nosnippet>103</a>    }
 <a href=#104 id=104 data-nosnippet>104</a>
 <a href=#105 id=105 data-nosnippet>105</a>    <span class="doccomment">/// tells you in which directions you can move through the files in the commit
-<a href=#106 id=106 data-nosnippet>106</a>    </span><span class="kw">pub fn </span>get_move_direction(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Directions {
+<a href=#106 id=106 data-nosnippet>106</a>    </span><span class="kw">pub const fn </span>get_move_direction(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Directions {
 <a href=#107 id=107 data-nosnippet>107</a>        <span class="kw">match </span><span class="self">self</span>.current_pos {
 <a href=#108 id=108 data-nosnippet>108</a>            <span class="number">0 </span><span class="kw">if </span><span class="self">self</span>.files.len() == <span class="number">1 </span>=&gt; Directions::None,
 <a href=#109 id=109 data-nosnippet>109</a>            <span class="number">0 </span>=&gt; Directions::Forward,
@@ -294,7 +294,7 @@
 <a href=#294 id=294 data-nosnippet>294</a>    }
 <a href=#295 id=295 data-nosnippet>295</a>
 <a href=#296 id=296 data-nosnippet>296</a>    <span class="doccomment">/// returns the directions in which ways you can move through the commit history
-<a href=#297 id=297 data-nosnippet>297</a>    </span><span class="kw">pub fn </span>get_move_direction(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Directions {
+<a href=#297 id=297 data-nosnippet>297</a>    </span><span class="kw">pub const fn </span>get_move_direction(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Directions {
 <a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">match </span><span class="self">self</span>.current_pos {
 <a href=#299 id=299 data-nosnippet>299</a>            <span class="number">0 </span><span class="kw">if </span><span class="self">self</span>.commit_history.len() == <span class="number">1 </span>=&gt; Directions::None,
 <a href=#300 id=300 data-nosnippet>300</a>            <span class="number">0 </span>=&gt; Directions::Forward,
@@ -314,9 +314,9 @@
 <a href=#314 id=314 data-nosnippet>314</a>    ///
 <a href=#315 id=315 data-nosnippet>315</a>    /// # examples
 <a href=#316 id=316 data-nosnippet>316</a>    /// ```rust
-<a href=#317 id=317 data-nosnippet>317</a>    /// use git_function_history::{get_function_history, Filter, FileFilterType, Language};
+<a href=#317 id=317 data-nosnippet>317</a>    /// use git_function_history::{get_function_history, Filter, FileFilterType};
 <a href=#318 id=318 data-nosnippet>318</a>    ///
-<a href=#319 id=319 data-nosnippet>319</a>    /// let history = get_function_history("new", &amp;FileFilterType::None, &amp;Filter::None, &amp;Language::Rust).unwrap();
+<a href=#319 id=319 data-nosnippet>319</a>    /// let history = get_function_history("new", &amp;FileFilterType::None, &amp;Filter::None, function_grep::supported_languages::predefined_languages()).unwrap();
 <a href=#320 id=320 data-nosnippet>320</a>    ///
 <a href=#321 id=321 data-nosnippet>321</a>    /// history.filter_by(&amp;Filter::Directory("app".to_string())).unwrap();
 <a href=#322 id=322 data-nosnippet>322</a>    /// ```
